@@ -17,6 +17,7 @@ import {
   ClipboardList,
   LogOut,
   Building2,
+  Wrench,
 } from "lucide-react";
 
 type Props = {
@@ -50,6 +51,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
         { key: "payments", icon: Wallet, href: `${basePath}/tournament/${tournamentId}/payments` },
         { key: "messages", icon: Mail, href: `${basePath}/tournament/${tournamentId}/messages` },
         { key: "settings", icon: Settings, href: `${basePath}/tournament/${tournamentId}/settings` },
+        { key: "setup", icon: Wrench, href: `${basePath}/tournament/${tournamentId}/setup` },
       ]
     : [];
 

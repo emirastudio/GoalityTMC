@@ -78,7 +78,8 @@
     "packages": "Пакеты",
     "registrations": "Регистрации",
     "profile": "Профиль",
-    "club": "Клуб"
+    "club": "Клуб",
+    "setup": "Настройка"
   },
   "team": {
     "regNumber": "Регистрационный номер",

@@ -78,7 +78,8 @@
     "packages": "Packages",
     "registrations": "Registrations",
     "profile": "Profile",
-    "club": "Club"
+    "club": "Club",
+    "setup": "Setup"
   },
   "team": {
     "regNumber": "Registration number",

@@ -182,6 +182,10 @@ export default function RegisterPage() {
   const router = useRouter();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Get tournamentId from URL query param (from catalog)
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const tournamentIdParam = searchParams?.get("tournamentId") ?? null;
+
   const [step, setStep] = useState<Step>("club");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -206,13 +210,16 @@ export default function RegisterPage() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
   useEffect(() => {
-    fetch("/api/tournaments/active").then(async (res) => {
+    const url = tournamentIdParam
+      ? `/api/tournaments/active?tournamentId=${tournamentIdParam}`
+      : "/api/tournaments/active";
+    fetch(url).then(async (res) => {
       if (res.ok) {
         const data = await res.json();
         setClasses(data.classes ?? []);
       }
     });
-  }, []);
+  }, [tournamentIdParam]);
 
   const stepIndex = STEPS.indexOf(step);
   const isFirst = stepIndex === 0;
@@ -290,6 +297,7 @@ export default function RegisterPage() {
       fd.append("password", password);
       fd.append("teams", JSON.stringify(teamsList));
       if (logoFile) fd.append("logo", logoFile);
+      if (tournamentIdParam) fd.append("tournamentId", tournamentIdParam);
 
       const res = await fetch("/api/clubs/register", { method: "POST", body: fd });
       if (res.ok) {

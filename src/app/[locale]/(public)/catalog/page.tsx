@@ -130,7 +130,7 @@ export default async function CatalogPage() {
 
                     <div className="ml-6 shrink-0">
                       <Link
-                        href={`/club/register`}
+                        href={`/club/register?tournamentId=${tournament.id}`}
                         className="inline-flex items-center gap-2 rounded-lg bg-navy px-5 py-2.5 text-sm font-medium text-white hover:bg-navy-light transition-colors"
                       >
                         {t("register")}

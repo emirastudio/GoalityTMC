@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
   const password = formData.get("password") as string;
   const teamsJson = formData.get("teams") as string;
   const logoFile = formData.get("logo") as File | null;
+  const tournamentIdParam = formData.get("tournamentId") as string | null;
 
   console.log(`[REGISTER] attempt — club="${clubName}" email="${contactEmail}" country="${country}" ip=${ip} ua=${ua.slice(0, 80)}`);
 
@@ -97,10 +98,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "An account with this email already exists. Please log in." }, { status: 409 });
   }
 
-  // Get active tournament
-  const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
-  });
+  // Get tournament — by ID if specified, otherwise any open
+  const tournament = tournamentIdParam
+    ? await db.query.tournaments.findFirst({
+        where: and(
+          eq(tournaments.id, parseInt(tournamentIdParam)),
+          eq(tournaments.registrationOpen, true)
+        ),
+      })
+    : await db.query.tournaments.findFirst({
+        where: eq(tournaments.registrationOpen, true),
+      });
   if (!tournament) {
     console.log(`[REGISTER] FAIL no active tournament — email=${contactEmail}`);
     await logAttempt({ ...base, teamsCount: teamsList.length, teamsJson, status: "fail_no_tournament", failReason: "No open tournament" });

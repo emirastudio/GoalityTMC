@@ -1,7 +1,5 @@
 "use client";
-
 import { PackagesPageContent } from "@/components/admin/pages/packages-page";
-
-export default function PackagesPage() {
+export default function OrgPackagesPage() {
   return <PackagesPageContent />;
 }

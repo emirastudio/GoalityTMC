@@ -2,6 +2,6 @@
 
 import { TournamentSetupPageContent } from "@/components/admin/pages/tournament-setup-page";
 
-export default function AdminTournamentsPage() {
+export default function OrgTournamentSetupPage() {
   return <TournamentSetupPageContent />;
 }

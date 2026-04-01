@@ -78,7 +78,8 @@
     "packages": "Paketid",
     "registrations": "Registreerimised",
     "profile": "Profiil",
-    "club": "Klubi"
+    "club": "Klubi",
+    "setup": "Seadistamine"
   },
   "team": {
     "regNumber": "Registreerimisnumber",
