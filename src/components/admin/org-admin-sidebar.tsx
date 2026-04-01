@@ -91,7 +91,12 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
               </span>
             </div>
             {tournamentNav.map(({ key, icon: Icon, href }) => {
-              const isActive = pathname.startsWith(href) && (key === "settings" ? pathname.endsWith("/settings") : true);
+              const isActive =
+                key === "overview"
+                  ? pathname === href
+                  : key === "settings"
+                  ? pathname.startsWith(href) && pathname.endsWith("/settings")
+                  : pathname.startsWith(href);
               return (
                 <Link
                   key={`t-${key}`}
