@@ -131,19 +131,18 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
         />
         <div className="flex flex-1">
           {/* Desktop sidebar */}
-          <div className="hidden md:flex flex-col w-56 shrink-0 border-r border-border bg-white">
-            <div className="p-4 border-b border-border">
+          <div className="hidden md:flex flex-col w-60 shrink-0 bg-[#1C2121]">
+            <div className="px-4 py-4 border-b border-white/8">
               {isTeamManager ? (
-                /* Тренер команды — показываем только название без переключения */
                 <div className="flex items-center gap-2.5 px-1">
-                  <div className="w-9 h-9 rounded-full bg-navy/10 border border-navy/20 flex items-center justify-center shrink-0">
-                    <span className="text-[11px] font-bold text-navy">
+                  <div className="w-9 h-9 rounded-xl bg-mint/15 border border-mint/20 flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-bold text-mint">
                       {club.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()}
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[13px] font-bold text-text-primary truncate leading-tight">{club.name}</p>
-                    <p className="text-[11px] text-text-secondary leading-tight truncate">{activeTeam?.name}</p>
+                    <p className="text-[13px] font-bold text-white truncate leading-tight">{club.name}</p>
+                    <p className="text-[11px] text-white/50 leading-tight truncate">{activeTeam?.name}</p>
                   </div>
                 </div>
               ) : (
@@ -153,6 +152,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
                   clubId={club.id}
                   teams={enrichedTeams}
                   classes={classes.map(c => ({ id: c.id, name: c.name }))}
+                  dark
                 />
               )}
             </div>

@@ -28,6 +28,7 @@ interface TeamSwitcherProps {
   clubId: number;
   teams: TeamSummary[];
   classes: ClassOption[];
+  dark?: boolean;
 }
 
 const statusDot: Record<string, string> = {
@@ -37,7 +38,7 @@ const statusDot: Record<string, string> = {
   cancelled: "bg-red-400",
 };
 
-export function TeamSwitcher({ clubName, clubBadgeUrl, clubId, teams, classes }: TeamSwitcherProps) {
+export function TeamSwitcher({ clubName, clubBadgeUrl, clubId, teams, classes, dark = false }: TeamSwitcherProps) {
   const t = useTranslations("team");
   const { teamId, setTeamId } = useTeam();
   const [open, setOpen] = useState(false);
@@ -97,74 +98,76 @@ export function TeamSwitcher({ clubName, clubBadgeUrl, clubId, teams, classes }:
           <img
             src={clubBadgeUrl}
             alt={clubName}
-            className="w-9 h-9 rounded-full object-contain bg-surface border border-border shrink-0"
+            className={cn("w-9 h-9 rounded-xl object-contain shrink-0", dark ? "border border-white/10" : "bg-surface border border-border")}
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-navy/10 border border-navy/20 flex items-center justify-center shrink-0">
-            <span className="text-[11px] font-bold text-navy">{initials}</span>
+          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", dark ? "bg-mint/15 border border-mint/20" : "bg-navy/10 border border-navy/20")}>
+            <span className={cn("text-[11px] font-bold", dark ? "text-mint" : "text-navy")}>{initials}</span>
           </div>
         )}
         <div className="min-w-0">
-          <p className="text-[13px] font-bold text-text-primary truncate leading-tight">{clubName}</p>
-          <p className="text-[10px] text-text-secondary leading-tight">{teams.length} {teams.length === 1 ? "team" : "teams"}</p>
+          <p className={cn("text-[13px] font-bold truncate leading-tight", dark ? "text-white" : "text-text-primary")}>{clubName}</p>
+          <p className={cn("text-[10px] leading-tight", dark ? "text-white/40" : "text-text-secondary")}>{teams.length} {teams.length === 1 ? "team" : "teams"}</p>
         </div>
       </div>
 
       {/* Team dropdown */}
       {activeTeam && (
         <div ref={ref} className="relative">
-          {/* Trigger */}
           <button
             onClick={() => setOpen((v) => !v)}
             className={cn(
               "w-full text-left rounded-xl border px-3 py-2.5 transition-all",
-              open
-                ? "border-navy bg-navy/5 shadow-sm"
-                : "border-border hover:border-navy/30 hover:bg-surface/60 bg-white"
+              dark
+                ? open
+                  ? "border-mint/30 bg-white/8"
+                  : "border-white/10 bg-white/6 hover:bg-white/10"
+                : open
+                  ? "border-navy bg-navy/5 shadow-sm"
+                  : "border-border hover:border-navy/30 hover:bg-surface/60 bg-white"
             )}
           >
             <div className="flex items-center gap-2">
               <span className={cn("w-2 h-2 rounded-full shrink-0", statusDot[activeTeam.status])} />
-              <p className="text-[13px] font-semibold text-text-primary flex-1 truncate">
+              <p className={cn("text-[13px] font-semibold flex-1 truncate", dark ? "text-white/90" : "text-text-primary")}>
                 {activeTeam.name || "—"}
               </p>
-              <ChevronDown className={cn("w-3.5 h-3.5 text-text-secondary shrink-0 transition-transform", open && "rotate-180")} />
+              <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 transition-transform", dark ? "text-white/30" : "text-text-secondary", open && "rotate-180")} />
             </div>
             <div className="flex items-center gap-3 mt-1 ml-4">
-              <span className="text-[11px] text-text-secondary font-medium">{activeTeam.className}</span>
-              <span className="text-[11px] text-text-secondary flex items-center gap-0.5">
+              <span className={cn("text-[11px] font-medium", dark ? "text-white/40" : "text-text-secondary")}>{activeTeam.className}</span>
+              <span className={cn("text-[11px] flex items-center gap-0.5", dark ? "text-white/40" : "text-text-secondary")}>
                 <Users className="w-3 h-3" />&nbsp;{activeTeam.playersCount}
               </span>
             </div>
-            <p className="text-[10px] text-text-secondary/60 mt-0.5 ml-4">{t(activeTeam.status)}</p>
           </button>
 
-          {/* Dropdown */}
           {open && (
-            <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white rounded-xl border border-border shadow-lg overflow-hidden">
+            <div className={cn("absolute top-full left-0 right-0 mt-1 z-50 rounded-xl border shadow-2xl overflow-hidden", dark ? "bg-[#1C2121] border-white/10" : "bg-white border-border shadow-lg")}>
               {teams.map((team) => (
                 <button
                   key={team.id}
                   onClick={() => { setTeamId(team.id); setOpen(false); }}
                   className={cn(
-                    "w-full text-left flex items-start gap-2.5 px-3 py-2.5 hover:bg-surface transition-colors border-b border-border last:border-0",
-                    team.id === activeTeam?.id && "bg-navy/5"
+                    "w-full text-left flex items-start gap-2.5 px-3 py-2.5 transition-colors border-b last:border-0",
+                    dark
+                      ? cn("border-white/6 hover:bg-white/6", team.id === activeTeam?.id && "bg-white/8")
+                      : cn("border-border hover:bg-surface", team.id === activeTeam?.id && "bg-navy/5")
                   )}
                 >
                   <span className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", statusDot[team.status])} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-text-primary truncate">{team.name}</p>
-                    <p className="text-[11px] text-text-secondary">{team.className} · {t(team.status)}</p>
+                    <p className={cn("text-[13px] font-medium truncate", dark ? "text-white/90" : "text-text-primary")}>{team.name}</p>
+                    <p className={cn("text-[11px]", dark ? "text-white/35" : "text-text-secondary")}>{team.className} · {t(team.status)}</p>
                   </div>
                   {team.id === activeTeam?.id && (
-                    <Check className="w-3.5 h-3.5 text-navy shrink-0 mt-0.5" />
+                    <Check className={cn("w-3.5 h-3.5 shrink-0 mt-0.5", dark ? "text-mint" : "text-navy")} />
                   )}
                 </button>
               ))}
-              {/* Add team button */}
               <button
                 onClick={() => { setOpen(false); setShowAddModal(true); }}
-                className="w-full text-left flex items-center gap-2 px-3 py-2.5 hover:bg-surface transition-colors text-navy border-t border-border"
+                className={cn("w-full text-left flex items-center gap-2 px-3 py-2.5 transition-colors border-t", dark ? "border-white/10 hover:bg-white/6 text-mint" : "border-border hover:bg-surface text-navy")}
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span className="text-[13px] font-medium">{t("addTeam")}</span>
@@ -174,11 +177,10 @@ export function TeamSwitcher({ clubName, clubBadgeUrl, clubId, teams, classes }:
         </div>
       )}
 
-      {/* No teams - just show add button */}
       {!activeTeam && (
         <button
           onClick={() => setShowAddModal(true)}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-navy/30 px-3 py-3 text-navy hover:bg-navy/5 transition-colors"
+          className={cn("w-full flex items-center justify-center gap-2 rounded-xl border border-dashed px-3 py-3 transition-colors", dark ? "border-white/15 text-mint hover:bg-white/6" : "border-navy/30 text-navy hover:bg-navy/5")}
         >
           <Plus className="w-4 h-4" />
           <span className="text-[13px] font-medium">{t("addTeam")}</span>

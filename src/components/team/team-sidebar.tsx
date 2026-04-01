@@ -68,12 +68,12 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
   ];
 
   return (
-    <aside className={cn("w-56 shrink-0", className)}>
-      <nav className="space-y-5">
+    <aside className={cn("w-full shrink-0", className)}>
+      <nav className="space-y-4">
         {groups.map((group, gi) => (
           <div key={gi}>
             {group.labelKey && (
-              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-text-secondary/60">
+              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/30">
                 {t(group.labelKey)}
               </p>
             )}
@@ -85,16 +85,16 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
                     key={key}
                     href={href}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all",
+                      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all",
                       isActive
-                        ? "bg-navy text-white shadow-sm"
-                        : "text-text-secondary hover:bg-surface hover:text-text-primary"
+                        ? "bg-mint/12 text-mint"
+                        : "text-white/60 hover:bg-white/8 hover:text-white"
                     )}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4 shrink-0" />
                     <span className="flex-1">{t(key)}</span>
                     {badge !== undefined && badge > 0 && (
-                      <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold bg-gold text-white">
+                      <span className="text-[10px] rounded-full px-1.5 py-0.5 font-bold bg-mint text-navy">
                         {badge}
                       </span>
                     )}
