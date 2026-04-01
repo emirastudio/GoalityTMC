@@ -1,4 +1,8 @@
 {
+  "meta": {
+    "title": "Goality TMC — Play. Grow. Win.",
+    "description": "Jalgpalliturniiride haldamise platvorm — registreerimine, logistika, majutus ja maksed ühes kohas."
+  },
   "common": {
     "save": "Salvesta",
     "cancel": "Tühista",

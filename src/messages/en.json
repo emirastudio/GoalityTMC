@@ -1,4 +1,8 @@
 {
+  "meta": {
+    "title": "Goality TMC — Play. Grow. Win.",
+    "description": "Football tournament management platform — registration, logistics, accommodation, and payments in one place."
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",

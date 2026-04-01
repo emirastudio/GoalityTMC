@@ -7,10 +7,6 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Goality TMC — Play. Grow. Win.",
-  description: "Football tournament management platform — registration, logistics, accommodation, and payments in one place.",
-};
 
 export default function RootLayout({
   children,
