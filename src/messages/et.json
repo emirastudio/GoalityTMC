@@ -79,7 +79,8 @@
     "registrations": "Registreerimised",
     "profile": "Profiil",
     "club": "Klubi",
-    "setup": "Seadistamine"
+    "setup": "Seadistamine",
+    "servicesPackages": "Teenused ja paketid"
   },
   "team": {
     "regNumber": "Registreerimisnumber",
@@ -514,6 +515,48 @@
     "inviteStep3": "Nad avavad lingi ja loovad oma konto (nimi, e-post, parool).",
     "inviteStep4": "Pärast sisselogimist näevad nad ainult oma meeskonda.",
     "inviteNote": "Link kehtib 7 päeva. Uue lingi saab igal ajal luua."
+  },
+  "flexServices": {
+    "title": "Teenused ja paketid",
+    "servicesTab": "Teenuste t\u00fc\u00fcbid",
+    "packagesTab": "Paketid",
+    "addService": "Lisa teenus",
+    "serviceName": "Teenuse nimi",
+    "serviceNamePlaceholder": "nt. Majutus, Toitlustus, Transport...",
+    "noServices": "Teenuseid pole veel loodud",
+    "addPackage": "Lisa pakett",
+    "packageName": "Paketi nimi",
+    "packageNamePlaceholder": "nt. Premium, Budget, VIP...",
+    "noPackages": "Pakette pole veel loodud",
+    "editPackage": "Muuda paketti",
+    "items": "\u00dcksused",
+    "addItem": "Lisa \u00fcksus",
+    "noItems": "Paketis pole \u00fcksusi",
+    "selectService": "Vali teenus",
+    "details": "Tingimused",
+    "detailsPlaceholder": "nt. Hotell Hilton, 5 \u00f6\u00f6d",
+    "pricingMode": "Hinnastamine",
+    "price": "Hind",
+    "days": "P\u00e4evad",
+    "quantity": "Kogus",
+    "default": "Vaikimisi",
+    "assigned": "meeskonda m\u00e4\u00e4ratud",
+    "modes": {
+      "per_person": "Inimese kohta",
+      "per_player": "M\u00e4ngija kohta",
+      "per_staff": "Personali kohta",
+      "per_accompanying": "Saatja kohta",
+      "per_team": "Meeskonna kohta",
+      "per_person_per_day": "Inimese / p\u00e4ev",
+      "per_unit": "Tk kohta",
+      "flat": "Fikseeritud summa"
+    },
+    "overrides": "Kohandatud hinnad",
+    "customPrice": "Kohandatud hind",
+    "customQty": "Kohandatud kogus",
+    "reason": "P\u00f5hjus",
+    "disabled": "V\u00e4lja j\u00e4etud",
+    "noOverrides": "Standardhinnad"
   },
   "orgAdmin": {
     "dashboardSubtitle": "Organisatsiooni juhtpaneel",

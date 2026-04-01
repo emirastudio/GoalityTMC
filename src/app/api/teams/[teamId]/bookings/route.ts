@@ -58,23 +58,17 @@ export async function GET(
 
   const tournamentId = team.tournamentId;
 
-  // Determine which service types are included in this package
-  const includeAccommodation = pkg?.includeAccommodation ?? true;
-  const includeTransfer = pkg?.includeTransfer ?? true;
-  const includeRegistration = pkg?.includeRegistration ?? true;
-  const includeMeals = pkg?.includeMeals ?? true;
+  // All service types are always included (old per-package flags were removed)
+  const includeAccommodation = true;
+  const includeTransfer = true;
+  const includeRegistration = true;
+  const includeMeals = true;
 
-  // Load accommodation — respects package flag + specific option if set
-  const accommodation = !includeAccommodation
-    ? []
-    : pkg?.accommodationOptionId
-    ? await db.query.accommodationOptions.findMany({
-        where: eq(accommodationOptions.id, pkg.accommodationOptionId),
-      })
-    : await db.query.accommodationOptions.findMany({
-        where: eq(accommodationOptions.tournamentId, tournamentId),
-        orderBy: [asc(accommodationOptions.sortOrder)],
-      });
+  // Load accommodation options for this tournament
+  const accommodation = await db.query.accommodationOptions.findMany({
+    where: eq(accommodationOptions.tournamentId, tournamentId),
+    orderBy: [asc(accommodationOptions.sortOrder)],
+  });
 
   // Load service options — filtered by package flags
   const [meals, transfers, registration] = await Promise.all([

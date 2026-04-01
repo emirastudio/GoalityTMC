@@ -452,12 +452,9 @@ export const servicePackages = pgTable("service_packages", {
   nameRu: text("name_ru"),
   nameEt: text("name_et"),
   description: text("description"),
+  descriptionRu: text("description_ru"),
+  descriptionEt: text("description_et"),
   isDefault: boolean("is_default").default(false).notNull(),
-  accommodationOptionId: integer("accommodation_option_id"),
-  includeAccommodation: boolean("include_accommodation").default(true).notNull(),
-  includeTransfer: boolean("include_transfer").default(true).notNull(),
-  includeRegistration: boolean("include_registration").default(true).notNull(),
-  includeMeals: boolean("include_meals").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -579,6 +576,78 @@ export const teamBookings = pgTable("team_bookings", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ═══════════════════════════════════════════════════════════
+// NEW FLEXIBLE SERVICES & PACKAGES MODEL
+// ═══════════════════════════════════════════════════════════
+
+export const pricingModeEnum = pgEnum("pricing_mode", [
+  "per_person",          // price × total people
+  "per_player",          // price × players count
+  "per_staff",           // price × staff count
+  "per_accompanying",    // price × accompanying count
+  "per_team",            // fixed price per team
+  "per_person_per_day",  // price × people × days
+  "per_unit",            // price × custom quantity
+  "flat",                // fixed amount (organizer enters total)
+]);
+
+// ─── Services (type catalog — just names) ──────────────
+// Organizer creates service types: "Accommodation", "Meals", "Transfer", etc.
+export const services = pgTable("services", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  name: text("name").notNull(),
+  nameRu: text("name_ru"),
+  nameEt: text("name_et"),
+  icon: text("icon"),             // optional icon name (lucide)
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Package Items (service configured in a package) ────
+// Each item = a service type + specific conditions + pricing
+export const packageItems = pgTable("package_items", {
+  id: serial("id").primaryKey(),
+  packageId: integer("package_id")
+    .references(() => servicePackages.id, { onDelete: "cascade" })
+    .notNull(),
+  serviceId: integer("service_id")
+    .references(() => services.id, { onDelete: "cascade" })
+    .notNull(),
+  // Conditions / details (free text describing specifics)
+  details: text("details"),           // "Hotel Hilton, 5 nights"
+  detailsRu: text("details_ru"),
+  detailsEt: text("details_et"),
+  // Pricing
+  pricingMode: pricingModeEnum("pricing_mode").default("per_person").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).default("0").notNull(),
+  // Extra params for complex pricing
+  days: integer("days"),              // for per_person_per_day mode
+  quantity: integer("quantity"),      // for per_unit mode (default qty)
+  // Display
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Team Package Overrides (per-team custom pricing) ───
+// Override price of a specific package item for a specific team
+export const teamPackageItemOverrides = pgTable("team_package_item_overrides", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id")
+    .references(() => teams.id, { onDelete: "cascade" })
+    .notNull(),
+  packageItemId: integer("package_item_id")
+    .references(() => packageItems.id, { onDelete: "cascade" })
+    .notNull(),
+  customPrice: decimal("custom_price", { precision: 10, scale: 2 }),
+  customQuantity: integer("custom_quantity"),   // override quantity
+  isDisabled: boolean("is_disabled").default(false).notNull(),  // exclude this item
+  reason: text("reason"),             // "Early bird discount", "VIP bonus"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // ─── Admin Users ────────────────────────────────────────

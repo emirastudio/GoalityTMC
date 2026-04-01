@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { servicePackages, packageAssignments } from "@/db/schema";
+import { servicePackages, packageItems, packageAssignments } from "@/db/schema";
 import { requireTournamentAdmin, requireAdmin, isError } from "@/lib/api-auth";
 import { eq, count, sql } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   const ctx = await requireTournamentAdmin(req);
   if (isError(ctx)) return ctx;
-  const { tournament } = ctx;
 
   const packages = await db
     .select({
@@ -17,14 +16,22 @@ export async function GET(req: NextRequest) {
       nameRu: servicePackages.nameRu,
       nameEt: servicePackages.nameEt,
       description: servicePackages.description,
+      descriptionRu: servicePackages.descriptionRu,
+      descriptionEt: servicePackages.descriptionEt,
       isDefault: servicePackages.isDefault,
       createdAt: servicePackages.createdAt,
+      itemsCount: sql<number>`(
+        SELECT COUNT(*) FROM package_items
+        WHERE package_items.package_id = ${servicePackages.id}
+      )::int`,
       assignedTeams: count(packageAssignments.id),
-      publishedTeams: sql<number>`COUNT(CASE WHEN ${packageAssignments.isPublished} = true THEN 1 END)::int`,
     })
     .from(servicePackages)
-    .leftJoin(packageAssignments, eq(packageAssignments.packageId, servicePackages.id))
-    .where(eq(servicePackages.tournamentId, tournament.id))
+    .leftJoin(
+      packageAssignments,
+      eq(packageAssignments.packageId, servicePackages.id)
+    )
+    .where(eq(servicePackages.tournamentId, ctx.tournament.id))
     .groupBy(servicePackages.id)
     .orderBy(servicePackages.createdAt);
 
@@ -34,18 +41,19 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const ctx = await requireTournamentAdmin(req);
   if (isError(ctx)) return ctx;
-  const { tournament } = ctx;
 
   const body = await req.json();
 
   const [created] = await db
     .insert(servicePackages)
     .values({
-      tournamentId: tournament.id,
+      tournamentId: ctx.tournament.id,
       name: body.name,
       nameRu: body.nameRu,
       nameEt: body.nameEt,
       description: body.description,
+      descriptionRu: body.descriptionRu,
+      descriptionEt: body.descriptionEt,
       isDefault: body.isDefault ?? false,
     })
     .returning();
@@ -82,12 +90,7 @@ export async function DELETE(req: NextRequest) {
   if (isError(session)) return session;
 
   const { searchParams } = new URL(req.url);
-  let id = Number(searchParams.get("id"));
-
-  if (!id) {
-    const body = await req.json().catch(() => ({}));
-    id = body.id;
-  }
+  const id = Number(searchParams.get("id"));
 
   if (!id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
@@ -100,7 +103,9 @@ export async function DELETE(req: NextRequest) {
 
   if (assignments.length > 0) {
     return NextResponse.json(
-      { error: `Cannot delete: ${assignments.length} team(s) assigned to this package` },
+      {
+        error: `Cannot delete: ${assignments.length} team(s) assigned to this package`,
+      },
       { status: 409 }
     );
   }
