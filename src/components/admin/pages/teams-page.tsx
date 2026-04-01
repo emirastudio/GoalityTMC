@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useAdminFetch } from "@/lib/tournament-context";
+import { useAdminFetch, useTournament } from "@/lib/tournament-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,7 @@ export function TeamsPageContent() {
   const router = useRouter();
   const locale = useLocale();
   const adminFetch = useAdminFetch();
+  const tournament = useTournament();
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
@@ -267,7 +268,12 @@ export function TeamsPageContent() {
                   return (
                     <tr
                       key={team.id}
-                      onClick={() => router.push(`/${locale}/admin/teams/${team.id}`)}
+                      onClick={() => {
+                        const path = tournament?.orgSlug
+                          ? `/${locale}/org/${tournament.orgSlug}/admin/tournament/${tournament.tournamentId}/teams/${team.id}`
+                          : `/${locale}/admin/teams/${team.id}`;
+                        router.push(path);
+                      }}
                       className="border-b border-border last:border-0 hover:bg-navy/5 cursor-pointer"
                     >
                       {/* Reg number */}
