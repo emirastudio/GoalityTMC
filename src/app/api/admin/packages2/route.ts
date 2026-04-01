@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { servicePackages, packageItems, packageAssignments } from "@/db/schema";
-import { requireTournamentAdmin, requireAdmin, isError } from "@/lib/api-auth";
-import { eq, count, sql } from "drizzle-orm";
+import { requireTournamentAdmin, isError } from "@/lib/api-auth";
+import { eq, and, count, sql } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   const ctx = await requireTournamentAdmin(req);
@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await requireAdmin();
-  if (isError(session)) return session;
+  const ctx = await requireTournamentAdmin(req);
+  if (isError(ctx)) return ctx;
 
   const body = await req.json();
   if (!body.id) {
@@ -75,7 +75,7 @@ export async function PATCH(req: NextRequest) {
   const [updated] = await db
     .update(servicePackages)
     .set(fields)
-    .where(eq(servicePackages.id, id))
+    .where(and(eq(servicePackages.id, id), eq(servicePackages.tournamentId, ctx.tournament.id)))
     .returning();
 
   if (!updated) {
@@ -86,8 +86,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await requireAdmin();
-  if (isError(session)) return session;
+  const ctx = await requireTournamentAdmin(req);
+  if (isError(ctx)) return ctx;
 
   const { searchParams } = new URL(req.url);
   const id = Number(searchParams.get("id"));
@@ -112,7 +112,7 @@ export async function DELETE(req: NextRequest) {
 
   const [deleted] = await db
     .delete(servicePackages)
-    .where(eq(servicePackages.id, id))
+    .where(and(eq(servicePackages.id, id), eq(servicePackages.tournamentId, ctx.tournament.id)))
     .returning();
 
   if (!deleted) {
