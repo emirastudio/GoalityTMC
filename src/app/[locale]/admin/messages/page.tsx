@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAdminFetch } from "@/lib/tournament-context";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ type Question = {
 };
 
 export default function AdminMessagesPage() {
+  const adminFetch = useAdminFetch();
   const [tab, setTab] = useState<"messages" | "questions">("messages");
 
   // Messages state
@@ -56,7 +58,7 @@ export default function AdminMessagesPage() {
   const [replyingSending, setReplyingSending] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/messages")
+    adminFetch("/api/admin/messages")
       .then((r) => r.json())
       .then((data) => {
         setMessages(data.messages ?? []);
@@ -70,7 +72,7 @@ export default function AdminMessagesPage() {
   useEffect(() => {
     if (tab === "questions" && questions.length === 0) {
       setQuestionsLoading(true);
-      fetch("/api/admin/questions")
+      adminFetch("/api/admin/questions")
         .then((r) => r.json())
         .then((data) => {
           setQuestions(data);
@@ -91,7 +93,7 @@ export default function AdminMessagesPage() {
     if (!sendToAll && selectedTeamIds.length === 0) return;
 
     setSending(true);
-    const res = await fetch("/api/admin/messages", {
+    const res = await adminFetch("/api/admin/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -109,7 +111,7 @@ export default function AdminMessagesPage() {
       setSelectedTeamIds([]);
       setSendToAll(true);
       // Refresh messages
-      const data = await fetch("/api/admin/messages").then((r) => r.json());
+      const data = await adminFetch("/api/admin/messages").then((r) => r.json());
       setMessages(data.messages ?? []);
       setTimeout(() => setSendSuccess(false), 3000);
     }
@@ -120,7 +122,7 @@ export default function AdminMessagesPage() {
     const replyBody = replyDrafts[questionId]?.trim();
     if (!replyBody) return;
     setReplyingSending(questionId);
-    const res = await fetch(`/api/admin/questions/${questionId}`, {
+    const res = await adminFetch(`/api/admin/questions/${questionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ replyBody }),

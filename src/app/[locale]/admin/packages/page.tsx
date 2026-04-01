@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { useAdminFetch } from "@/lib/tournament-context";
 import { LangTabs, type Lang } from "@/components/admin/lang-tabs";
 // no useTranslations — admin panel uses hardcoded English labels
 import { Input } from "@/components/ui/input";
@@ -121,6 +122,7 @@ const EMPTY_FORM = {
 };
 
 function PackagesTab() {
+  const adminFetch = useAdminFetch();
   const [packages, setPackages] = useState<ServicePackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -137,7 +139,7 @@ function PackagesTab() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/packages");
+      const res = await adminFetch("/api/admin/packages");
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Failed to load packages");
@@ -155,7 +157,7 @@ function PackagesTab() {
   }, [loadPackages]);
 
   useEffect(() => {
-    fetch("/api/admin/services/accommodation")
+    adminFetch("/api/admin/services/accommodation")
       .then((r) => r.ok ? r.json() : [])
       .then(setAccOptions)
       .catch(() => {});
@@ -199,7 +201,7 @@ function PackagesTab() {
         ...form,
         accommodationOptionId: form.accommodationOptionId ? Number(form.accommodationOptionId) : null,
       };
-      const res = await fetch("/api/admin/packages", {
+      const res = await adminFetch("/api/admin/packages", {
         method: isNew ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(isNew ? payload : { id: editId, ...payload }),
@@ -222,7 +224,7 @@ function PackagesTab() {
   const deletePackage = async (id: number) => {
     setError(null);
     try {
-      const res = await fetch(`/api/admin/packages?id=${id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/admin/packages?id=${id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Delete failed");
@@ -238,7 +240,7 @@ function PackagesTab() {
   const publishAll = async (pkgId: number) => {
     setPublishing(pkgId);
     try {
-      await fetch(`/api/admin/packages/${pkgId}/publish`, { method: "POST" });
+      await adminFetch(`/api/admin/packages/${pkgId}/publish`, { method: "POST" });
       await loadPackages();
     } finally {
       setPublishing(null);
@@ -511,6 +513,7 @@ function PackagesTab() {
 /* ─────────────────────────────────────────── AssignmentsTab */
 
 function AssignmentsTab() {
+  const adminFetch = useAdminFetch();
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [packages, setPackages] = useState<ServicePackage[]>([]);
@@ -533,8 +536,8 @@ function AssignmentsTab() {
     setError(null);
     try {
       const [teamsRes, packagesRes] = await Promise.all([
-        fetch("/api/admin/teams"),
-        fetch("/api/admin/packages"),
+        adminFetch("/api/admin/teams"),
+        adminFetch("/api/admin/packages"),
       ]);
       if (!teamsRes.ok || !packagesRes.ok) throw new Error("Failed to load data");
 
@@ -550,7 +553,7 @@ function AssignmentsTab() {
       setPackages(packagesData);
 
       // Fetch package assignments for each team
-      const assignmentsRes = await fetch("/api/admin/teams/assignments");
+      const assignmentsRes = await adminFetch("/api/admin/teams/assignments");
       let assignmentMap: Record<number, { id: number; name: string; isPublished: boolean }> = {};
 
       if (assignmentsRes.ok) {
@@ -589,7 +592,7 @@ function AssignmentsTab() {
     setAssigningId(teamId);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/teams/${teamId}/assign-package`, {
+      const res = await adminFetch(`/api/admin/teams/${teamId}/assign-package`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packageId }),
@@ -619,7 +622,7 @@ function AssignmentsTab() {
     setRemovingId(teamId);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/teams/${teamId}/assign-package`, {
+      const res = await adminFetch(`/api/admin/teams/${teamId}/assign-package`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -644,7 +647,7 @@ function AssignmentsTab() {
   const togglePublish = async (teamId: number, currentValue: boolean) => {
     setTogglingPublish(teamId);
     try {
-      await fetch(`/api/admin/teams/${teamId}/assign-package`, {
+      await adminFetch(`/api/admin/teams/${teamId}/assign-package`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPublished: !currentValue }),
@@ -667,7 +670,7 @@ function AssignmentsTab() {
       const unassigned = teams.filter((t) => !t.currentPackage);
       await Promise.all(
         unassigned.map((team) =>
-          fetch(`/api/admin/teams/${team.id}/assign-package`, {
+          adminFetch(`/api/admin/teams/${team.id}/assign-package`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ packageId: defaultPkg.id }),

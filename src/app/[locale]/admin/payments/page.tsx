@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { useAdminFetch } from "@/lib/tournament-context";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ function toDateInput(iso: string | null): string {
 
 export default function AdminPaymentsPage() {
   const t = useTranslations("admin");
+  const adminFetch = useAdminFetch();
 
   const [payments, setPayments] = useState<Payment[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -109,7 +111,7 @@ export default function AdminPaymentsPage() {
 
   const fetchPayments = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/payments");
+      const res = await adminFetch("/api/admin/payments");
       if (res.ok) setPayments(await res.json());
     } finally {
       setLoading(false);
@@ -118,7 +120,7 @@ export default function AdminPaymentsPage() {
 
   const fetchTeams = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/teams");
+      const res = await adminFetch("/api/admin/teams");
       if (res.ok) setTeams(await res.json());
     } catch { /* silent */ }
   }, []);
@@ -149,7 +151,7 @@ export default function AdminPaymentsPage() {
     if (!formTeamId || !formAmount) return;
     setSubmitting(true);
     try {
-      const res = await fetch("/api/admin/payments", {
+      const res = await adminFetch("/api/admin/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -180,7 +182,7 @@ export default function AdminPaymentsPage() {
     if (!editingPayment || !editTeamId || !editAmount) return;
     setEditSubmitting(true);
     try {
-      const res = await fetch("/api/admin/payments", {
+      const res = await adminFetch("/api/admin/payments", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -198,13 +200,13 @@ export default function AdminPaymentsPage() {
   async function handleDelete(id: number) {
     setDeleting(true);
     try {
-      const res = await fetch(`/api/admin/payments?id=${id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/admin/payments?id=${id}`, { method: "DELETE" });
       if (res.ok) { setConfirmDeleteId(null); await fetchPayments(); }
     } finally { setDeleting(false); }
   }
 
   async function handleStatusChange(paymentId: number, newStatus: string) {
-    await fetch("/api/admin/payments", {
+    await adminFetch("/api/admin/payments", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: paymentId, status: newStatus }),

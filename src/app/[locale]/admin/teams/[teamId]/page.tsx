@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
+import { useAdminFetch } from "@/lib/tournament-context";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -272,6 +273,7 @@ function PackagePricingCard({
   selectedPackageId, assigningPackage, togglingPublish,
   teamId, onAssign, onRemove, onTogglePublish, onSelectPackage, onRefresh,
 }: PackagePricingCardProps) {
+  const adminFetch = useAdminFetch();
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
@@ -289,7 +291,7 @@ function PackagePricingCard({
     setSavingFree(true);
     setSavedFree(false);
     try {
-      await fetch(`/api/admin/teams/${teamId}/assign-package`, {
+      await adminFetch(`/api/admin/teams/${teamId}/assign-package`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -338,15 +340,15 @@ function PackagePricingCard({
       // If same as base → remove override (restore default)
       if (Math.abs(newVal - basePrice) < 0.001) {
         if (existing) {
-          await fetch(`/api/admin/teams/${teamId}/overrides?id=${existing.id}`, { method: "DELETE" });
+          await adminFetch(`/api/admin/teams/${teamId}/overrides?id=${existing.id}`, { method: "DELETE" });
         }
       } else {
         // Delete old override first (if exists)
         if (existing) {
-          await fetch(`/api/admin/teams/${teamId}/overrides?id=${existing.id}`, { method: "DELETE" });
+          await adminFetch(`/api/admin/teams/${teamId}/overrides?id=${existing.id}`, { method: "DELETE" });
         }
         // Create new override
-        await fetch(`/api/admin/teams/${teamId}/overrides`, {
+        await adminFetch(`/api/admin/teams/${teamId}/overrides`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ serviceType, serviceId, customPrice: newVal }),
@@ -379,10 +381,10 @@ function PackagePricingCard({
     setSavingKey(key);
     try {
       if (existing) {
-        await fetch(`/api/admin/teams/${teamId}/overrides?id=${existing.id}`, { method: "DELETE" });
+        await adminFetch(`/api/admin/teams/${teamId}/overrides?id=${existing.id}`, { method: "DELETE" });
       }
       if (!isAlreadyFree) {
-        await fetch(`/api/admin/teams/${teamId}/overrides`, {
+        await adminFetch(`/api/admin/teams/${teamId}/overrides`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ serviceType: "transfer", serviceId, customPrice: 0 }),
@@ -719,6 +721,7 @@ export default function AdminTeamDetailPage() {
   const teamId = params.teamId as string;
   const router = useRouter();
   const locale = useLocale();
+  const adminFetch = useAdminFetch();
 
   const [report, setReport] = useState<TeamReport | null>(null);
   const [packages, setPackages] = useState<ServicePackage[]>([]);
@@ -764,7 +767,7 @@ export default function AdminTeamDetailPage() {
 
   const fetchReport = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/teams/${teamId}/report`);
+      const res = await adminFetch(`/api/admin/teams/${teamId}/report`);
       if (!res.ok) { setError("Team not found"); return; }
       const data: TeamReport = await res.json();
       setReport(data);
@@ -778,7 +781,7 @@ export default function AdminTeamDetailPage() {
 
   const fetchPackages = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/packages");
+      const res = await adminFetch("/api/admin/packages");
       if (res.ok) { const d = await res.json(); setPackages(Array.isArray(d) ? d : []); }
     } catch { /* silent */ }
   }, []);
@@ -791,7 +794,7 @@ export default function AdminTeamDetailPage() {
   async function handleStatusChange(newStatus: TeamStatus) {
     setSavingStatus(true);
     try {
-      const res = await fetch(`/api/admin/teams/${teamId}`, {
+      const res = await adminFetch(`/api/admin/teams/${teamId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -805,7 +808,7 @@ export default function AdminTeamDetailPage() {
     notesTimerRef.current = setTimeout(async () => {
       setSavingNotes(true);
       try {
-        await fetch(`/api/admin/teams/${teamId}`, {
+        await adminFetch(`/api/admin/teams/${teamId}`, {
           method: "PATCH", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ notes }),
         });
@@ -818,7 +821,7 @@ export default function AdminTeamDetailPage() {
     if (!selectedPackageId) return;
     setAssigningPackage(true);
     try {
-      const res = await fetch(`/api/admin/teams/${teamId}/assign-package`, {
+      const res = await adminFetch(`/api/admin/teams/${teamId}/assign-package`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packageId: Number(selectedPackageId) }),
       });
@@ -829,7 +832,7 @@ export default function AdminTeamDetailPage() {
   async function handleRemovePackage() {
     setAssigningPackage(true);
     try {
-      const res = await fetch(`/api/admin/teams/${teamId}/assign-package`, { method: "DELETE" });
+      const res = await adminFetch(`/api/admin/teams/${teamId}/assign-package`, { method: "DELETE" });
       if (res.ok) { setSelectedPackageId(""); await fetchReport(); }
     } finally { setAssigningPackage(false); }
   }
@@ -838,7 +841,7 @@ export default function AdminTeamDetailPage() {
     if (!report?.package) return;
     setTogglingPublish(true);
     try {
-      const res = await fetch(`/api/admin/teams/${teamId}/assign-package`, {
+      const res = await adminFetch(`/api/admin/teams/${teamId}/assign-package`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPublished: !report.package.isPublished }),
       });
@@ -851,7 +854,7 @@ export default function AdminTeamDetailPage() {
     if (!paymentAmount) return;
     setSubmittingPayment(true);
     try {
-      const res = await fetch("/api/admin/payments", {
+      const res = await adminFetch("/api/admin/payments", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           teamId: Number(teamId), amount: Number(paymentAmount),
@@ -872,7 +875,7 @@ export default function AdminTeamDetailPage() {
   async function handleCopyInvite() {
     if (!report?.club) return;
     try {
-      const res = await fetch("/api/admin/generate-invite", {
+      const res = await adminFetch("/api/admin/generate-invite", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clubId: report.club.id }),
       });
@@ -889,7 +892,7 @@ export default function AdminTeamDetailPage() {
     if (!report?.club) return;
     setLoggingIn(true);
     try {
-      const res = await fetch("/api/admin/impersonate", {
+      const res = await adminFetch("/api/admin/impersonate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clubId: report.club.id }),
@@ -905,7 +908,7 @@ export default function AdminTeamDetailPage() {
   async function handleDeleteTeam() {
     setDeleting(true);
     try {
-      const res = await fetch(`/api/admin/teams/${teamId}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/admin/teams/${teamId}`, { method: "DELETE" });
       if (res.ok) {
         router.push(`/${locale}/admin/teams`);
       }
@@ -1438,7 +1441,7 @@ export default function AdminTeamDetailPage() {
                       value={team.hotelId ?? ""}
                       onChange={async (e) => {
                         const val = e.target.value;
-                        await fetch(`/api/admin/teams/${teamId}`, {
+                        await adminFetch(`/api/admin/teams/${teamId}`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ hotelId: val ? Number(val) : null }),

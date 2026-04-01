@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAdminFetch } from "@/lib/tournament-context";
 import { CheckCircle, XCircle, AlertCircle, RefreshCw, Monitor, Smartphone, Download } from "lucide-react";
 
 type Attempt = {
@@ -80,6 +81,7 @@ function fmtDate(iso: string) {
 }
 
 export default function RegistrationsPage() {
+  const adminFetch = useAdminFetch();
   const [rows, setRows] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "success" | "fail">("all");
@@ -87,7 +89,7 @@ export default function RegistrationsPage() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/admin/registration-log");
+    const res = await adminFetch("/api/admin/registration-log");
     if (res.ok) setRows(await res.json());
     setLoading(false);
   }

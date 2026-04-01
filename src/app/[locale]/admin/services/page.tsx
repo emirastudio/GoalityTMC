@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, type ChangeEvent } from "react";
+import { useAdminFetch } from "@/lib/tournament-context";
 import { LangTabs, type Lang } from "@/components/admin/lang-tabs";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -156,6 +157,7 @@ function DeleteConfirm({
 /* ═══════════════════════════════════════════ ACCOMMODATION TAB */
 
 function AccommodationTab() {
+  const adminFetch = useAdminFetch();
   const [items, setItems] = useState<AccommodationOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -184,7 +186,7 @@ function AccommodationTab() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/services/accommodation");
+      const res = await adminFetch("/api/admin/services/accommodation");
       if (!res.ok) throw new Error("Failed to load");
       setItems(await res.json());
     } catch (e: unknown) {
@@ -222,7 +224,7 @@ function AccommodationTab() {
       const url = isNew
         ? "/api/admin/services/accommodation"
         : `/api/admin/services/accommodation/${editId}`;
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method: isNew ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -242,7 +244,7 @@ function AccommodationTab() {
 
   const doDelete = async (id: number) => {
     try {
-      const res = await fetch(`/api/admin/services/accommodation/${id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/admin/services/accommodation/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       setDeleteId(null);
       await load();
@@ -404,6 +406,7 @@ function AccommodationTab() {
 /* ═══════════════════════════════════════════ MEALS TAB */
 
 function MealsTab() {
+  const adminFetch = useAdminFetch();
   const [items, setItems] = useState<MealOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -420,7 +423,7 @@ function MealsTab() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/services/meals");
+      const res = await adminFetch("/api/admin/services/meals");
       if (!res.ok) throw new Error("Failed to load");
       setItems(await res.json());
     } catch (e: unknown) {
@@ -446,7 +449,7 @@ function MealsTab() {
     try {
       const isNew = editId === "new";
       const url = isNew ? "/api/admin/services/meals" : `/api/admin/services/meals/${editId}`;
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method: isNew ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -466,7 +469,7 @@ function MealsTab() {
 
   const doDelete = async (id: number) => {
     try {
-      const res = await fetch(`/api/admin/services/meals/${id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/admin/services/meals/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       setDeleteId(null);
       await load();
@@ -595,6 +598,7 @@ function MealsTab() {
 /* ═══════════════════════════════════════════ TRANSFERS TAB */
 
 function TransfersTab() {
+  const adminFetch = useAdminFetch();
   const [items, setItems] = useState<TransferOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -611,7 +615,7 @@ function TransfersTab() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/services/transfers");
+      const res = await adminFetch("/api/admin/services/transfers");
       if (!res.ok) throw new Error("Failed to load");
       setItems(await res.json());
     } catch (e: unknown) {
@@ -637,7 +641,7 @@ function TransfersTab() {
     try {
       const isNew = editId === "new";
       const url = isNew ? "/api/admin/services/transfers" : `/api/admin/services/transfers/${editId}`;
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method: isNew ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -657,7 +661,7 @@ function TransfersTab() {
 
   const doDelete = async (id: number) => {
     try {
-      const res = await fetch(`/api/admin/services/transfers/${id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/admin/services/transfers/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       setDeleteId(null);
       await load();
@@ -776,6 +780,7 @@ function TransfersTab() {
 /* ═══════════════════════════════════════════ REGISTRATION FEE TAB */
 
 function RegistrationTab() {
+  const adminFetch = useAdminFetch();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -786,7 +791,7 @@ function RegistrationTab() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/services/registration");
+      const res = await adminFetch("/api/admin/services/registration");
       if (!res.ok) throw new Error("Failed to load");
       const data: RegistrationFee = await res.json();
       setForm({ name: data.name ?? "", nameRu: data.nameRu ?? "", price: data.price ?? "", isRequired: data.isRequired ?? true });
@@ -803,7 +808,7 @@ function RegistrationTab() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/services/registration", {
+      const res = await adminFetch("/api/admin/services/registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

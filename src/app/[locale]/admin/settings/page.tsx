@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useAdminFetch } from "@/lib/tournament-context";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,7 @@ function Textarea({
 /* ────────────────────────────────────────── page */
 
 export default function AdminSettingsPage() {
+  const adminFetch = useAdminFetch();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -112,7 +114,7 @@ export default function AdminSettingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/tournament-info");
+      const res = await adminFetch("/api/admin/tournament-info");
       if (!res.ok) throw new Error("Failed to load tournament info");
       const d: TournamentInfoData = await res.json();
       setScheduleUrl(d.scheduleUrl ?? "");
@@ -143,7 +145,7 @@ export default function AdminSettingsPage() {
     setSaved(false);
     setError(null);
     try {
-      const res = await fetch("/api/admin/tournament-info", {
+      const res = await adminFetch("/api/admin/tournament-info", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

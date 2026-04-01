@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useAdminFetch } from "@/lib/tournament-context";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -166,6 +167,7 @@ function SaveButton({
 /* ────────────────────────────────────────── page */
 
 export default function AdminTournamentsPage() {
+  const adminFetch = useAdminFetch();
   const [data, setData] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -211,10 +213,10 @@ export default function AdminTournamentsPage() {
     setError(null);
     try {
       const [res, infoRes, fieldsRes, hotelsRes] = await Promise.all([
-        fetch("/api/admin/tournaments"),
-        fetch("/api/admin/tournament-info"),
-        fetch("/api/admin/tournament-fields"),
-        fetch("/api/admin/tournament-hotels"),
+        adminFetch("/api/admin/tournaments"),
+        adminFetch("/api/admin/tournament-info"),
+        adminFetch("/api/admin/tournament-fields"),
+        adminFetch("/api/admin/tournament-hotels"),
       ]);
       if (!res.ok) throw new Error("Failed to load tournament data");
       const d: TournamentData = await res.json();
@@ -281,7 +283,7 @@ export default function AdminTournamentsPage() {
     setSaving(true);
     setSaved(false);
     try {
-      const res = await fetch("/api/admin/tournaments", {
+      const res = await adminFetch("/api/admin/tournaments", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -330,17 +332,17 @@ export default function AdminTournamentsPage() {
       const toDelete = fields.filter((f) => f._deleted && f.id);
       const toUpsert = fields.filter((f) => !f._deleted);
       await Promise.all(toDelete.map((f) =>
-        fetch(`/api/admin/tournament-fields?id=${f.id}`, { method: "DELETE" })
+        adminFetch(`/api/admin/tournament-fields?id=${f.id}`, { method: "DELETE" })
       ));
       for (const f of toUpsert) {
         if (f.id) {
-          await fetch("/api/admin/tournament-fields", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
+          await adminFetch("/api/admin/tournament-fields", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
         } else {
-          await fetch("/api/admin/tournament-fields", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
+          await adminFetch("/api/admin/tournament-fields", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
         }
       }
       // Refresh
-      const res = await fetch("/api/admin/tournament-fields");
+      const res = await adminFetch("/api/admin/tournament-fields");
       if (res.ok) {
         const f = await res.json();
         setFields(Array.isArray(f) ? f.map((x: TournamentField) => ({
@@ -365,17 +367,17 @@ export default function AdminTournamentsPage() {
       const toDelete = hotels.filter((h) => h._deleted && h.id);
       const toUpsert = hotels.filter((h) => !h._deleted);
       await Promise.all(toDelete.map((h) =>
-        fetch(`/api/admin/tournament-hotels?id=${h.id}`, { method: "DELETE" })
+        adminFetch(`/api/admin/tournament-hotels?id=${h.id}`, { method: "DELETE" })
       ));
       for (const h of toUpsert) {
         if (h.id) {
-          await fetch("/api/admin/tournament-hotels", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(h) });
+          await adminFetch("/api/admin/tournament-hotels", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(h) });
         } else {
-          await fetch("/api/admin/tournament-hotels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(h) });
+          await adminFetch("/api/admin/tournament-hotels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(h) });
         }
       }
       // Refresh
-      const res = await fetch("/api/admin/tournament-hotels");
+      const res = await adminFetch("/api/admin/tournament-hotels");
       if (res.ok) {
         const h = await res.json();
         setHotels(Array.isArray(h) ? h.map((x: TournamentHotel) => ({
@@ -397,7 +399,7 @@ export default function AdminTournamentsPage() {
     setInfoSaving(true);
     setInfoSaved(false);
     try {
-      const res = await fetch("/api/admin/tournament-info", {
+      const res = await adminFetch("/api/admin/tournament-info", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tInfo),

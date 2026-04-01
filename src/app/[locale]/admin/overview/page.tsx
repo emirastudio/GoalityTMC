@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useAdminFetch } from "@/lib/tournament-context";
 import {
   ChevronUp,
   ChevronDown,
@@ -111,6 +112,7 @@ function fmt(n: number | null | undefined) {
 }
 
 export default function AdminOverviewPage() {
+  const adminFetch = useAdminFetch();
   const [rows, setRows] = useState<OverviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,7 +133,7 @@ export default function AdminOverviewPage() {
   const [showColPicker, setShowColPicker] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/overview")
+    adminFetch("/api/admin/overview")
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) setRows(data);

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
+import { useAdminFetch } from "@/lib/tournament-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,7 @@ export default function AdminTeamsPage() {
   const tc = useTranslations("common");
   const router = useRouter();
   const locale = useLocale();
+  const adminFetch = useAdminFetch();
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export default function AdminTeamsPage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchTeams = useCallback(() => {
-    fetch("/api/admin/teams")
+    adminFetch("/api/admin/teams")
       .then((res) => res.json())
       .then((json) => {
         if (Array.isArray(json)) setTeams(json);
@@ -104,7 +106,7 @@ export default function AdminTeamsPage() {
   ) {
     setStatusDropdown(null);
     try {
-      const res = await fetch(`/api/admin/teams/${teamId}`, {
+      const res = await adminFetch(`/api/admin/teams/${teamId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -119,7 +121,7 @@ export default function AdminTeamsPage() {
 
   async function handleCopyInvite(clubId: number, teamId: number) {
     try {
-      const res = await fetch("/api/admin/generate-invite", {
+      const res = await adminFetch("/api/admin/generate-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clubId }),
