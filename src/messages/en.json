@@ -561,46 +561,61 @@
     "inviteNote": "The link expires in 7 days. You can generate a new one at any time."
   },
   "flexServices": {
-    "title": "Services & Packages",
-    "servicesTab": "Service Types",
-    "packagesTab": "Packages",
-    "addService": "Add Service",
-    "serviceName": "Service name",
-    "serviceNamePlaceholder": "e.g. Accommodation, Meals, Transfer...",
-    "noServices": "No services created yet",
-    "addPackage": "Add Package",
-    "packageName": "Package name",
-    "packageNamePlaceholder": "e.g. Premium, Budget, VIP...",
-    "noPackages": "No packages created yet",
-    "editPackage": "Edit Package",
-    "items": "Items",
-    "addItem": "Add Item",
-    "noItems": "No items in this package",
-    "selectService": "Select service",
-    "details": "Details / Conditions",
-    "detailsPlaceholder": "e.g. Hotel Hilton, 5 nights",
-    "pricingMode": "Pricing",
-    "price": "Price",
-    "days": "Days",
-    "quantity": "Quantity",
-    "default": "Default",
-    "assigned": "teams assigned",
+    "pageTitle": "Services & Packages",
+    "pageDescription": "Create service types and configure them in packages with pricing",
+    "tabs": {
+      "services": "Service Types",
+      "packages": "Packages"
+    },
+    "services": {
+      "title": "Service Types",
+      "namePlaceholder": "e.g. Accommodation, Meals, Transfer...",
+      "add": "Add Service",
+      "empty": "No services created yet"
+    },
+    "packages": {
+      "title": "Packages",
+      "namePlaceholder": "e.g. Premium, Budget, VIP...",
+      "add": "Add Package",
+      "empty": "No packages created yet",
+      "default": "Default",
+      "items": "Items",
+      "teams": "teams assigned",
+      "noItems": "No items in this package",
+      "cannotDelete": "Cannot delete package with assigned teams"
+    },
+    "items": {
+      "addTitle": "Add Item",
+      "selectService": "Select service",
+      "detailsPlaceholder": "e.g. Hotel Hilton, 5 nights",
+      "pricePlaceholder": "Price",
+      "daysPlaceholder": "Days",
+      "quantityPlaceholder": "Quantity",
+      "add": "Add",
+      "days": "days",
+      "qty": "qty"
+    },
     "modes": {
       "per_person": "Per person",
+      "per_person_per_day": "Per person / day",
+      "per_unit": "Per unit",
+      "flat": "Fixed amount",
       "per_player": "Per player",
       "per_staff": "Per staff",
       "per_accompanying": "Per accompanying",
-      "per_team": "Per team",
-      "per_person_per_day": "Per person / day",
-      "per_unit": "Per unit",
-      "flat": "Fixed amount"
+      "per_team": "Per team"
     },
-    "overrides": "Custom Pricing",
-    "customPrice": "Custom price",
-    "customQty": "Custom qty",
-    "reason": "Reason",
-    "disabled": "Excluded",
-    "noOverrides": "Standard prices applied"
+    "errors": {
+      "loadFailed": "Failed to load data",
+      "addFailed": "Failed to add",
+      "saveFailed": "Failed to save",
+      "deleteFailed": "Failed to delete"
+    },
+    "loading": "Loading...",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure?"
   },
   "orgAdmin": {
     "dashboardSubtitle": "Organization dashboard",
