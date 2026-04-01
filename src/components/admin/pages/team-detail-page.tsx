@@ -15,6 +15,7 @@ import {
   AlertTriangle, Plane, Train, Bus, Car, Hotel, Utensils,
   Calendar, ExternalLink, ChevronDown, ChevronUp, Eye, EyeOff,
   Phone, Mail, MapPin, Clock, FileText, CreditCard, UserCheck, LogIn,
+  Loader2,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -245,6 +246,288 @@ function MedicalBadge({ allergies, dietary, medical }: {
         </span>
       )}
     </div>
+  );
+}
+
+// ─── PackageItemOverridesCard ────────────────────────────────────────────────
+
+interface PkgItem {
+  id: number;
+  serviceId: number;
+  serviceName: string | null;
+  serviceIcon: string | null;
+  details: string | null;
+  pricingMode: string;
+  price: string;
+  days: number | null;
+  quantity: number | null;
+  imageUrl: string | null;
+  note: string | null;
+}
+
+interface PkgItemOverride {
+  id: number;
+  packageItemId: number;
+  customPrice: string | null;
+  customQuantity: number | null;
+  isDisabled: boolean;
+  reason: string | null;
+  serviceName: string | null;
+  serviceIcon: string | null;
+  itemDetails: string | null;
+  itemPricingMode: string | null;
+  itemPrice: string | null;
+}
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  BedDouble: Hotel, Utensils: Utensils, Bus: Bus, Car: Car,
+  Plane: Plane, Shirt: Users, Trophy: Users, Camera: Users,
+  Music: Users, Dumbbell: Users, Heart: Users, Star: Users,
+  ShoppingBag: Users, Wifi: Users, Coffee: Users, MapPin: MapPin,
+  Package: Users,
+};
+
+function resolveItemIcon(name: string | null | undefined): React.ElementType {
+  if (!name) return FileText;
+  return ICON_MAP[name] ?? FileText;
+}
+
+function PackageItemOverridesCard({
+  teamId,
+  packageId,
+}: {
+  teamId: string;
+  packageId: number;
+}) {
+  const adminFetch = useAdminFetch();
+  const [items, setItems] = useState<PkgItem[]>([]);
+  const [overrides, setOverrides] = useState<PkgItemOverride[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // per-item edit state
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editPrice, setEditPrice] = useState("");
+  const [editDisabled, setEditDisabled] = useState(false);
+  const [editReason, setEditReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [itemsRes, ovRes] = await Promise.all([
+        adminFetch(`/api/admin/packages2/${packageId}/items`),
+        adminFetch(`/api/admin/teams/${teamId}/package-overrides`),
+      ]);
+      if (itemsRes.ok) setItems(await itemsRes.json());
+      if (ovRes.ok) setOverrides(await ovRes.json());
+    } finally {
+      setLoading(false);
+    }
+  }, [adminFetch, packageId, teamId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  function getOverride(itemId: number) {
+    return overrides.find((o) => o.packageItemId === itemId) ?? null;
+  }
+
+  function startEdit(item: PkgItem) {
+    const ov = getOverride(item.id);
+    setEditingId(item.id);
+    setEditPrice(ov?.customPrice ?? item.price);
+    setEditDisabled(ov?.isDisabled ?? false);
+    setEditReason(ov?.reason ?? "");
+  }
+
+  async function saveOverride(item: PkgItem) {
+    setSaving(true);
+    try {
+      const existing = getOverride(item.id);
+      const payload = {
+        packageItemId: item.id,
+        customPrice: editPrice !== item.price ? editPrice : null,
+        isDisabled: editDisabled,
+        reason: editReason || null,
+      };
+
+      if (existing) {
+        // If everything is default → delete override
+        if (!editDisabled && editPrice === item.price && !editReason) {
+          await adminFetch(`/api/admin/teams/${teamId}/package-overrides?id=${existing.id}`, { method: "DELETE" });
+        } else {
+          await adminFetch(`/api/admin/teams/${teamId}/package-overrides`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: existing.id, ...payload }),
+          });
+        }
+      } else if (editDisabled || editPrice !== item.price || editReason) {
+        await adminFetch(`/api/admin/teams/${teamId}/package-overrides`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      setEditingId(null);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeOverride(ovId: number) {
+    await adminFetch(`/api/admin/teams/${teamId}/package-overrides?id=${ovId}`, { method: "DELETE" });
+    await load();
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>Package Item Overrides</CardTitle></CardHeader>
+        <div className="flex items-center gap-2 py-4 text-text-secondary">
+          <Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">Loading...</span>
+        </div>
+      </Card>
+    );
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Package Item Overrides</CardTitle>
+        <p className="text-xs text-text-secondary mt-0.5">
+          Override pricing or disable specific services for this team only
+        </p>
+      </CardHeader>
+
+      <div className="space-y-2">
+        {items.map((item) => {
+          const ov = getOverride(item.id);
+          const Icon = resolveItemIcon(item.serviceIcon);
+          const isEditing = editingId === item.id;
+
+          return (
+            <div
+              key={item.id}
+              className={`rounded-xl border px-4 py-3 transition-colors ${
+                ov?.isDisabled
+                  ? "border-red-200 bg-red-50/50"
+                  : ov
+                  ? "border-amber-200 bg-amber-50/50"
+                  : "border-border bg-white"
+              }`}
+            >
+              {/* Item header */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-navy/8 flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 text-navy" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-navy">
+                        {item.serviceName ?? "—"}
+                      </span>
+                      {item.details && (
+                        <span className="text-xs text-text-secondary">{item.details}</span>
+                      )}
+                      {ov?.isDisabled && (
+                        <span className="text-xs font-semibold text-red-600 bg-red-100 rounded px-1.5 py-0.5">
+                          Disabled for this team
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="text-xs text-text-secondary">{item.pricingMode.replace(/_/g, " ")}</span>
+                      {ov?.customPrice && ov.customPrice !== item.price ? (
+                        <>
+                          <span className="text-xs text-text-secondary line-through">€{item.price}</span>
+                          <span className="text-xs font-semibold text-amber-700">€{ov.customPrice}</span>
+                        </>
+                      ) : (
+                        <span className="text-xs font-semibold text-text-primary">€{item.price}</span>
+                      )}
+                      {ov?.reason && (
+                        <span className="text-xs text-text-secondary italic">"{ov.reason}"</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {ov && !isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => removeOverride(ov.id)}
+                      className="text-xs text-text-secondary hover:text-error transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => isEditing ? setEditingId(null) : startEdit(item)}
+                    className="text-xs font-medium text-navy hover:text-navy/70 transition-colors cursor-pointer"
+                  >
+                    {isEditing ? "Cancel" : ov ? "Edit" : "Override"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Edit form */}
+              {isEditing && (
+                <div className="mt-3 pt-3 border-t border-border space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-text-secondary mb-1 block">Custom price (€)</label>
+                      <input
+                        type="number"
+                        value={editPrice}
+                        onChange={(e) => setEditPrice(e.target.value)}
+                        placeholder={item.price}
+                        className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-text-secondary mb-1 block">Reason (optional)</label>
+                      <input
+                        type="text"
+                        value={editReason}
+                        onChange={(e) => setEditReason(e.target.value)}
+                        placeholder="e.g. Early bird, VIP, Sponsor"
+                        className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
+                      />
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editDisabled}
+                      onChange={(e) => setEditDisabled(e.target.checked)}
+                      className="rounded border-border w-4 h-4"
+                    />
+                    <span className="text-sm text-red-600 font-medium">Disable this service for team</span>
+                  </label>
+
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => saveOverride(item)} disabled={saving}>
+                      {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      Save
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => setEditingId(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 
@@ -1404,6 +1687,14 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           onSelectPackage={setSelectedPackageId}
           onRefresh={fetchReport}
         />
+
+        {/* Package Item Overrides */}
+        {report.package && (
+          <PackageItemOverridesCard
+            teamId={teamId}
+            packageId={report.package.id}
+          />
+        )}
 
         {/* Hotel & Logistics */}
         <Card>
