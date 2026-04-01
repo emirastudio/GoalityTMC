@@ -16,6 +16,7 @@ import {
   Building2,
   FileText,
   UserCircle,
+  Package,
 } from "lucide-react";
 import { useTeam } from "@/lib/team-context";
 
@@ -51,6 +52,7 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
     {
       labelKey: "logistics",
       items: [
+        { key: "services", icon: Package, href: "/team/services" },
         { key: "booking", icon: ShoppingCart, href: "/team/booking" },
         { key: "economy", icon: Wallet, href: "/team/economy" },
         { key: "travel", icon: Plane, href: "/team/travel" },
