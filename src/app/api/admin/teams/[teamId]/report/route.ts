@@ -5,17 +5,15 @@ import {
   teamBookings, teamServiceOverrides, payments, teamTravel, tournamentInfo,
   accommodationOptions, extraMealOptions, transferOptions, registrationFees, tournamentHotels,
 } from "@/db/schema";
-import { getSession } from "@/lib/auth";
+import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq, and } from "drizzle-orm";
 import { recalculateAll } from "@/lib/booking-calculator";
 
 type RouteContext = { params: Promise<{ teamId: string }> };
 
 export async function GET(_req: NextRequest, context: RouteContext) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const { teamId } = await context.params;
   const teamIdNum = Number(teamId);

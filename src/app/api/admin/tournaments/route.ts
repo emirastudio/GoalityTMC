@@ -5,14 +5,12 @@ import {
   tournamentClasses,
   tournamentProducts,
 } from "@/db/schema";
-import { getSession } from "@/lib/auth";
+import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq } from "drizzle-orm";
 
 export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const tournament = await db.query.tournaments.findFirst({
     where: eq(tournaments.registrationOpen, true),
@@ -37,10 +35,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const tournament = await db.query.tournaments.findFirst({
     where: eq(tournaments.registrationOpen, true),

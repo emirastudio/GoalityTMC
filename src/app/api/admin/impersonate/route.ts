@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { clubs, clubUsers } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { getSession, createToken, ADMIN_BACKUP_COOKIE } from "@/lib/auth";
+import { createToken, ADMIN_BACKUP_COOKIE } from "@/lib/auth";
+import { requireAdmin, isError } from "@/lib/api-auth";
 import { cookies } from "next/headers";
 
 // POST /api/admin/impersonate — admin logs in as a club
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const { clubId } = await req.json();
   if (!clubId) {

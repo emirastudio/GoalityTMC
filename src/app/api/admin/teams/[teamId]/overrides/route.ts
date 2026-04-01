@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { teamServiceOverrides } from "@/db/schema";
-import { getSession } from "@/lib/auth";
+import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq, and } from "drizzle-orm";
 
 type RouteContext = { params: Promise<{ teamId: string }> };
 
 export async function GET(_req: NextRequest, context: RouteContext) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const { teamId } = await context.params;
   const teamIdNum = Number(teamId);
@@ -23,10 +21,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
 }
 
 export async function POST(req: NextRequest, context: RouteContext) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const { teamId } = await context.params;
   const teamIdNum = Number(teamId);
@@ -78,10 +74,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(req: NextRequest, context: RouteContext) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const { searchParams } = new URL(req.url);
   let id = Number(searchParams.get("id"));

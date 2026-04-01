@@ -1,6 +1,6 @@
-import { OrgAdminSidebar } from "@/components/admin/org-admin-sidebar";
 import { getSession } from "@/lib/auth";
 import { authorizeOrg, getOrgTournament } from "@/lib/tenant";
+import { TournamentProvider } from "@/lib/tournament-context";
 import { redirect } from "next/navigation";
 
 type Props = {
@@ -30,7 +30,9 @@ export default async function TournamentLayout({ children, params }: Props) {
     redirect(`/${locale}/org/${orgSlug}/admin/tournaments`);
   }
 
-  // The sidebar already rendered by parent layout (OrgAdminLayout)
-  // This layout just validates the tournament exists and belongs to the org
-  return <>{children}</>;
+  return (
+    <TournamentProvider tournamentId={tournament.id} orgSlug={orgSlug}>
+      {children}
+    </TournamentProvider>
+  );
 }

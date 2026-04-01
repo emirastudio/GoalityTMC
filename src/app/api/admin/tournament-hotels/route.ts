@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { tournaments, tournamentHotels, teams } from "@/db/schema";
-import { getSession } from "@/lib/auth";
+import { tournamentHotels, teams } from "@/db/schema";
+import { requireTournamentAdmin, requireAdmin, isError } from "@/lib/api-auth";
 import { eq, asc } from "drizzle-orm";
 
-async function getActiveTournament() {
-  return db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
-  });
-}
-
-export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== "admin")
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const tournament = await getActiveTournament();
-  if (!tournament)
-    return NextResponse.json({ error: "No active tournament" }, { status: 404 });
+export async function GET(req: NextRequest) {
+  const ctx = await requireTournamentAdmin(req);
+  if (isError(ctx)) return ctx;
+  const { tournament } = ctx;
 
   const hotels = await db.query.tournamentHotels.findMany({
     where: eq(tournamentHotels.tournamentId, tournament.id),
@@ -28,13 +18,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  if (!session || session.role !== "admin")
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const tournament = await getActiveTournament();
-  if (!tournament)
-    return NextResponse.json({ error: "No active tournament" }, { status: 404 });
+  const ctx = await requireTournamentAdmin(req);
+  if (isError(ctx)) return ctx;
+  const { tournament } = ctx;
 
   const body = await req.json();
   const [hotel] = await db
@@ -55,9 +41,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await getSession();
-  if (!session || session.role !== "admin")
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const body = await req.json();
   const { id, ...values } = body;
@@ -80,9 +65,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await getSession();
-  if (!session || session.role !== "admin")
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const { searchParams } = new URL(req.url);
   const id = parseInt(searchParams.get("id") ?? "0");

@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { teams } from "@/db/schema";
-import { getSession } from "@/lib/auth";
+import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq } from "drizzle-orm";
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ teamId: string }> }
 ) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const { teamId } = await params;
   const tid = parseInt(teamId);
@@ -32,10 +30,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ teamId: string }> }
 ) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const { teamId } = await params;
   const tid = parseInt(teamId);

@@ -7,14 +7,12 @@ import {
   accommodationOptions, extraMealOptions, transferOptions, registrationFees,
 } from "@/db/schema";
 import { eq, and, inArray, sql } from "drizzle-orm";
-import { getSession } from "@/lib/auth";
+import { requireAdmin, isError } from "@/lib/api-auth";
 import { recalculateAll, type ServiceData, type OverrideData } from "@/lib/booking-calculator";
 
 export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (isError(session)) return session;
 
   const tournament = await db.query.tournaments.findFirst({
     where: eq(tournaments.registrationOpen, true),

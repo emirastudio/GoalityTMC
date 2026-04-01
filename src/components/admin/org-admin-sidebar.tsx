@@ -22,14 +22,17 @@ import {
 type Props = {
   orgSlug: string;
   orgName: string;
-  tournamentId?: number;
 };
 
-export function OrgAdminSidebar({ orgSlug, orgName, tournamentId }: Props) {
+export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
   const t = useTranslations("nav");
   const pathname = usePathname();
 
   const basePath = `/org/${orgSlug}/admin`;
+
+  // Extract tournamentId from URL: /org/[slug]/admin/tournament/[id]/...
+  const tournamentMatch = pathname.match(/\/tournament\/(\d+)/);
+  const tournamentId = tournamentMatch ? parseInt(tournamentMatch[1]) : null;
 
   const orgNav = [
     { key: "dashboard", icon: LayoutDashboard, href: basePath },
