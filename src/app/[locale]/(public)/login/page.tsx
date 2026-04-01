@@ -44,12 +44,8 @@ export default function LoginPage() {
           router.push("/admin/dashboard");
         }
       } else {
-        if (data.organizationSlug) {
-          router.push(`/org/${data.organizationSlug}/team/overview`);
-        } else {
-          // Fallback for legacy clubs without org
-          router.push("/team/overview");
-        }
+        // Team pages stay at /team/ for now (tenant isolation via session)
+        router.push("/team/overview");
       }
     } else {
       setError(t("invalidCredentials"));

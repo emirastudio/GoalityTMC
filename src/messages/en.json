@@ -593,6 +593,35 @@
     "country": "Country",
     "contact": "Contact"
   },
+  "landing": {
+    "heroTitle": "Tournament Management Platform",
+    "heroSubtitle": "Everything you need to organize a tournament: registration, logistics, accommodation, transfers, and finances — all in one place.",
+    "heroCtaOrganizer": "Create Tournament",
+    "heroCtaCatalog": "Browse Tournaments",
+    "heroCtaLogin": "Sign In",
+    "feature1Title": "Full Tournament Management",
+    "feature1Desc": "Teams, schedules, services, payments — manage everything from one dashboard.",
+    "feature2Title": "Team Self-Service",
+    "feature2Desc": "Teams register, book hotels and transfers, manage rosters — all online.",
+    "feature3Title": "International Ready",
+    "feature3Desc": "Multi-language support, multiple currencies, organizers from any country."
+  },
+  "catalog": {
+    "title": "Tournament Catalog",
+    "subtitle": "Find and register for upcoming tournaments",
+    "noTournaments": "No tournaments available at the moment",
+    "checkBack": "Check back soon — new tournaments are added regularly",
+    "teams": "teams",
+    "clubs": "clubs",
+    "classes": "Age classes",
+    "register": "Register",
+    "deadline": "Registration deadline",
+    "organizedBy": "Organized by",
+    "dates": "Dates",
+    "location": "Location",
+    "createYourOwn": "Are you a tournament organizer?",
+    "createCta": "Create your tournament"
+  },
   "onboarding": {
     "title": "Create your organization",
     "subtitle": "Set up your tournament management platform in minutes",

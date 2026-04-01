@@ -549,6 +549,35 @@
     "country": "Riik",
     "contact": "Kontakt"
   },
+  "landing": {
+    "heroTitle": "Turniiride haldamise platvorm",
+    "heroSubtitle": "K\u00f5ik turniiri korraldamiseks: registreerimine, logistika, majutus, transport ja finants \u2014 k\u00f5ik \u00fches kohas.",
+    "heroCtaOrganizer": "Loo turniir",
+    "heroCtaCatalog": "Sirvi turniire",
+    "heroCtaLogin": "Logi sisse",
+    "feature1Title": "T\u00e4ielik turniiride haldamine",
+    "feature1Desc": "Meeskonnad, ajakavad, teenused, maksed \u2014 halda k\u00f5ike \u00fchest juhtpaneelist.",
+    "feature2Title": "Meeskondade iseteenindus",
+    "feature2Desc": "Meeskonnad registreeruvad, broneerivad hotelle ja transporti, haldavad koosseise \u2014 k\u00f5ik veebis.",
+    "feature3Title": "Rahvusvaheline valmidus",
+    "feature3Desc": "Mitmekeelne tugi, erinevad valuutad, korraldajad igast riigist."
+  },
+  "catalog": {
+    "title": "Turniiride kataloog",
+    "subtitle": "Leia ja registreeru eelseisvatel turniiridel",
+    "noTournaments": "Hetkel turniire ei ole",
+    "checkBack": "Vaata hiljem \u2014 uusi turniire lisatakse regulaarselt",
+    "teams": "meeskonda",
+    "clubs": "klubi",
+    "classes": "Vanuseklassid",
+    "register": "Registreeru",
+    "deadline": "Registreerimise t\u00e4htaeg",
+    "organizedBy": "Korraldaja",
+    "dates": "Kuup\u00e4evad",
+    "location": "Asukoht",
+    "createYourOwn": "Oled turniiri korraldaja?",
+    "createCta": "Loo oma turniir"
+  },
   "onboarding": {
     "title": "Loo oma organisatsioon",
     "subtitle": "Seadista turniiride haldamise platvorm mõne minutiga",
