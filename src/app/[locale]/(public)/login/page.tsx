@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Crown, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -57,11 +57,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface">
       <Card className="w-full max-w-md">
         <div className="text-center mb-6">
-          {mode === "admin" ? (
-            <Shield className="w-10 h-10 text-navy mx-auto mb-3" />
-          ) : (
-            <Crown className="w-10 h-10 text-gold mx-auto mb-3" />
-          )}
+          <div className="w-12 h-12 rounded-xl bg-mint flex items-center justify-center mx-auto mb-3">
+            <span className="text-navy font-black text-xs leading-none">P.G.W.</span>
+          </div>
           <h1 className="text-xl font-bold text-navy">{t("loginTitle")}</h1>
           <p className="text-text-secondary text-sm mt-1">{t("loginSubtitle")}</p>
         </div>
@@ -98,7 +96,7 @@ export default function LoginPage() {
             name="email"
             type="email"
             label={t("email")}
-            placeholder={mode === "admin" ? "admin@kingscup.ee" : "club@example.com"}
+            placeholder={mode === "admin" ? "admin@goality.ee" : "club@example.com"}
             required
           />
           <Input

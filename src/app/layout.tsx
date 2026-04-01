@@ -8,8 +8,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Kings Cup - Tournament Registration",
-  description: "Team registration and management system for Kings Cup tournaments",
+  title: "Goality TMC — Play. Grow. Win.",
+  description: "Football tournament management platform — registration, logistics, accommodation, and payments in one place.",
 };
 
 export default function RootLayout({

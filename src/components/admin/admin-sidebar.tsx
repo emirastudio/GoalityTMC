@@ -24,8 +24,10 @@ export function AdminSidebar() {
 
   return (
     <aside className="w-60 shrink-0 bg-navy min-h-screen flex flex-col">
-      <div className="p-5 flex items-center gap-2">
-        <Shield className="w-7 h-7 text-gold" />
+      <div className="p-5 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-mint flex items-center justify-center shrink-0">
+          <span className="text-navy font-black text-[9px] leading-none">P.G.W.</span>
+        </div>
         <span className="text-lg font-bold text-white tracking-tight">Goality</span>
       </div>
       <nav className="flex-1 px-3 space-y-0.5">
