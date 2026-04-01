@@ -1,14 +1,15 @@
-import { TeamHeader } from "@/components/team/team-header";
 import { TeamSidebar } from "@/components/team/team-sidebar";
 import { MobileNav } from "@/components/team/mobile-nav";
+import { TeamHeader } from "@/components/team/team-header";
 import { TeamSwitcher } from "@/components/club/team-switcher";
+import { SidebarFooter } from "@/components/team/sidebar-footer";
 import { TeamProvider } from "@/lib/team-context";
-import { SiteFooter } from "@/components/ui/site-footer";
 import { ImpersonationBanner } from "@/components/team/impersonation-banner";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { clubs, teams, people, tournamentClasses, inboxMessages, teamMessageReads, messageRecipients, tournaments } from "@/db/schema";
-import { eq, and, count, sql, notInArray, or } from "drizzle-orm";
+import { Crown } from "lucide-react";
+import { clubs, teams, people, tournamentClasses, inboxMessages, teamMessageReads, messageRecipients } from "@/db/schema";
+import { eq, and, count, sql, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export default async function TeamLayout({ children }: { children: React.ReactNode }) {
@@ -24,19 +25,16 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
 
   if (!club) redirect("/en/login");
 
-  // Get tournament classes for "add team" modal
   const classes = await db.query.tournamentClasses.findMany({
     where: eq(tournamentClasses.tournamentId, club.tournamentId),
     orderBy: (c, { asc }) => [asc(c.minBirthYear)],
   });
 
-  // Get all teams for this club
   const clubTeams = await db.query.teams.findMany({
     where: eq(teams.clubId, club.id),
     orderBy: (t, { asc }) => [asc(t.createdAt)],
   });
 
-  // Enrich with player counts and class names
   const enrichedTeams = await Promise.all(
     clubTeams.map(async (team) => {
       const [pc] = await db
@@ -68,14 +66,12 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     })
   );
 
-  // Тренер команды видит только свою команду
   const isTeamManager = !!session.teamId;
   const isImpersonating = !!session.impersonating;
   const activeTeam = isTeamManager
     ? enrichedTeams.find((t) => t.id === session.teamId) ?? enrichedTeams[0]
     : enrichedTeams[0];
 
-  // Unread inbox count for active team (only messages visible to this team)
   let inboxCount = 0;
   if (activeTeam) {
     const [countRow] = await db
@@ -102,6 +98,13 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     inboxCount = Number(countRow?.value ?? 0);
   }
 
+  const clubInitials = club.name
+    .split(" ")
+    .map((w: string) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
     <TeamProvider
       initialTeamId={activeTeam?.id ?? null}
@@ -110,65 +113,87 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
       initialInboxCount={inboxCount}
       isTeamManager={isTeamManager}
     >
-      <div className="flex flex-col min-h-screen">
-        {isImpersonating && <ImpersonationBanner clubName={club.name} />}
-        <TeamHeader
-          teamName={activeTeam?.name}
-          regNumber={activeTeam?.regNumber}
-          year={2026}
-          clubName={club.name}
-          clubBadgeUrl={club.badgeUrl ?? null}
-          clubId={club.id}
-          teams={enrichedTeams.map(t => ({
-            id: t.id,
-            name: t.name,
-            className: t.className,
-            status: t.status,
-            playersCount: t.playersCount,
-          }))}
-          classes={classes.map(c => ({ id: c.id, name: c.name }))}
-          isTeamManager={isTeamManager}
-        />
-        <div className="flex flex-1">
-          {/* Desktop sidebar */}
-          <div className="hidden md:flex flex-col w-60 shrink-0 bg-[#1C2121]">
-            <div className="px-4 py-4 border-b border-white/8">
-              {isTeamManager ? (
-                <div className="flex items-center gap-2.5 px-1">
-                  <div className="w-9 h-9 rounded-xl bg-mint/15 border border-mint/20 flex items-center justify-center shrink-0">
-                    <span className="text-[11px] font-bold text-mint">
-                      {club.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-bold text-white truncate leading-tight">{club.name}</p>
-                    <p className="text-[11px] text-white/50 leading-tight truncate">{activeTeam?.name}</p>
-                  </div>
-                </div>
-              ) : (
-                <TeamSwitcher
-                  clubName={club.name}
-                  clubBadgeUrl={club.badgeUrl ?? null}
-                  clubId={club.id}
-                  teams={enrichedTeams}
-                  classes={classes.map(c => ({ id: c.id, name: c.name }))}
-                  dark
-                />
-              )}
+      {isImpersonating && <ImpersonationBanner clubName={club.name} />}
+
+      <div className="flex min-h-screen bg-[#F0F2F5]">
+
+        {/* ── Desktop Sidebar ───────────────────────────────── */}
+        <aside className="hidden md:flex flex-col w-64 shrink-0 bg-[#0D1117] sticky top-0 h-screen overflow-hidden">
+
+          {/* Brand */}
+          <div className="h-14 px-5 flex items-center gap-3 shrink-0 border-b border-white/6">
+            <div className="w-7 h-7 rounded-lg bg-mint flex items-center justify-center shrink-0">
+              <Crown className="w-4 h-4 text-[#0D1117]" />
             </div>
-            <div className="p-3 flex-1">
-              <TeamSidebar />
-            </div>
+            <span className="text-[15px] font-bold text-white tracking-tight">Kings Cup</span>
           </div>
-          {/* Main content — extra bottom padding on mobile for bottom nav */}
-          <main className="flex-1 p-4 md:p-6 bg-surface pb-20 md:pb-6 flex flex-col">
-            <div className="flex-1">{children}</div>
-            <SiteFooter />
+
+          {/* Club / team switcher */}
+          <div className="px-4 py-4 border-b border-white/6 shrink-0">
+            {isTeamManager ? (
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-mint/15 border border-mint/20 flex items-center justify-center shrink-0">
+                  <span className="text-[12px] font-bold text-mint">{clubInitials}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-bold text-white truncate">{club.name}</p>
+                  <p className="text-[11px] text-white/40 truncate">{activeTeam?.name}</p>
+                </div>
+              </div>
+            ) : (
+              <TeamSwitcher
+                clubName={club.name}
+                clubBadgeUrl={club.badgeUrl ?? null}
+                clubId={club.id}
+                teams={enrichedTeams}
+                classes={classes.map((c) => ({ id: c.id, name: c.name }))}
+                dark
+              />
+            )}
+          </div>
+
+          {/* Navigation */}
+          <div className="flex-1 px-3 py-3 overflow-y-auto">
+            <TeamSidebar />
+          </div>
+
+          {/* Lang + Logout */}
+          <SidebarFooter />
+        </aside>
+
+        {/* ── Right side ───────────────────────────────────── */}
+        <div className="flex-1 flex flex-col min-w-0">
+
+          {/* Mobile header only */}
+          <div className="md:hidden">
+            <TeamHeader
+              teamName={activeTeam?.name}
+              regNumber={activeTeam?.regNumber}
+              year={2026}
+              clubName={club.name}
+              clubBadgeUrl={club.badgeUrl ?? null}
+              clubId={club.id}
+              teams={enrichedTeams.map((t) => ({
+                id: t.id,
+                name: t.name,
+                className: t.className,
+                status: t.status,
+                playersCount: t.playersCount,
+              }))}
+              classes={classes.map((c) => ({ id: c.id, name: c.name }))}
+              isTeamManager={isTeamManager}
+            />
+          </div>
+
+          {/* Main content */}
+          <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
+            {children}
           </main>
         </div>
-        {/* Mobile bottom nav */}
-        <MobileNav />
       </div>
+
+      {/* Mobile bottom nav */}
+      <MobileNav />
     </TeamProvider>
   );
 }

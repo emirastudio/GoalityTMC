@@ -408,9 +408,59 @@ export default function TeamOverviewPage() {
   ];
 
   const balanceNum = parseFloat(finance.balance);
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
     <div className="space-y-6 max-w-4xl">
+
+      {/* ── Page header (Bidibet style) ── */}
+      <div className="mb-2">
+        <p className="text-[11px] font-semibold text-text-secondary/50 uppercase tracking-widest mb-1.5">
+          {today}
+        </p>
+        <h1 className="text-2xl font-bold text-text-primary">{t("registrationProgress")}</h1>
+        <p className="text-sm text-text-secondary mt-1">{t("checklist.hasPlayers.hint")}</p>
+      </div>
+
+      {/* ── Stats grid (Bidibet style) ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { icon: Users,  value: counts.players,  label: tn("players"),        color: "bg-blue-500/10 text-blue-600" },
+          { icon: Shield, value: counts.staff,     label: tn("staff"),          color: "bg-violet-500/10 text-violet-600" },
+          { icon: Hotel,  value: counts.hotel,     label: t("hotelRooms"),      color: "bg-amber-500/10 text-amber-600" },
+          { icon: Bus,    value: counts.transfer,  label: t("transferBooked"),  color: "bg-emerald-500/10 text-emerald-600" },
+        ].map(({ icon: Icon, value, label, color }) => (
+          <div key={label} className="bg-white rounded-2xl p-5 border border-border shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[11px] font-semibold text-text-secondary/60 uppercase tracking-wider">{label}</p>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
+                <Icon className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-text-primary leading-none">{value}</p>
+            <p className="text-[11px] text-text-secondary mt-2">{t("done")}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Finance summary (Bidibet card style) ── */}
+      <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <p className="text-sm font-semibold text-text-primary">{t("financeSummary")}</p>
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-border">
+          {[
+            { label: t("totalOrdered"), value: parseFloat(finance.totalOrdered).toFixed(0), color: "text-text-primary", prefix: "€" },
+            { label: t("totalPaid"), value: parseFloat(finance.totalPaid).toFixed(0), color: "text-success", prefix: "€" },
+            { label: t("balanceLabel"), value: (balanceNum < 0 ? "" : "+") + parseFloat(finance.balance).toFixed(0), color: balanceNum < 0 ? "text-error" : "text-success", prefix: "€" },
+          ].map(({ label, value, color, prefix }) => (
+            <div key={label} className="px-5 py-4">
+              <p className="text-[11px] font-semibold text-text-secondary/60 uppercase tracking-wider mb-2">{label}</p>
+              <p className={`text-2xl font-bold ${color}`}>{prefix}{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ── Accommodation Quest Card ── */}
       {teamId && (
@@ -428,48 +478,43 @@ export default function TeamOverviewPage() {
         />
       )}
 
-      {/* Progress bar */}
-      <Card>
+      {/* ── Progress + checklist ── */}
+      <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
-          <CardTitle className="mb-0">{t("registrationProgress")}</CardTitle>
+          <p className="text-sm font-semibold text-text-primary">{t("registrationProgress")}</p>
           <span className="text-2xl font-bold text-navy">{completionPercent}%</span>
         </div>
-        <div className="w-full h-3 bg-surface rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-[#F0F2F5] rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-navy to-gold rounded-full transition-all duration-500"
+            className="h-full bg-gradient-to-r from-navy to-mint rounded-full transition-all duration-700"
             style={{ width: `${completionPercent}%` }}
           />
         </div>
 
-        {/* Checklist */}
         <div className="mt-5 space-y-2">
           {checklist.map(({ key, label, done, href, icon: Icon }) => (
             done ? (
-              /* ── Done: compact row ── */
-              <div key={key} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-success/5">
-                <CheckCircle className="w-5 h-5 text-success shrink-0" />
-                <Icon className="w-4 h-4 text-success/60 shrink-0" />
+              <div key={key} className="flex items-center gap-3 py-2 px-3 rounded-xl bg-success/5">
+                <CheckCircle className="w-4 h-4 text-success shrink-0" />
+                <Icon className="w-4 h-4 text-success/50 shrink-0" />
                 <span className="text-sm flex-1 text-text-primary">{label}</span>
-                <span className="text-xs font-medium text-success">{t("done")}</span>
+                <span className="text-[11px] font-semibold text-success uppercase tracking-wide">{t("done")}</span>
               </div>
             ) : (
-              /* ── Not done: expanded with hint + CTA ── */
-              <div key={key} className="rounded-xl border border-warning/40 bg-warning/5 overflow-hidden">
-                {/* Header row */}
+              <div key={key} className="rounded-xl border border-warning/30 bg-warning/4 overflow-hidden">
                 <div className="flex items-center gap-3 px-3 pt-3 pb-1">
-                  <AlertTriangle className="w-5 h-5 text-warning shrink-0" />
-                  <Icon className="w-4 h-4 text-warning/70 shrink-0" />
+                  <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+                  <Icon className="w-4 h-4 text-warning/60 shrink-0" />
                   <span className="text-sm font-semibold text-text-primary flex-1">{label}</span>
                   <Badge variant="warning">{t("solve")}</Badge>
                 </div>
-                {/* Hint + action */}
                 <div className="flex items-end justify-between gap-3 px-3 pb-3 pt-1">
                   <p className="text-xs text-text-secondary leading-relaxed flex-1">
                     {t(`checklist.${key}.hint`)}
                   </p>
                   <Link
                     href={href}
-                    className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-white bg-navy rounded-lg px-3 py-1.5 hover:bg-navy/90 transition-colors whitespace-nowrap"
+                    className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-white bg-navy rounded-lg px-3 py-1.5 hover:bg-navy-light transition-colors whitespace-nowrap"
                   >
                     {t(`checklist.${key}.action`)}
                     <ArrowRight className="w-3 h-3" />
@@ -479,57 +524,12 @@ export default function TeamOverviewPage() {
             )
           ))}
         </div>
-      </Card>
-
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="text-center">
-          <Users className="w-5 h-5 text-navy mx-auto mb-1" />
-          <p className="text-2xl font-bold">{counts.players}</p>
-          <p className="text-xs text-text-secondary">{tn("players")}</p>
-        </Card>
-        <Card className="text-center">
-          <Shield className="w-5 h-5 text-navy mx-auto mb-1" />
-          <p className="text-2xl font-bold">{counts.staff}</p>
-          <p className="text-xs text-text-secondary">{tn("staff")}</p>
-        </Card>
-        <Card className="text-center">
-          <Hotel className="w-5 h-5 text-navy mx-auto mb-1" />
-          <p className="text-2xl font-bold">{counts.hotel}</p>
-          <p className="text-xs text-text-secondary">{t("hotelRooms")}</p>
-        </Card>
-        <Card className="text-center">
-          <Bus className="w-5 h-5 text-navy mx-auto mb-1" />
-          <p className="text-2xl font-bold">{counts.transfer}</p>
-          <p className="text-xs text-text-secondary">{t("transferBooked")}</p>
-        </Card>
       </div>
-
-      {/* Finance summary */}
-      <Card>
-        <CardTitle>{t("financeSummary")}</CardTitle>
-        <div className="mt-3 grid grid-cols-3 gap-4">
-          <div>
-            <p className="text-xs text-text-secondary uppercase tracking-wider">{t("totalOrdered")}</p>
-            <p className="text-xl font-bold mt-1">{parseFloat(finance.totalOrdered).toFixed(0)} EUR</p>
-          </div>
-          <div>
-            <p className="text-xs text-text-secondary uppercase tracking-wider">{t("totalPaid")}</p>
-            <p className="text-xl font-bold mt-1 text-success">{parseFloat(finance.totalPaid).toFixed(0)} EUR</p>
-          </div>
-          <div>
-            <p className="text-xs text-text-secondary uppercase tracking-wider">{t("balanceLabel")}</p>
-            <p className={`text-xl font-bold mt-1 ${balanceNum < 0 ? "text-error" : "text-success"}`}>
-              {balanceNum < 0 ? "" : "+"}{parseFloat(finance.balance).toFixed(0)} EUR
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* Tournament Info */}
       {(assignedHotel || (tInfo && (tInfo.venueName || tInfo.mealTimes || tInfo.scheduleUrl || tInfo.emergencyContact))) && (
-        <Card>
-          <CardTitle>🏆 {t("tournamentInfoTitle")}</CardTitle>
+        <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
+          <p className="text-sm font-semibold text-text-primary mb-4">🏆 {t("tournamentInfoTitle")}</p>
           <div className="mt-4 space-y-4">
 
             {/* Assigned hotel (team-specific only) */}
@@ -624,20 +624,20 @@ export default function TeamOverviewPage() {
               </div>
             )}
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Allergies */}
       {allergies.length > 0 && (
-        <Card>
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="w-5 h-5 text-warning" />
-            <CardTitle className="mb-0">{t("allergiesTitle")}</CardTitle>
+        <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertCircle className="w-4 h-4 text-warning" />
+            <p className="text-sm font-semibold text-text-primary">{t("allergiesTitle")}</p>
           </div>
           <div className="space-y-2">
             {allergies.map((a, i) => (
-              <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-warning-light">
-                <span className="text-sm font-medium">{a.firstName} {a.lastName}</span>
+              <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-xl bg-warning/6 border border-warning/15">
+                <span className="text-sm font-medium text-text-primary">{a.firstName} {a.lastName}</span>
                 {a.allergies && (
                   <span className="text-sm text-text-secondary">— {a.allergies}</span>
                 )}
@@ -647,7 +647,7 @@ export default function TeamOverviewPage() {
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );
