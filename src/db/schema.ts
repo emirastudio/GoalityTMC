@@ -4,6 +4,7 @@ import {
   integer,
   boolean,
   timestamp,
+  date,
   serial,
   decimal,
   pgEnum,
@@ -622,6 +623,15 @@ export const packageItems = pgTable("package_items", {
   details: text("details"),           // "Hotel Hilton, 5 nights"
   detailsRu: text("details_ru"),
   detailsEt: text("details_et"),
+  // Date range (e.g. check-in / check-out, transfer date)
+  dateFrom: date("date_from"),
+  dateTo: date("date_to"),
+  // Media
+  imageUrl: text("image_url"),        // thumbnail shown in client-facing view
+  // Note visible to clubs (e.g. "Breakfast included", "Non-refundable")
+  note: text("note"),
+  noteRu: text("note_ru"),
+  noteEt: text("note_et"),
   // Pricing
   pricingMode: pricingModeEnum("pricing_mode").default("per_person").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).default("0").notNull(),

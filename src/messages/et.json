@@ -527,7 +527,9 @@
       "title": "Teenuse tüübid",
       "namePlaceholder": "nt. Majutus, Toitlustus, Transport...",
       "add": "Lisa teenus",
-      "empty": "Teenuseid pole veel loodud"
+      "empty": "Teenuseid pole veel loodud",
+      "icon": "Ikoon",
+      "selectIcon": "Vali ikoon"
     },
     "packages": {
       "title": "Paketid",
@@ -549,7 +551,13 @@
       "quantityPlaceholder": "Kogus",
       "add": "Lisa",
       "days": "päeva",
-      "qty": "tk"
+      "qty": "tk",
+      "notePlaceholder": "Märkus klubidele (nt. Hommikusöök sisaldub)",
+      "dateFrom": "Alguskuupäev",
+      "dateTo": "Lõppkuupäev",
+      "image": "Pilt",
+      "imageUpload": "Laadi pilt üles",
+      "imageUploading": "Laadimine..."
     },
     "modes": {
       "per_person": "Inimese kohta",

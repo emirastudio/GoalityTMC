@@ -571,7 +571,9 @@
       "title": "Service Types",
       "namePlaceholder": "e.g. Accommodation, Meals, Transfer...",
       "add": "Add Service",
-      "empty": "No services created yet"
+      "empty": "No services created yet",
+      "icon": "Icon",
+      "selectIcon": "Select icon"
     },
     "packages": {
       "title": "Packages",
@@ -588,9 +590,15 @@
       "addTitle": "Add Item",
       "selectService": "Select service",
       "detailsPlaceholder": "e.g. Hotel Hilton, 5 nights",
+      "notePlaceholder": "Note for clubs (e.g. Breakfast included)",
       "pricePlaceholder": "Price",
       "daysPlaceholder": "Days",
       "quantityPlaceholder": "Quantity",
+      "dateFrom": "Date from",
+      "dateTo": "Date to",
+      "image": "Image",
+      "imageUpload": "Upload image",
+      "imageUploading": "Uploading...",
       "add": "Add",
       "days": "days",
       "qty": "qty"

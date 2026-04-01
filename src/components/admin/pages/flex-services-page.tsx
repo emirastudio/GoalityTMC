@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useAdminFetch } from "@/lib/tournament-context";
 import {
@@ -14,7 +14,52 @@ import {
   Pencil,
   Check,
   X,
+  BedDouble,
+  Utensils,
+  Bus,
+  Shirt,
+  Trophy,
+  Camera,
+  Music,
+  Dumbbell,
+  Heart,
+  Star,
+  ShoppingBag,
+  Wifi,
+  Coffee,
+  Car,
+  Plane,
+  MapPin,
+  Upload,
+  ImageIcon,
 } from "lucide-react";
+
+/* ─────────────────────────────────────────── icon catalog */
+
+const SERVICE_ICONS: { name: string; icon: React.ElementType }[] = [
+  { name: "BedDouble", icon: BedDouble },
+  { name: "Utensils", icon: Utensils },
+  { name: "Bus", icon: Bus },
+  { name: "Car", icon: Car },
+  { name: "Plane", icon: Plane },
+  { name: "Shirt", icon: Shirt },
+  { name: "Trophy", icon: Trophy },
+  { name: "Camera", icon: Camera },
+  { name: "Music", icon: Music },
+  { name: "Dumbbell", icon: Dumbbell },
+  { name: "Heart", icon: Heart },
+  { name: "Star", icon: Star },
+  { name: "ShoppingBag", icon: ShoppingBag },
+  { name: "Wifi", icon: Wifi },
+  { name: "Coffee", icon: Coffee },
+  { name: "MapPin", icon: MapPin },
+  { name: "Package", icon: Package },
+];
+
+function resolveIcon(name: string | null | undefined): React.ElementType {
+  if (!name) return Layers;
+  return SERVICE_ICONS.find((i) => i.name === name)?.icon ?? Layers;
+}
 
 /* ─────────────────────────────────────────── types */
 
@@ -23,6 +68,7 @@ interface Service {
   name: string;
   nameRu: string | null;
   nameEt: string | null;
+  icon: string | null;
   sortOrder: number;
 }
 
@@ -41,7 +87,12 @@ interface PackageItem {
   id: number;
   serviceId: number;
   serviceName: string;
+  serviceIcon: string | null;
   details: string | null;
+  dateFrom: string | null;
+  dateTo: string | null;
+  imageUrl: string | null;
+  note: string | null;
   pricingMode: string;
   price: string;
   days: number | null;
@@ -97,6 +148,140 @@ function ErrorBanner({
   );
 }
 
+/* ─────────────────────────────────────────── IconPicker */
+
+function IconPicker({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (name: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const Selected = resolveIcon(value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary hover:bg-surface transition-colors cursor-pointer"
+      >
+        <Selected className="w-4 h-4 text-navy" />
+        <span className="text-xs text-text-secondary">
+          {value ?? "No icon"}
+        </span>
+        <ChevronDown className="w-3 h-3 text-text-secondary ml-1" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-border rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1 w-56">
+          <button
+            type="button"
+            onClick={() => { onChange(null); setOpen(false); }}
+            className="col-span-6 text-xs text-text-secondary hover:text-navy text-left px-2 py-1 rounded hover:bg-surface cursor-pointer"
+          >
+            No icon
+          </button>
+          {SERVICE_ICONS.map(({ name, icon: Icon }) => (
+            <button
+              key={name}
+              type="button"
+              title={name}
+              onClick={() => { onChange(name); setOpen(false); }}
+              className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors ${
+                value === name
+                  ? "bg-navy text-white"
+                  : "hover:bg-surface text-navy"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────── ImageUpload */
+
+function ImageUpload({
+  value,
+  onChange,
+  adminFetch,
+}: {
+  value: string | null;
+  onChange: (url: string | null) => void;
+  adminFetch: ReturnType<typeof useAdminFetch>;
+}) {
+  const t = useTranslations("flexServices");
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await adminFetch("/api/admin/upload", { method: "POST", body: form });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      onChange(data.url);
+    } catch {
+      // silently ignore — user can try again
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      {value ? (
+        <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-border shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value} alt="" className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="absolute top-0.5 right-0.5 bg-black/50 rounded-full p-0.5 cursor-pointer"
+          >
+            <X className="w-2.5 h-2.5 text-white" />
+          </button>
+        </div>
+      ) : (
+        <div className="w-14 h-14 rounded-lg border border-dashed border-border bg-surface flex items-center justify-center shrink-0">
+          <ImageIcon className="w-5 h-5 text-text-secondary/40" />
+        </div>
+      )}
+      <button
+        type="button"
+        disabled={uploading}
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-navy hover:bg-surface transition-colors cursor-pointer disabled:opacity-40"
+      >
+        {uploading ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Upload className="w-3.5 h-3.5" />
+        )}
+        {uploading ? t("items.imageUploading") : t("items.imageUpload")}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleFile(f);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────── ServiceTypesTab */
 
 function ServiceTypesTab() {
@@ -107,9 +292,11 @@ function ServiceTypesTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
+  const [newIcon, setNewIcon] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
+  const [editIcon, setEditIcon] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -142,13 +329,14 @@ function ServiceTypesTab() {
       const res = await adminFetch("/api/admin/services2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName.trim() }),
+        body: JSON.stringify({ name: newName.trim(), icon: newIcon }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? t("errors.addFailed"));
       }
       setNewName("");
+      setNewIcon(null);
       await loadServices();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t("errors.addFailed"));
@@ -160,11 +348,13 @@ function ServiceTypesTab() {
   const startEdit = (svc: Service) => {
     setEditId(svc.id);
     setEditName(svc.name);
+    setEditIcon(svc.icon);
   };
 
   const cancelEdit = () => {
     setEditId(null);
     setEditName("");
+    setEditIcon(null);
   };
 
   const saveEdit = async () => {
@@ -175,7 +365,7 @@ function ServiceTypesTab() {
       const res = await adminFetch("/api/admin/services2", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editId, name: editName.trim() }),
+        body: JSON.stringify({ id: editId, name: editName.trim(), icon: editIcon }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -218,6 +408,7 @@ function ServiceTypesTab() {
 
       {/* Add form */}
       <div className="flex items-center gap-2">
+        <IconPicker value={newIcon} onChange={setNewIcon} />
         <input
           type="text"
           value={newName}
@@ -254,89 +445,98 @@ function ServiceTypesTab() {
         </div>
       ) : (
         <div className="space-y-2">
-          {services.map((svc) => (
-            <div
-              key={svc.id}
-              className="rounded-xl border border-border bg-white shadow-sm p-4 flex items-center justify-between gap-3"
-            >
-              {editId === svc.id ? (
-                <div className="flex items-center gap-2 flex-1">
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveEdit();
-                      if (e.key === "Escape") cancelEdit();
-                    }}
-                    className="flex-1 rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={saveEdit}
-                    disabled={saving}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-navy hover:text-navy/80 cursor-pointer"
-                  >
-                    {saving ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Check className="w-3.5 h-3.5" />
-                    )}
-                    {t("save")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cancelEdit}
-                    className="text-xs text-text-secondary cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <span className="font-medium text-sm text-navy">{svc.name}</span>
-                  <div className="flex items-center gap-2">
+          {services.map((svc) => {
+            const SvcIcon = resolveIcon(svc.icon);
+            return (
+              <div
+                key={svc.id}
+                className="rounded-xl border border-border bg-white shadow-sm p-4 flex items-center justify-between gap-3"
+              >
+                {editId === svc.id ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <IconPicker value={editIcon} onChange={setEditIcon} />
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveEdit();
+                        if (e.key === "Escape") cancelEdit();
+                      }}
+                      className="flex-1 rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30"
+                      autoFocus
+                    />
                     <button
                       type="button"
-                      onClick={() => startEdit(svc)}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-navy transition-colors cursor-pointer"
+                      onClick={saveEdit}
+                      disabled={saving}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-navy hover:text-navy/80 cursor-pointer"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
-                      {t("edit")}
+                      {saving ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5" />
+                      )}
+                      {t("save")}
                     </button>
-                    {deleteId === svc.id ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => deleteService(svc.id)}
-                          className="text-xs font-medium text-error cursor-pointer hover:underline"
-                        >
-                          {t("confirmDelete")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteId(null)}
-                          className="text-xs text-text-secondary cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </span>
-                    ) : (
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className="text-xs text-text-secondary cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-navy/8 flex items-center justify-center shrink-0">
+                        <SvcIcon className="w-4 h-4 text-navy" />
+                      </div>
+                      <span className="font-medium text-sm text-navy">{svc.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setDeleteId(svc.id)}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-error transition-colors cursor-pointer"
+                        onClick={() => startEdit(svc)}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-navy transition-colors cursor-pointer"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        {t("delete")}
+                        <Pencil className="w-3.5 h-3.5" />
+                        {t("edit")}
                       </button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+                      {deleteId === svc.id ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => deleteService(svc.id)}
+                            className="text-xs font-medium text-error cursor-pointer hover:underline"
+                          >
+                            {t("confirmDelete")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteId(null)}
+                            className="text-xs text-text-secondary cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setDeleteId(svc.id)}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-error transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          {t("delete")}
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -364,6 +564,10 @@ function PackageItemsSection({
   const [form, setForm] = useState({
     serviceId: "",
     details: "",
+    note: "",
+    dateFrom: "",
+    dateTo: "",
+    imageUrl: null as string | null,
     pricingMode: "per_person",
     price: "",
     days: "",
@@ -399,6 +603,10 @@ function PackageItemsSection({
       const payload: Record<string, unknown> = {
         serviceId: Number(form.serviceId),
         details: form.details || null,
+        note: form.note || null,
+        dateFrom: form.dateFrom || null,
+        dateTo: form.dateTo || null,
+        imageUrl: form.imageUrl || null,
         pricingMode: form.pricingMode,
         price: form.price,
       };
@@ -420,6 +628,10 @@ function PackageItemsSection({
       setForm({
         serviceId: "",
         details: "",
+        note: "",
+        dateFrom: "",
+        dateTo: "",
+        imageUrl: null,
         pricingMode: "per_person",
         price: "",
         days: "",
@@ -453,18 +665,13 @@ function PackageItemsSection({
   };
 
   const pricingModeLabel = (mode: string) => {
-    switch (mode) {
-      case "per_person":
-        return t("modes.per_person");
-      case "per_person_per_day":
-        return t("modes.per_person_per_day");
-      case "per_unit":
-        return t("modes.per_unit");
-      case "flat":
-        return t("modes.flat");
-      default:
-        return mode;
-    }
+    const key = `modes.${mode}` as Parameters<typeof t>[0];
+    return t(key) ?? mode;
+  };
+
+  const formatDate = (d: string | null) => {
+    if (!d) return null;
+    return new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short" });
   };
 
   return (
@@ -483,76 +690,103 @@ function PackageItemsSection({
             <p className="text-xs text-text-secondary py-2">{t("packages.noItems")}</p>
           ) : (
             <div className="space-y-1.5">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between gap-2 rounded-lg bg-surface border border-border px-3 py-2"
-                >
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-navy">
-                      {item.serviceName}
-                    </span>
-                    {item.details && (
-                      <span className="text-xs text-text-secondary ml-2">
-                        {item.details}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-text-secondary">
-                        {pricingModeLabel(item.pricingMode)}
-                      </span>
-                      <span className="text-xs font-semibold text-text-primary">
-                        {item.price}
-                      </span>
-                      {item.days !== null && (
-                        <span className="text-xs text-text-secondary">
-                          {item.days} {t("items.days")}
-                        </span>
+              {items.map((item) => {
+                const ItemIcon = resolveIcon(item.serviceIcon);
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between gap-2 rounded-lg bg-surface border border-border px-3 py-2"
+                  >
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      {item.imageUrl ? (
+                        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-border">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-navy/8 flex items-center justify-center shrink-0">
+                          <ItemIcon className="w-5 h-5 text-navy" />
+                        </div>
                       )}
-                      {item.quantity !== null && (
-                        <span className="text-xs text-text-secondary">
-                          {t("items.qty")}: {item.quantity}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-navy">
+                          {item.serviceName}
                         </span>
-                      )}
+                        {item.details && (
+                          <span className="text-xs text-text-secondary ml-2">
+                            {item.details}
+                          </span>
+                        )}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                          <span className="text-xs text-text-secondary">
+                            {pricingModeLabel(item.pricingMode)}
+                          </span>
+                          <span className="text-xs font-semibold text-text-primary">
+                            {item.price}
+                          </span>
+                          {item.days !== null && (
+                            <span className="text-xs text-text-secondary">
+                              {item.days} {t("items.days")}
+                            </span>
+                          )}
+                          {item.quantity !== null && (
+                            <span className="text-xs text-text-secondary">
+                              {t("items.qty")}: {item.quantity}
+                            </span>
+                          )}
+                          {(item.dateFrom || item.dateTo) && (
+                            <span className="text-xs text-text-secondary">
+                              {formatDate(item.dateFrom)} – {formatDate(item.dateTo)}
+                            </span>
+                          )}
+                        </div>
+                        {item.note && (
+                          <p className="text-xs text-text-secondary/70 mt-0.5 italic">
+                            {item.note}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {deleteItemId === item.id ? (
-                    <span className="inline-flex items-center gap-1.5 shrink-0">
+                    {deleteItemId === item.id ? (
+                      <span className="inline-flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => deleteItem(item.id)}
+                          className="text-xs font-medium text-error cursor-pointer hover:underline"
+                        >
+                          {t("confirmDelete")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteItemId(null)}
+                          className="text-xs text-text-secondary cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => deleteItem(item.id)}
-                        className="text-xs font-medium text-error cursor-pointer hover:underline"
+                        onClick={() => setDeleteItemId(item.id)}
+                        className="inline-flex items-center text-xs text-text-secondary hover:text-error transition-colors cursor-pointer shrink-0"
                       >
-                        {t("confirmDelete")}
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteItemId(null)}
-                        className="text-xs text-text-secondary cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setDeleteItemId(item.id)}
-                      className="inline-flex items-center text-xs text-text-secondary hover:text-error transition-colors cursor-pointer shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {/* Add item form */}
-          <div className="rounded-lg border border-dashed border-border bg-surface/50 p-3 space-y-2">
+          <div className="rounded-lg border border-dashed border-border bg-surface/50 p-3 space-y-3">
             <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">
               {t("items.addTitle")}
             </p>
+
+            {/* Row 1: service + details */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <select
                 value={form.serviceId}
@@ -573,6 +807,10 @@ function PackageItemsSection({
                 placeholder={t("items.detailsPlaceholder")}
                 className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
               />
+            </div>
+
+            {/* Row 2: pricing mode + price */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <select
                 value={form.pricingMode}
                 onChange={(e) => setForm((f) => ({ ...f, pricingMode: e.target.value }))}
@@ -582,6 +820,10 @@ function PackageItemsSection({
                 <option value="per_person_per_day">{t("modes.per_person_per_day")}</option>
                 <option value="per_unit">{t("modes.per_unit")}</option>
                 <option value="flat">{t("modes.flat")}</option>
+                <option value="per_player">{t("modes.per_player")}</option>
+                <option value="per_staff">{t("modes.per_staff")}</option>
+                <option value="per_accompanying">{t("modes.per_accompanying")}</option>
+                <option value="per_team">{t("modes.per_team")}</option>
               </select>
               <input
                 type="number"
@@ -590,25 +832,69 @@ function PackageItemsSection({
                 placeholder={t("items.pricePlaceholder")}
                 className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
               />
-              {form.pricingMode === "per_person_per_day" && (
-                <input
-                  type="number"
-                  value={form.days}
-                  onChange={(e) => setForm((f) => ({ ...f, days: e.target.value }))}
-                  placeholder={t("items.daysPlaceholder")}
-                  className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
-                />
-              )}
-              {form.pricingMode === "per_unit" && (
-                <input
-                  type="number"
-                  value={form.quantity}
-                  onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-                  placeholder={t("items.quantityPlaceholder")}
-                  className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
-                />
-              )}
             </div>
+
+            {/* Conditional: days / quantity */}
+            {form.pricingMode === "per_person_per_day" && (
+              <input
+                type="number"
+                value={form.days}
+                onChange={(e) => setForm((f) => ({ ...f, days: e.target.value }))}
+                placeholder={t("items.daysPlaceholder")}
+                className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+              />
+            )}
+            {form.pricingMode === "per_unit" && (
+              <input
+                type="number"
+                value={form.quantity}
+                onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+                placeholder={t("items.quantityPlaceholder")}
+                className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+              />
+            )}
+
+            {/* Row 3: date from + date to */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-text-secondary mb-1 block">{t("items.dateFrom")}</label>
+                <input
+                  type="date"
+                  value={form.dateFrom}
+                  onChange={(e) => setForm((f) => ({ ...f, dateFrom: e.target.value }))}
+                  className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-text-secondary mb-1 block">{t("items.dateTo")}</label>
+                <input
+                  type="date"
+                  value={form.dateTo}
+                  onChange={(e) => setForm((f) => ({ ...f, dateTo: e.target.value }))}
+                  className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30"
+                />
+              </div>
+            </div>
+
+            {/* Row 4: note */}
+            <input
+              type="text"
+              value={form.note}
+              onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+              placeholder={t("items.notePlaceholder")}
+              className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+            />
+
+            {/* Row 5: image upload */}
+            <div>
+              <label className="text-xs text-text-secondary mb-1.5 block">{t("items.image")}</label>
+              <ImageUpload
+                value={form.imageUrl}
+                onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))}
+                adminFetch={adminFetch}
+              />
+            </div>
+
             <button
               type="button"
               onClick={addItem}
@@ -858,7 +1144,6 @@ export function FlexServicesPageContent() {
   const [tab, setTab] = useState<Tab>("services");
   const [services, setServices] = useState<Service[]>([]);
 
-  // Load services for the packages tab (needed for the item add form)
   useEffect(() => {
     adminFetch("/api/admin/services2")
       .then((r) => (r.ok ? r.json() : []))
