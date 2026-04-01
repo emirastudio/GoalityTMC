@@ -564,7 +564,9 @@
     "feature2Title": "Meeskondade iseteenindus",
     "feature2Desc": "Meeskonnad registreeruvad, broneerivad hotelle ja transporti, haldavad koosseise \u2014 k\u00f5ik veebis.",
     "feature3Title": "Rahvusvaheline valmidus",
-    "feature3Desc": "Mitmekeelne tugi, erinevad valuutad, korraldajad igast riigist."
+    "feature3Desc": "Mitmekeelne tugi, erinevad valuutad, korraldajad igast riigist.",
+    "ctaTitle": "Valmis oma turniiri korraldama?",
+    "ctaSubtitle": "Loo konto ja seadista turniir m\u00f5ne minutiga \u2014 alustamine on tasuta."
   },
   "catalog": {
     "title": "Turniiride kataloog",

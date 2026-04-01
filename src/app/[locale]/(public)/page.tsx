@@ -1,12 +1,34 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { Trophy, Building2, Users, ArrowRight, Globe } from "lucide-react";
+import { Trophy, Users, ArrowRight, Globe } from "lucide-react";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 export default async function HomePage() {
   const t = await getTranslations("landing");
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Nav bar */}
+      <div className="bg-navy">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-mint flex items-center justify-center">
+              <span className="text-navy font-black text-[9px] leading-none">P.G.W.</span>
+            </div>
+            <span className="text-lg font-bold text-white">Goality</span>
+          </div>
+          <div className="flex items-center gap-5">
+            <LanguageSwitcher variant="light" />
+            <Link
+              href="/login"
+              className="text-sm text-white/70 hover:text-white transition-colors"
+            >
+              {t("heroCtaLogin")}
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Hero */}
       <div className="bg-navy text-white relative overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 py-16 md:py-24 relative z-10">
@@ -39,12 +61,6 @@ export default async function HomePage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
               >
                 {t("heroCtaCatalog")}
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-6 py-3 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors"
-              >
-                {t("heroCtaLogin")}
               </Link>
             </div>
           </div>
@@ -84,8 +100,8 @@ export default async function HomePage() {
       <div className="bg-mint">
         <div className="max-w-5xl mx-auto px-4 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
-            <h2 className="text-2xl font-bold text-navy">{t("feature1Title")}</h2>
-            <p className="text-navy/70 mt-1">{t("heroSubtitle")}</p>
+            <h2 className="text-2xl font-bold text-navy">{t("ctaTitle")}</h2>
+            <p className="text-navy/70 mt-1">{t("ctaSubtitle")}</p>
           </div>
           <Link
             href="/onboarding"
@@ -104,9 +120,10 @@ export default async function HomePage() {
             <span className="font-bold text-navy">Goality</span>
             <span>&copy; {new Date().getFullYear()}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <Link href="/catalog" className="hover:text-navy">{t("heroCtaCatalog")}</Link>
             <Link href="/login" className="hover:text-navy">{t("heroCtaLogin")}</Link>
+            <LanguageSwitcher variant="dark" />
           </div>
         </div>
       </div>

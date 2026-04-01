@@ -608,7 +608,9 @@
     "feature2Title": "Team Self-Service",
     "feature2Desc": "Teams register, book hotels and transfers, manage rosters — all online.",
     "feature3Title": "International Ready",
-    "feature3Desc": "Multi-language support, multiple currencies, organizers from any country."
+    "feature3Desc": "Multi-language support, multiple currencies, organizers from any country.",
+    "ctaTitle": "Ready to organize your tournament?",
+    "ctaSubtitle": "Create your account and set up a tournament in minutes — free to start."
   },
   "catalog": {
     "title": "Tournament Catalog",
