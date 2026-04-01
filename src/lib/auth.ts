@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const TOKEN_NAME = "kingscup_token";
+const TOKEN_NAME = "goality_token";
 
 export type TokenPayload = {
   userId: number;
@@ -12,9 +12,13 @@ export type TokenPayload = {
   tournamentId?: number;
   teamId?: number; // если задан — пользователь является тренером конкретной команды
   impersonating?: true; // admin просматривает аккаунт клуба
+  // Multi-tenant fields
+  organizationId?: number; // org the user belongs to (null for super admin)
+  organizationSlug?: string; // org slug for URL routing
+  isSuper?: boolean; // true = platform-level super admin
 };
 
-export const ADMIN_BACKUP_COOKIE = "kingscup_admin_backup";
+export const ADMIN_BACKUP_COOKIE = "goality_admin_backup";
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 12);

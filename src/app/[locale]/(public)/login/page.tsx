@@ -34,7 +34,23 @@ export default function LoginPage() {
     });
 
     if (res.ok) {
-      router.push(mode === "admin" ? "/admin/dashboard" : "/team/overview");
+      const data = await res.json();
+      if (mode === "admin") {
+        if (data.isSuper) {
+          router.push("/admin/dashboard");
+        } else if (data.organizationSlug) {
+          router.push(`/org/${data.organizationSlug}/admin`);
+        } else {
+          router.push("/admin/dashboard");
+        }
+      } else {
+        if (data.organizationSlug) {
+          router.push(`/org/${data.organizationSlug}/team/overview`);
+        } else {
+          // Fallback for legacy clubs without org
+          router.push("/team/overview");
+        }
+      }
     } else {
       setError(t("invalidCredentials"));
     }

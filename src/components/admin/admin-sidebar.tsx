@@ -6,29 +6,15 @@ import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  Users,
-  Mail,
+  Building2,
   Settings,
-  Trophy,
-  Wallet,
-  Crown,
   LogOut,
-  Package,
-  Layers,
-  TableProperties,
-  ClipboardList,
+  Shield,
 } from "lucide-react";
 
 const navItems = [
   { key: "dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
-  { key: "overview", icon: TableProperties, href: "/admin/overview" },
-  { key: "registrations", icon: ClipboardList, href: "/admin/registrations" },
-  { key: "teams", icon: Users, href: "/admin/teams" },
-  { key: "services", icon: Package, href: "/admin/services" },
-  { key: "packages", icon: Layers, href: "/admin/packages" },
-  { key: "payments", icon: Wallet, href: "/admin/payments" },
-  { key: "messages", icon: Mail, href: "/admin/messages" },
-  { key: "tournaments", icon: Trophy, href: "/admin/tournaments" },
+  { label: "Organizations", icon: Building2, href: "/admin/organizations" },
   { key: "settings", icon: Settings, href: "/admin/settings" },
 ] as const;
 
@@ -39,16 +25,18 @@ export function AdminSidebar() {
   return (
     <aside className="w-60 shrink-0 bg-navy min-h-screen flex flex-col">
       <div className="p-5 flex items-center gap-2">
-        <Crown className="w-7 h-7 text-gold" />
-        <span className="text-lg font-bold text-white tracking-tight">Kings Cup</span>
+        <Shield className="w-7 h-7 text-gold" />
+        <span className="text-lg font-bold text-white tracking-tight">Goality</span>
       </div>
       <nav className="flex-1 px-3 space-y-0.5">
-        {navItems.map(({ key, icon: Icon, href }) => {
-          const isActive = pathname.startsWith(href);
+        {navItems.map((item) => {
+          const isActive = pathname.startsWith(item.href);
+          const label = "key" in item ? t(item.key) : item.label;
+          const Icon = item.icon;
           return (
             <Link
-              key={key}
-              href={href}
+              key={item.href}
+              href={item.href}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
@@ -57,7 +45,7 @@ export function AdminSidebar() {
               )}
             >
               <Icon className="w-4.5 h-4.5" />
-              {t(key)}
+              {label}
             </Link>
           );
         })}

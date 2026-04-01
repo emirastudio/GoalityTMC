@@ -8,9 +8,13 @@ import {
   decimal,
   pgEnum,
   uniqueIndex,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 // ─── Enums ──────────────────────────────────────────────
+
+export const orgPlanEnum = pgEnum("org_plan", ["free", "basic", "premium"]);
+
 export const teamStatusEnum = pgEnum("team_status", [
   "draft",
   "open",
@@ -55,11 +59,33 @@ export const bookingTypeEnum = pgEnum("booking_type", [
   "custom",
 ]);
 
+// ─── Organizations (multi-tenant) ──────────────────────
+export const organizations = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+  logo: text("logo"),
+  country: varchar("country", { length: 100 }),
+  city: varchar("city", { length: 100 }),
+  timezone: varchar("timezone", { length: 50 }).default("Europe/Tallinn").notNull(),
+  defaultLocale: varchar("default_locale", { length: 5 }).default("en").notNull(),
+  currency: varchar("currency", { length: 3 }).default("EUR").notNull(),
+  plan: orgPlanEnum("plan").default("free").notNull(),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  website: text("website"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // ─── Tournaments ────────────────────────────────────────
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" })
+    .notNull(),
   name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
+  slug: text("slug").notNull(),
   year: integer("year").notNull(),
   description: text("description"),
   logoUrl: text("logo_url"),
@@ -70,7 +96,9 @@ export const tournaments = pgTable("tournaments", {
   currency: text("currency").default("EUR").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+  uniqueIndex("tournaments_org_slug_idx").on(table.organizationId, table.slug),
+]);
 
 // ─── Tournament Classes ─────────────────────────────────
 export const tournamentClasses = pgTable("tournament_classes", {
@@ -554,8 +582,12 @@ export const teamBookings = pgTable("team_bookings", {
 });
 
 // ─── Admin Users ────────────────────────────────────────
+// organizationId = null → platform super admin (sees everything)
+// organizationId = N   → org admin (sees only their org)
 export const adminUsers = pgTable("admin_users", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" }),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),

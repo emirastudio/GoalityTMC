@@ -8,28 +8,70 @@ const client = postgres(connectionString);
 const db = drizzle(client, { schema });
 
 async function seed() {
-  console.log("Seeding database...");
+  console.log("Seeding Goality TMC platform...\n");
 
-  // Create admin user
   const passwordHash = await bcrypt.hash("admin123", 12);
-  const [admin] = await db
+
+  // ─── 1. Create Super Admin (platform level, no organization) ───
+  const [superAdmin] = await db
     .insert(schema.adminUsers)
     .values({
-      email: "admin@kingscup.ee",
-      name: "Admin",
+      email: "admin@goality.ee",
+      name: "Andrei Arhipov",
       passwordHash,
       role: "super_admin",
+      organizationId: null,
     })
     .onConflictDoNothing()
     .returning();
-  console.log("Admin user created:", admin?.email ?? "already exists");
+  console.log("Super Admin created:", superAdmin?.email ?? "already exists");
 
-  // Create tournament
+  // ─── 2. Create Organization: Kings Cup ───
+  const [org] = await db
+    .insert(schema.organizations)
+    .values({
+      name: "Kings Cup",
+      slug: "kingscup",
+      country: "Estonia",
+      city: "Tallinn",
+      timezone: "Europe/Tallinn",
+      defaultLocale: "en",
+      currency: "EUR",
+      plan: "premium",
+      contactEmail: "support@kingscup.ee",
+      website: "https://kingscup.ee",
+    })
+    .onConflictDoNothing()
+    .returning();
+
+  if (!org) {
+    console.log("Organization already exists, skipping...");
+    await client.end();
+    return;
+  }
+  console.log("Organization created:", org.name, `(/${org.slug})`);
+
+  // ─── 3. Create Org Admin for Kings Cup ───
+  const [orgAdmin] = await db
+    .insert(schema.adminUsers)
+    .values({
+      email: "admin@kingscup.ee",
+      name: "Kings Cup Admin",
+      passwordHash,
+      role: "admin",
+      organizationId: org.id,
+    })
+    .onConflictDoNothing()
+    .returning();
+  console.log("Org Admin created:", orgAdmin?.email ?? "already exists");
+
+  // ─── 4. Create Tournament ───
   const [tournament] = await db
     .insert(schema.tournaments)
     .values({
+      organizationId: org.id,
       name: "Kings Cup Elite Round",
-      slug: "kings-cup-2026",
+      slug: "elite-round-2026",
       year: 2026,
       description: "Kings Cup Elite Round 2026 — International youth football tournament",
       registrationOpen: true,
@@ -45,10 +87,9 @@ async function seed() {
     await client.end();
     return;
   }
-
   console.log("Tournament created:", tournament.name);
 
-  // Create classes (by birth year)
+  // ─── 5. Tournament Classes ───
   const classes = await db
     .insert(schema.tournamentClasses)
     .values([
@@ -57,9 +98,9 @@ async function seed() {
       { tournamentId: tournament.id, name: "2016", minBirthYear: 2016, maxPlayers: 20, maxStaff: 5 },
     ])
     .returning();
-  console.log("Classes created:", classes.map((c) => c.name).join(", "));
+  console.log("Classes:", classes.map((c) => c.name).join(", "));
 
-  // Create products
+  // ─── 6. Products ───
   await db.insert(schema.tournamentProducts).values([
     {
       tournamentId: tournament.id,
@@ -72,63 +113,9 @@ async function seed() {
       includedQuantity: 1,
       sortOrder: 1,
     },
-    {
-      tournamentId: tournament.id,
-      name: "Hotel accommodation — Players",
-      nameRu: "Проживание в отеле — Игроки",
-      nameEt: "Hotellimajutus — Mängijad",
-      description: "Per player staying at the hotel",
-      descriptionRu: "За каждого игрока, проживающего в отеле",
-      descriptionEt: "Iga hotellis majutatava mängija kohta",
-      price: "65",
-      category: "accommodation",
-      perPerson: true,
-      sortOrder: 2,
-    },
-    {
-      tournamentId: tournament.id,
-      name: "Hotel accommodation — Staff",
-      nameRu: "Проживание в отеле — Персонал",
-      nameEt: "Hotellimajutus — Personal",
-      description: "Per staff/accompanying person staying at the hotel",
-      descriptionRu: "За каждого сотрудника/сопровождающего в отеле",
-      descriptionEt: "Iga hotellis majutatava personali/saatja kohta",
-      price: "75",
-      category: "accommodation",
-      perPerson: true,
-      sortOrder: 3,
-    },
-    {
-      tournamentId: tournament.id,
-      name: "Airport/Station transfer",
-      nameRu: "Трансфер аэропорт/вокзал",
-      nameEt: "Lennujaama/jaama transfer",
-      description: "Round trip transfer per person",
-      descriptionRu: "Трансфер туда-обратно на человека",
-      descriptionEt: "Edasi-tagasi transfer inimese kohta",
-      price: "25",
-      category: "transfer",
-      perPerson: true,
-      sortOrder: 4,
-    },
-    {
-      tournamentId: tournament.id,
-      name: "Extra meals package",
-      nameRu: "Доп. питание",
-      nameEt: "Lisatoidupakett",
-      description: "Additional meals beyond standard tournament catering",
-      descriptionRu: "Дополнительное питание сверх стандартного",
-      descriptionEt: "Lisatoit standardse turniiritoitlustuse kõrval",
-      price: "35",
-      category: "meals",
-      perPerson: true,
-      sortOrder: 5,
-    },
   ]);
-  console.log("Products created");
 
-  // ─── New service model ────────────────────────────────
-  // Accommodation options
+  // ─── 7. Services ───
   await db.insert(schema.accommodationOptions).values([
     {
       tournamentId: tournament.id,
@@ -142,90 +129,21 @@ async function seed() {
       pricePerAccompanying: "75",
       includedMeals: 3,
       mealNote: "Breakfast + Lunch + Dinner included",
-      mealNoteRu: "Завтрак + Обед + Ужин включены",
-      mealNoteEt: "Hommikusöök + Lõuna + Õhtusöök sisaldub",
       sortOrder: 1,
     },
-    {
-      tournamentId: tournament.id,
-      name: "Short stay (3 nights)",
-      nameRu: "Краткое проживание (3 ночи)",
-      nameEt: "Lühimajutus (3 ööd)",
-      checkIn: new Date("2026-07-13"),
-      checkOut: new Date("2026-07-16"),
-      pricePerPlayer: "45",
-      pricePerStaff: "55",
-      pricePerAccompanying: "55",
-      includedMeals: 3,
-      mealNote: "Breakfast + Lunch + Dinner included",
-      mealNoteRu: "Завтрак + Обед + Ужин включены",
-      mealNoteEt: "Hommikusöök + Lõuna + Õhtusöök sisaldub",
-      sortOrder: 2,
-    },
   ]);
-  console.log("Accommodation options created");
 
-  // Extra meal options
-  await db.insert(schema.extraMealOptions).values([
-    {
-      tournamentId: tournament.id,
-      name: "Extra lunch",
-      nameRu: "Дополнительный обед",
-      nameEt: "Lisalõuna",
-      description: "Additional lunch for days not covered by accommodation",
-      pricePerPerson: "12",
-      perDay: true,
-      sortOrder: 1,
-    },
-    {
-      tournamentId: tournament.id,
-      name: "Extra dinner",
-      nameRu: "Дополнительный ужин",
-      nameEt: "Lisaõhtusöök",
-      description: "Additional dinner for days not covered by accommodation",
-      pricePerPerson: "15",
-      perDay: true,
-      sortOrder: 2,
-    },
-  ]);
-  console.log("Extra meal options created");
-
-  // Transfer options
   await db.insert(schema.transferOptions).values([
-    {
-      tournamentId: tournament.id,
-      name: "Self-organized",
-      nameRu: "Самостоятельно",
-      nameEt: "Iseorganiseeritud",
-      description: "No transfer needed — team arranges own transport",
-      descriptionRu: "Трансфер не нужен — команда добирается самостоятельно",
-      pricePerPerson: "0",
-      sortOrder: 1,
-    },
     {
       tournamentId: tournament.id,
       name: "Airport ↔ Hotel",
       nameRu: "Аэропорт ↔ Отель",
       nameEt: "Lennujaam ↔ Hotell",
-      description: "Pick-up from airport/station to hotel and back",
-      descriptionRu: "Встреча в аэропорту/вокзале, доставка в отель и обратно",
       pricePerPerson: "25",
-      sortOrder: 2,
-    },
-    {
-      tournamentId: tournament.id,
-      name: "Full transfer",
-      nameRu: "Полный трансфер",
-      nameEt: "Täistransfer",
-      description: "Airport ↔ Hotel + Hotel ↔ Stadium for all match days",
-      descriptionRu: "Аэропорт ↔ Отель + Отель ↔ Стадион на все дни матчей",
-      pricePerPerson: "50",
-      sortOrder: 3,
+      sortOrder: 1,
     },
   ]);
-  console.log("Transfer options created");
 
-  // Registration fee
   await db.insert(schema.registrationFees).values({
     tournamentId: tournament.id,
     name: "Registration fee",
@@ -234,20 +152,16 @@ async function seed() {
     price: "150",
     isRequired: true,
   });
-  console.log("Registration fee created");
 
-  // Default service package
   const [pkg] = await db.insert(schema.servicePackages).values({
     tournamentId: tournament.id,
     name: "Standard Package",
     nameRu: "Стандартный пакет",
     nameEt: "Standardpakett",
-    description: "Full accommodation, meals, and transfer options",
     isDefault: true,
   }).returning();
-  console.log("Service package created:", pkg.name);
 
-  // Create a test club
+  // ─── 8. Test Club + Teams ───
   const clubPasswordHash = await bcrypt.hash("club123", 12);
   const [club] = await db
     .insert(schema.clubs)
@@ -261,9 +175,7 @@ async function seed() {
       contactPhone: "+372 555 1234",
     })
     .returning();
-  console.log("Club created:", club.name);
 
-  // Create club user
   await db.insert(schema.clubUsers).values({
     clubId: club.id,
     email: "arhipov.coach@gmail.com",
@@ -271,37 +183,59 @@ async function seed() {
     passwordHash: clubPasswordHash,
     accessLevel: "write",
   });
-  console.log("Club user created");
 
-  // Create two teams for the club
-  const [team1] = await db
-    .insert(schema.teams)
-    .values({
+  await db.insert(schema.teams).values([
+    {
       tournamentId: tournament.id,
       clubId: club.id,
       classId: classes[0]!.id,
       name: "FC Infonet U12",
       status: "open",
       regNumber: 10001,
-    })
-    .returning();
-
-  const [team2] = await db
-    .insert(schema.teams)
-    .values({
+    },
+    {
       tournamentId: tournament.id,
       clubId: club.id,
       classId: classes[1]!.id,
       name: "FC Infonet U11",
       status: "draft",
       regNumber: 10002,
+    },
+  ]);
+
+  console.log("Club + teams created: FC Infonet");
+
+  // ─── 9. Second Organization (demo) ───
+  const [org2] = await db
+    .insert(schema.organizations)
+    .values({
+      name: "Baltic Football League",
+      slug: "baltic-league",
+      country: "Latvia",
+      city: "Riga",
+      timezone: "Europe/Riga",
+      defaultLocale: "en",
+      currency: "EUR",
+      plan: "basic",
+      contactEmail: "info@balticleague.lv",
     })
     .returning();
-  console.log("Teams created:", team1.name, team2.name);
 
-  console.log("\nSeed complete!");
-  console.log("Admin login: admin@kingscup.ee / admin123");
-  console.log("Club login: arhipov.coach@gmail.com / club123");
+  await db.insert(schema.adminUsers).values({
+    email: "admin@balticleague.lv",
+    name: "Baltic League Admin",
+    passwordHash,
+    role: "admin",
+    organizationId: org2.id,
+  });
+  console.log("Demo org created:", org2.name);
+
+  console.log("\n--- Seed complete! ---");
+  console.log("\nLogins:");
+  console.log("  Super Admin:  admin@goality.ee / admin123");
+  console.log("  Org Admin:    admin@kingscup.ee / admin123");
+  console.log("  Club:         arhipov.coach@gmail.com / club123");
+  console.log("  Demo Org:     admin@balticleague.lv / admin123");
 
   await client.end();
 }

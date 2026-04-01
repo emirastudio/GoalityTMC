@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clubUsers, clubs } from "@/db/schema";
+import { clubUsers, clubs, tournaments, organizations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { verifyPassword, createToken, setSessionCookie } from "@/lib/auth";
 
@@ -24,15 +24,38 @@ export async function POST(req: NextRequest) {
     where: eq(clubs.id, user.clubId),
   });
 
+  // Resolve organization from tournament
+  let organizationId: number | undefined;
+  let organizationSlug: string | undefined;
+  if (club?.tournamentId) {
+    const tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, club.tournamentId),
+    });
+    if (tournament?.organizationId) {
+      organizationId = tournament.organizationId;
+      const org = await db.query.organizations.findFirst({
+        where: eq(organizations.id, tournament.organizationId),
+      });
+      organizationSlug = org?.slug;
+    }
+  }
+
   const token = createToken({
     userId: user.id,
     role: "club",
     clubId: user.clubId,
     tournamentId: club?.tournamentId,
+    organizationId,
+    organizationSlug,
     ...(user.teamId ? { teamId: user.teamId } : {}),
   });
 
   await setSessionCookie(token);
 
-  return NextResponse.json({ ok: true, clubId: user.clubId, teamId: user.teamId ?? null });
+  return NextResponse.json({
+    ok: true,
+    clubId: user.clubId,
+    teamId: user.teamId ?? null,
+    organizationSlug,
+  });
 }
