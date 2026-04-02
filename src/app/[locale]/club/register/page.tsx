@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Crown, ChevronRight, ChevronLeft, Check, Plus, Trash2, ImageIcon, ChevronDown, Search } from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { Crown, ChevronRight, ChevronLeft, Check, Plus, Trash2, ImageIcon, ChevronDown, Search, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -179,6 +182,7 @@ type Step = (typeof STEPS)[number];
 export default function RegisterPage() {
   const t = useTranslations("register");
   const tc = useTranslations("common");
+  const tcr = useTranslations("clubRegister");
   const router = useRouter();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -231,6 +235,13 @@ export default function RegisterPage() {
     { value: "assistant", label: t("contact.roles.assistant") },
     { value: "president", label: t("contact.roles.president") },
     { value: "other", label: t("contact.roles.other") },
+  ];
+
+  const stepLabels = [
+    tcr("step1"),
+    tcr("step2"),
+    tcr("step3"),
+    tcr("step4"),
   ];
 
   function next() {
@@ -320,248 +331,358 @@ export default function RegisterPage() {
   }));
 
   return (
-    <div className="min-h-screen th-bg">
-      {/* Header */}
-      <div className="th-card border-b th-border">
-        <div className="max-w-2xl mx-auto px-6 py-5 flex items-center gap-3">
-          <Crown className="w-8 h-8 text-gold" />
-          <div>
-            <h1 className="text-lg font-bold text-navy">{t("title")}</h1>
-            <p className="text-sm th-text-2">{t("subtitle")}</p>
+    <ThemeProvider defaultTheme="dark">
+      <div className="min-h-screen flex" style={{ background: "var(--cat-bg)" }}>
+
+        {/* ── Left panel ──────────────────────────── */}
+        <div className="hidden lg:flex flex-col w-[38%] relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, var(--cat-banner-from), var(--cat-banner-via), var(--cat-banner-to))" }}>
+
+          {/* Glow orbs */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-[-15%] left-[-10%] w-[500px] h-[500px] rounded-full opacity-[0.08]"
+              style={{ background: "radial-gradient(circle, var(--cat-accent), transparent 70%)" }} />
+            <div className="absolute bottom-[-20%] right-[-5%] w-[400px] h-[400px] rounded-full opacity-[0.05]"
+              style={{ background: "radial-gradient(circle, #8B5CF6, transparent 70%)" }} />
+          </div>
+
+          {/* Logo */}
+          <div className="relative z-10 p-10">
+            <Link href="/" className="flex items-center gap-3">
+              <img src="/logo.png" alt="Goality" className="w-10 h-10 rounded-xl object-contain"
+                style={{ boxShadow: "0 4px 20px var(--cat-accent-glow)" }} />
+              <div>
+                <span className="font-black text-[18px] tracking-tight" style={{ color: "var(--cat-text)" }}>Goality</span>
+                <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest"
+                  style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>TMC</span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Center content */}
+          <div className="relative z-10 flex-1 flex flex-col justify-center px-10 pb-10">
+            <div className="mb-8">
+              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-6 border"
+                style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)" }}>
+                <Crown className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
+                <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--cat-accent)" }}>
+                  Club Registration
+                </span>
+              </div>
+              <h1 className="text-3xl xl:text-4xl font-black tracking-tight leading-[1.1] mb-4"
+                style={{ color: "var(--cat-text)" }}>
+                {tcr("heroTitle")}
+              </h1>
+              <p className="text-[14px] leading-relaxed" style={{ color: "var(--cat-text-secondary)" }}>
+                {tcr("heroSubtitle")}
+              </p>
+            </div>
+
+            {/* Step indicators */}
+            <ul className="space-y-3">
+              {STEPS.map((s, i) => {
+                const isActive = i === stepIndex;
+                const isDone = i < stepIndex;
+                return (
+                  <li key={s} className="flex items-center gap-3">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[13px] font-bold transition-all"
+                      style={
+                        isDone
+                          ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" }
+                          : isActive
+                          ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)", boxShadow: "0 0 0 3px var(--cat-accent-glow)" }
+                          : { background: "var(--cat-badge-open-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-card-border)" }
+                      }
+                    >
+                      {isDone ? <Check className="w-4 h-4" /> : i + 1}
+                    </div>
+                    <span
+                      className="text-[13px] font-medium"
+                      style={{ color: isActive ? "var(--cat-text)" : isDone ? "var(--cat-text-secondary)" : "var(--cat-text-muted)" }}
+                    >
+                      {stepLabels[i]}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* Bottom quote */}
+          <div className="relative z-10 mx-8 mb-8 p-5 rounded-2xl border"
+            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+            <p className="text-[13px] italic mb-2" style={{ color: "var(--cat-text-secondary)" }}>
+              "{tcr("heroQuote")}"
+            </p>
+            <p className="text-[11px] font-semibold" style={{ color: "var(--cat-text-muted)" }}>
+              {tcr("heroQuoteAuthor")}
+            </p>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-2xl mx-auto px-6 py-6">
-        {/* Step indicators */}
-        <div className="flex items-center justify-between mb-8">
-          {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all",
-                i < stepIndex ? "bg-success text-white" :
-                i === stepIndex ? "bg-navy text-white shadow-md" :
-                "bg-border th-text-2"
-              )}>
-                {i < stepIndex ? <Check className="w-4 h-4" /> : i + 1}
-              </div>
-              <span className={cn(
-                "text-sm font-medium hidden sm:inline",
-                i === stepIndex ? "text-navy" : "th-text-2"
-              )}>
-                {t(`steps.${s}`)}
-              </span>
-              {i < STEPS.length - 1 && (
-                <div className={cn("w-6 h-0.5 mx-1", i < stepIndex ? "bg-success" : "bg-border")} />
-              )}
+        {/* ── Right panel (form) ─────────────────── */}
+        <div className="flex-1 flex flex-col overflow-y-auto">
+
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-6 py-4 lg:px-10">
+            <Link href="/" className="flex items-center gap-2 lg:hidden">
+              <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain" />
+              <span className="font-bold text-[15px]" style={{ color: "var(--cat-text)" }}>Goality TMC</span>
+            </Link>
+            <div className="ml-auto flex items-center gap-3">
+              <LanguageSwitcher variant="light" />
+              <Link href="/login"
+                className="hidden sm:inline-flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                style={{ color: "var(--cat-text-secondary)", borderColor: "var(--cat-card-border)" }}>
+                Sign in
+              </Link>
             </div>
-          ))}
-        </div>
+          </div>
 
-        {error && <Alert variant="error" className="mb-4">{error}</Alert>}
-
-        <Card className="p-8">
-          {/* ── STEP 1: Club ── */}
-          {step === "club" && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-xl font-bold th-text">{t("club.title")}</h2>
-                <p className="text-sm th-text-2 mt-1">{t("club.description")}</p>
-              </div>
-
-              <Input id="clubName" label={t("club.name")} value={clubName}
-                onChange={(e) => setClubName(e.target.value)} placeholder={t("club.namePlaceholder")} required />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <CountrySelect
-                  label={t("club.country")}
-                  value={country}
-                  onChange={setCountry}
-                  required
-                />
-                <Input id="city" label={t("club.city")} value={city}
-                  onChange={(e) => setCity(e.target.value)} placeholder={t("club.cityPlaceholder")} />
-              </div>
-
-              {/* Logo upload */}
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium th-text">
-                  {t("club.badge")} <span className="th-text-2 font-normal">{t("club.badgeOptional")}</span>
-                </label>
-                <div
-                  onClick={() => logoInputRef.current?.click()}
-                  className="border-2 border-dashed th-border rounded-xl p-6 text-center hover:border-navy/40 hover:bg-surface/50 transition-colors cursor-pointer"
-                >
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Logo preview" className="w-20 h-20 object-contain mx-auto rounded-lg" />
-                  ) : (
-                    <>
-                      <ImageIcon className="w-8 h-8 text-text-secondary/40 mx-auto mb-2" />
-                      <p className="text-sm th-text-2">
-                        <span className="text-navy font-medium">{t("club.uploadLogo")}</span> {t("club.dragDrop")}
-                      </p>
-                      <p className="text-xs th-text-2 mt-1">{t("club.fileTypes")}</p>
-                    </>
+          {/* Mobile step indicators */}
+          <div className="lg:hidden px-6 pb-4">
+            <div className="flex items-center gap-2">
+              {STEPS.map((s, i) => (
+                <div key={s} className="flex items-center gap-1">
+                  <div className={cn(
+                    "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all",
                   )}
-                  {logoFile && <p className="text-xs text-navy mt-2 font-medium">{logoFile.name}</p>}
+                    style={
+                      i < stepIndex
+                        ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" }
+                        : i === stepIndex
+                        ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" }
+                        : { background: "var(--cat-badge-open-bg)", color: "var(--cat-text-muted)" }
+                    }
+                  >
+                    {i < stepIndex ? <Check className="w-3 h-3" /> : i + 1}
+                  </div>
+                  {i < STEPS.length - 1 && (
+                    <div className="w-6 h-0.5" style={{ background: i < stepIndex ? "var(--cat-accent)" : "var(--cat-card-border)" }} />
+                  )}
                 </div>
-                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
-              </div>
+              ))}
             </div>
-          )}
+          </div>
 
-          {/* ── STEP 2: Teams ── */}
-          {step === "teams" && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-xl font-bold th-text">{t("teams.title")}</h2>
-                <p className="text-sm th-text-2 mt-1">{t("teams.description")}</p>
-              </div>
+          {/* Form area */}
+          <div className="flex-1 px-6 py-4 lg:px-12 lg:py-8 max-w-2xl w-full mx-auto">
 
-              <div className="space-y-4">
-                {teamsList.map((team, i) => (
-                  <div key={i} className="rounded-xl border th-border p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-navy">{t("teams.teamLabel", { n: i + 1 })}</p>
-                      {teamsList.length > 1 && (
-                        <button onClick={() => removeTeam(i)} className="th-text-2 hover:text-error cursor-pointer">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                    <Input
-                      id={`teamName-${i}`}
-                      label={t("teams.teamName")}
-                      value={team.name}
-                      onChange={(e) => updateTeam(i, "name", e.target.value)}
-                      placeholder={t("teams.teamNamePlaceholder", { club: clubName || "FC Club" })}
+            {error && <Alert variant="error" className="mb-4">{error}</Alert>}
+
+            <Card className="p-8">
+              {/* ── STEP 1: Club ── */}
+              {step === "club" && (
+                <div className="space-y-5">
+                  <div>
+                    <h2 className="text-xl font-bold th-text">{t("club.title")}</h2>
+                    <p className="text-sm th-text-2 mt-1">{t("club.description")}</p>
+                  </div>
+
+                  <Input id="clubName" label={t("club.name")} value={clubName}
+                    onChange={(e) => setClubName(e.target.value)} placeholder={t("club.namePlaceholder")} required />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <CountrySelect
+                      label={t("club.country")}
+                      value={country}
+                      onChange={setCountry}
                       required
                     />
-                    <Select
-                      id={`classId-${i}`}
-                      label={t("teams.ageClass")}
-                      value={team.classId}
-                      onChange={(e) => updateTeam(i, "classId", e.target.value)}
-                      options={classOptions}
-                      placeholder={t("teams.selectAgeClass")}
-                    />
+                    <Input id="city" label={t("club.city")} value={city}
+                      onChange={(e) => setCity(e.target.value)} placeholder={t("club.cityPlaceholder")} />
                   </div>
-                ))}
-              </div>
 
-              <Button variant="ghost" onClick={addTeam} className="w-full border border-dashed th-border">
-                <Plus className="w-4 h-4" />
-                {t("teams.addAnother")}
-              </Button>
-            </div>
-          )}
-
-          {/* ── STEP 3: Contact ── */}
-          {step === "contact" && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-xl font-bold th-text">{t("contact.title")}</h2>
-                <p className="text-sm th-text-2 mt-1">{t("contact.description")}</p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input id="contactName" label={t("contact.fullName")} value={contactName}
-                  onChange={(e) => setContactName(e.target.value)} required />
-                <Select id="contactRole" label={t("contact.role")} value={contactRole}
-                  onChange={(e) => setContactRole(e.target.value)}
-                  options={contactRoles} placeholder={t("contact.selectRole")} />
-              </div>
-
-              <Input id="contactEmail" label={t("contact.email")} type="email" value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)} required />
-
-              <Input id="contactPhone" label={t("contact.phone")} type="tel" value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)} />
-
-              <div className="border-t th-border pt-4 space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-wider th-text-2">
-                  {t("contact.passwordSection")}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input id="password" label={t("contact.password")} type="password" value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t("contact.passwordPlaceholder")} required />
-                  <Input id="passwordConfirm" label={t("contact.confirmPassword")} type="password" value={passwordConfirm}
-                    onChange={(e) => setPasswordConfirm(e.target.value)} required />
+                  {/* Logo upload */}
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium th-text">
+                      {t("club.badge")} <span className="th-text-2 font-normal">{t("club.badgeOptional")}</span>
+                    </label>
+                    <div
+                      onClick={() => logoInputRef.current?.click()}
+                      className="border-2 border-dashed th-border rounded-xl p-6 text-center hover:border-navy/40 hover:bg-surface/50 transition-colors cursor-pointer"
+                    >
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="Logo preview" className="w-20 h-20 object-contain mx-auto rounded-lg" />
+                      ) : (
+                        <>
+                          <ImageIcon className="w-8 h-8 text-text-secondary/40 mx-auto mb-2" />
+                          <p className="text-sm th-text-2">
+                            <span className="text-navy font-medium">{t("club.uploadLogo")}</span> {t("club.dragDrop")}
+                          </p>
+                          <p className="text-xs th-text-2 mt-1">{t("club.fileTypes")}</p>
+                        </>
+                      )}
+                      {logoFile && <p className="text-xs text-navy mt-2 font-medium">{logoFile.name}</p>}
+                    </div>
+                    <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* ── STEP 4: Review ── */}
-          {step === "review" && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-xl font-bold th-text">{t("review.title")}</h2>
-                <p className="text-sm th-text-2 mt-1">{t("review.description")}</p>
-              </div>
+              {/* ── STEP 2: Teams ── */}
+              {step === "teams" && (
+                <div className="space-y-5">
+                  <div>
+                    <h2 className="text-xl font-bold th-text">{t("teams.title")}</h2>
+                    <p className="text-sm th-text-2 mt-1">{t("teams.description")}</p>
+                  </div>
 
-              <div className="space-y-3">
-                {/* Club */}
-                <div className="rounded-xl th-bg p-4 space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider th-text-2">{t("review.club")}</p>
-                  <div className="flex items-center gap-3">
-                    {logoPreview && (
-                      <img src={logoPreview} alt="badge" className="w-10 h-10 object-contain rounded" />
-                    )}
-                    <div>
-                      <p className="text-sm font-medium">{clubName}</p>
-                      <p className="text-sm th-text-2">{city}{city && country ? ", " : ""}{country}</p>
+                  <div className="space-y-4">
+                    {teamsList.map((team, i) => (
+                      <div key={i} className="rounded-xl border th-border p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-navy">{t("teams.teamLabel", { n: i + 1 })}</p>
+                          {teamsList.length > 1 && (
+                            <button onClick={() => removeTeam(i)} className="th-text-2 hover:text-error cursor-pointer">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <Input
+                          id={`teamName-${i}`}
+                          label={t("teams.teamName")}
+                          value={team.name}
+                          onChange={(e) => updateTeam(i, "name", e.target.value)}
+                          placeholder={t("teams.teamNamePlaceholder", { club: clubName || "FC Club" })}
+                          required
+                        />
+                        <Select
+                          id={`classId-${i}`}
+                          label={t("teams.ageClass")}
+                          value={team.classId}
+                          onChange={(e) => updateTeam(i, "classId", e.target.value)}
+                          options={classOptions}
+                          placeholder={t("teams.selectAgeClass")}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button variant="ghost" onClick={addTeam} className="w-full border border-dashed th-border">
+                    <Plus className="w-4 h-4" />
+                    {t("teams.addAnother")}
+                  </Button>
+                </div>
+              )}
+
+              {/* ── STEP 3: Contact ── */}
+              {step === "contact" && (
+                <div className="space-y-5">
+                  <div>
+                    <h2 className="text-xl font-bold th-text">{t("contact.title")}</h2>
+                    <p className="text-sm th-text-2 mt-1">{t("contact.description")}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input id="contactName" label={t("contact.fullName")} value={contactName}
+                      onChange={(e) => setContactName(e.target.value)} required />
+                    <Select id="contactRole" label={t("contact.role")} value={contactRole}
+                      onChange={(e) => setContactRole(e.target.value)}
+                      options={contactRoles} placeholder={t("contact.selectRole")} />
+                  </div>
+
+                  <Input id="contactEmail" label={t("contact.email")} type="email" value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)} required />
+
+                  <Input id="contactPhone" label={t("contact.phone")} type="tel" value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)} />
+
+                  <div className="border-t th-border pt-4 space-y-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider th-text-2">
+                      {t("contact.passwordSection")}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Input id="password" label={t("contact.password")} type="password" value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={t("contact.passwordPlaceholder")} required />
+                      <Input id="passwordConfirm" label={t("contact.confirmPassword")} type="password" value={passwordConfirm}
+                        onChange={(e) => setPasswordConfirm(e.target.value)} required />
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Teams */}
-                <div className="rounded-xl th-bg p-4 space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider th-text-2">
-                    {t("review.teams")} ({teamsList.length})
-                  </p>
-                  {teamsList.map((tm, i) => (
-                    <div key={i} className="flex items-center justify-between py-1.5 border-b th-border last:border-0">
-                      <p className="text-sm font-medium">{tm.name}</p>
-                      <p className="text-sm th-text-2">{getClassName(tm.classId)}</p>
+              {/* ── STEP 4: Review ── */}
+              {step === "review" && (
+                <div className="space-y-5">
+                  <div>
+                    <h2 className="text-xl font-bold th-text">{t("review.title")}</h2>
+                    <p className="text-sm th-text-2 mt-1">{t("review.description")}</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Club */}
+                    <div className="rounded-xl th-bg p-4 space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider th-text-2">{t("review.club")}</p>
+                      <div className="flex items-center gap-3">
+                        {logoPreview && (
+                          <img src={logoPreview} alt="badge" className="w-10 h-10 object-contain rounded" />
+                        )}
+                        <div>
+                          <p className="text-sm font-medium">{clubName}</p>
+                          <p className="text-sm th-text-2">{city}{city && country ? ", " : ""}{country}</p>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
 
-                {/* Contact */}
-                <div className="rounded-xl th-bg p-4 space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider th-text-2">{t("review.contact")}</p>
-                  <p className="text-sm font-medium">{contactName}
-                    {contactRole && <span className="th-text-2 font-normal ml-2">
-                      · {contactRoles.find(r => r.value === contactRole)?.label}
-                    </span>}
-                  </p>
-                  <p className="text-sm th-text-2">{contactEmail}</p>
-                  {contactPhone && <p className="text-sm th-text-2">{contactPhone}</p>}
+                    {/* Teams */}
+                    <div className="rounded-xl th-bg p-4 space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider th-text-2">
+                        {t("review.teams")} ({teamsList.length})
+                      </p>
+                      {teamsList.map((tm, i) => (
+                        <div key={i} className="flex items-center justify-between py-1.5 border-b th-border last:border-0">
+                          <p className="text-sm font-medium">{tm.name}</p>
+                          <p className="text-sm th-text-2">{getClassName(tm.classId)}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Contact */}
+                    <div className="rounded-xl th-bg p-4 space-y-1">
+                      <p className="text-xs font-semibold uppercase tracking-wider th-text-2">{t("review.contact")}</p>
+                      <p className="text-sm font-medium">{contactName}
+                        {contactRole && <span className="th-text-2 font-normal ml-2">
+                          · {contactRoles.find(r => r.value === contactRole)?.label}
+                        </span>}
+                      </p>
+                      <p className="text-sm th-text-2">{contactEmail}</p>
+                      {contactPhone && <p className="text-sm th-text-2">{contactPhone}</p>}
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between mt-8 pt-6 border-t th-border">
+                <Button variant="ghost" onClick={prev} disabled={isFirst}>
+                  <ChevronLeft className="w-4 h-4" /> {tc("back")}
+                </Button>
+
+                {isLast ? (
+                  <Button variant="gold" size="lg" disabled={submitting} onClick={handleSubmit}>
+                    {submitting ? t("submitting") : t("submit")}
+                  </Button>
+                ) : (
+                  <Button onClick={next}>
+                    {t("next")} <ChevronRight className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
+            </Card>
+
+            {/* Back to home */}
+            <div className="mt-6 text-center">
+              <Link href="/" className="inline-flex items-center gap-1.5 text-[12px] hover:opacity-80 transition-opacity"
+                style={{ color: "var(--cat-text-muted)" }}>
+                <ArrowLeft className="w-3 h-3" /> Back to home
+              </Link>
             </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t th-border">
-            <Button variant="ghost" onClick={prev} disabled={isFirst}>
-              <ChevronLeft className="w-4 h-4" /> {tc("back")}
-            </Button>
-
-            {isLast ? (
-              <Button variant="gold" size="lg" disabled={submitting} onClick={handleSubmit}>
-                {submitting ? t("submitting") : t("submit")}
-              </Button>
-            ) : (
-              <Button onClick={next}>
-                {t("next")} <ChevronRight className="w-4 h-4" />
-              </Button>
-            )}
           </div>
-        </Card>
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }

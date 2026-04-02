@@ -264,6 +264,16 @@ export default function LoginPage() {
                 </p>
               )}
 
+              {mode === "organizer" && (
+                <p className="mt-6 text-center text-[13px]" style={{ color: "var(--cat-text-muted)" }}>
+                  {t("noOrgAccount")}{" "}
+                  <Link href="/onboarding" className="font-semibold hover:opacity-80 transition-opacity"
+                    style={{ color: "var(--cat-accent)" }}>
+                    {t("registerOrg")}
+                  </Link>
+                </p>
+              )}
+
               {/* Back to home */}
               <div className="mt-8 text-center">
                 <Link href="/" className="inline-flex items-center gap-1.5 text-[12px] hover:opacity-80 transition-opacity"

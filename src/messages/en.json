@@ -64,7 +64,9 @@
     "loginHeroBullet3": "Real-time payment tracking",
     "loginHeroQuote": "Setup took 20 minutes. Clubs loved the self-service registration.",
     "loginHeroQuoteAuthor": "Kings Cup organizer — Tallinn, Estonia",
-    "superAdminLink": "Super admin"
+    "superAdminLink": "Super admin",
+    "noOrgAccount": "Want to organize a tournament?",
+    "registerOrg": "Create your organization"
   },
   "nav": {
     "overview": "Overview",
@@ -853,7 +855,16 @@
       "passwordTooShort": "Password must be at least 6 characters",
       "slugTaken": "This organization name is already taken",
       "emailExists": "An account with this email already exists"
-    }
+    },
+    "heroTitle": "Run your own\ntournaments.",
+    "heroSubtitle": "Create your organization and start managing tournaments, clubs and payments — all in one platform.",
+    "heroBullet1": "Create and manage multiple tournaments",
+    "heroBullet2": "Club self-service registration portal",
+    "heroBullet3": "Real-time payments and team control",
+    "heroQuote": "We set up our first tournament in 30 minutes. Clubs loved the self-service registration.",
+    "heroQuoteAuthor": "Kings Cup organizer — Tallinn, Estonia",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign in"
   },
   "invite": {
     "loading": "Loading...",
@@ -870,5 +881,15 @@
     "passwordTooShort": "Password must be at least 6 characters.",
     "createAccount": "Create Account & Sign In",
     "acceptError": "Failed to create account. The link may have already been used."
+  },
+  "clubRegister": {
+    "heroTitle": "Register your club",
+    "heroSubtitle": "Join the tournament in a few simple steps.",
+    "step1": "Club information",
+    "step2": "Teams",
+    "step3": "Contact person",
+    "step4": "Review & Submit",
+    "heroQuote": "Simple and fast. We registered in 5 minutes.",
+    "heroQuoteAuthor": "FC Tallinn representative"
   }
 }

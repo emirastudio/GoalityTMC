@@ -64,7 +64,9 @@
     "loginHeroBullet3": "Reaalajas maksete jälgimine",
     "loginHeroQuote": "Seadistamine võttis 20 minutit. Klubid armastasid iseteeninduslikku registreerimist.",
     "loginHeroQuoteAuthor": "Kings Cup korraldaja — Tallinn, Eesti",
-    "superAdminLink": "Superadmin"
+    "superAdminLink": "Superadmin",
+    "noOrgAccount": "Soovite turniiri korraldada?",
+    "registerOrg": "Looge organisatsioon"
   },
   "nav": {
     "overview": "Ülevaade",
@@ -809,7 +811,16 @@
       "passwordTooShort": "Parool peab olema vähemalt 6 tähemärki",
       "slugTaken": "See organisatsiooni nimi on juba võetud",
       "emailExists": "Selle e-postiga konto on juba olemas"
-    }
+    },
+    "heroTitle": "Korraldage oma\nturniirid.",
+    "heroSubtitle": "Looge organisatsioon ja hallake turniire, klubisid ja makseid — kõik ühes kohas.",
+    "heroBullet1": "Mitme turniiri loomine ja haldamine",
+    "heroBullet2": "Klubide iseteenindusregistreerimine",
+    "heroBullet3": "Reaalajas maksed ja meeskonna haldamine",
+    "heroQuote": "Esimese turniiri seadsime üles 30 minutiga. Klubid armasid iseteenindust.",
+    "heroQuoteAuthor": "Kings Cup korraldaja — Tallinn, Eesti",
+    "alreadyHaveAccount": "Konto on juba olemas?",
+    "signIn": "Logi sisse"
   },
   "invite": {
     "loading": "Laadimine...",
@@ -826,5 +837,15 @@
     "passwordTooShort": "Parool peab olema vähemalt 6 tähemärki.",
     "createAccount": "Loo konto ja logi sisse",
     "acceptError": "Konto loomine ebaõnnestus. Link võib olla juba kasutatud."
+  },
+  "clubRegister": {
+    "heroTitle": "Registreerige klubi",
+    "heroSubtitle": "Liituge turniiri mõne lihtsa sammuga.",
+    "step1": "Klubi andmed",
+    "step2": "Meeskonnad",
+    "step3": "Kontaktisik",
+    "step4": "Ülevaatus ja esitamine",
+    "heroQuote": "Lihtne ja kiire. Registreerisime 5 minutiga.",
+    "heroQuoteAuthor": "FC Tallinn esindaja"
   }
 }

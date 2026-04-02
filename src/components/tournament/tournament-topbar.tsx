@@ -10,9 +10,8 @@ export function TournamentTopbar() {
       style={{ background: "var(--cat-header-bg)", borderBottom: "1px solid var(--cat-header-border)", backdropFilter: "blur(12px)" }}>
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 shrink-0">
-        <img src="/logo.png" alt="Goality" className="w-7 h-7 rounded-xl object-contain" />
-        <span className="font-black text-[14px] tracking-tight hidden sm:block" style={{ color: "var(--cat-text)" }}>Goality</span>
-        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden sm:block" style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>TMC</span>
+        <img src="/logo.png" alt="Goality" className="w-6 h-6 object-contain" />
+        <span className="font-black text-[14px] tracking-tight hidden sm:block" style={{ color: "var(--cat-text)" }}>Goality TMC</span>
       </Link>
 
       {/* Nav */}
