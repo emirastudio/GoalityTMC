@@ -82,7 +82,7 @@ export default function TravelPage() {
         <form onSubmit={handleSubmit} className="mt-6 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <h3 className="font-semibold text-navy border-b border-border pb-2">{t("arrival")}</h3>
+              <h3 className="font-semibold text-navy border-b th-border pb-2">{t("arrival")}</h3>
               <Select
                 id="arrivalType" label={t("transportType")}
                 value={form.arrivalType}
@@ -108,7 +108,7 @@ export default function TravelPage() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold text-navy border-b border-border pb-2">{t("departure")}</h3>
+              <h3 className="font-semibold text-navy border-b th-border pb-2">{t("departure")}</h3>
               <Select
                 id="departureType" label={t("transportType")}
                 value={form.departureType}

@@ -185,14 +185,14 @@ function StepIndicator({
             ? "bg-success text-white"
             : active
             ? "bg-navy text-white"
-            : "bg-surface text-text-secondary border border-border"
+            : "th-bg th-text-2 border th-border"
         }`}
       >
         {done ? <CheckCircle className="w-4 h-4" /> : stepNum}
       </div>
       <span
         className={`text-sm font-medium ${
-          active ? "text-navy" : done ? "text-success" : "text-text-secondary"
+          active ? "text-navy" : done ? "text-success" : "th-text-2"
         }`}
       >
         {label}
@@ -216,12 +216,12 @@ function QtyInput({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <label className="text-sm text-text-secondary">{label}</label>
+      <label className="text-sm th-text-2">{label}</label>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
-          className="w-8 h-8 rounded-lg border border-border bg-surface text-text-secondary hover:bg-navy hover:text-white hover:border-navy transition-colors flex items-center justify-center text-lg leading-none"
+          className="w-8 h-8 rounded-lg border th-border th-bg th-text-2 hover:bg-navy hover:text-white hover:border-navy transition-colors flex items-center justify-center text-lg leading-none"
         >
           −
         </button>
@@ -230,12 +230,12 @@ function QtyInput({
           min={min}
           value={value}
           onChange={(e) => onChange(Math.max(min, parseInt(e.target.value) || 0))}
-          className="w-16 text-center rounded-lg border border-border bg-white px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-navy/20"
+          className="w-16 text-center rounded-lg border th-border th-card px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-navy/20"
         />
         <button
           type="button"
           onClick={() => onChange(value + 1)}
-          className="w-8 h-8 rounded-lg border border-border bg-surface text-text-secondary hover:bg-navy hover:text-white hover:border-navy transition-colors flex items-center justify-center text-lg leading-none"
+          className="w-8 h-8 rounded-lg border th-border th-bg th-text-2 hover:bg-navy hover:text-white hover:border-navy transition-colors flex items-center justify-center text-lg leading-none"
         >
           +
         </button>
@@ -512,7 +512,7 @@ export default function BookingPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-48 text-text-secondary text-sm">
+      <div className="flex items-center justify-center h-48 th-text-2 text-sm">
         {tc("loading")}
       </div>
     );
@@ -525,14 +525,14 @@ export default function BookingPage() {
       <div className="max-w-2xl">
         <Card>
           <div className="flex flex-col items-center text-center py-8 gap-4">
-            <div className="w-14 h-14 rounded-full bg-surface flex items-center justify-center">
-              <Clock className="w-7 h-7 text-text-secondary" />
+            <div className="w-14 h-14 rounded-full th-bg flex items-center justify-center">
+              <Clock className="w-7 h-7 th-text-2" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-text-primary mb-1">
+              <h3 className="text-lg font-semibold th-text mb-1">
                 {t("pricingNotAssigned")}
               </h3>
-              <p className="text-sm text-text-secondary max-w-sm">{t("pricingNotAssignedDesc")}</p>
+              <p className="text-sm th-text-2 max-w-sm">{t("pricingNotAssignedDesc")}</p>
             </div>
           </div>
         </Card>
@@ -581,10 +581,10 @@ export default function BookingPage() {
             {data.registration ? (
               <div className="flex items-center justify-between rounded-xl border border-navy/20 bg-navy/5 px-5 py-4">
                 <div>
-                  <p className="font-semibold text-text-primary">
+                  <p className="font-semibold th-text">
                     {getLocalName(data.registration, locale)}
                   </p>
-                  <p className="text-xs text-text-secondary mt-0.5">{t("included")}</p>
+                  <p className="text-xs th-text-2 mt-0.5">{t("included")}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-navy">
@@ -597,11 +597,11 @@ export default function BookingPage() {
                       )
                     )}
                   </p>
-                  <p className="text-xs text-text-secondary">× 1</p>
+                  <p className="text-xs th-text-2">× 1</p>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-text-secondary">{t("noOrders")}</p>
+              <p className="text-sm th-text-2">{t("noOrders")}</p>
             )}
           </StepCard>
 
@@ -624,7 +624,7 @@ export default function BookingPage() {
               </div>
             )}
             {data.accommodation.length === 0 ? (
-              <p className="text-sm text-text-secondary">{t("noAccommodationOptions")}</p>
+              <p className="text-sm th-text-2">{t("noAccommodationOptions")}</p>
             ) : (
               <div className="space-y-3">
                 {data.accommodation
@@ -664,7 +664,7 @@ export default function BookingPage() {
                         className={`rounded-xl border-2 cursor-pointer transition-all ${
                           selected
                             ? "border-navy bg-navy/5 shadow-sm"
-                            : "border-border bg-white hover:border-navy/40"
+                            : "th-border th-card hover:border-navy/40"
                         }`}
                       >
                         <div className="p-4">
@@ -672,7 +672,7 @@ export default function BookingPage() {
                             <div className="flex items-start gap-3">
                               <div
                                 className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                                  selected ? "border-navy bg-navy" : "border-border"
+                                  selected ? "border-navy bg-navy" : "th-border"
                                 }`}
                               >
                                 {selected && (
@@ -680,11 +680,11 @@ export default function BookingPage() {
                                 )}
                               </div>
                               <div>
-                                <p className="font-semibold text-text-primary">
+                                <p className="font-semibold th-text">
                                   {getLocalName(opt, locale)}
                                 </p>
                                 {(opt.checkIn || opt.checkOut) && (
-                                  <p className="text-xs text-text-secondary mt-0.5">
+                                  <p className="text-xs th-text-2 mt-0.5">
                                     {t("checkIn")}: {formatDate(opt.checkIn)} — {t("checkOut")}:{" "}
                                     {formatDate(opt.checkOut)}
                                   </p>
@@ -692,14 +692,14 @@ export default function BookingPage() {
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="text-xs text-text-secondary">
+                              <p className="text-xs th-text-2">
                                 {fmtPrice(playerPrice)} / {t("players").toLowerCase()}
                               </p>
-                              <p className="text-xs text-text-secondary">
+                              <p className="text-xs th-text-2">
                                 {fmtPrice(staffPrice)} / {t("staff").toLowerCase()}
                               </p>
                               {hasAccomp && (
-                                <p className="text-xs text-text-secondary">
+                                <p className="text-xs th-text-2">
                                   {fmtPrice(accompPrice)} / {t("accompanying").toLowerCase()}
                                 </p>
                               )}
@@ -716,7 +716,7 @@ export default function BookingPage() {
                                   </Badge>
                                 ) : null}
                                 {mealNote && (
-                                  <span className="text-xs text-text-secondary">{mealNote}</span>
+                                  <span className="text-xs th-text-2">{mealNote}</span>
                                 )}
                               </div>
                             ) : null;
@@ -753,8 +753,8 @@ export default function BookingPage() {
                               />
                             )}
                             {accomTotal > 0 && (
-                              <div className="pt-2 border-t border-border flex justify-between text-sm font-medium">
-                                <span className="text-text-secondary">{t("subtotal")}</span>
+                              <div className="pt-2 border-t th-border flex justify-between text-sm font-medium">
+                                <span className="th-text-2">{t("subtotal")}</span>
                                 <span className="text-navy">{fmtPrice(accomTotal)}</span>
                               </div>
                             )}
@@ -770,7 +770,7 @@ export default function BookingPage() {
           {/* ─── Step 3: Extra Meals ──────────────────────────────────── */}
           <StepCard stepNum={3} title={t("extraMeals")} subtotal={mealTotal}>
             {data.meals.length === 0 ? (
-              <p className="text-sm text-text-secondary">{t("noOrders")}</p>
+              <p className="text-sm th-text-2">{t("noOrders")}</p>
             ) : (
               <div className="space-y-3">
                 {data.meals
@@ -819,7 +819,7 @@ export default function BookingPage() {
                         className={`rounded-xl border-2 transition-all ${
                           checked
                             ? "border-navy bg-navy/5"
-                            : "border-border bg-white hover:border-navy/30"
+                            : "th-border th-card hover:border-navy/30"
                         }`}
                       >
                         <div
@@ -829,7 +829,7 @@ export default function BookingPage() {
                           <div className="flex items-start gap-3">
                             <div
                               className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${
-                                checked ? "border-navy bg-navy" : "border-border"
+                                checked ? "border-navy bg-navy" : "th-border"
                               }`}
                             >
                               {checked && (
@@ -850,7 +850,7 @@ export default function BookingPage() {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-semibold text-text-primary">
+                                <p className="font-semibold th-text">
                                   {getLocalName(opt, locale)}
                                 </p>
                                 {opt.perDay && (
@@ -858,14 +858,14 @@ export default function BookingPage() {
                                 )}
                               </div>
                               {desc && (
-                                <p className="text-xs text-text-secondary mt-0.5">{desc}</p>
+                                <p className="text-xs th-text-2 mt-0.5">{desc}</p>
                               )}
                             </div>
                             <div className="text-right shrink-0">
                               <p className="text-sm font-semibold text-navy">
                                 {fmtPrice(price)}
                               </p>
-                              <p className="text-xs text-text-secondary">
+                              <p className="text-xs th-text-2">
                                 {opt.perDay ? t("perPersonPerDay") : t("perPerson")}
                               </p>
                             </div>
@@ -892,8 +892,8 @@ export default function BookingPage() {
                               />
                             )}
                             {mealSubtotal > 0 && (
-                              <div className="pt-2 border-t border-border flex justify-between text-sm font-medium">
-                                <span className="text-text-secondary">{t("subtotal")}</span>
+                              <div className="pt-2 border-t th-border flex justify-between text-sm font-medium">
+                                <span className="th-text-2">{t("subtotal")}</span>
                                 <span className="text-navy">{fmtPrice(mealSubtotal)}</span>
                               </div>
                             )}
@@ -909,7 +909,7 @@ export default function BookingPage() {
           {/* ─── Step 4: Transfer ─────────────────────────────────────── */}
           <StepCard stepNum={4} title={t("selectTransfer")} subtotal={xferTotal}>
             {data.transfers.length === 0 ? (
-              <p className="text-sm text-text-secondary">{t("noTransferOptions")}</p>
+              <p className="text-sm th-text-2">{t("noTransferOptions")}</p>
             ) : (
               <div className="space-y-3">
                 {data.transfers
@@ -937,14 +937,14 @@ export default function BookingPage() {
                         className={`rounded-xl border-2 cursor-pointer transition-all ${
                           selected
                             ? "border-navy bg-navy/5 shadow-sm"
-                            : "border-border bg-white hover:border-navy/40"
+                            : "th-border th-card hover:border-navy/40"
                         }`}
                       >
                         <div className="p-4">
                           <div className="flex items-start gap-3">
                             <div
                               className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                                selected ? "border-navy bg-navy" : "border-border"
+                                selected ? "border-navy bg-navy" : "th-border"
                               }`}
                             >
                               {selected && (
@@ -953,7 +953,7 @@ export default function BookingPage() {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-semibold text-text-primary">
+                                <p className="font-semibold th-text">
                                   {getLocalName(opt, locale)}
                                 </p>
                                 {isFree && (
@@ -961,7 +961,7 @@ export default function BookingPage() {
                                 )}
                               </div>
                               {desc && (
-                                <p className="text-xs text-text-secondary mt-0.5">{desc}</p>
+                                <p className="text-xs th-text-2 mt-0.5">{desc}</p>
                               )}
                             </div>
                             {!isFree && (
@@ -969,7 +969,7 @@ export default function BookingPage() {
                                 <p className="text-sm font-semibold text-navy">
                                   {fmtPrice(price)}
                                 </p>
-                                <p className="text-xs text-text-secondary">{t("perTeam")}</p>
+                                <p className="text-xs th-text-2">{t("perTeam")}</p>
                               </div>
                             )}
                           </div>
@@ -1032,19 +1032,19 @@ function StepCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border-2 border-border bg-white shadow-sm overflow-hidden">
+    <div className="rounded-xl border-2 th-border th-card shadow-sm overflow-hidden">
       {/* Step header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-surface/50">
+      <div className="flex items-center gap-3 px-5 py-4 border-b th-border bg-surface/50">
         <div className="w-7 h-7 rounded-full bg-navy text-white flex items-center justify-center text-xs font-bold shrink-0">
           {stepNum}
         </div>
-        <h3 className="font-semibold text-text-primary flex-1">{title}</h3>
+        <h3 className="font-semibold th-text flex-1">{title}</h3>
         {!hideBadge && subtotal > 0 && (
           <Badge variant="info">
             €{subtotal.toFixed(2)}
           </Badge>
         )}
-        <ChevronRight className="w-4 h-4 text-text-secondary" />
+        <ChevronRight className="w-4 h-4 th-text-2" />
       </div>
 
       {/* Content */}
@@ -1166,7 +1166,7 @@ function SummaryTable({
 
   if (rows.length === 0) {
     return (
-      <p className="text-sm text-text-secondary text-center py-4">{t("noOrders")}</p>
+      <p className="text-sm th-text-2 text-center py-4">{t("noOrders")}</p>
     );
   }
 
@@ -1174,28 +1174,28 @@ function SummaryTable({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border">
-            <th className="pb-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wide">
+          <tr className="border-b th-border">
+            <th className="pb-3 text-left text-xs font-medium th-text-2 uppercase tracking-wide">
               {t("item")}
             </th>
-            <th className="pb-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wide">
+            <th className="pb-3 text-center text-xs font-medium th-text-2 uppercase tracking-wide">
               {t("quantity")}
             </th>
-            <th className="pb-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wide">
+            <th className="pb-3 text-right text-xs font-medium th-text-2 uppercase tracking-wide">
               {t("unitPrice")}
             </th>
-            <th className="pb-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wide">
+            <th className="pb-3 text-right text-xs font-medium th-text-2 uppercase tracking-wide">
               {t("total")}
             </th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-b border-border last:border-0">
-              <td className="py-3 font-medium text-text-primary pr-4">{row.label}</td>
-              <td className="py-3 text-center text-text-secondary">{row.qty}</td>
-              <td className="py-3 text-right text-text-secondary">{row.unitPrice}</td>
-              <td className="py-3 text-right font-semibold text-text-primary">
+            <tr key={i} className="border-b th-border last:border-0">
+              <td className="py-3 font-medium th-text pr-4">{row.label}</td>
+              <td className="py-3 text-center th-text-2">{row.qty}</td>
+              <td className="py-3 text-right th-text-2">{row.unitPrice}</td>
+              <td className="py-3 text-right font-semibold th-text">
                 {fmtPrice(row.total)}
               </td>
             </tr>
@@ -1203,7 +1203,7 @@ function SummaryTable({
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-navy">
-            <td colSpan={3} className="pt-4 text-right font-bold text-text-primary pr-4">
+            <td colSpan={3} className="pt-4 text-right font-bold th-text pr-4">
               {t("grandTotal")}
             </td>
             <td className="pt-4 text-right text-xl font-bold text-navy">

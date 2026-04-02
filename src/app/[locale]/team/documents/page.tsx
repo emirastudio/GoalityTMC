@@ -43,8 +43,8 @@ export default function DocumentsPage() {
               <div key={doc.id} className="flex items-center gap-3 py-3">
                 <FileText className="w-5 h-5 text-navy shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-text-primary">{doc.name}</p>
-                  <p className="text-xs text-text-secondary">
+                  <p className="text-sm font-medium th-text">{doc.name}</p>
+                  <p className="text-xs th-text-2">
                     {new Date(doc.uploadedAt).toLocaleDateString()}
                     {doc.fileSize && ` · ${doc.fileSize}`}
                   </p>
@@ -61,7 +61,7 @@ export default function DocumentsPage() {
             ))}
           </div>
         ) : (
-          <div className="mt-6 text-center py-8 text-text-secondary text-sm">
+          <div className="mt-6 text-center py-8 th-text-2 text-sm">
             <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
             {t("noDocuments")}
           </div>

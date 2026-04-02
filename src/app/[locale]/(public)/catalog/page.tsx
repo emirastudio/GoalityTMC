@@ -108,9 +108,7 @@ export default async function CatalogPage() {
         <header className="sticky top-0 z-50 backdrop-blur-xl border-b" style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)" }}>
           <div className="max-w-[1400px] mx-auto px-6 h-14 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, var(--cat-accent), var(--cat-accent-dark))", boxShadow: "0 4px 14px var(--cat-accent-glow)" }}>
-                <Trophy className="w-4 h-4" style={{ color: "var(--cat-accent-text)" }} />
-              </div>
+              <img src="/logo.png" alt="Goality" className="w-9 h-9 rounded-xl object-contain" style={{ boxShadow: "0 4px 14px var(--cat-accent-glow)" }} />
               <span className="font-bold text-[15px] tracking-tight" style={{ color: "var(--cat-text)" }}>Goality</span>
             </Link>
             <nav className="hidden md:flex items-center gap-8">

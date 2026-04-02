@@ -47,7 +47,7 @@ function SectionHeader({
       <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-navy/5">
         <Icon className="w-4 h-4 text-navy" />
       </div>
-      <h3 className="text-base font-semibold text-text-primary">{title}</h3>
+      <h3 className="text-base font-semibold th-text">{title}</h3>
     </div>
   );
 }
@@ -71,7 +71,7 @@ function Textarea({
     <div className="space-y-1.5">
       <label
         htmlFor={id}
-        className="block text-sm font-medium text-text-primary"
+        className="block text-sm font-medium th-text"
       >
         {label}
       </label>
@@ -81,7 +81,7 @@ function Textarea({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         rows={rows}
-        className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary/50 transition-colors focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+        className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm th-text placeholder:th-text-2/50 transition-colors focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
       />
     </div>
   );
@@ -184,7 +184,7 @@ export function SettingsPageContent() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">
+        <h1 className="text-2xl font-bold th-text">
           Tournament Information
         </h1>
         <Button onClick={handleSave} disabled={saving}>

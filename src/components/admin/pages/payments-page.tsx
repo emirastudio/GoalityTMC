@@ -228,34 +228,34 @@ export function PaymentsPageContent() {
   ];
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20 text-text-secondary">Loading...</div>;
+    return <div className="flex items-center justify-center py-20 th-text-2">Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Payments</h1>
+        <h1 className="text-2xl font-bold th-text">Payments</h1>
         <Button onClick={() => setShowModal(true)}>Add Payment</Button>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="border-l-4 border-l-emerald-500">
-          <p className="text-sm text-text-secondary">Total Received</p>
+          <p className="text-sm th-text-2">Total Received</p>
           <p className="text-2xl font-bold text-emerald-600">{formatEuro(summary.received)}</p>
         </Card>
         <Card className="border-l-4 border-l-amber-400">
-          <p className="text-sm text-text-secondary">Pending</p>
+          <p className="text-sm th-text-2">Pending</p>
           <p className="text-2xl font-bold text-amber-600">{formatEuro(summary.pending)}</p>
         </Card>
         <Card className="border-l-4 border-l-red-500">
-          <p className="text-sm text-text-secondary">Refunded</p>
+          <p className="text-sm th-text-2">Refunded</p>
           <p className="text-2xl font-bold text-red-600">{formatEuro(summary.refunded)}</p>
         </Card>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 border-b th-border">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -263,7 +263,7 @@ export function PaymentsPageContent() {
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
               filter === tab.key
                 ? "border-navy text-navy"
-                : "border-transparent text-text-secondary hover:text-text-primary"
+                : "border-transparent th-text-2 hover:th-text"
             }`}
           >
             {tab.label}
@@ -279,55 +279,55 @@ export function PaymentsPageContent() {
       {/* Table */}
       <Card padding={false}>
         {filteredPayments.length === 0 ? (
-          <div className="py-12 text-center text-text-secondary">No payments found</div>
+          <div className="py-12 text-center th-text-2">No payments found</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-surface/50">
-                  <th className="text-left px-4 py-3 font-medium text-text-secondary">Date</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-secondary">Team</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-secondary">Club</th>
-                  <th className="text-right px-4 py-3 font-medium text-text-secondary">Amount</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-secondary">Method</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-secondary">Status</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-secondary">Reference</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-secondary">Notes</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-secondary">Actions</th>
+                <tr className="border-b th-border th-bg/50">
+                  <th className="text-left px-4 py-3 font-medium th-text-2">Date</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">Team</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">Club</th>
+                  <th className="text-right px-4 py-3 font-medium th-text-2">Amount</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">Method</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">Status</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">Reference</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">Notes</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredPayments.map((p) => (
-                  <tr key={p.id} className="border-b border-border last:border-b-0 hover:bg-surface/30">
+                  <tr key={p.id} className="border-b th-border last:border-b-0 hover:th-bg/30">
                     <td className="px-4 py-3 whitespace-nowrap">
                       {p.receivedAt ? formatDate(p.receivedAt) : formatDate(p.createdAt)}
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium">{p.teamName}</div>
-                      <div className="text-xs text-text-secondary">{p.teamRegNumber}</div>
+                      <div className="text-xs th-text-2">{p.teamRegNumber}</div>
                     </td>
-                    <td className="px-4 py-3 text-text-secondary">{p.clubName ?? "-"}</td>
+                    <td className="px-4 py-3 th-text-2">{p.clubName ?? "-"}</td>
                     <td className="px-4 py-3 text-right font-medium tabular-nums">
                       {formatEuro(p.amount)}
                     </td>
-                    <td className="px-4 py-3 text-text-secondary">
+                    <td className="px-4 py-3 th-text-2">
                       {METHOD_LABELS[p.method] ?? p.method}
                     </td>
                     <td className="px-4 py-3">
                       <select
                         value={p.status}
                         onChange={(e) => handleStatusChange(p.id, e.target.value)}
-                        className="text-xs border border-border rounded-md px-2 py-1 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-navy/20"
+                        className="text-xs border th-border rounded-md px-2 py-1 th-card cursor-pointer focus:outline-none focus:ring-1 focus:ring-navy/20"
                       >
                         <option value="pending">Pending</option>
                         <option value="received">Received</option>
                         <option value="refunded">Refunded</option>
                       </select>
                     </td>
-                    <td className="px-4 py-3 text-text-secondary text-xs max-w-[120px] truncate">
+                    <td className="px-4 py-3 th-text-2 text-xs max-w-[120px] truncate">
                       {p.reference ?? "-"}
                     </td>
-                    <td className="px-4 py-3 text-text-secondary text-xs max-w-[140px] truncate">
+                    <td className="px-4 py-3 th-text-2 text-xs max-w-[140px] truncate">
                       {p.notes ?? "-"}
                     </td>
                     <td className="px-4 py-3">
@@ -343,7 +343,7 @@ export function PaymentsPageContent() {
                           </button>
                           <button
                             onClick={() => setConfirmDeleteId(null)}
-                            className="text-xs text-text-secondary hover:text-text-primary"
+                            className="text-xs th-text-2 hover:th-text"
                           >
                             No
                           </button>
@@ -352,14 +352,14 @@ export function PaymentsPageContent() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEdit(p)}
-                            className="p-1.5 rounded-lg text-text-secondary hover:text-navy hover:bg-navy/5 transition-colors"
+                            className="p-1.5 rounded-lg th-text-2 hover:text-navy hover:bg-navy/5 transition-colors"
                             title="Edit payment"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setConfirmDeleteId(p.id)}
-                            className="p-1.5 rounded-lg text-text-secondary hover:text-error hover:bg-error/5 transition-colors"
+                            className="p-1.5 rounded-lg th-text-2 hover:text-error hover:bg-error/5 transition-colors"
                             title="Delete payment"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -381,25 +381,25 @@ export function PaymentsPageContent() {
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <CardTitle>Edit Payment</CardTitle>
-              <button onClick={() => setEditingPayment(null)} className="p-1 hover:bg-surface rounded-lg">
-                <X className="w-4 h-4 text-text-secondary" />
+              <button onClick={() => setEditingPayment(null)} className="p-1 hover:th-bg rounded-lg">
+                <X className="w-4 h-4 th-text-2" />
               </button>
             </div>
             <form onSubmit={handleEdit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Team</label>
+                <label className="block text-sm font-medium th-text">Team</label>
                 <input
                   type="text"
                   value={editTeamSearch}
                   onChange={(e) => setEditTeamSearch(e.target.value)}
                   placeholder="Search teams..."
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
                 />
                 <select
                   value={editTeamId}
                   onChange={(e) => setEditTeamId(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer"
                   size={Math.min(filteredTeams(editTeamSearch).length + 1, 6)}
                 >
                   <option value="" disabled>Select a team</option>
@@ -449,11 +449,11 @@ export function PaymentsPageContent() {
               />
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Notes (optional)</label>
+                <label className="block text-sm font-medium th-text">Notes (optional)</label>
                 <textarea
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-y"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-y"
                   rows={3} placeholder="Additional notes..."
                 />
               </div>
@@ -484,25 +484,25 @@ export function PaymentsPageContent() {
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <CardTitle>Add Payment</CardTitle>
-              <button onClick={() => { setShowModal(false); resetForm(); }} className="p-1 hover:bg-surface rounded-lg">
-                <X className="w-4 h-4 text-text-secondary" />
+              <button onClick={() => { setShowModal(false); resetForm(); }} className="p-1 hover:th-bg rounded-lg">
+                <X className="w-4 h-4 th-text-2" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Team</label>
+                <label className="block text-sm font-medium th-text">Team</label>
                 <input
                   type="text"
                   value={teamSearch}
                   onChange={(e) => setTeamSearch(e.target.value)}
                   placeholder="Search teams..."
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
                 />
                 <select
                   value={formTeamId}
                   onChange={(e) => setFormTeamId(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer"
                   size={Math.min(filteredTeams(teamSearch).length + 1, 6)}
                 >
                   <option value="" disabled>Select a team</option>
@@ -551,11 +551,11 @@ export function PaymentsPageContent() {
               />
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Notes (optional)</label>
+                <label className="block text-sm font-medium th-text">Notes (optional)</label>
                 <textarea
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-y"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-y"
                   rows={3} placeholder="Additional notes..."
                 />
               </div>

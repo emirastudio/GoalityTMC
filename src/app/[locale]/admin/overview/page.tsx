@@ -87,7 +87,7 @@ function accomStatus(row: OverviewRow): React.ReactNode {
         <Check className="w-3 h-3" /> Confirmed
       </span>
     );
-  return <span className="text-xs text-text-secondary">—</span>;
+  return <span className="text-xs th-text-2">—</span>;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -321,7 +321,7 @@ export default function AdminOverviewPage() {
 
   if (loading)
     return (
-      <div className="p-8 text-center text-text-secondary">Loading…</div>
+      <div className="p-8 text-center th-text-2">Loading…</div>
     );
   if (error)
     return <div className="p-8 text-center text-error">{error}</div>;
@@ -331,14 +331,14 @@ export default function AdminOverviewPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Overview</h1>
-          <p className="text-sm text-text-secondary">
+          <h1 className="text-xl font-bold th-text">Overview</h1>
+          <p className="text-sm th-text-2">
             {visible.length} of {rows.length} teams
           </p>
         </div>
         <button
           onClick={exportCsv}
-          className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-surface transition-colors"
+          className="flex items-center gap-2 rounded-lg border th-border th-card px-3 py-2 text-sm font-medium hover:th-bg transition-colors"
         >
           <Download className="w-4 h-4" />
           Export CSV
@@ -346,19 +346,19 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap gap-2 items-center bg-white border border-border rounded-xl p-3">
-        <Filter className="w-4 h-4 text-text-secondary shrink-0" />
+      <div className="flex flex-wrap gap-2 items-center th-card border th-border rounded-xl p-3">
+        <Filter className="w-4 h-4 th-text-2 shrink-0" />
         <input
           type="search"
           placeholder="Search club / team…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-border rounded-lg px-3 py-1.5 text-sm min-w-[160px] focus:outline-none focus:ring-2 focus:ring-navy/30"
+          className="border th-border rounded-lg px-3 py-1.5 text-sm min-w-[160px] focus:outline-none focus:ring-2 focus:ring-navy/30"
         />
         <select
           value={filterDivision}
           onChange={(e) => setFilterDivision(e.target.value)}
-          className="border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 bg-white"
+          className="border th-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 th-card"
         >
           <option value="all">All divisions</option>
           {divisions.map((d) => (
@@ -370,7 +370,7 @@ export default function AdminOverviewPage() {
         <select
           value={filterCountry}
           onChange={(e) => setFilterCountry(e.target.value)}
-          className="border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 bg-white"
+          className="border th-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 th-card"
         >
           <option value="all">All countries</option>
           {countries.map((c) => (
@@ -382,7 +382,7 @@ export default function AdminOverviewPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 bg-white"
+          className="border th-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 th-card"
         >
           <option value="all">All statuses</option>
           {statuses.map((s) => (
@@ -394,7 +394,7 @@ export default function AdminOverviewPage() {
         <select
           value={filterAccom}
           onChange={(e) => setFilterAccom(e.target.value)}
-          className="border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 bg-white"
+          className="border th-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 th-card"
         >
           <option value="all">All accom</option>
           <option value="confirmed">Accom confirmed</option>
@@ -411,7 +411,7 @@ export default function AdminOverviewPage() {
               setFilterStatus("all");
               setFilterAccom("all");
             }}
-            className="text-xs text-text-secondary hover:text-error flex items-center gap-1 transition-colors"
+            className="text-xs th-text-2 hover:text-error flex items-center gap-1 transition-colors"
           >
             <X className="w-3 h-3" /> Clear
           </button>
@@ -419,7 +419,7 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* Table wrapper */}
-      <div className="relative rounded-xl overflow-hidden border border-border shadow-sm">
+      <div className="relative rounded-xl overflow-hidden border th-border shadow-sm">
         {/* Column picker button */}
         <div className="absolute right-2 top-1 z-10">
           <div className="relative">
@@ -435,11 +435,11 @@ export default function AdminOverviewPage() {
               Columns {extraCols.size > 0 && `(${extraCols.size})`}
             </button>
             {showColPicker && (
-              <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-lg p-2 z-20 min-w-[180px]">
+              <div className="absolute right-0 top-full mt-1 th-card border th-border rounded-xl shadow-lg p-2 z-20 min-w-[180px]">
                 {EXTRA_COLS.map((c) => (
                   <label
                     key={c.key}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface cursor-pointer text-sm"
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:th-bg cursor-pointer text-sm"
                   >
                     <input
                       type="checkbox"
@@ -491,7 +491,7 @@ export default function AdminOverviewPage() {
                 <tr>
                   <td
                     colSpan={18 + activeExtraCols.length}
-                    className="text-center py-12 text-text-secondary"
+                    className="text-center py-12 th-text-2"
                   >
                     No teams found
                   </td>
@@ -500,12 +500,12 @@ export default function AdminOverviewPage() {
               {visible.map((row, i) => (
                 <tr
                   key={row.id}
-                  className={`border-b border-border last:border-0 hover:bg-navy/3 transition-colors ${
-                    i % 2 === 0 ? "bg-white" : "bg-surface/50"
+                  className={`border-b th-border last:border-0 hover:bg-navy/3 transition-colors ${
+                    i % 2 === 0 ? "th-card" : "th-bg/50"
                   }`}
                 >
                   {/* Reg # */}
-                  <td className="px-2 py-1.5 pl-3 font-mono text-xs text-text-secondary whitespace-nowrap">
+                  <td className="px-2 py-1.5 pl-3 font-mono text-xs th-text-2 whitespace-nowrap">
                     {row.regNumber}
                   </td>
                   {/* Flag */}
@@ -513,15 +513,15 @@ export default function AdminOverviewPage() {
                     {countryToFlag(row.country)}
                   </td>
                   {/* Club */}
-                  <td className="px-2 py-1.5 whitespace-nowrap max-w-[160px] truncate font-medium text-text-primary">
+                  <td className="px-2 py-1.5 whitespace-nowrap max-w-[160px] truncate font-medium th-text">
                     {row.clubName ?? "—"}
                   </td>
                   {/* Team */}
-                  <td className="px-2 py-1.5 whitespace-nowrap max-w-[140px] truncate text-text-primary">
+                  <td className="px-2 py-1.5 whitespace-nowrap max-w-[140px] truncate th-text">
                     {row.teamName}
                   </td>
                   {/* Division */}
-                  <td className="px-2 py-1.5 text-xs text-text-secondary whitespace-nowrap">
+                  <td className="px-2 py-1.5 text-xs th-text-2 whitespace-nowrap">
                     {row.division ?? "—"}
                   </td>
                   {/* Status */}
@@ -530,70 +530,70 @@ export default function AdminOverviewPage() {
                   </td>
                   {/* Players */}
                   <td className="px-2 py-1.5 text-center tabular-nums">
-                    {row.players || <span className="text-text-secondary/40">0</span>}
+                    {row.players || <span className="th-text-2/40">0</span>}
                   </td>
                   {/* Staff */}
                   <td className="px-2 py-1.5 text-center tabular-nums">
-                    {row.staff || <span className="text-text-secondary/40">0</span>}
+                    {row.staff || <span className="th-text-2/40">0</span>}
                   </td>
                   {/* Accompanying */}
                   <td className="px-2 py-1.5 text-center tabular-nums">
-                    {row.accompanying || <span className="text-text-secondary/40">0</span>}
+                    {row.accompanying || <span className="th-text-2/40">0</span>}
                   </td>
                   {/* Arrival */}
-                  <td className="px-2 py-1.5 text-xs whitespace-nowrap text-text-secondary">
+                  <td className="px-2 py-1.5 text-xs whitespace-nowrap th-text-2">
                     {row.arrivalDate ? (
                       <span>
                         {row.arrivalDate}
                         {row.arrivalTime && (
-                          <span className="text-text-secondary/60 ml-1">{row.arrivalTime}</span>
+                          <span className="th-text-2/60 ml-1">{row.arrivalTime}</span>
                         )}
                       </span>
                     ) : (
-                      <Minus className="w-3 h-3 text-text-secondary/30 mx-auto" />
+                      <Minus className="w-3 h-3 th-text-2/30 mx-auto" />
                     )}
                   </td>
                   {/* Departure */}
-                  <td className="px-2 py-1.5 text-xs whitespace-nowrap text-text-secondary">
+                  <td className="px-2 py-1.5 text-xs whitespace-nowrap th-text-2">
                     {row.departureDate ? (
                       <span>
                         {row.departureDate}
                         {row.departureTime && (
-                          <span className="text-text-secondary/60 ml-1">{row.departureTime}</span>
+                          <span className="th-text-2/60 ml-1">{row.departureTime}</span>
                         )}
                       </span>
                     ) : (
-                      <Minus className="w-3 h-3 text-text-secondary/30 mx-auto" />
+                      <Minus className="w-3 h-3 th-text-2/30 mx-auto" />
                     )}
                   </td>
                   {/* Accom status */}
                   <td className="px-2 py-1.5 whitespace-nowrap">{accomStatus(row)}</td>
                   {/* Accom players */}
                   <td className="px-2 py-1.5 text-center tabular-nums text-xs">
-                    {row.accomPlayers ?? <span className="text-text-secondary/30">—</span>}
+                    {row.accomPlayers ?? <span className="th-text-2/30">—</span>}
                   </td>
                   {/* Accom staff */}
                   <td className="px-2 py-1.5 text-center tabular-nums text-xs">
-                    {row.accomStaff ?? <span className="text-text-secondary/30">—</span>}
+                    {row.accomStaff ?? <span className="th-text-2/30">—</span>}
                   </td>
                   {/* Accom acc */}
                   <td className="px-2 py-1.5 text-center tabular-nums text-xs">
-                    {row.accomAccompanying ?? <span className="text-text-secondary/30">—</span>}
+                    {row.accomAccompanying ?? <span className="th-text-2/30">—</span>}
                   </td>
                   {/* Check-in */}
-                  <td className="px-2 py-1.5 text-xs text-text-secondary whitespace-nowrap">
-                    {row.accomCheckIn ?? <span className="text-text-secondary/30">—</span>}
+                  <td className="px-2 py-1.5 text-xs th-text-2 whitespace-nowrap">
+                    {row.accomCheckIn ?? <span className="th-text-2/30">—</span>}
                   </td>
                   {/* Check-out */}
-                  <td className="px-2 py-1.5 text-xs text-text-secondary whitespace-nowrap">
-                    {row.accomCheckOut ?? <span className="text-text-secondary/30">—</span>}
+                  <td className="px-2 py-1.5 text-xs th-text-2 whitespace-nowrap">
+                    {row.accomCheckOut ?? <span className="th-text-2/30">—</span>}
                   </td>
                   {/* Transfer */}
                   <td className="px-2 py-1.5 text-center">
                     {row.hasTransfer ? (
                       <Check className="w-4 h-4 text-success mx-auto" />
                     ) : (
-                      <X className="w-4 h-4 text-text-secondary/30 mx-auto" />
+                      <X className="w-4 h-4 th-text-2/30 mx-auto" />
                     )}
                   </td>
                   {/* Extra columns */}
@@ -602,11 +602,11 @@ export default function AdminOverviewPage() {
                     return (
                       <td
                         key={c.key}
-                        className="px-2 py-1.5 text-xs text-text-secondary whitespace-nowrap"
+                        className="px-2 py-1.5 text-xs th-text-2 whitespace-nowrap"
                       >
                         {c.key === "packageName" ? (
-                          <span className="font-medium text-text-primary">
-                            {(val as string) ?? <span className="text-text-secondary/40">—</span>}
+                          <span className="font-medium th-text">
+                            {(val as string) ?? <span className="th-text-2/40">—</span>}
                             {c.key === "packageName" && row.packagePublished && (
                               <span className="ml-1 text-[9px] bg-success/15 text-success rounded px-1">
                                 pub
@@ -627,25 +627,25 @@ export default function AdminOverviewPage() {
 
         {/* Summary footer */}
         {visible.length > 0 && (
-          <div className="bg-navy/5 border-t border-border px-3 py-2 flex flex-wrap gap-4 text-xs text-text-secondary">
+          <div className="bg-navy/5 border-t th-border px-3 py-2 flex flex-wrap gap-4 text-xs th-text-2">
             <span>
-              <strong className="text-text-primary">{visible.reduce((s, r) => s + r.players, 0)}</strong> players
+              <strong className="th-text">{visible.reduce((s, r) => s + r.players, 0)}</strong> players
             </span>
             <span>
-              <strong className="text-text-primary">{visible.reduce((s, r) => s + r.staff, 0)}</strong> staff
+              <strong className="th-text">{visible.reduce((s, r) => s + r.staff, 0)}</strong> staff
             </span>
             <span>
-              <strong className="text-text-primary">{visible.reduce((s, r) => s + r.accompanying, 0)}</strong> accompanying
+              <strong className="th-text">{visible.reduce((s, r) => s + r.accompanying, 0)}</strong> accompanying
             </span>
             <span>
-              <strong className="text-text-primary">{visible.filter((r) => r.hasTransfer).length}</strong> with transfer
+              <strong className="th-text">{visible.filter((r) => r.hasTransfer).length}</strong> with transfer
             </span>
             <span>
-              <strong className="text-text-primary">{visible.filter((r) => r.accomConfirmed).length}</strong> accom confirmed
+              <strong className="th-text">{visible.filter((r) => r.accomConfirmed).length}</strong> accom confirmed
             </span>
             {extraCols.has("totalOrdered") && (
               <span>
-                <strong className="text-text-primary">
+                <strong className="th-text">
                   €{visible.reduce((s, r) => s + r.totalOrdered, 0).toLocaleString("en")}
                 </strong>{" "}
                 total ordered
@@ -653,7 +653,7 @@ export default function AdminOverviewPage() {
             )}
             {extraCols.has("paid") && (
               <span>
-                <strong className="text-text-primary">
+                <strong className="th-text">
                   €{visible.reduce((s, r) => s + r.paid, 0).toLocaleString("en")}
                 </strong>{" "}
                 paid

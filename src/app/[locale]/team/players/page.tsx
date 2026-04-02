@@ -43,8 +43,8 @@ export default function PlayersPage() {
   return (
     <div className="space-y-5 max-w-5xl">
       <div>
-        <h2 className="text-xl font-bold text-text-primary">{t("title")}</h2>
-        <p className="text-sm text-text-secondary mt-0.5">
+        <h2 className="text-xl font-bold th-text">{t("title")}</h2>
+        <p className="text-sm th-text-2 mt-0.5">
           {t("description")} ({players.length})
         </p>
       </div>

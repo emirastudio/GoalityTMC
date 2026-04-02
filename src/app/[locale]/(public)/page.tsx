@@ -14,9 +14,7 @@ export default async function HomePage() {
       <div className="bg-navy">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-mint flex items-center justify-center">
-              <span className="text-navy font-black text-[9px] leading-none">P.G.W.</span>
-            </div>
+            <img src="/logo.png" alt="Goality" className="w-9 h-9 rounded-xl object-contain" />
             <span className="text-lg font-bold text-white">Goality</span>
           </div>
           <div className="flex items-center gap-5">

@@ -77,7 +77,7 @@ function SectionTab({
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
         active
           ? "bg-navy text-white"
-          : "bg-white text-text-secondary hover:bg-surface border border-border"
+          : "th-card th-text-2 hover:th-bg border th-border"
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -251,7 +251,7 @@ function PackagesTab() {
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">
+        <h2 className="text-sm font-semibold th-text-2 uppercase tracking-wide">
           Packages
         </h2>
         <div className="flex items-center gap-3">
@@ -273,17 +273,17 @@ function PackagesTab() {
 
       {/* Create / Edit form */}
       {editId !== null && (
-        <div className="rounded-xl border border-border bg-white shadow-sm p-5 space-y-4">
+        <div className="rounded-xl border th-border th-card shadow-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-base text-text-primary">
+            <h3 className="font-semibold text-base th-text">
               {editId === "new" ? "Create Package" : "Edit Package"}
             </h3>
             <LangTabs lang={lang} onChange={setLang} />
           </div>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-text-secondary">
-                Name {lang === "en" ? "*" : <span className="text-text-secondary/60">(RU — leave empty to use English)</span>}
+              <label className="block text-xs font-medium th-text-2">
+                Name {lang === "en" ? "*" : <span className="th-text-2/60">(RU — leave empty to use English)</span>}
               </label>
               <Input
                 value={lang === "en" ? form.name : form.nameRu}
@@ -292,26 +292,26 @@ function PackagesTab() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-text-secondary">
-                Description {lang === "ru" && <span className="text-text-secondary/60">(leave empty to use English)</span>}
+              <label className="block text-xs font-medium th-text-2">
+                Description {lang === "ru" && <span className="th-text-2/60">(leave empty to use English)</span>}
               </label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 rows={3}
                 placeholder={lang === "en" ? "Describe what's included…" : "Описание пакета…"}
-                className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30 resize-none"
+                className="w-full rounded-md border th-border th-card px-3 py-2 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/30 resize-none"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-text-secondary">
+              <label className="block text-xs font-medium th-text-2">
                 Accommodation option
               </label>
               <select
                 value={form.accommodationOptionId}
                 onChange={(e) => setForm((f) => ({ ...f, accommodationOptionId: e.target.value }))}
                 disabled={!form.includeAccommodation}
-                className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30 appearance-none disabled:opacity-40"
+                className="w-full rounded-md border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/30 appearance-none disabled:opacity-40"
               >
                 <option value="">— Select accommodation —</option>
                 {accOptions.map((opt) => (
@@ -323,7 +323,7 @@ function PackagesTab() {
 
           {/* Included services */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">Included services</p>
+            <p className="text-xs font-semibold th-text-2 uppercase tracking-wide">Included services</p>
             <div className="grid grid-cols-2 gap-2">
               {(
                 [
@@ -333,7 +333,7 @@ function PackagesTab() {
                   { key: "includeMeals", label: "🍽️ Extra Meals" },
                 ] as const
               ).map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer select-none bg-surface rounded-lg px-3 py-2 border border-border hover:border-navy/30 transition-colors">
+                <label key={key} className="flex items-center gap-2 cursor-pointer select-none th-bg rounded-lg px-3 py-2 border th-border hover:border-navy/30 transition-colors">
                   <input
                     type="checkbox"
                     className="w-4 h-4 accent-navy shrink-0"
@@ -349,7 +349,7 @@ function PackagesTab() {
                       });
                     }}
                   />
-                  <span className="text-sm text-text-primary">{label}</span>
+                  <span className="text-sm th-text">{label}</span>
                 </label>
               ))}
             </div>
@@ -362,7 +362,7 @@ function PackagesTab() {
               checked={form.isDefault}
               onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))}
             />
-            <span className="text-sm font-medium text-text-primary">Default package</span>
+            <span className="text-sm font-medium th-text">Default package</span>
           </label>
           <div className="flex items-center gap-2 pt-1">
             <Button
@@ -387,25 +387,25 @@ function PackagesTab() {
 
       {/* Package list */}
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-text-secondary">
+        <div className="flex items-center justify-center py-16 th-text-2">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           <span className="text-sm">Loading…</span>
         </div>
       ) : packages.length === 0 ? (
-        <div className="rounded-xl border border-border bg-white shadow-sm px-6 py-12 text-center">
-          <Layers className="w-8 h-8 text-text-secondary/40 mx-auto mb-3" />
-          <p className="text-sm text-text-secondary">No packages yet</p>
+        <div className="rounded-xl border th-border th-card shadow-sm px-6 py-12 text-center">
+          <Layers className="w-8 h-8 th-text-2/40 mx-auto mb-3" />
+          <p className="text-sm th-text-2">No packages yet</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {packages.map((pkg) => (
             <div
               key={pkg.id}
-              className="rounded-xl border border-border bg-white shadow-sm p-4 flex flex-col gap-2"
+              className="rounded-xl border th-border th-card shadow-sm p-4 flex flex-col gap-2"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm text-text-primary">{pkg.name}</span>
+                  <span className="font-semibold text-sm th-text">{pkg.name}</span>
                   {pkg.isDefault && (
                     <span className="inline-flex items-center rounded-full bg-gold/15 px-2 py-0.5 text-xs font-semibold text-gold">
                       Default
@@ -415,7 +415,7 @@ function PackagesTab() {
               </div>
 
               {pkg.description && (
-                <p className="text-xs text-text-secondary leading-relaxed">{pkg.description}</p>
+                <p className="text-xs th-text-2 leading-relaxed">{pkg.description}</p>
               )}
 
               {/* Service badges */}
@@ -436,15 +436,15 @@ function PackagesTab() {
                 )}
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+              <div className="flex items-center gap-1.5 text-xs th-text-2">
                 <Users className="w-3.5 h-3.5" />
                 <span>
                   {pkg.assignedTeams} teams
                 </span>
               </div>
 
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
-                <span className="text-xs text-text-secondary">
+              <div className="flex items-center justify-between mt-2 pt-2 border-t th-border">
+                <span className="text-xs th-text-2">
                   {pkg.publishedTeams ?? 0}/{pkg.assignedTeams} published
                 </span>
                 <button
@@ -462,7 +462,7 @@ function PackagesTab() {
                   type="button"
                   onClick={() => openEdit(pkg)}
                   disabled={editId !== null}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-navy transition-colors cursor-pointer disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-navy transition-colors cursor-pointer disabled:opacity-40"
                 >
                   <Pencil className="w-3.5 h-3.5" />
                   Edit
@@ -480,7 +480,7 @@ function PackagesTab() {
                     <button
                       type="button"
                       onClick={() => setDeleteId(null)}
-                      className="text-xs text-text-secondary cursor-pointer"
+                      className="text-xs th-text-2 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -495,7 +495,7 @@ function PackagesTab() {
                         ? `Cannot delete: ${pkg.assignedTeams} team(s) assigned`
                         : undefined
                     }
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-error transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ml-auto"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-error transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ml-auto"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Delete
@@ -693,7 +693,7 @@ function AssignmentsTab() {
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">
+        <h2 className="text-sm font-semibold th-text-2 uppercase tracking-wide">
           Team Assignments
         </h2>
         <div className="flex items-center gap-3">
@@ -725,51 +725,51 @@ function AssignmentsTab() {
       {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-text-secondary">
+        <div className="flex items-center justify-center py-16 th-text-2">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           <span className="text-sm">Loading…</span>
         </div>
       ) : teams.length === 0 ? (
-        <div className="rounded-xl border border-border bg-white shadow-sm px-6 py-12 text-center">
-          <Users className="w-8 h-8 text-text-secondary/40 mx-auto mb-3" />
-          <p className="text-sm text-text-secondary">No teams found</p>
+        <div className="rounded-xl border th-border th-card shadow-sm px-6 py-12 text-center">
+          <Users className="w-8 h-8 th-text-2/40 mx-auto mb-3" />
+          <p className="text-sm th-text-2">No teams found</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border th-border th-card shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-surface">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wide w-10">
+                <tr className="border-b th-border th-bg">
+                  <th className="px-4 py-3 text-left text-xs font-semibold th-text-2 uppercase tracking-wide w-10">
                     #
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wide">
+                  <th className="px-4 py-3 text-left text-xs font-semibold th-text-2 uppercase tracking-wide">
                     Team
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wide">
+                  <th className="px-4 py-3 text-left text-xs font-semibold th-text-2 uppercase tracking-wide">
                     Club
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wide">
+                  <th className="px-4 py-3 text-left text-xs font-semibold th-text-2 uppercase tracking-wide">
                     Current Package
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-text-secondary uppercase tracking-wide">
+                  <th className="px-4 py-3 text-right text-xs font-semibold th-text-2 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-[var(--cat-card-border)]">
                 {teams.map((team, idx) => {
                   const isAssigning = assigningId === team.id;
                   const isRemoving = removingId === team.id;
                   const justSaved = saved === team.id;
 
                   return (
-                    <tr key={team.id} className="hover:bg-surface/50 transition-colors">
-                      <td className="px-4 py-3 text-xs text-text-secondary font-mono">
+                    <tr key={team.id} className="hover:th-bg/50 transition-colors">
+                      <td className="px-4 py-3 text-xs th-text-2 font-mono">
                         {team.regNumber ?? idx + 1}
                       </td>
-                      <td className="px-4 py-3 font-medium text-text-primary">{team.name}</td>
-                      <td className="px-4 py-3 text-text-secondary">{team.club.name ?? "—"}</td>
+                      <td className="px-4 py-3 font-medium th-text">{team.name}</td>
+                      <td className="px-4 py-3 th-text-2">{team.club.name ?? "—"}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 flex-wrap">
                           {team.currentPackage ? (
@@ -777,7 +777,7 @@ function AssignmentsTab() {
                               {team.currentPackage.name}
                             </span>
                           ) : (
-                            <span className="text-text-secondary/60 text-xs">—</span>
+                            <span className="th-text-2/60 text-xs">—</span>
                           )}
                           {team.currentPackage && (
                             <button
@@ -815,7 +815,7 @@ function AssignmentsTab() {
                                   if (val) assignPackage(team.id, Number(val));
                                 }}
                                 disabled={isAssigning || isRemoving}
-                                className="appearance-none rounded-md border border-border bg-white pl-3 pr-8 py-1.5 text-xs font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30 cursor-pointer disabled:opacity-50 min-w-[140px]"
+                                className="appearance-none rounded-md border th-border th-card pl-3 pr-8 py-1.5 text-xs font-medium th-text focus:outline-none focus:ring-2 focus:ring-navy/30 cursor-pointer disabled:opacity-50 min-w-[140px]"
                               >
                                 <option value="">— Assign package —</option>
                                 {packages.map((pkg) => (
@@ -825,7 +825,7 @@ function AssignmentsTab() {
                                   </option>
                                 ))}
                               </select>
-                              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-secondary" />
+                              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 th-text-2" />
                               {isAssigning && (
                                 <Loader2 className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-navy animate-spin" />
                               )}
@@ -838,7 +838,7 @@ function AssignmentsTab() {
                               type="button"
                               onClick={() => removePackage(team.id)}
                               disabled={isAssigning || isRemoving}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-error transition-colors cursor-pointer disabled:opacity-40"
+                              className="inline-flex items-center gap-1 text-xs font-medium th-text-2 hover:text-error transition-colors cursor-pointer disabled:opacity-40"
                             >
                               {isRemoving ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -868,14 +868,14 @@ export function PackagesPageContent() {
   const [tab, setTab] = useState<Tab>("packages");
 
   return (
-    <div className="flex-1 min-h-screen bg-surface p-6 lg:p-8 space-y-6">
+    <div className="flex-1 min-h-screen th-bg p-6 lg:p-8 space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-xl font-bold text-text-primary flex items-center gap-2.5">
+        <h1 className="text-xl font-bold th-text flex items-center gap-2.5">
           <Layers className="w-5 h-5 text-navy" />
           Packages
         </h1>
-        <p className="text-sm text-text-secondary mt-1">
+        <p className="text-sm th-text-2 mt-1">
           Manage service packages and assign them to teams
         </p>
       </div>

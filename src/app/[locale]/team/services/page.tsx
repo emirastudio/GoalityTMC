@@ -125,7 +125,7 @@ export default function ServicesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh] gap-3 text-text-secondary">
+      <div className="flex items-center justify-center min-h-[40vh] gap-3 th-text-2">
         <Loader2 className="w-5 h-5 animate-spin" />
         <span className="text-sm">{t("loading")}</span>
       </div>
@@ -135,10 +135,10 @@ export default function ServicesPage() {
   if (!data?.available || !data.items || !data.peopleCounts) {
     return (
       <div className="max-w-lg mx-auto mt-12">
-        <div className="rounded-2xl border border-border bg-white p-8 text-center shadow-sm">
+        <div className="rounded-2xl border th-border th-card p-8 text-center shadow-sm">
           <AlertCircle className="w-10 h-10 text-text-secondary/40 mx-auto mb-4" />
-          <h2 className="text-base font-semibold text-text-primary mb-2">{t("notAvailable")}</h2>
-          <p className="text-sm text-text-secondary">{t("notAvailableDesc")}</p>
+          <h2 className="text-base font-semibold th-text mb-2">{t("notAvailable")}</h2>
+          <p className="text-sm th-text-2">{t("notAvailableDesc")}</p>
         </div>
       </div>
     );
@@ -151,28 +151,28 @@ export default function ServicesPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-text-primary flex items-center gap-2.5">
+        <h1 className="text-xl font-bold th-text flex items-center gap-2.5">
           <Package className="w-5 h-5 text-navy" />
           {t("title")}
         </h1>
-        <p className="text-sm text-text-secondary mt-1">{t("description")}</p>
+        <p className="text-sm th-text-2 mt-1">{t("description")}</p>
       </div>
 
       {/* Package name */}
-      <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border th-border th-card p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-1">Package</p>
+            <p className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-1">Package</p>
             <h2 className="text-lg font-bold text-navy">{pkg?.name}</h2>
             {pkg?.description && (
-              <p className="text-sm text-text-secondary mt-1">{pkg.description}</p>
+              <p className="text-sm th-text-2 mt-1">{pkg.description}</p>
             )}
           </div>
         </div>
 
         {/* Team size summary */}
-        <div className="mt-4 pt-4 border-t border-border flex items-center gap-6">
-          <div className="flex items-center gap-1.5 text-sm text-text-secondary">
+        <div className="mt-4 pt-4 border-t th-border flex items-center gap-6">
+          <div className="flex items-center gap-1.5 text-sm th-text-2">
             <Users className="w-4 h-4" />
             <span>{t("teamSize")}:</span>
           </div>
@@ -187,7 +187,7 @@ export default function ServicesPage() {
 
       {/* Items list */}
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-white p-8 text-center text-sm text-text-secondary">
+        <div className="rounded-2xl border th-border th-card p-8 text-center text-sm th-text-2">
           No services in this package yet.
         </div>
       ) : (
@@ -197,14 +197,14 @@ export default function ServicesPage() {
             return (
               <div
                 key={item.id}
-                className={`rounded-2xl border bg-white shadow-sm overflow-hidden ${
-                  item.isDisabled ? "border-border opacity-50" : "border-border"
+                className={`rounded-2xl border th-card shadow-sm overflow-hidden ${
+                  item.isDisabled ? "th-border opacity-50" : "th-border"
                 }`}
               >
                 <div className="flex items-start gap-4 p-4">
                   {/* Image or icon */}
                   {item.imageUrl ? (
-                    <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-border">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border th-border">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                     </div>
@@ -222,18 +222,18 @@ export default function ServicesPage() {
                           {item.serviceName ?? "—"}
                         </h3>
                         {item.details && (
-                          <p className="text-xs text-text-secondary mt-0.5">{item.details}</p>
+                          <p className="text-xs th-text-2 mt-0.5">{item.details}</p>
                         )}
                       </div>
 
                       {/* Price */}
                       <div className="text-right shrink-0">
                         {item.isDisabled ? (
-                          <span className="text-xs text-text-secondary italic">{t("disabled")}</span>
+                          <span className="text-xs th-text-2 italic">{t("disabled")}</span>
                         ) : (
                           <>
                             {item.isOverridden && item.basePrice !== item.effectivePrice && (
-                              <p className="text-xs text-text-secondary line-through">
+                              <p className="text-xs th-text-2 line-through">
                                 €{Number(item.basePrice).toFixed(2)}
                               </p>
                             )}
@@ -247,7 +247,7 @@ export default function ServicesPage() {
 
                     {/* Pricing breakdown */}
                     {!item.isDisabled && (
-                      <p className="text-xs text-text-secondary mt-1.5">
+                      <p className="text-xs th-text-2 mt-1.5">
                         <PricingLabel item={item} counts={peopleCounts} t={t} />
                         {item.isOverridden && (
                           <span className="ml-2 text-amber-600 font-medium">
@@ -260,14 +260,14 @@ export default function ServicesPage() {
 
                     {/* Date range */}
                     {(item.dateFrom || item.dateTo) && (
-                      <p className="text-xs text-text-secondary mt-1">
+                      <p className="text-xs th-text-2 mt-1">
                         {t("from")} {fmtDate(item.dateFrom)} {t("to")} {fmtDate(item.dateTo)}
                       </p>
                     )}
 
                     {/* Note */}
                     {item.note && (
-                      <p className="text-xs text-text-secondary/70 mt-1.5 italic border-l-2 border-border pl-2">
+                      <p className="text-xs text-text-secondary/70 mt-1.5 italic border-l-2 th-border pl-2">
                         {item.note}
                       </p>
                     )}

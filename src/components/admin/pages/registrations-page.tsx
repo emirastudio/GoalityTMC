@@ -46,8 +46,8 @@ function DeviceIcon({ ua }: { ua: string | null }) {
   if (!ua) return null;
   const mobile = /mobile|android|iphone|ipad/i.test(ua);
   return mobile
-    ? <Smartphone className="w-3.5 h-3.5 text-text-secondary" />
-    : <Monitor className="w-3.5 h-3.5 text-text-secondary" />;
+    ? <Smartphone className="w-3.5 h-3.5 th-text-2" />
+    : <Monitor className="w-3.5 h-3.5 th-text-2" />;
 }
 
 function parseBrowser(ua: string | null): string {
@@ -137,8 +137,8 @@ export function RegistrationsPageContent() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Registration Log</h1>
-          <p className="text-sm text-text-secondary">
+          <h1 className="text-xl font-bold th-text">Registration Log</h1>
+          <p className="text-sm th-text-2">
             <span className="text-success font-semibold">{successCount}</span> successful ·{" "}
             <span className="text-error font-semibold">{failCount}</span> failed · {rows.length} total
           </p>
@@ -146,14 +146,14 @@ export function RegistrationsPageContent() {
         <div className="flex items-center gap-2">
           <button
             onClick={load}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-surface transition-colors"
+            className="flex items-center gap-1.5 rounded-lg border th-border th-card px-3 py-2 text-sm font-medium hover:th-bg transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </button>
           <button
             onClick={exportCsv}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-surface transition-colors"
+            className="flex items-center gap-1.5 rounded-lg border th-border th-card px-3 py-2 text-sm font-medium hover:th-bg transition-colors"
           >
             <Download className="w-4 h-4" />
             CSV
@@ -162,13 +162,13 @@ export function RegistrationsPageContent() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1 bg-surface rounded-lg p-1 w-fit">
+      <div className="flex gap-1 th-bg rounded-lg p-1 w-fit">
         {(["all", "success", "fail"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              filter === f ? "bg-white text-text-primary shadow-sm" : "text-text-secondary hover:text-text-primary"
+              filter === f ? "th-card th-text shadow-sm" : "th-text-2 hover:th-text"
             }`}
           >
             {f === "all" ? `All (${rows.length})` : f === "success" ? `✓ Success (${successCount})` : `✗ Failed (${failCount})`}
@@ -177,16 +177,16 @@ export function RegistrationsPageContent() {
       </div>
 
       {loading && (
-        <div className="text-center py-12 text-text-secondary">Loading…</div>
+        <div className="text-center py-12 th-text-2">Loading…</div>
       )}
 
       {!loading && visible.length === 0 && (
-        <div className="text-center py-12 text-text-secondary">No records yet</div>
+        <div className="text-center py-12 th-text-2">No records yet</div>
       )}
 
       {/* Table */}
       {!loading && visible.length > 0 && (
-        <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+        <div className="rounded-xl border th-border overflow-hidden shadow-sm">
           <table className="w-full text-sm border-collapse">
             <thead className="bg-navy">
               <tr>
@@ -206,20 +206,20 @@ export function RegistrationsPageContent() {
                   <tr
                     key={row.id}
                     onClick={() => setExpanded(expanded === row.id ? null : row.id)}
-                    className={`border-b border-border last:border-0 cursor-pointer hover:bg-navy/3 transition-colors ${
-                      i % 2 === 0 ? "bg-white" : "bg-surface/40"
+                    className={`border-b th-border last:border-0 cursor-pointer hover:bg-navy/3 transition-colors ${
+                      i % 2 === 0 ? "th-card" : "th-bg/40"
                     } ${row.status !== "success" ? "border-l-2 border-l-error/40" : ""}`}
                   >
-                    <td className="px-3 py-2 text-xs text-text-secondary whitespace-nowrap font-mono">
+                    <td className="px-3 py-2 text-xs th-text-2 whitespace-nowrap font-mono">
                       {fmtDate(row.createdAt)}
                     </td>
-                    <td className="px-3 py-2 font-medium text-text-primary max-w-[150px] truncate">
-                      {row.clubName ?? <span className="text-text-secondary/40 italic">—</span>}
+                    <td className="px-3 py-2 font-medium th-text max-w-[150px] truncate">
+                      {row.clubName ?? <span className="th-text-2/40 italic">—</span>}
                     </td>
-                    <td className="px-3 py-2 text-text-secondary max-w-[180px] truncate text-xs">
+                    <td className="px-3 py-2 th-text-2 max-w-[180px] truncate text-xs">
                       {row.contactEmail ?? "—"}
                     </td>
-                    <td className="px-3 py-2 text-xs text-text-secondary">
+                    <td className="px-3 py-2 text-xs th-text-2">
                       {row.country ?? "—"}
                     </td>
                     <td className="px-3 py-2 text-center tabular-nums text-xs">
@@ -229,29 +229,29 @@ export function RegistrationsPageContent() {
                       <StatusBadge status={row.status} />
                     </td>
                     <td className="px-3 py-2">
-                      <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                      <div className="flex items-center gap-1.5 text-xs th-text-2">
                         <DeviceIcon ua={row.userAgent} />
                         <span>{parseBrowser(row.userAgent)}</span>
-                        <span className="text-text-secondary/50">{parseOS(row.userAgent)}</span>
+                        <span className="th-text-2/50">{parseOS(row.userAgent)}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-xs font-mono text-text-secondary/70">
+                    <td className="px-3 py-2 text-xs font-mono th-text-2/70">
                       {row.ip?.split(",")[0]?.trim() ?? "—"}
                     </td>
                   </tr>
 
                   {/* Expanded detail row */}
                   {expanded === row.id && (
-                    <tr key={`${row.id}-detail`} className="bg-navy/5 border-b border-border">
+                    <tr key={`${row.id}-detail`} className="bg-navy/5 border-b th-border">
                       <td colSpan={8} className="px-4 py-3">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                           <div>
-                            <p className="text-text-secondary font-semibold uppercase tracking-wide mb-1">Contact</p>
+                            <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">Contact</p>
                             <p className="font-medium">{row.contactName ?? "—"}</p>
-                            <p className="text-text-secondary">{row.contactEmail ?? "—"}</p>
+                            <p className="th-text-2">{row.contactEmail ?? "—"}</p>
                           </div>
                           <div>
-                            <p className="text-text-secondary font-semibold uppercase tracking-wide mb-1">Location</p>
+                            <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">Location</p>
                             <p>{row.country}{row.city ? `, ${row.city}` : ""}</p>
                             {row.clubId && (
                               <p className="text-success">Club ID: #{row.clubId}</p>
@@ -259,7 +259,7 @@ export function RegistrationsPageContent() {
                           </div>
                           {row.failReason && (
                             <div>
-                              <p className="text-text-secondary font-semibold uppercase tracking-wide mb-1">Fail reason</p>
+                              <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">Fail reason</p>
                               <p className="text-error">{row.failReason}</p>
                             </div>
                           )}
@@ -268,17 +268,17 @@ export function RegistrationsPageContent() {
                               const t = JSON.parse(row.teamsJson) as { name: string; classId: string }[];
                               return (
                                 <div>
-                                  <p className="text-text-secondary font-semibold uppercase tracking-wide mb-1">Teams</p>
+                                  <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">Teams</p>
                                   {t.map((tm, idx) => (
-                                    <p key={idx}>{tm.name || "(no name)"} <span className="text-text-secondary">class {tm.classId || "?"}</span></p>
+                                    <p key={idx}>{tm.name || "(no name)"} <span className="th-text-2">class {tm.classId || "?"}</span></p>
                                   ))}
                                 </div>
                               );
                             } catch { return null; }
                           })()}
                           <div className="col-span-2 md:col-span-4">
-                            <p className="text-text-secondary font-semibold uppercase tracking-wide mb-1">User Agent</p>
-                            <p className="font-mono text-[10px] text-text-secondary break-all">{row.userAgent ?? "—"}</p>
+                            <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">User Agent</p>
+                            <p className="font-mono text-[10px] th-text-2 break-all">{row.userAgent ?? "—"}</p>
                           </div>
                         </div>
                       </td>

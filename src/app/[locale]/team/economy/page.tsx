@@ -73,10 +73,10 @@ export default function EconomyPage() {
             <h3 className="text-sm font-semibold text-navy mb-3">{t("subtotal")}</h3>
             <div className="space-y-2">
               {data.orders.map((order, i) => (
-                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-surface">
+                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg th-bg">
                   <div>
                     <p className="text-sm font-medium">{getLocalName(order)}</p>
-                    <p className="text-xs text-text-secondary">
+                    <p className="text-xs th-text-2">
                       {order.quantity} × {parseFloat(order.unitPrice).toFixed(0)} {tc("euro")}
                     </p>
                   </div>
@@ -89,11 +89,11 @@ export default function EconomyPage() {
 
         {/* Summary */}
         <div className="mt-6 space-y-3">
-          <div className="flex justify-between py-3 border-b border-border">
+          <div className="flex justify-between py-3 border-b th-border">
             <span className="text-sm font-semibold">{t("totalToPay")}:</span>
             <span className="text-lg font-bold text-navy">{parseFloat(data.totalToPay).toFixed(0)} {tc("euro")}</span>
           </div>
-          <div className="flex justify-between py-3 border-b border-border">
+          <div className="flex justify-between py-3 border-b th-border">
             <span className="text-sm font-semibold">{t("received")}:</span>
             <span className="text-lg font-bold text-success">{parseFloat(data.totalPaid).toFixed(0)} {tc("euro")}</span>
           </div>
@@ -115,13 +115,13 @@ export default function EconomyPage() {
           </div>
           <div className="space-y-3">
             {data.payments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between py-3 px-3 rounded-lg bg-surface">
+              <div key={payment.id} className="flex items-center justify-between py-3 px-3 rounded-lg th-bg">
                 <div className="flex items-center gap-3">
-                  <Clock className="w-4 h-4 text-text-secondary" />
+                  <Clock className="w-4 h-4 th-text-2" />
                   <div>
                     <p className="text-sm font-medium">{parseFloat(payment.amount).toFixed(0)} {payment.currency}</p>
                     {payment.reference && (
-                      <p className="text-xs text-text-secondary">{payment.reference}</p>
+                      <p className="text-xs th-text-2">{payment.reference}</p>
                     )}
                   </div>
                 </div>
@@ -130,7 +130,7 @@ export default function EconomyPage() {
                     {payment.status}
                   </Badge>
                   {payment.receivedAt && (
-                    <p className="text-xs text-text-secondary mt-1">
+                    <p className="text-xs th-text-2 mt-1">
                       {new Date(payment.receivedAt).toLocaleDateString()}
                     </p>
                   )}

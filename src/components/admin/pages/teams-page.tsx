@@ -190,14 +190,14 @@ export function TeamsPageContent() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-text-primary">{t("title")}</h1>
+          <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
         </div>
         <Card>
           <div className="animate-pulse space-y-4">
-            <div className="h-10 w-full bg-surface rounded-lg" />
-            <div className="h-6 w-full bg-surface rounded" />
-            <div className="h-6 w-3/4 bg-surface rounded" />
-            <div className="h-6 w-full bg-surface rounded" />
+            <div className="h-10 w-full th-bg rounded-lg" />
+            <div className="h-6 w-full th-bg rounded" />
+            <div className="h-6 w-3/4 th-bg rounded" />
+            <div className="h-6 w-full th-bg rounded" />
           </div>
         </Card>
       </div>
@@ -207,7 +207,7 @@ export function TeamsPageContent() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">{t("title")}</h1>
+        <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
         <div className="flex gap-3">
           <Button variant="secondary" onClick={exportCSV}>
             <Download className="w-4 h-4" />
@@ -218,15 +218,15 @@ export function TeamsPageContent() {
 
       <Card padding={false}>
         {/* Search bar */}
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b th-border">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 th-text-2" />
             <input
               type="text"
               placeholder={tc("search") + "..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-navy/20"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-navy/20"
             />
           </div>
         </div>
@@ -235,29 +235,29 @@ export function TeamsPageContent() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                <tr className="border-b th-border text-left">
+                  <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     #
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                  <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     {tTeam("clubName")}
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                  <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     {tTeam("teamName")}
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                  <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     {tTeam("class")}
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                  <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     {t("players")}
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                  <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     {t("balance")}
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                  <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     {tTeam("status")}
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                  <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     {tc("actions")}
                   </th>
                 </tr>
@@ -274,7 +274,7 @@ export function TeamsPageContent() {
                           : `/${locale}/admin/teams/${team.id}`;
                         router.push(path);
                       }}
-                      className="border-b border-border last:border-0 hover:bg-navy/5 cursor-pointer"
+                      className="border-b th-border last:border-0 hover:bg-navy/5 cursor-pointer"
                     >
                       {/* Reg number */}
                       <td className="px-4 py-3">
@@ -291,30 +291,30 @@ export function TeamsPageContent() {
                               className="w-6 h-6 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-surface flex items-center justify-center">
-                              <Users className="w-3 h-3 text-text-secondary" />
+                            <div className="w-6 h-6 rounded-full th-bg flex items-center justify-center">
+                              <Users className="w-3 h-3 th-text-2" />
                             </div>
                           )}
-                          <span className="text-sm text-text-primary">
+                          <span className="text-sm th-text">
                             {team.club?.name || "-"}
                           </span>
                         </div>
                       </td>
 
                       {/* Team name */}
-                      <td className="px-4 py-3 text-sm font-medium text-text-primary">
+                      <td className="px-4 py-3 text-sm font-medium th-text">
                         {team.name || (
-                          <span className="text-text-secondary">-</span>
+                          <span className="th-text-2">-</span>
                         )}
                       </td>
 
                       {/* Class */}
-                      <td className="px-4 py-3 text-sm text-text-secondary">
+                      <td className="px-4 py-3 text-sm th-text-2">
                         {team.class?.name || "-"}
                       </td>
 
                       {/* Players */}
-                      <td className="px-4 py-3 text-sm text-text-secondary">
+                      <td className="px-4 py-3 text-sm th-text-2">
                         {team.playerCount}
                       </td>
 
@@ -353,7 +353,7 @@ export function TeamsPageContent() {
                         {statusDropdown === team.id && (
                           <div
                             ref={dropdownRef}
-                            className="absolute z-20 mt-1 left-4 bg-white rounded-lg border border-border shadow-lg py-1 min-w-[140px]"
+                            className="absolute z-20 mt-1 left-4 th-card rounded-lg border th-border shadow-lg py-1 min-w-[140px]"
                           >
                             {allStatuses.map((s) => (
                               <button
@@ -361,10 +361,10 @@ export function TeamsPageContent() {
                                 onClick={() =>
                                   handleStatusChange(team.id, s)
                                 }
-                                className={`w-full text-left px-3 py-2 text-sm hover:bg-surface flex items-center gap-2 cursor-pointer ${
+                                className={`w-full text-left px-3 py-2 text-sm hover:th-bg flex items-center gap-2 cursor-pointer ${
                                   team.status === s
                                     ? "font-medium text-navy"
-                                    : "text-text-primary"
+                                    : "th-text"
                                 }`}
                               >
                                 {team.status === s && (
@@ -411,7 +411,7 @@ export function TeamsPageContent() {
             </table>
           </div>
         ) : (
-          <div className="text-center py-12 text-text-secondary text-sm">
+          <div className="text-center py-12 th-text-2 text-sm">
             <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
             {search ? t("noResults") : t("noTeams")}
           </div>

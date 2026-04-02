@@ -114,7 +114,7 @@ interface ServicePackage { id: number; name: string; isDefault: boolean }
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<TeamStatus, string> = {
-  draft: "bg-surface text-text-secondary border-border",
+  draft: "th-bg th-text-2 th-border",
   open: "bg-emerald-50 text-emerald-700 border-emerald-200",
   confirmed: "bg-amber-50 text-amber-700 border-amber-200",
   cancelled: "bg-red-50 text-red-600 border-red-200",
@@ -171,23 +171,23 @@ function StatTile({ label, value, sub, detail, color = "default" }: {
   color?: "default" | "green" | "red" | "amber";
 }) {
   const colors = {
-    default: "border-border bg-surface/50",
+    default: "th-border th-bg/50",
     green: "border-emerald-200 bg-emerald-50",
     red: "border-red-200 bg-red-50",
     amber: "border-amber-200 bg-amber-50",
   };
   const textColors = {
-    default: "text-text-primary",
+    default: "th-text",
     green: "text-emerald-700",
     red: "text-red-600",
     amber: "text-amber-700",
   };
   return (
     <div className={`rounded-xl border p-4 ${colors[color]}`}>
-      <p className="text-xs font-medium text-text-secondary uppercase tracking-wide">{label}</p>
+      <p className="text-xs font-medium th-text-2 uppercase tracking-wide">{label}</p>
       <p className={`text-2xl font-bold mt-1 ${textColors[color]}`}>{value}</p>
-      {sub && <p className="text-xs text-text-secondary mt-0.5">{sub}</p>}
-      {detail && <p className="text-xs text-text-secondary/70 mt-1">{detail}</p>}
+      {sub && <p className="text-xs th-text-2 mt-0.5">{sub}</p>}
+      {detail && <p className="text-xs th-text-2/70 mt-1">{detail}</p>}
     </div>
   );
 }
@@ -197,10 +197,10 @@ function SectionHeader({ label, count, open, onToggle }: {
 }) {
   return (
     <button onClick={onToggle}
-      className="flex items-center gap-2 text-sm font-semibold text-text-primary hover:text-navy transition-colors cursor-pointer w-full text-left py-1">
+      className="flex items-center gap-2 text-sm font-semibold th-text hover:text-navy transition-colors cursor-pointer w-full text-left py-1">
       {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       {label}
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-surface border border-border text-xs font-medium text-text-secondary">
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full th-bg border th-border text-xs font-medium th-text-2">
         {count}
       </span>
     </button>
@@ -213,16 +213,16 @@ function InfoRow({ icon, label, value, href }: {
   if (!value) return null;
   return (
     <div className="flex items-start gap-3 text-sm">
-      <span className="text-text-secondary mt-0.5 shrink-0">{icon}</span>
+      <span className="th-text-2 mt-0.5 shrink-0">{icon}</span>
       <div>
-        <span className="text-xs text-text-secondary block">{label}</span>
+        <span className="text-xs th-text-2 block">{label}</span>
         {href ? (
           <a href={href} target="_blank" rel="noopener noreferrer"
             className="text-navy hover:underline font-medium flex items-center gap-1">
             {value} <ExternalLink className="w-3 h-3" />
           </a>
         ) : (
-          <span className="text-text-primary font-medium">{value}</span>
+          <span className="th-text font-medium">{value}</span>
         )}
       </div>
     </div>
@@ -384,7 +384,7 @@ function PackageItemOverridesCard({
     return (
       <Card>
         <CardHeader><CardTitle>Package Item Overrides</CardTitle></CardHeader>
-        <div className="flex items-center gap-2 py-4 text-text-secondary">
+        <div className="flex items-center gap-2 py-4 th-text-2">
           <Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">Loading...</span>
         </div>
       </Card>
@@ -397,7 +397,7 @@ function PackageItemOverridesCard({
     <Card>
       <CardHeader>
         <CardTitle>Package Item Overrides</CardTitle>
-        <p className="text-xs text-text-secondary mt-0.5">
+        <p className="text-xs th-text-2 mt-0.5">
           Override pricing or disable specific services for this team only
         </p>
       </CardHeader>
@@ -416,7 +416,7 @@ function PackageItemOverridesCard({
                   ? "border-red-200 bg-red-50/50"
                   : ov
                   ? "border-amber-200 bg-amber-50/50"
-                  : "border-border bg-white"
+                  : "th-border th-card"
               }`}
             >
               {/* Item header */}
@@ -431,7 +431,7 @@ function PackageItemOverridesCard({
                         {item.serviceName ?? "—"}
                       </span>
                       {item.details && (
-                        <span className="text-xs text-text-secondary">{item.details}</span>
+                        <span className="text-xs th-text-2">{item.details}</span>
                       )}
                       {ov?.isDisabled && (
                         <span className="text-xs font-semibold text-red-600 bg-red-100 rounded px-1.5 py-0.5">
@@ -440,17 +440,17 @@ function PackageItemOverridesCard({
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-text-secondary">{item.pricingMode.replace(/_/g, " ")}</span>
+                      <span className="text-xs th-text-2">{item.pricingMode.replace(/_/g, " ")}</span>
                       {ov?.customPrice && ov.customPrice !== item.price ? (
                         <>
-                          <span className="text-xs text-text-secondary line-through">€{item.price}</span>
+                          <span className="text-xs th-text-2 line-through">€{item.price}</span>
                           <span className="text-xs font-semibold text-amber-700">€{ov.customPrice}</span>
                         </>
                       ) : (
-                        <span className="text-xs font-semibold text-text-primary">€{item.price}</span>
+                        <span className="text-xs font-semibold th-text">€{item.price}</span>
                       )}
                       {ov?.reason && (
-                        <span className="text-xs text-text-secondary italic">"{ov.reason}"</span>
+                        <span className="text-xs th-text-2 italic">"{ov.reason}"</span>
                       )}
                     </div>
                   </div>
@@ -461,7 +461,7 @@ function PackageItemOverridesCard({
                     <button
                       type="button"
                       onClick={() => removeOverride(ov.id)}
-                      className="text-xs text-text-secondary hover:text-error transition-colors cursor-pointer"
+                      className="text-xs th-text-2 hover:text-error transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -478,26 +478,26 @@ function PackageItemOverridesCard({
 
               {/* Edit form */}
               {isEditing && (
-                <div className="mt-3 pt-3 border-t border-border space-y-2">
+                <div className="mt-3 pt-3 border-t th-border space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-xs text-text-secondary mb-1 block">Custom price (€)</label>
+                      <label className="text-xs th-text-2 mb-1 block">Custom price (€)</label>
                       <input
                         type="number"
                         value={editPrice}
                         onChange={(e) => setEditPrice(e.target.value)}
                         placeholder={item.price}
-                        className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
+                        className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-text-secondary mb-1 block">Reason (optional)</label>
+                      <label className="text-xs th-text-2 mb-1 block">Reason (optional)</label>
                       <input
                         type="text"
                         value={editReason}
                         onChange={(e) => setEditReason(e.target.value)}
                         placeholder="e.g. Early bird, VIP, Sponsor"
-                        className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
+                        className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
                       />
                     </div>
                   </div>
@@ -507,7 +507,7 @@ function PackageItemOverridesCard({
                       type="checkbox"
                       checked={editDisabled}
                       onChange={(e) => setEditDisabled(e.target.checked)}
-                      className="rounded border-border w-4 h-4"
+                      className="rounded th-border w-4 h-4"
                     />
                     <span className="text-sm text-red-600 font-medium">Disable this service for team</span>
                   </label>
@@ -703,7 +703,7 @@ function PackagePricingCard({
     if (isEditing) {
       return (
         <div className="flex items-center gap-1">
-          <span className="text-text-secondary text-sm">€</span>
+          <span className="th-text-2 text-sm">€</span>
           <input
             ref={inputRef}
             type="number"
@@ -726,18 +726,18 @@ function PackagePricingCard({
           className={`text-sm font-semibold tabular-nums rounded-lg px-2.5 py-1 border transition-all cursor-pointer ${
             isCustom
               ? "bg-navy/5 text-navy border-navy/30 hover:bg-navy/10"
-              : "bg-transparent text-text-primary border-transparent hover:bg-surface hover:border-border"
+              : "bg-transparent th-text border-transparent hover:th-bg hover:th-border"
           } disabled:opacity-50`}
         >
           {isSaving ? "…" : fmtEuro(effPrice)}
         </button>
         {isCustom && (
-          <span className="text-xs text-text-secondary line-through opacity-60 hidden group-hover:inline">
+          <span className="text-xs th-text-2 line-through opacity-60 hidden group-hover:inline">
             {fmtEuro(basePrice)}
           </span>
         )}
         {unitLabel && !isEditing && (
-          <span className="text-xs text-text-secondary hidden group-hover:inline">{unitLabel}</span>
+          <span className="text-xs th-text-2 hidden group-hover:inline">{unitLabel}</span>
         )}
       </div>
     );
@@ -788,7 +788,7 @@ function PackagePricingCard({
         <select
           value={selectedPackageId}
           onChange={(e) => onSelectPackage(e.target.value)}
-          className="flex-1 rounded-lg border border-border bg-white px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer"
+          className="flex-1 rounded-lg border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer"
         >
           <option value="">{pkg ? "Change package..." : "Assign package..."}</option>
           {packages.map((p) => (
@@ -801,21 +801,21 @@ function PackagePricingCard({
       </div>
 
       {!pkg ? (
-        <div className="rounded-lg border border-dashed border-border p-4 text-center">
-          <p className="text-sm text-text-secondary">No package assigned — team cannot open booking page</p>
+        <div className="rounded-lg border border-dashed th-border p-4 text-center">
+          <p className="text-sm th-text-2">No package assigned — team cannot open booking page</p>
         </div>
       ) : (
         <>
           {/* Pricing table */}
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border">
-                <th className="text-left pb-2 text-xs font-medium text-text-secondary uppercase tracking-wide">Service</th>
-                <th className="text-left pb-2 text-xs font-medium text-text-secondary uppercase tracking-wide">Conditions</th>
-                <th className="text-right pb-2 text-xs font-medium text-text-secondary uppercase tracking-wide pr-1">Price</th>
+              <tr className="border-b th-border">
+                <th className="text-left pb-2 text-xs font-medium th-text-2 uppercase tracking-wide">Service</th>
+                <th className="text-left pb-2 text-xs font-medium th-text-2 uppercase tracking-wide">Conditions</th>
+                <th className="text-right pb-2 text-xs font-medium th-text-2 uppercase tracking-wide pr-1">Price</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-[var(--cat-card-border)]">
 
               {/* Registration */}
               {pkg.includeRegistration && services.registration.map((r) => {
@@ -824,12 +824,12 @@ function PackagePricingCard({
                   <tr key={`reg-${r.id}`} className={`${ov?.isDisabled ? "opacity-40" : ""}`}>
                     <td className="py-2.5 pr-3">
                       <div className="flex items-center gap-2">
-                        <FileText className="w-3.5 h-3.5 text-text-secondary shrink-0" />
-                        <span className="text-sm font-medium text-text-primary">{r.name}</span>
-                        {r.isRequired && <span className="text-xs text-text-secondary bg-surface border border-border rounded px-1.5">req.</span>}
+                        <FileText className="w-3.5 h-3.5 th-text-2 shrink-0" />
+                        <span className="text-sm font-medium th-text">{r.name}</span>
+                        {r.isRequired && <span className="text-xs th-text-2 th-bg border th-border rounded px-1.5">req.</span>}
                       </div>
                     </td>
-                    <td className="py-2.5 pr-3 text-xs text-text-secondary">1 × per team</td>
+                    <td className="py-2.5 pr-3 text-xs th-text-2">1 × per team</td>
                     <td className="py-2.5 text-right">
                       {PriceCell({ rowKey: `registration-${r.id}`, serviceType: "registration", serviceId: r.id, basePrice: parseFloat(r.price) })}
                     </td>
@@ -847,15 +847,15 @@ function PackagePricingCard({
                   <tr key={`accom-${a.id}`} className={`${ov?.isDisabled ? "opacity-40" : ""}`}>
                     <td className="py-2.5 pr-3">
                       <div className="flex items-center gap-2">
-                        <Hotel className="w-3.5 h-3.5 text-text-secondary shrink-0" />
-                        <span className="text-sm font-medium text-text-primary">{a.name}</span>
+                        <Hotel className="w-3.5 h-3.5 th-text-2 shrink-0" />
+                        <span className="text-sm font-medium th-text">{a.name}</span>
                         {a.includedMeals > 0 && (
                           <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1.5">{a.includedMeals} meals</span>
                         )}
                       </div>
                     </td>
                     <td className="py-2.5 pr-3">
-                      <div className="text-xs text-text-secondary space-y-0.5">
+                      <div className="text-xs th-text-2 space-y-0.5">
                         {dateRange && <div>{dateRange}</div>}
                         <div>
                           Players {fmtEuro(parseFloat(a.pricePerPlayer))}
@@ -867,7 +867,7 @@ function PackagePricingCard({
                     <td className="py-2.5 text-right">
                       {PriceCell({ rowKey: `accommodation-${a.id}`, serviceType: "accommodation", serviceId: a.id, basePrice: parseFloat(a.pricePerPlayer), unitLabel: "per person" })}
                       {ov?.customPrice && (
-                        <div className="text-xs text-text-secondary text-right mt-0.5">all types</div>
+                        <div className="text-xs th-text-2 text-right mt-0.5">all types</div>
                       )}
                     </td>
                   </tr>
@@ -881,12 +881,12 @@ function PackagePricingCard({
                   <tr key={`tr-${t.id}`} className={`${ov?.isDisabled ? "opacity-40" : ""}`}>
                     <td className="py-2.5 pr-3">
                       <div className="flex items-center gap-2">
-                        <Car className="w-3.5 h-3.5 text-text-secondary shrink-0" />
-                        <span className="text-sm font-medium text-text-primary">{t.name}</span>
+                        <Car className="w-3.5 h-3.5 th-text-2 shrink-0" />
+                        <span className="text-sm font-medium th-text">{t.name}</span>
                       </div>
-                      {t.description && <div className="text-xs text-text-secondary mt-0.5 ml-5">{t.description}</div>}
+                      {t.description && <div className="text-xs th-text-2 mt-0.5 ml-5">{t.description}</div>}
                     </td>
-                    <td className="py-2.5 pr-3 text-xs text-text-secondary">Per team</td>
+                    <td className="py-2.5 pr-3 text-xs th-text-2">Per team</td>
                     <td className="py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {PriceCell({ rowKey: `transfer-${t.id}`, serviceType: "transfer", serviceId: t.id, basePrice: parseFloat(t.pricePerPerson) })}
@@ -896,7 +896,7 @@ function PackagePricingCard({
                           className={`text-xs px-2 py-1 rounded-lg border transition-colors cursor-pointer shrink-0 ${
                             effectivePrice("transfer", t.id, parseFloat(t.pricePerPerson)) === 0
                               ? "bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
-                              : "bg-surface border-border text-text-secondary hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
+                              : "th-bg th-border th-text-2 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
                           }`}
                         >
                           🎁
@@ -914,11 +914,11 @@ function PackagePricingCard({
                   <tr key={`meal-${m.id}`} className={`${ov?.isDisabled ? "opacity-40" : ""}`}>
                     <td className="py-2.5 pr-3">
                       <div className="flex items-center gap-2">
-                        <Utensils className="w-3.5 h-3.5 text-text-secondary shrink-0" />
-                        <span className="text-sm font-medium text-text-primary">{m.name}</span>
+                        <Utensils className="w-3.5 h-3.5 th-text-2 shrink-0" />
+                        <span className="text-sm font-medium th-text">{m.name}</span>
                       </div>
                     </td>
-                    <td className="py-2.5 pr-3 text-xs text-text-secondary">
+                    <td className="py-2.5 pr-3 text-xs th-text-2">
                       {m.perDay ? "Per person / day" : "Per person"}
                     </td>
                     <td className="py-2.5 text-right">
@@ -931,16 +931,16 @@ function PackagePricingCard({
             </tbody>
           </table>
 
-          <p className="text-xs text-text-secondary mt-3 italic">
+          <p className="text-xs th-text-2 mt-3 italic">
             Click any price to edit. Press Enter to save, Esc to cancel. Base price restores on clear.
           </p>
 
           {/* ── Free Slots ── */}
-          <div className="mt-5 pt-5 border-t border-border">
+          <div className="mt-5 pt-5 border-t th-border">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-sm font-semibold text-text-primary">Free slots</p>
-                <p className="text-xs text-text-secondary">Complimentary places (visible to the team)</p>
+                <p className="text-sm font-semibold th-text">Free slots</p>
+                <p className="text-xs th-text-2">Complimentary places (visible to the team)</p>
               </div>
               <button
                 onClick={saveFreeSlots}
@@ -958,7 +958,7 @@ function PackagePricingCard({
                 { label: "Meals in package", value: mealsOverride, set: setMealsOverride, placeholder: "default", isText: true },
               ].map(({ label, value, set, placeholder, isText }) => (
                 <div key={label}>
-                  <label className="block text-xs text-text-secondary mb-1">{label}</label>
+                  <label className="block text-xs th-text-2 mb-1">{label}</label>
                   <div className="flex items-center gap-1.5">
                     <input
                       type="number"
@@ -973,14 +973,14 @@ function PackagePricingCard({
                           set(String(parseInt(e.target.value) || 0));
                         }
                       }}
-                      className="w-16 rounded-lg border border-border px-2 py-1.5 text-sm font-semibold text-center focus:outline-none focus:border-navy"
+                      className="w-16 rounded-lg border th-border px-2 py-1.5 text-sm font-semibold text-center focus:outline-none focus:border-navy"
                     />
-                    {!isText && <span className="text-xs text-text-secondary">free</span>}
+                    {!isText && <span className="text-xs th-text-2">free</span>}
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-text-secondary mt-1">Leave meals empty to use default (from accommodation option)</p>
+            <p className="text-xs th-text-2 mt-1">Leave meals empty to use default (from accommodation option)</p>
             {(parseInt(freePlayers) > 0 || parseInt(freeStaff) > 0 || parseInt(freeAccom) > 0) && (
               <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs text-emerald-700">
                 The team will see: {[
@@ -1203,14 +1203,14 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
-        <div className="h-6 w-40 bg-surface rounded" />
-        <div className="h-32 bg-surface rounded-xl" />
+        <div className="h-6 w-40 th-bg rounded" />
+        <div className="h-32 th-bg rounded-xl" />
         <div className="grid grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-24 bg-surface rounded-xl" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-24 th-bg rounded-xl" />)}
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="h-48 bg-surface rounded-xl" />
-          <div className="h-48 bg-surface rounded-xl" />
+          <div className="h-48 th-bg rounded-xl" />
+          <div className="h-48 th-bg rounded-xl" />
         </div>
       </div>
     );
@@ -1220,7 +1220,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
     return (
       <div className="space-y-4">
         <button onClick={() => router.push(`/${locale}/admin/teams`)}
-          className="flex items-center gap-2 text-sm text-text-secondary hover:text-navy cursor-pointer">
+          className="flex items-center gap-2 text-sm th-text-2 hover:text-navy cursor-pointer">
           <ArrowLeft className="w-4 h-4" /> Back to Teams
         </button>
         <Alert variant="error">{error ?? "Team not found"}</Alert>
@@ -1264,7 +1264,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
 
       {/* ── Back nav ── */}
       <button onClick={() => router.push(`/${locale}/admin/teams`)}
-        className="flex items-center gap-2 text-sm text-text-secondary hover:text-navy transition-colors cursor-pointer">
+        className="flex items-center gap-2 text-sm th-text-2 hover:text-navy transition-colors cursor-pointer">
         <ArrowLeft className="w-4 h-4" /> All Teams
       </button>
 
@@ -1277,30 +1277,30 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           <div className="flex items-start gap-4">
             {club?.badgeUrl ? (
               <img src={club.badgeUrl} alt={club.name}
-                className="w-14 h-14 rounded-full object-cover border-2 border-border shrink-0" />
+                className="w-14 h-14 rounded-full object-cover border-2 th-border shrink-0" />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-surface flex items-center justify-center border-2 border-border shrink-0">
-                <Users className="w-7 h-7 text-text-secondary" />
+              <div className="w-14 h-14 rounded-full th-bg flex items-center justify-center border-2 th-border shrink-0">
+                <Users className="w-7 h-7 th-text-2" />
               </div>
             )}
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl font-bold text-text-primary">{team.name}</h1>
-                <span className="text-lg font-semibold text-text-secondary">#{team.regNumber}</span>
+                <h1 className="text-2xl font-bold th-text">{team.name}</h1>
+                <span className="text-lg font-semibold th-text-2">#{team.regNumber}</span>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${STATUS_COLORS[team.status]}`}>
                   {team.status.charAt(0).toUpperCase() + team.status.slice(1)}
                 </span>
               </div>
               {club && (
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm th-text-2">
                   {club.name}
                   {club.city ? ` · ${club.city}` : ""}
                   {club.country ? `, ${club.country}` : ""}
                 </p>
               )}
               {teamClass && (
-                <p className="text-xs text-text-secondary mt-0.5">
-                  Class: <span className="font-semibold text-text-primary">{teamClass.name}</span>
+                <p className="text-xs th-text-2 mt-0.5">
+                  Class: <span className="font-semibold th-text">{teamClass.name}</span>
                   {(teamClass.minBirthYear || teamClass.maxBirthYear) &&
                     ` (${teamClass.minBirthYear ?? ""}–${teamClass.maxBirthYear ?? ""})`}
                 </p>
@@ -1313,7 +1313,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             {/* Status dropdown */}
             <select value={team.status} onChange={(e) => handleStatusChange(e.target.value as TeamStatus)}
               disabled={savingStatus}
-              className="rounded-lg border border-border bg-white px-3 py-1.5 text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer disabled:opacity-50">
+              className="rounded-lg border th-border th-card px-3 py-1.5 text-sm font-medium th-text focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer disabled:opacity-50">
               {allStatuses.map((s) => (
                 <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
               ))}
@@ -1363,7 +1363,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="text-xs text-text-secondary hover:text-text-primary cursor-pointer px-1.5 py-1.5"
+                  className="text-xs th-text-2 hover:th-text cursor-pointer px-1.5 py-1.5"
                 >
                   Cancel
                 </button>
@@ -1371,7 +1371,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             ) : (
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-error border border-border hover:border-error/40 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-error border th-border hover:border-error/40 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
@@ -1381,11 +1381,11 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
 
         {/* Contact info */}
         {club && (club.contactName || club.contactEmail || club.contactPhone) && (
-          <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-x-6 gap-y-2">
+          <div className="mt-4 pt-4 border-t th-border flex flex-wrap gap-x-6 gap-y-2">
             {club.contactName && (
-              <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <div className="flex items-center gap-2 text-sm th-text-2">
                 <UserCheck className="w-4 h-4" />
-                <span className="font-medium text-text-primary">{club.contactName}</span>
+                <span className="font-medium th-text">{club.contactName}</span>
               </div>
             )}
             {club.contactEmail && (
@@ -1397,7 +1397,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             )}
             {club.contactPhone && (
               <a href={`tel:${club.contactPhone}`}
-                className="flex items-center gap-2 text-sm text-text-secondary hover:text-navy">
+                className="flex items-center gap-2 text-sm th-text-2 hover:text-navy">
                 <Phone className="w-4 h-4" />
                 {club.contactPhone}
               </a>
@@ -1467,7 +1467,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         <Card>
           <CardHeader><CardTitle>Booking Summary</CardTitle></CardHeader>
           {report.bookings.length === 0 ? (
-            <p className="text-sm text-text-secondary italic">No bookings saved yet.</p>
+            <p className="text-sm th-text-2 italic">No bookings saved yet.</p>
           ) : (
             <div className="space-y-2">
               {(() => {
@@ -1479,11 +1479,11 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 return (
                   <>
                     {accRows.length > 0 && (
-                      <div className="rounded-lg border border-border overflow-hidden">
-                        <div className="flex items-center justify-between px-3 py-2.5 bg-surface/50">
+                      <div className="rounded-lg border th-border overflow-hidden">
+                        <div className="flex items-center justify-between px-3 py-2.5 th-bg/50">
                           <div className="flex items-center gap-2">
-                            <Hotel className="w-4 h-4 text-text-secondary" />
-                            <span className="text-sm font-medium text-text-primary">
+                            <Hotel className="w-4 h-4 th-text-2" />
+                            <span className="text-sm font-medium th-text">
                               {resolveServiceName("accommodation", accRows[0].serviceId)}
                             </span>
                           </div>
@@ -1491,7 +1491,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                         </div>
                         <div className="px-3 py-2 space-y-1">
                           {accRows.map((b) => (
-                            <div key={b.id} className="flex justify-between text-xs text-text-secondary">
+                            <div key={b.id} className="flex justify-between text-xs th-text-2">
                               <span className="capitalize">{b.notes ?? "persons"} × {fmtEuro(b.unitPrice)}</span>
                               <span>{b.quantity} ppl → {fmtEuro(b.total)}</span>
                             </div>
@@ -1502,20 +1502,20 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
 
                     {otherRows.map((b) => {
                       const icons: Record<string, React.ReactNode> = {
-                        transfer: <Car className="w-4 h-4 text-text-secondary" />,
-                        meal: <Utensils className="w-4 h-4 text-text-secondary" />,
-                        registration: <FileText className="w-4 h-4 text-text-secondary" />,
+                        transfer: <Car className="w-4 h-4 th-text-2" />,
+                        meal: <Utensils className="w-4 h-4 th-text-2" />,
+                        registration: <FileText className="w-4 h-4 th-text-2" />,
                       };
                       return (
-                        <div key={b.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                        <div key={b.id} className="flex items-center justify-between rounded-lg border th-border px-3 py-2.5">
                           <div className="flex items-center gap-2">
-                            {icons[b.bookingType] ?? <FileText className="w-4 h-4 text-text-secondary" />}
+                            {icons[b.bookingType] ?? <FileText className="w-4 h-4 th-text-2" />}
                             <div>
-                              <span className="text-sm font-medium text-text-primary">
+                              <span className="text-sm font-medium th-text">
                                 {resolveServiceName(b.bookingType, b.serviceId)}
                               </span>
                               {b.quantity > 1 && (
-                                <span className="text-xs text-text-secondary ml-2">× {b.quantity}</span>
+                                <span className="text-xs th-text-2 ml-2">× {b.quantity}</span>
                               )}
                             </div>
                           </div>
@@ -1524,8 +1524,8 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                       );
                     })}
 
-                    <div className="flex justify-between items-center pt-2 border-t border-border">
-                      <span className="text-sm font-semibold text-text-primary">Grand Total</span>
+                    <div className="flex justify-between items-center pt-2 border-t th-border">
+                      <span className="text-sm font-semibold th-text">Grand Total</span>
                       <span className="text-lg font-bold text-navy">{fmtEuro(finance.totalFromBookings)}</span>
                     </div>
                   </>
@@ -1546,18 +1546,18 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             </div>
           </CardHeader>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="rounded-lg border border-border bg-surface/50 p-3 text-center">
-              <p className="text-xs text-text-secondary">Ordered</p>
-              <p className="text-lg font-bold text-text-primary">{fmtEuro(finance.totalFromBookings)}</p>
+            <div className="rounded-lg border th-border th-bg/50 p-3 text-center">
+              <p className="text-xs th-text-2">Ordered</p>
+              <p className="text-lg font-bold th-text">{fmtEuro(finance.totalFromBookings)}</p>
             </div>
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-center">
-              <p className="text-xs text-text-secondary">Paid</p>
+              <p className="text-xs th-text-2">Paid</p>
               <p className="text-lg font-bold text-emerald-700">{fmtEuro(finance.totalPaid)}</p>
             </div>
             <div className={`rounded-lg border p-3 text-center ${
               finance.balance <= 0 ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"
             }`}>
-              <p className="text-xs text-text-secondary">Balance</p>
+              <p className="text-xs th-text-2">Balance</p>
               <p className={`text-lg font-bold ${finance.balance <= 0 ? "text-emerald-700" : "text-red-600"}`}>
                 {finance.balance > 0 ? "-" : ""}{fmtEuro(Math.abs(finance.balance))}
               </p>
@@ -1568,22 +1568,22 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           {payments.length > 0 && (
             <div>
               <button onClick={() => setShowPayments(!showPayments)}
-                className="flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-navy cursor-pointer mb-2">
+                className="flex items-center gap-1 text-xs font-medium th-text-2 hover:text-navy cursor-pointer mb-2">
                 {showPayments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 Payment history ({payments.length})
               </button>
               {showPayments && (
                 <div className="space-y-1.5">
                   {payments.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0">
+                    <div key={p.id} className="flex items-center justify-between text-sm py-1.5 border-b th-border last:border-0">
                       <div className="flex items-center gap-2">
                         <Badge variant={PAYMENT_STATUS_BADGE[p.status] ?? "default"}>
                           {p.status}
                         </Badge>
-                        <span className="text-text-secondary text-xs">{fmtDate(p.receivedAt ?? p.createdAt)}</span>
-                        <span className="text-text-secondary text-xs">{METHOD_LABELS[p.method] ?? p.method}</span>
+                        <span className="th-text-2 text-xs">{fmtDate(p.receivedAt ?? p.createdAt)}</span>
+                        <span className="th-text-2 text-xs">{METHOD_LABELS[p.method] ?? p.method}</span>
                       </div>
-                      <span className="font-semibold tabular-nums text-text-primary">{fmtEuro(p.amount)}</span>
+                      <span className="font-semibold tabular-nums th-text">{fmtEuro(p.amount)}</span>
                     </div>
                   ))}
                 </div>
@@ -1591,7 +1591,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             </div>
           )}
           {payments.length === 0 && (
-            <p className="text-xs text-text-secondary italic">No payments recorded yet.</p>
+            <p className="text-xs th-text-2 italic">No payments recorded yet.</p>
           )}
         </Card>
       </div>
@@ -1608,7 +1608,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 ✅ Confirmed
               </span>
             ) : team.accomDeclined ? (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-surface text-text-secondary border-border">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border th-bg th-text-2 th-border">
                 Declined
               </span>
             ) : (
@@ -1620,47 +1620,47 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         </CardHeader>
         {team.accomConfirmed ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-lg border border-border bg-surface/50 p-3">
-              <p className="text-xs text-text-secondary">Players</p>
-              <p className="text-xl font-bold text-text-primary">{team.accomPlayers}</p>
+            <div className="rounded-lg border th-border th-bg/50 p-3">
+              <p className="text-xs th-text-2">Players</p>
+              <p className="text-xl font-bold th-text">{team.accomPlayers}</p>
             </div>
-            <div className="rounded-lg border border-border bg-surface/50 p-3">
-              <p className="text-xs text-text-secondary">Staff</p>
-              <p className="text-xl font-bold text-text-primary">{team.accomStaff}</p>
+            <div className="rounded-lg border th-border th-bg/50 p-3">
+              <p className="text-xs th-text-2">Staff</p>
+              <p className="text-xl font-bold th-text">{team.accomStaff}</p>
             </div>
-            <div className="rounded-lg border border-border bg-surface/50 p-3">
-              <p className="text-xs text-text-secondary">Accompanying</p>
-              <p className="text-xl font-bold text-text-primary">{team.accomAccompanying}</p>
+            <div className="rounded-lg border th-border th-bg/50 p-3">
+              <p className="text-xs th-text-2">Accompanying</p>
+              <p className="text-xl font-bold th-text">{team.accomAccompanying}</p>
             </div>
-            <div className="rounded-lg border border-border bg-surface/50 p-3">
-              <p className="text-xs text-text-secondary">Total beds</p>
+            <div className="rounded-lg border th-border th-bg/50 p-3">
+              <p className="text-xs th-text-2">Total beds</p>
               <p className="text-xl font-bold text-navy">{team.accomPlayers + team.accomStaff + team.accomAccompanying}</p>
             </div>
           </div>
         ) : team.accomDeclined ? (
-          <p className="text-sm text-text-secondary italic">Команда отказалась от проживания в отеле.</p>
+          <p className="text-sm th-text-2 italic">Команда отказалась от проживания в отеле.</p>
         ) : (
-          <p className="text-sm text-text-secondary italic">Команда ещё не ответила на вопрос о проживании.</p>
+          <p className="text-sm th-text-2 italic">Команда ещё не ответила на вопрос о проживании.</p>
         )}
         {team.accomConfirmed && (team.accomCheckIn || team.accomCheckOut) && (
           <div className="mt-3 flex gap-6 text-sm">
             {team.accomCheckIn && (
               <div>
-                <span className="text-xs text-text-secondary block">Check-in</span>
-                <span className="font-semibold text-text-primary">{team.accomCheckIn}</span>
+                <span className="text-xs th-text-2 block">Check-in</span>
+                <span className="font-semibold th-text">{team.accomCheckIn}</span>
               </div>
             )}
             {team.accomCheckOut && (
               <div>
-                <span className="text-xs text-text-secondary block">Check-out</span>
-                <span className="font-semibold text-text-primary">{team.accomCheckOut}</span>
+                <span className="text-xs th-text-2 block">Check-out</span>
+                <span className="font-semibold th-text">{team.accomCheckOut}</span>
               </div>
             )}
           </div>
         )}
         {team.accomConfirmed && team.accomNotes && (
-          <div className="mt-3 rounded-lg bg-surface border border-border p-3 text-sm text-text-secondary">
-            <span className="text-xs font-semibold text-text-secondary block mb-1">Special requests</span>
+          <div className="mt-3 rounded-lg th-bg border th-border p-3 text-sm th-text-2">
+            <span className="text-xs font-semibold th-text-2 block mb-1">Special requests</span>
             {team.accomNotes}
           </div>
         )}
@@ -1714,11 +1714,11 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           <div className="space-y-5">
               {/* Hotel assignment */}
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-3 flex items-center gap-1.5">
+                <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3 flex items-center gap-1.5">
                   <Hotel className="w-3.5 h-3.5" /> Отель команды
                 </h4>
                 {availableHotels.length === 0 ? (
-                  <p className="text-sm text-text-secondary italic">
+                  <p className="text-sm th-text-2 italic">
                     Отели не добавлены.{" "}
                     <button onClick={() => router.push(`/${locale}/admin/tournaments`)}
                       className="text-navy hover:underline cursor-pointer">Добавить в турнире</button>
@@ -1726,7 +1726,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 ) : (
                   <div className="space-y-3">
                     <select
-                      className="w-full rounded-lg border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:border-navy"
+                      className="w-full rounded-lg border th-border px-3 py-2 text-sm th-card focus:outline-none focus:border-navy"
                       value={team.hotelId ?? ""}
                       onChange={async (e) => {
                         const val = e.target.value;
@@ -1746,11 +1746,11 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                     {assignedHotel && (
                       <div className="rounded-lg bg-navy/5 border border-navy/15 p-3 space-y-1.5">
                         <p className="text-sm font-semibold text-navy">{assignedHotel.name}</p>
-                        {assignedHotel.address && <p className="text-xs text-text-secondary">{assignedHotel.address}</p>}
-                        {assignedHotel.contactName && <p className="text-xs text-text-secondary">Контакт: {assignedHotel.contactName}</p>}
+                        {assignedHotel.address && <p className="text-xs th-text-2">{assignedHotel.address}</p>}
+                        {assignedHotel.contactName && <p className="text-xs th-text-2">Контакт: {assignedHotel.contactName}</p>}
                         {assignedHotel.contactPhone && <a href={`tel:${assignedHotel.contactPhone}`} className="text-xs text-navy hover:underline block">{assignedHotel.contactPhone}</a>}
-                        {assignedHotel.contactEmail && <p className="text-xs text-text-secondary">{assignedHotel.contactEmail}</p>}
-                        {assignedHotel.notes && <p className="text-xs text-text-secondary italic">{assignedHotel.notes}</p>}
+                        {assignedHotel.contactEmail && <p className="text-xs th-text-2">{assignedHotel.contactEmail}</p>}
+                        {assignedHotel.notes && <p className="text-xs th-text-2 italic">{assignedHotel.notes}</p>}
                       </div>
                     )}
                   </div>
@@ -1762,14 +1762,14 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               {/* Meals */}
               {(tInfo.mealTimes || tInfo.mealLocation || tInfo.mealNotes) && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-3 flex items-center gap-1.5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3 flex items-center gap-1.5">
                     <Utensils className="w-3.5 h-3.5" /> Meals
                   </h4>
                   <div className="space-y-2">
                     <InfoRow icon={<Clock className="w-4 h-4" />} label="Meal times" value={tInfo.mealTimes} />
                     <InfoRow icon={<MapPin className="w-4 h-4" />} label="Location" value={tInfo.mealLocation} />
                     {tInfo.mealNotes && (
-                      <div className="rounded-lg bg-surface border border-border p-2.5 text-xs text-text-secondary">
+                      <div className="rounded-lg th-bg border th-border p-2.5 text-xs th-text-2">
                         {tInfo.mealNotes}
                       </div>
                     )}
@@ -1780,7 +1780,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               {/* Venue */}
               {(tInfo.venueName || tInfo.venueAddress) && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-3 flex items-center gap-1.5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5" /> Venue
                   </h4>
                   <div className="space-y-2">
@@ -1794,7 +1794,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               {/* Emergency */}
               {(tInfo.emergencyContact || tInfo.emergencyPhone) && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-3 flex items-center gap-1.5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3 flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5" /> Emergency Contact
                   </h4>
                   <div className="space-y-2">
@@ -1819,47 +1819,47 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Arrival */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-3">Arrival</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3">Arrival</h4>
               {travel.arrivalType ? (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                  <div className="flex items-center gap-2 text-sm font-semibold th-text">
                     {TRANSPORT_ICONS[travel.arrivalType] ?? <Plane className="w-4 h-4" />}
                     <span>{TRANSPORT_LABELS[travel.arrivalType] ?? travel.arrivalType}</span>
                   </div>
                   {travel.arrivalDate && (
-                    <p className="text-sm text-text-secondary">
+                    <p className="text-sm th-text-2">
                       {fmtDate(travel.arrivalDate)}{travel.arrivalTime && ` at ${travel.arrivalTime}`}
                     </p>
                   )}
                   {travel.arrivalDetails && (
-                    <p className="text-sm font-medium text-text-primary">{travel.arrivalDetails}</p>
+                    <p className="text-sm font-medium th-text">{travel.arrivalDetails}</p>
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-text-secondary italic">Not specified</p>
+                <p className="text-sm th-text-2 italic">Not specified</p>
               )}
             </div>
 
             {/* Departure */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-3">Departure</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3">Departure</h4>
               {travel.departureType ? (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                  <div className="flex items-center gap-2 text-sm font-semibold th-text">
                     {TRANSPORT_ICONS[travel.departureType] ?? <Plane className="w-4 h-4" />}
                     <span>{TRANSPORT_LABELS[travel.departureType] ?? travel.departureType}</span>
                   </div>
                   {travel.departureDate && (
-                    <p className="text-sm text-text-secondary">
+                    <p className="text-sm th-text-2">
                       {fmtDate(travel.departureDate)}{travel.departureTime && ` at ${travel.departureTime}`}
                     </p>
                   )}
                   {travel.departureDetails && (
-                    <p className="text-sm font-medium text-text-primary">{travel.departureDetails}</p>
+                    <p className="text-sm font-medium th-text">{travel.departureDetails}</p>
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-text-secondary italic">Not specified</p>
+                <p className="text-sm th-text-2 italic">Not specified</p>
               )}
             </div>
           </div>
@@ -1873,7 +1873,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <CardTitle>People</CardTitle>
-            <div className="flex items-center gap-3 text-sm text-text-secondary">
+            <div className="flex items-center gap-3 text-sm th-text-2">
               <span>{people.counts.players} players</span>
               <span>·</span>
               <span>{people.counts.staff} staff</span>
@@ -1894,9 +1894,9 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               {medicalPeople.map((p) => (
                 <div key={p.id} className="flex flex-wrap items-center gap-2 text-xs">
                   <span className="font-medium text-amber-900">{p.firstName} {p.lastName}</span>
-                  {p.allergies && <span className="bg-white border border-amber-200 rounded-full px-2 py-0.5 text-amber-700">⚠ {p.allergies}</span>}
-                  {p.dietaryRequirements && <span className="bg-white border border-blue-200 rounded-full px-2 py-0.5 text-blue-700">🥗 {p.dietaryRequirements}</span>}
-                  {p.medicalNotes && <span className="bg-white border border-red-200 rounded-full px-2 py-0.5 text-red-600">💊 {p.medicalNotes}</span>}
+                  {p.allergies && <span className="th-card border border-amber-200 rounded-full px-2 py-0.5 text-amber-700">⚠ {p.allergies}</span>}
+                  {p.dietaryRequirements && <span className="th-card border border-blue-200 rounded-full px-2 py-0.5 text-blue-700">🥗 {p.dietaryRequirements}</span>}
+                  {p.medicalNotes && <span className="th-card border border-red-200 rounded-full px-2 py-0.5 text-red-600">💊 {p.medicalNotes}</span>}
                 </div>
               ))}
             </div>
@@ -1912,33 +1912,33 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 <div className="mt-2 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border">
+                      <tr className="border-b th-border">
                         {["#", "Name", "DOB / Age", "Pos", "Hotel", "Transfer"].map((h, i) => (
-                          <th key={i} className="text-left pb-2 pr-3 text-xs font-medium text-text-secondary whitespace-nowrap">{h}</th>
+                          <th key={i} className="text-left pb-2 pr-3 text-xs font-medium th-text-2 whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {players.map((p, i) => (
-                        <tr key={p.id} className={`border-b border-border last:border-0 ${(p.allergies || p.dietaryRequirements) ? "bg-amber-50/60" : ""}`}>
-                          <td className="py-2.5 pr-3 text-text-secondary tabular-nums">{p.shirtNumber ?? i + 1}</td>
-                          <td className="py-2.5 pr-3 font-medium text-text-primary whitespace-nowrap">
+                        <tr key={p.id} className={`border-b th-border last:border-0 ${(p.allergies || p.dietaryRequirements) ? "bg-amber-50/60" : ""}`}>
+                          <td className="py-2.5 pr-3 th-text-2 tabular-nums">{p.shirtNumber ?? i + 1}</td>
+                          <td className="py-2.5 pr-3 font-medium th-text whitespace-nowrap">
                             {p.firstName} {p.lastName}
                             {(p.allergies || p.dietaryRequirements) && (
                               <AlertTriangle className="inline w-3.5 h-3.5 text-amber-500 ml-1" />
                             )}
                           </td>
-                          <td className="py-2.5 pr-3 text-text-secondary text-xs whitespace-nowrap">
+                          <td className="py-2.5 pr-3 th-text-2 text-xs whitespace-nowrap">
                             {p.dateOfBirth ? (
                               <>{fmtDate(p.dateOfBirth)} <span className="opacity-60">({calcAge(p.dateOfBirth)}y)</span></>
                             ) : "—"}
                           </td>
-                          <td className="py-2.5 pr-3 text-text-secondary text-xs">{p.position ?? "—"}</td>
+                          <td className="py-2.5 pr-3 th-text-2 text-xs">{p.position ?? "—"}</td>
                           <td className="py-2.5 pr-3 text-xs">
-                            {p.needsHotel ? <span className="text-emerald-600 font-medium">✓</span> : <span className="text-text-secondary">—</span>}
+                            {p.needsHotel ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
                           </td>
                           <td className="py-2.5 text-xs">
-                            {p.needsTransfer ? <span className="text-emerald-600 font-medium">✓</span> : <span className="text-text-secondary">—</span>}
+                            {p.needsTransfer ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
                           </td>
                         </tr>
                       ))}
@@ -1957,25 +1957,25 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 <div className="mt-2 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border">
+                      <tr className="border-b th-border">
                         {["Name", "Role", "Hotel", "Transfer"].map((h, i) => (
-                          <th key={i} className="text-left pb-2 pr-3 text-xs font-medium text-text-secondary">{h}</th>
+                          <th key={i} className="text-left pb-2 pr-3 text-xs font-medium th-text-2">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {staff.map((p) => (
-                        <tr key={p.id} className="border-b border-border last:border-0">
-                          <td className="py-2.5 pr-3 font-medium text-text-primary whitespace-nowrap">
+                        <tr key={p.id} className="border-b th-border last:border-0">
+                          <td className="py-2.5 pr-3 font-medium th-text whitespace-nowrap">
                             {p.firstName} {p.lastName}
                             {p.isResponsible && <Badge variant="info" className="ml-2">Responsible</Badge>}
                           </td>
-                          <td className="py-2.5 pr-3 text-text-secondary text-xs">{p.role ?? p.position ?? "—"}</td>
+                          <td className="py-2.5 pr-3 th-text-2 text-xs">{p.role ?? p.position ?? "—"}</td>
                           <td className="py-2.5 pr-3 text-xs">
-                            {p.needsHotel ? <span className="text-emerald-600 font-medium">✓</span> : <span className="text-text-secondary">—</span>}
+                            {p.needsHotel ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
                           </td>
                           <td className="py-2.5 text-xs">
-                            {p.needsTransfer ? <span className="text-emerald-600 font-medium">✓</span> : <span className="text-text-secondary">—</span>}
+                            {p.needsTransfer ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
                           </td>
                         </tr>
                       ))}
@@ -1994,21 +1994,21 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 <div className="mt-2 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border">
+                      <tr className="border-b th-border">
                         {["Name", "Hotel", "Transfer"].map((h, i) => (
-                          <th key={i} className="text-left pb-2 pr-3 text-xs font-medium text-text-secondary">{h}</th>
+                          <th key={i} className="text-left pb-2 pr-3 text-xs font-medium th-text-2">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {accompanying.map((p) => (
-                        <tr key={p.id} className="border-b border-border last:border-0">
-                          <td className="py-2.5 pr-3 font-medium text-text-primary">{p.firstName} {p.lastName}</td>
+                        <tr key={p.id} className="border-b th-border last:border-0">
+                          <td className="py-2.5 pr-3 font-medium th-text">{p.firstName} {p.lastName}</td>
                           <td className="py-2.5 pr-3 text-xs">
-                            {p.needsHotel ? <span className="text-emerald-600 font-medium">✓</span> : <span className="text-text-secondary">—</span>}
+                            {p.needsHotel ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
                           </td>
                           <td className="py-2.5 text-xs">
-                            {p.needsTransfer ? <span className="text-emerald-600 font-medium">✓</span> : <span className="text-text-secondary">—</span>}
+                            {p.needsTransfer ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
                           </td>
                         </tr>
                       ))}
@@ -2020,7 +2020,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           )}
 
           {people.counts.total === 0 && (
-            <p className="text-sm text-text-secondary italic">No people registered yet.</p>
+            <p className="text-sm th-text-2 italic">No people registered yet.</p>
           )}
         </div>
       </Card>
@@ -2032,7 +2032,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Admin Notes</CardTitle>
-            {savingNotes && <span className="text-xs text-text-secondary">Saving...</span>}
+            {savingNotes && <span className="text-xs th-text-2">Saving...</span>}
           </div>
         </CardHeader>
         <textarea
@@ -2041,7 +2041,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           onBlur={handleNotesBlur}
           rows={3}
           placeholder="Internal notes visible only to admins..."
-          className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-y"
+          className="w-full rounded-lg border th-border th-card px-3 py-2.5 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-y"
         />
       </Card>
 
@@ -2055,7 +2055,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               <div className="flex items-center justify-between">
                 <CardTitle><CreditCard className="w-5 h-5 inline mr-2" />Add Payment</CardTitle>
                 <button onClick={() => { setShowPaymentModal(false); resetPaymentForm(); }}
-                  className="text-text-secondary hover:text-text-primary transition-colors cursor-pointer text-xl leading-none">×</button>
+                  className="th-text-2 hover:th-text transition-colors cursor-pointer text-xl leading-none">×</button>
               </div>
             </CardHeader>
             <form onSubmit={handleAddPayment} className="space-y-4">
@@ -2076,10 +2076,10 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               <Input label="Reference (optional)" value={paymentReference}
                 onChange={(e) => setPaymentReference(e.target.value)} placeholder="Invoice number, etc." />
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-1.5">Notes (optional)</label>
+                <label className="block text-sm font-medium th-text mb-1.5">Notes (optional)</label>
                 <textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows={2}
                   placeholder="Additional notes..."
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/20 resize-none" />
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/20 resize-none" />
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <Button variant="secondary" type="button" onClick={() => { setShowPaymentModal(false); resetPaymentForm(); }}>

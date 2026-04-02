@@ -142,7 +142,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold text-text-primary">{t("title")}</h1>
+      <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
 
       {/* Contact Information */}
       <Card>
@@ -237,7 +237,7 @@ export default function ProfilePage() {
           <Trash2 className="w-5 h-5 text-error" />
           <CardTitle className="text-error">{t("deleteAccount")}</CardTitle>
         </div>
-        <p className="text-sm text-text-secondary mb-4">{t("deleteWarning")}</p>
+        <p className="text-sm th-text-2 mb-4">{t("deleteWarning")}</p>
 
         {deletionSent ? (
           <div className="bg-success-light text-success rounded-lg px-4 py-3 text-sm font-medium">
@@ -289,7 +289,7 @@ export default function ProfilePage() {
             <UserPlus className="w-5 h-5 text-navy" />
             <CardTitle>{t("inviteManager")}</CardTitle>
           </div>
-          <p className="text-sm text-text-secondary mb-4">{t("inviteManagerDesc")}</p>
+          <p className="text-sm th-text-2 mb-4">{t("inviteManagerDesc")}</p>
 
           {inviteToken ? (
             <div className="space-y-3">
@@ -297,7 +297,7 @@ export default function ProfilePage() {
                 <input
                   readOnly
                   value={`${window.location.origin}/${locale}/invite/${inviteToken}`}
-                  className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-secondary font-mono"
+                  className="flex-1 rounded-lg border th-border th-bg px-3 py-2 text-sm th-text-2 font-mono"
                 />
                 <button
                   onClick={() => {
@@ -305,13 +305,13 @@ export default function ProfilePage() {
                     setInviteCopied(true);
                     setTimeout(() => setInviteCopied(false), 2000);
                   }}
-                  className="shrink-0 flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface transition-colors"
+                  className="shrink-0 flex items-center gap-1.5 rounded-lg border th-border px-3 py-2 text-sm hover:th-bg transition-colors"
                 >
                   {inviteCopied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
                   {inviteCopied ? t("copied") : t("copy")}
                 </button>
               </div>
-              <p className="text-xs text-text-secondary">{t("inviteLinkExpiry")}</p>
+              <p className="text-xs th-text-2">{t("inviteLinkExpiry")}</p>
               <Button
                 variant="ghost"
                 onClick={() => setInviteToken(null)}

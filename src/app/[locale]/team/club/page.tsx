@@ -131,7 +131,7 @@ export default function ClubPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold text-text-primary">{t("title")}</h1>
+      <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
 
       {saved && <Alert variant="success">{tj("submitted")} ✓</Alert>}
       {badgeError && <Alert variant="error">{badgeError}</Alert>}
@@ -146,7 +146,7 @@ export default function ClubPage() {
         </CardDescription>
 
         <div className="mt-6 flex flex-col items-center">
-          <div className="w-28 h-28 rounded-full bg-surface flex items-center justify-center mb-6 overflow-hidden border-2 border-border">
+          <div className="w-28 h-28 rounded-full th-bg flex items-center justify-center mb-6 overflow-hidden border-2 th-border">
             {displayImage ? (
               <img src={displayImage} alt="Club badge" className="w-full h-full object-contain" />
             ) : (
@@ -158,14 +158,14 @@ export default function ClubPage() {
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
             onClick={() => inputRef.current?.click()}
-            className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-navy/40 hover:bg-surface/50 transition-colors cursor-pointer"
+            className="w-full border-2 border-dashed th-border rounded-xl p-8 text-center hover:border-navy/40 hover:bg-surface/50 transition-colors cursor-pointer"
           >
             <ImageIcon className="w-10 h-10 text-text-secondary/40 mx-auto mb-3" />
             <p className="text-sm">
               <span className="text-navy font-medium">{tj("uploadLink")}</span>
               {" "}{tj("orDragDrop")}
             </p>
-            <p className="text-xs text-text-secondary mt-1">{tj("fileTypes")}</p>
+            <p className="text-xs th-text-2 mt-1">{tj("fileTypes")}</p>
             {file && <p className="text-xs text-navy mt-2 font-medium">{file.name}</p>}
           </div>
 
@@ -201,18 +201,18 @@ export default function ClubPage() {
 
           <div className="mt-4 space-y-3">
             {managersLoading ? null : managers.length === 0 ? (
-              <p className="text-sm text-text-secondary">{t("noManagers")}</p>
+              <p className="text-sm th-text-2">{t("noManagers")}</p>
             ) : (
               managers.map((m) => (
                 <div
                   key={m.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-lg border th-border px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-text-primary truncate">
+                    <p className="text-sm font-medium th-text truncate">
                       {m.name ?? m.email}
                     </p>
-                    <p className="text-xs text-text-secondary truncate">{m.email}</p>
+                    <p className="text-xs th-text-2 truncate">{m.email}</p>
                     {m.teamName && (
                       <p className="text-xs text-navy mt-0.5">{m.teamName}</p>
                     )}
@@ -235,7 +235,7 @@ export default function ClubPage() {
                   ) : (
                     <button
                       onClick={() => setConfirmDeleteId(m.id)}
-                      className="shrink-0 p-2 rounded-lg text-text-secondary hover:text-error hover:bg-error/5 transition-colors"
+                      className="shrink-0 p-2 rounded-lg th-text-2 hover:text-error hover:bg-error/5 transition-colors"
                       title={t("removeAccess")}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -246,8 +246,8 @@ export default function ClubPage() {
             )}
 
             {/* Invite new manager */}
-            <div className="pt-2 border-t border-border space-y-3">
-              <p className="text-sm font-medium text-text-primary">{t("inviteNew")}</p>
+            <div className="pt-2 border-t th-border space-y-3">
+              <p className="text-sm font-medium th-text">{t("inviteNew")}</p>
 
               {/* How it works */}
               <div className="rounded-xl bg-navy/5 border border-navy/10 p-4 space-y-2">
@@ -260,7 +260,7 @@ export default function ClubPage() {
                     <span className="w-5 h-5 rounded-full bg-navy text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                       {i + 1}
                     </span>
-                    <p className="text-xs text-text-secondary leading-relaxed">{t(key)}</p>
+                    <p className="text-xs th-text-2 leading-relaxed">{t(key)}</p>
                   </div>
                 ))}
                 <p className="text-[11px] text-text-secondary/70 italic mt-2 pl-7">{t("inviteNote")}</p>
@@ -272,7 +272,7 @@ export default function ClubPage() {
                     <input
                       readOnly
                       value={`${window.location.origin}/${locale}/invite/${inviteToken}`}
-                      className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-secondary font-mono min-w-0"
+                      className="flex-1 rounded-lg border th-border th-bg px-3 py-2 text-sm th-text-2 font-mono min-w-0"
                     />
                     <button
                       onClick={() => {
@@ -282,7 +282,7 @@ export default function ClubPage() {
                         setInviteCopied(true);
                         setTimeout(() => setInviteCopied(false), 2000);
                       }}
-                      className="shrink-0 flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface transition-colors"
+                      className="shrink-0 flex items-center gap-1.5 rounded-lg border th-border px-3 py-2 text-sm hover:th-bg transition-colors"
                     >
                       {inviteCopied ? (
                         <Check className="w-4 h-4 text-success" />
@@ -292,7 +292,7 @@ export default function ClubPage() {
                       {inviteCopied ? tp("copied") : tp("copy")}
                     </button>
                   </div>
-                  <p className="text-xs text-text-secondary">{tp("inviteLinkExpiry")}</p>
+                  <p className="text-xs th-text-2">{tp("inviteLinkExpiry")}</p>
                   <Button variant="ghost" onClick={() => { setInviteToken(null); setInviteTeamId(null); }}>
                     {tp("generateNew")}
                   </Button>

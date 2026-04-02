@@ -132,7 +132,7 @@ function SectionTab({
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
         active
           ? "bg-navy text-white"
-          : "bg-white text-text-secondary hover:bg-surface border border-border"
+          : "th-card th-text-2 hover:th-bg border th-border"
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -492,7 +492,7 @@ export function TournamentSetupPageContent() {
   if (error && !data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-text-primary">
+        <h1 className="text-2xl font-bold th-text">
           Tournament Management
         </h1>
         <Card>
@@ -510,7 +510,7 @@ export function TournamentSetupPageContent() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <h1 className="text-2xl font-bold text-text-primary">
+      <h1 className="text-2xl font-bold th-text">
         Tournament Management
       </h1>
 
@@ -602,7 +602,7 @@ export function TournamentSetupPageContent() {
             <div className="space-y-1.5">
               <label
                 htmlFor="currency"
-                className="block text-sm font-medium text-text-primary"
+                className="block text-sm font-medium th-text"
               >
                 Currency
               </label>
@@ -610,7 +610,7 @@ export function TournamentSetupPageContent() {
                 id="currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+                className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
               >
                 <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
@@ -621,7 +621,7 @@ export function TournamentSetupPageContent() {
           </div>
 
           <div className="mt-5">
-            <label className="flex items-center gap-3 text-sm font-medium text-text-primary cursor-pointer">
+            <label className="flex items-center gap-3 text-sm font-medium th-text cursor-pointer">
               <input
                 type="checkbox"
                 checked={regOpen}
@@ -641,7 +641,7 @@ export function TournamentSetupPageContent() {
       {/* ─── Classes ─── */}
       {tab === "classes" && (
         <Card padding={false}>
-          <div className="p-6 border-b border-border flex items-center justify-between">
+          <div className="p-6 border-b th-border flex items-center justify-between">
             <CardTitle>Age Classes</CardTitle>
             <Button size="sm" onClick={addClass}>
               <Plus className="w-4 h-4" />
@@ -653,23 +653,23 @@ export function TournamentSetupPageContent() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                  <tr className="border-b th-border text-left">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Format
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Min Birth Year
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Max Players
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Max Staff
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase w-16">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase w-16">
                       &nbsp;
                     </th>
                   </tr>
@@ -679,7 +679,7 @@ export function TournamentSetupPageContent() {
                     cls._deleted ? null : (
                       <tr
                         key={cls.id ?? `new-${idx}`}
-                        className="border-b border-border last:border-0 hover:bg-surface"
+                        className="border-b th-border last:border-0 hover:th-bg"
                       >
                         <td className="px-4 py-2">
                           <input
@@ -689,14 +689,14 @@ export function TournamentSetupPageContent() {
                               updateClass(idx, "name", e.target.value)
                             }
                             placeholder="e.g. U12"
-                            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                           />
                         </td>
                         <td className="px-4 py-2">
                           <select
                             value={cls.format ?? ""}
                             onChange={(e) => updateClass(idx, "format", e.target.value || null)}
-                            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy bg-white"
+                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy th-card"
                           >
                             <option value="">—</option>
                             {FORMATS.map((f) => (
@@ -716,7 +716,7 @@ export function TournamentSetupPageContent() {
                               )
                             }
                             placeholder="2014"
-                            className="w-28 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-28 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -730,7 +730,7 @@ export function TournamentSetupPageContent() {
                                 e.target.value ? Number(e.target.value) : null
                               )
                             }
-                            className="w-20 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-20 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -744,7 +744,7 @@ export function TournamentSetupPageContent() {
                                 e.target.value ? Number(e.target.value) : null
                               )
                             }
-                            className="w-20 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-20 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                           />
                         </td>
                         <td className="px-4 py-2 text-center">
@@ -761,7 +761,7 @@ export function TournamentSetupPageContent() {
                               <button
                                 type="button"
                                 onClick={() => setDeleteConfirm(null)}
-                                className="text-xs text-text-secondary cursor-pointer hover:underline"
+                                className="text-xs th-text-2 cursor-pointer hover:underline"
                               >
                                 Cancel
                               </button>
@@ -772,7 +772,7 @@ export function TournamentSetupPageContent() {
                               onClick={() =>
                                 setDeleteConfirm({ type: "class", idx })
                               }
-                              className="text-text-secondary hover:text-error transition-colors cursor-pointer"
+                              className="th-text-2 hover:text-error transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -785,13 +785,13 @@ export function TournamentSetupPageContent() {
               </table>
             </div>
           ) : (
-            <div className="text-center py-10 text-text-secondary text-sm">
+            <div className="text-center py-10 th-text-2 text-sm">
               <GraduationCap className="w-8 h-8 mx-auto mb-2 opacity-30" />
               No classes defined. Click &quot;Add Class&quot; to create one.
             </div>
           )}
 
-          <div className="p-4 border-t border-border flex justify-end">
+          <div className="p-4 border-t th-border flex justify-end">
             <SaveButton saving={saving} saved={saved} onClick={saveClasses} />
           </div>
         </Card>
@@ -800,7 +800,7 @@ export function TournamentSetupPageContent() {
       {/* ─── Products & Prices ─── */}
       {tab === "products" && (
         <Card padding={false}>
-          <div className="p-6 border-b border-border flex items-center justify-between">
+          <div className="p-6 border-b th-border flex items-center justify-between">
             <CardTitle>Products & Prices</CardTitle>
             <Button size="sm" onClick={addProduct}>
               <Plus className="w-4 h-4" />
@@ -812,23 +812,23 @@ export function TournamentSetupPageContent() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                  <tr className="border-b th-border text-left">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Category
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Price ({currency})
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase text-center">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center">
                       Per Person
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase text-center">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center">
                       Required
                     </th>
-                    <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase w-16">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase w-16">
                       &nbsp;
                     </th>
                   </tr>
@@ -838,7 +838,7 @@ export function TournamentSetupPageContent() {
                     prod._deleted ? null : (
                       <tr
                         key={prod.id ?? `new-${idx}`}
-                        className="border-b border-border last:border-0 hover:bg-surface"
+                        className="border-b th-border last:border-0 hover:th-bg"
                       >
                         <td className="px-4 py-2">
                           <input
@@ -848,7 +848,7 @@ export function TournamentSetupPageContent() {
                               updateProduct(idx, "name", e.target.value)
                             }
                             placeholder="Product name"
-                            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -857,7 +857,7 @@ export function TournamentSetupPageContent() {
                             onChange={(e) =>
                               updateProduct(idx, "category", e.target.value)
                             }
-                            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy bg-white"
+                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy th-card"
                           >
                             {CATEGORIES.map((cat) => (
                               <option key={cat} value={cat}>
@@ -874,7 +874,7 @@ export function TournamentSetupPageContent() {
                             onChange={(e) =>
                               updateProduct(idx, "price", e.target.value)
                             }
-                            className="w-28 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-28 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                           />
                         </td>
                         <td className="px-4 py-2 text-center">
@@ -919,7 +919,7 @@ export function TournamentSetupPageContent() {
                               <button
                                 type="button"
                                 onClick={() => setDeleteConfirm(null)}
-                                className="text-xs text-text-secondary cursor-pointer hover:underline"
+                                className="text-xs th-text-2 cursor-pointer hover:underline"
                               >
                                 Cancel
                               </button>
@@ -930,7 +930,7 @@ export function TournamentSetupPageContent() {
                               onClick={() =>
                                 setDeleteConfirm({ type: "product", idx })
                               }
-                              className="text-text-secondary hover:text-error transition-colors cursor-pointer"
+                              className="th-text-2 hover:text-error transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -943,13 +943,13 @@ export function TournamentSetupPageContent() {
               </table>
             </div>
           ) : (
-            <div className="text-center py-10 text-text-secondary text-sm">
+            <div className="text-center py-10 th-text-2 text-sm">
               <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-30" />
               No products defined. Click &quot;Add Product&quot; to create one.
             </div>
           )}
 
-          <div className="p-4 border-t border-border flex justify-end">
+          <div className="p-4 border-t th-border flex justify-end">
             <SaveButton saving={saving} saved={saved} onClick={saveProducts} />
           </div>
         </Card>
@@ -958,16 +958,16 @@ export function TournamentSetupPageContent() {
       {/* ─── Fields tab ─── */}
       {tab === "fields" && (
         <Card padding={false}>
-          <div className="p-6 border-b border-border flex items-center justify-between">
+          <div className="p-6 border-b th-border flex items-center justify-between">
             <CardTitle>⚽ Pitches / Bases</CardTitle>
             <Button size="sm" onClick={addField}>
               <Plus className="w-4 h-4" />
               Add pitch
             </Button>
           </div>
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-[var(--cat-card-border)]">
             {fields.filter((f) => !f._deleted).length === 0 && (
-              <div className="text-center py-10 text-text-secondary text-sm">
+              <div className="text-center py-10 th-text-2 text-sm">
                 No pitches defined. Click &quot;Add pitch&quot; to create one.
               </div>
             )}
@@ -981,12 +981,12 @@ export function TournamentSetupPageContent() {
                       value={field.name}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, name: e.target.value } : f))}
                       placeholder="Pitch / base name"
-                      className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-navy"
+                      className="flex-1 rounded-lg border th-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-navy"
                     />
                     <button
                       type="button"
                       onClick={() => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, _deleted: true } : f))}
-                      className="text-text-secondary hover:text-error transition-colors cursor-pointer shrink-0"
+                      className="th-text-2 hover:text-error transition-colors cursor-pointer shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -997,35 +997,35 @@ export function TournamentSetupPageContent() {
                       value={field.address}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, address: e.target.value } : f))}
                       placeholder="Address"
-                      className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                     />
                     <input
                       type="url"
                       value={field.mapUrl}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, mapUrl: e.target.value } : f))}
                       placeholder="Map link (Google Maps)"
-                      className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                     />
                     <input
                       type="url"
                       value={field.scheduleUrl}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, scheduleUrl: e.target.value } : f))}
                       placeholder="Schedule / bus link"
-                      className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                     />
                     <input
                       type="text"
                       value={field.notes}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, notes: e.target.value } : f))}
                       placeholder="Additional info"
-                      className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                     />
                   </div>
                 </div>
               )
             )}
           </div>
-          <div className="p-4 border-t border-border flex justify-end">
+          <div className="p-4 border-t th-border flex justify-end">
             <SaveButton saving={fieldsSaving} saved={fieldsSaved} onClick={saveFields} />
           </div>
         </Card>
@@ -1034,16 +1034,16 @@ export function TournamentSetupPageContent() {
       {/* ─── Hotels tab ─── */}
       {tab === "hotels" && (
         <Card padding={false}>
-          <div className="p-6 border-b border-border flex items-center justify-between">
+          <div className="p-6 border-b th-border flex items-center justify-between">
             <CardTitle>🏨 Hotels</CardTitle>
             <Button size="sm" onClick={addHotel}>
               <Plus className="w-4 h-4" />
               Add hotel
             </Button>
           </div>
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-[var(--cat-card-border)]">
             {hotels.filter((h) => !h._deleted).length === 0 && (
-              <div className="text-center py-10 text-text-secondary text-sm">
+              <div className="text-center py-10 th-text-2 text-sm">
                 No hotels yet. Click &quot;Add hotel&quot; to create one.
               </div>
             )}
@@ -1057,12 +1057,12 @@ export function TournamentSetupPageContent() {
                       value={hotel.name}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, name: e.target.value } : h))}
                       placeholder="Hotel name"
-                      className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-navy"
+                      className="flex-1 rounded-lg border th-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-navy"
                     />
                     <button
                       type="button"
                       onClick={() => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, _deleted: true } : h))}
-                      className="text-text-secondary hover:text-error transition-colors cursor-pointer shrink-0"
+                      className="th-text-2 hover:text-error transition-colors cursor-pointer shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1073,28 +1073,28 @@ export function TournamentSetupPageContent() {
                       value={hotel.address}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, address: e.target.value } : h))}
                       placeholder="Address"
-                      className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                     />
                     <input
                       type="text"
                       value={hotel.contactName}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, contactName: e.target.value } : h))}
                       placeholder="Contact person"
-                      className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                     />
                     <input
                       type="tel"
                       value={hotel.contactPhone}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, contactPhone: e.target.value } : h))}
                       placeholder="Phone"
-                      className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                     />
                     <input
                       type="email"
                       value={hotel.contactEmail}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, contactEmail: e.target.value } : h))}
                       placeholder="Email"
-                      className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                     />
                     <div className="md:col-span-2">
                       <input
@@ -1102,7 +1102,7 @@ export function TournamentSetupPageContent() {
                         value={hotel.notes}
                         onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, notes: e.target.value } : h))}
                         placeholder="Notes (breakfast, parking, etc.)"
-                        className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                        className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
                       />
                     </div>
                   </div>
@@ -1110,7 +1110,7 @@ export function TournamentSetupPageContent() {
               )
             )}
           </div>
-          <div className="p-4 border-t border-border flex justify-end">
+          <div className="p-4 border-t th-border flex justify-end">
             <SaveButton saving={hotelsSaving} saved={hotelsSaved} onClick={saveHotels} />
           </div>
         </Card>
@@ -1128,10 +1128,10 @@ export function TournamentSetupPageContent() {
               <Input id="hotelCheckIn" label="Check-in time" value={tInfo.hotelCheckIn ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, hotelCheckIn: e.target.value }))} placeholder="14:00, 15 May" />
               <Input id="hotelCheckOut" label="Check-out time" value={tInfo.hotelCheckOut ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, hotelCheckOut: e.target.value }))} placeholder="12:00, 18 May" />
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-text-primary mb-1.5">Hotel notes</label>
+                <label className="block text-sm font-medium th-text mb-1.5">Hotel notes</label>
                 <textarea
                   rows={2}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-none"
+                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-none"
                   value={tInfo.hotelNotes ?? ""}
                   onChange={(e) => setTInfo((p) => ({ ...p, hotelNotes: e.target.value }))}
                   placeholder="Breakfast included, free parking..."
@@ -1159,10 +1159,10 @@ export function TournamentSetupPageContent() {
               <Input id="mealTimes" label="Meal times" value={tInfo.mealTimes ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, mealTimes: e.target.value }))} placeholder="Breakfast 7:30-9:00, Lunch 13:00, Dinner 19:00" />
               <Input id="mealLocation" label="Meal location" value={tInfo.mealLocation ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, mealLocation: e.target.value }))} placeholder="Hotel restaurant, 1st floor" />
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-text-primary mb-1.5">Meal notes</label>
+                <label className="block text-sm font-medium th-text mb-1.5">Meal notes</label>
                 <textarea
                   rows={2}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-none"
+                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-none"
                   value={tInfo.mealNotes ?? ""}
                   onChange={(e) => setTInfo((p) => ({ ...p, mealNotes: e.target.value }))}
                   placeholder="Vegetarian menu available on request..."
@@ -1191,10 +1191,10 @@ export function TournamentSetupPageContent() {
               <Input id="emergencyContact" label="Name / Role" value={tInfo.emergencyContact ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, emergencyContact: e.target.value }))} placeholder="John Smith, organizer" />
               <Input id="emergencyPhone" label="Phone" value={tInfo.emergencyPhone ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, emergencyPhone: e.target.value }))} placeholder="+372 5555 1234" />
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-text-primary mb-1.5">Additional notes for teams</label>
+                <label className="block text-sm font-medium th-text mb-1.5">Additional notes for teams</label>
                 <textarea
                   rows={3}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-none"
+                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-none"
                   value={tInfo.additionalNotes ?? ""}
                   onChange={(e) => setTInfo((p) => ({ ...p, additionalNotes: e.target.value }))}
                   placeholder="Important information for all participants..."

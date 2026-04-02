@@ -137,16 +137,16 @@ export function MessagesPageContent() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold text-text-primary">Messages</h1>
+      <h1 className="text-2xl font-bold th-text">Messages</h1>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 border-b th-border">
         <button
           onClick={() => setTab("messages")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             tab === "messages"
               ? "border-navy text-navy"
-              : "border-transparent text-text-secondary hover:text-text-primary"
+              : "border-transparent th-text-2 hover:th-text"
           }`}
         >
           Sent Messages
@@ -156,7 +156,7 @@ export function MessagesPageContent() {
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
             tab === "questions"
               ? "border-navy text-navy"
-              : "border-transparent text-text-secondary hover:text-text-primary"
+              : "border-transparent th-text-2 hover:th-text"
           }`}
         >
           Questions from Teams
@@ -183,18 +183,18 @@ export function MessagesPageContent() {
                 required
               />
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Message body</label>
+                <label className="block text-sm font-medium th-text">Message body</label>
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm min-h-[160px] focus:outline-none focus:ring-2 focus:ring-navy/20"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm min-h-[160px] focus:outline-none focus:ring-2 focus:ring-navy/20"
                   required
                 />
               </div>
 
               {/* Recipient selector */}
               <div className="space-y-3">
-                <p className="text-sm font-medium text-text-primary">Recipients</p>
+                <p className="text-sm font-medium th-text">Recipients</p>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input
@@ -219,12 +219,12 @@ export function MessagesPageContent() {
                 </div>
 
                 {!sendToAll && (
-                  <div className="border border-border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                  <div className="border th-border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
                     {allTeams.length === 0 ? (
-                      <p className="text-sm text-text-secondary">No teams</p>
+                      <p className="text-sm th-text-2">No teams</p>
                     ) : (
                       allTeams.map((team) => (
-                        <label key={team.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-surface rounded px-1 py-0.5">
+                        <label key={team.id} className="flex items-center gap-2 text-sm cursor-pointer hover:th-bg rounded px-1 py-0.5">
                           <input
                             type="checkbox"
                             checked={selectedTeamIds.includes(team.id)}
@@ -256,23 +256,23 @@ export function MessagesPageContent() {
           <Card>
             <CardTitle>Sent Messages</CardTitle>
             {loading ? (
-              <div className="mt-4 text-sm text-text-secondary">Loading...</div>
+              <div className="mt-4 text-sm th-text-2">Loading...</div>
             ) : messages.length === 0 ? (
-              <div className="mt-4 text-center py-8 text-text-secondary text-sm">
+              <div className="mt-4 text-center py-8 th-text-2 text-sm">
                 <Mail className="w-8 h-8 mx-auto mb-2 opacity-30" />
                 No messages sent yet
               </div>
             ) : (
-              <div className="mt-4 divide-y divide-border">
+              <div className="mt-4 divide-y divide-[var(--cat-card-border)]">
                 {messages.map((msg) => (
                   <div key={msg.id} className="py-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-text-primary">{msg.subject}</p>
-                        <p className="text-xs text-text-secondary mt-0.5">
+                        <p className="font-medium text-sm th-text">{msg.subject}</p>
+                        <p className="text-xs th-text-2 mt-0.5">
                           {new Date(msg.sentAt).toLocaleString()}
                         </p>
-                        <p className="text-xs text-text-secondary mt-1">
+                        <p className="text-xs th-text-2 mt-1">
                           {msg.sendToAll
                             ? "All teams"
                             : msg.recipientTeams
@@ -297,19 +297,19 @@ export function MessagesPageContent() {
         <Card>
           <CardTitle>Questions from Teams</CardTitle>
           {questionsLoading ? (
-            <div className="mt-4 text-sm text-text-secondary">Loading...</div>
+            <div className="mt-4 text-sm th-text-2">Loading...</div>
           ) : questions.length === 0 ? (
-            <div className="mt-4 text-center py-8 text-text-secondary text-sm">
+            <div className="mt-4 text-center py-8 th-text-2 text-sm">
               <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
               No questions yet
             </div>
           ) : (
-            <div className="mt-4 divide-y divide-border">
+            <div className="mt-4 divide-y divide-[var(--cat-card-border)]">
               {questions.map((q) => (
                 <div key={q.id}>
                   <button
                     onClick={() => setExpandedQuestion(expandedQuestion === q.id ? null : q.id)}
-                    className="flex items-center gap-3 w-full py-4 text-left hover:bg-surface rounded-lg px-2 -mx-2 transition-colors"
+                    className="flex items-center gap-3 w-full py-4 text-left hover:th-bg rounded-lg px-2 -mx-2 transition-colors"
                   >
                     <MessageSquare
                       className={`w-4 h-4 shrink-0 ${q.replyBody ? "text-success" : "text-gold"}`}
@@ -318,7 +318,7 @@ export function MessagesPageContent() {
                       <p className={`text-sm truncate ${!q.isRead ? "font-semibold" : ""}`}>
                         {q.subject}
                       </p>
-                      <p className="text-xs text-text-secondary">
+                      <p className="text-xs th-text-2">
                         {q.teamName ?? q.clubName} · {new Date(q.sentAt).toLocaleString()}
                       </p>
                     </div>
@@ -329,18 +329,18 @@ export function MessagesPageContent() {
                       <Badge variant="success">Answered</Badge>
                     )}
                     {expandedQuestion === q.id ? (
-                      <ChevronDown className="w-4 h-4 text-text-secondary shrink-0" />
+                      <ChevronDown className="w-4 h-4 th-text-2 shrink-0" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-text-secondary shrink-0" />
+                      <ChevronRight className="w-4 h-4 th-text-2 shrink-0" />
                     )}
                   </button>
 
                   {expandedQuestion === q.id && (
                     <div className="px-4 pb-4 space-y-4">
                       {/* Question body */}
-                      <div className="bg-surface rounded-lg p-4">
-                        <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Question</p>
-                        <p className="text-sm text-text-primary whitespace-pre-wrap">{q.body}</p>
+                      <div className="th-bg rounded-lg p-4">
+                        <p className="text-xs font-semibold th-text-2 uppercase mb-2">Question</p>
+                        <p className="text-sm th-text whitespace-pre-wrap">{q.body}</p>
                       </div>
 
                       {/* Existing reply */}
@@ -349,20 +349,20 @@ export function MessagesPageContent() {
                           <p className="text-xs font-semibold text-green-700 uppercase mb-2">
                             Reply · {q.repliedAt ? new Date(q.repliedAt).toLocaleString() : ""}
                           </p>
-                          <p className="text-sm text-text-primary whitespace-pre-wrap">{q.replyBody}</p>
+                          <p className="text-sm th-text whitespace-pre-wrap">{q.replyBody}</p>
                         </div>
                       )}
 
                       {/* Reply form */}
                       {!q.replyBody && (
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-text-primary">Reply</label>
+                          <label className="text-sm font-medium th-text">Reply</label>
                           <textarea
                             value={replyDrafts[q.id] ?? ""}
                             onChange={(e) =>
                               setReplyDrafts((prev) => ({ ...prev, [q.id]: e.target.value }))
                             }
-                            className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-navy/20"
+                            className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-navy/20"
                             placeholder="Type your reply..."
                           />
                           <div className="flex justify-end">

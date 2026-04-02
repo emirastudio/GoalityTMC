@@ -158,12 +158,12 @@ function AccommodationQuestCard({
   // ── State 4: Declined ────────────────────────────────────────────────────────
   if (displayState === "declined") {
     return (
-      <div className="rounded-xl border-2 border-border bg-surface p-4 flex items-center justify-between gap-4">
+      <div className="rounded-xl border-2 th-border th-bg p-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Hotel className="w-5 h-5 text-text-secondary shrink-0" />
+          <Hotel className="w-5 h-5 th-text-2 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-text-primary">{ta("declinedTitle")}</p>
-            <p className="text-xs text-text-secondary">{ta("declinedSubtitle")}</p>
+            <p className="text-sm font-semibold th-text">{ta("declinedTitle")}</p>
+            <p className="text-xs th-text-2">{ta("declinedSubtitle")}</p>
           </div>
         </div>
         <button
@@ -247,7 +247,7 @@ function AccommodationQuestCard({
                   const raw = e.target.value.replace(/[^0-9]/g, "");
                   set(raw === "" ? "" : String(parseInt(raw, 10)));
                 }}
-                className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                className="w-full rounded-lg border border-amber-300 th-card px-3 py-2 text-sm th-text focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
               />
             </div>
           ))}
@@ -261,7 +261,7 @@ function AccommodationQuestCard({
               type="date"
               value={checkIn}
               onChange={(e) => setCheckIn(e.target.value)}
-              className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg border border-amber-300 th-card px-3 py-2 text-sm th-text focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
             />
           </div>
           <div>
@@ -270,7 +270,7 @@ function AccommodationQuestCard({
               type="date"
               value={checkOut}
               onChange={(e) => setCheckOut(e.target.value)}
-              className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg border border-amber-300 th-card px-3 py-2 text-sm th-text focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
             />
           </div>
         </div>
@@ -283,7 +283,7 @@ function AccommodationQuestCard({
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder={ta("notesPlaceholder")}
-            className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 resize-none"
+            className="w-full rounded-lg border border-amber-300 th-card px-3 py-2 text-sm th-text focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 resize-none"
           />
         </div>
 
@@ -298,7 +298,7 @@ function AccommodationQuestCard({
           </button>
           <button
             onClick={() => setFormOpen(false)}
-            className="text-sm text-text-secondary hover:text-text-primary cursor-pointer"
+            className="text-sm th-text-2 hover:th-text cursor-pointer"
           >
             {ta("cancel")}
           </button>
@@ -418,8 +418,8 @@ export default function TeamOverviewPage() {
         <p className="text-[11px] font-semibold text-text-secondary/50 uppercase tracking-widest mb-1.5">
           {today}
         </p>
-        <h1 className="text-2xl font-bold text-text-primary">{t("registrationProgress")}</h1>
-        <p className="text-sm text-text-secondary mt-1">{t("checklist.hasPlayers.hint")}</p>
+        <h1 className="text-2xl font-bold th-text">{t("registrationProgress")}</h1>
+        <p className="text-sm th-text-2 mt-1">{t("checklist.hasPlayers.hint")}</p>
       </div>
 
       {/* ── Stats grid (Bidibet style) ── */}
@@ -430,27 +430,27 @@ export default function TeamOverviewPage() {
           { icon: Hotel,  value: counts.hotel,     label: t("hotelRooms"),      color: "bg-amber-500/10 text-amber-600" },
           { icon: Bus,    value: counts.transfer,  label: t("transferBooked"),  color: "bg-emerald-500/10 text-emerald-600" },
         ].map(({ icon: Icon, value, label, color }) => (
-          <div key={label} className="bg-white rounded-2xl p-5 border border-border shadow-sm">
+          <div key={label} className="th-card rounded-2xl p-5 border th-border shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <p className="text-[11px] font-semibold text-text-secondary/60 uppercase tracking-wider">{label}</p>
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
                 <Icon className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-text-primary leading-none">{value}</p>
-            <p className="text-[11px] text-text-secondary mt-2">{t("done")}</p>
+            <p className="text-3xl font-bold th-text leading-none">{value}</p>
+            <p className="text-[11px] th-text-2 mt-2">{t("done")}</p>
           </div>
         ))}
       </div>
 
       {/* ── Finance summary (Bidibet card style) ── */}
-      <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-border">
-          <p className="text-sm font-semibold text-text-primary">{t("financeSummary")}</p>
+      <div className="th-card rounded-2xl border th-border shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b th-border">
+          <p className="text-sm font-semibold th-text">{t("financeSummary")}</p>
         </div>
         <div className="grid grid-cols-3 divide-x divide-border">
           {[
-            { label: t("totalOrdered"), value: parseFloat(finance.totalOrdered).toFixed(0), color: "text-text-primary", prefix: "€" },
+            { label: t("totalOrdered"), value: parseFloat(finance.totalOrdered).toFixed(0), color: "th-text", prefix: "€" },
             { label: t("totalPaid"), value: parseFloat(finance.totalPaid).toFixed(0), color: "text-success", prefix: "€" },
             { label: t("balanceLabel"), value: (balanceNum < 0 ? "" : "+") + parseFloat(finance.balance).toFixed(0), color: balanceNum < 0 ? "text-error" : "text-success", prefix: "€" },
           ].map(({ label, value, color, prefix }) => (
@@ -479,12 +479,12 @@ export default function TeamOverviewPage() {
       )}
 
       {/* ── Progress + checklist ── */}
-      <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
+      <div className="th-card rounded-2xl border th-border shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-text-primary">{t("registrationProgress")}</p>
+          <p className="text-sm font-semibold th-text">{t("registrationProgress")}</p>
           <span className="text-2xl font-bold text-navy">{completionPercent}%</span>
         </div>
-        <div className="w-full h-2 bg-[#F0F2F5] rounded-full overflow-hidden">
+        <div className="w-full h-2 th-bg rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-navy to-mint rounded-full transition-all duration-700"
             style={{ width: `${completionPercent}%` }}
@@ -497,7 +497,7 @@ export default function TeamOverviewPage() {
               <div key={key} className="flex items-center gap-3 py-2 px-3 rounded-xl bg-success/5">
                 <CheckCircle className="w-4 h-4 text-success shrink-0" />
                 <Icon className="w-4 h-4 text-success/50 shrink-0" />
-                <span className="text-sm flex-1 text-text-primary">{label}</span>
+                <span className="text-sm flex-1 th-text">{label}</span>
                 <span className="text-[11px] font-semibold text-success uppercase tracking-wide">{t("done")}</span>
               </div>
             ) : (
@@ -505,11 +505,11 @@ export default function TeamOverviewPage() {
                 <div className="flex items-center gap-3 px-3 pt-3 pb-1">
                   <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
                   <Icon className="w-4 h-4 text-warning/60 shrink-0" />
-                  <span className="text-sm font-semibold text-text-primary flex-1">{label}</span>
+                  <span className="text-sm font-semibold th-text flex-1">{label}</span>
                   <Badge variant="warning">{t("solve")}</Badge>
                 </div>
                 <div className="flex items-end justify-between gap-3 px-3 pb-3 pt-1">
-                  <p className="text-xs text-text-secondary leading-relaxed flex-1">
+                  <p className="text-xs th-text-2 leading-relaxed flex-1">
                     {t(`checklist.${key}.hint`)}
                   </p>
                   <Link
@@ -528,8 +528,8 @@ export default function TeamOverviewPage() {
 
       {/* Tournament Info */}
       {(assignedHotel || (tInfo && (tInfo.venueName || tInfo.mealTimes || tInfo.scheduleUrl || tInfo.emergencyContact))) && (
-        <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
-          <p className="text-sm font-semibold text-text-primary mb-4">🏆 {t("tournamentInfoTitle")}</p>
+        <div className="th-card rounded-2xl border th-border shadow-sm p-5">
+          <p className="text-sm font-semibold th-text mb-4">🏆 {t("tournamentInfoTitle")}</p>
           <div className="mt-4 space-y-4">
 
             {/* Assigned hotel (team-specific only) */}
@@ -537,13 +537,13 @@ export default function TeamOverviewPage() {
               <div className="flex gap-3">
                 <Hotel className="w-5 h-5 text-navy shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-text-primary">{assignedHotel.name}</p>
-                  {assignedHotel.address && <p className="text-sm text-text-secondary">{assignedHotel.address}</p>}
-                  {assignedHotel.contactName && <p className="text-xs text-text-secondary mt-0.5">{t("contact")}: {assignedHotel.contactName}</p>}
+                  <p className="text-sm font-semibold th-text">{assignedHotel.name}</p>
+                  {assignedHotel.address && <p className="text-sm th-text-2">{assignedHotel.address}</p>}
+                  {assignedHotel.contactName && <p className="text-xs th-text-2 mt-0.5">{t("contact")}: {assignedHotel.contactName}</p>}
                   {assignedHotel.contactPhone && (
                     <a href={`tel:${assignedHotel.contactPhone}`} className="text-xs text-navy hover:underline block mt-0.5">{assignedHotel.contactPhone}</a>
                   )}
-                  {assignedHotel.notes && <p className="text-xs text-text-secondary italic mt-0.5">{assignedHotel.notes}</p>}
+                  {assignedHotel.notes && <p className="text-xs th-text-2 italic mt-0.5">{assignedHotel.notes}</p>}
                 </div>
               </div>
             )}
@@ -553,8 +553,8 @@ export default function TeamOverviewPage() {
               <div className="flex gap-3">
                 <MapPin className="w-5 h-5 text-navy shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-text-primary">{tInfo.venueName}</p>
-                  {tInfo.venueAddress && <p className="text-sm text-text-secondary">{tInfo.venueAddress}</p>}
+                  <p className="text-sm font-semibold th-text">{tInfo.venueName}</p>
+                  {tInfo.venueAddress && <p className="text-sm th-text-2">{tInfo.venueAddress}</p>}
                   {tInfo.venueMapUrl && (
                     <a
                       href={tInfo.venueMapUrl}
@@ -574,10 +574,10 @@ export default function TeamOverviewPage() {
               <div className="flex gap-3">
                 <Utensils className="w-5 h-5 text-navy shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-text-primary">{t("meals")}</p>
-                  <p className="text-sm text-text-secondary">{tInfo.mealTimes}</p>
-                  {tInfo.mealLocation && <p className="text-xs text-text-secondary">{tInfo.mealLocation}</p>}
-                  {tInfo.mealNotes && <p className="text-xs text-text-secondary italic">{tInfo.mealNotes}</p>}
+                  <p className="text-sm font-semibold th-text">{t("meals")}</p>
+                  <p className="text-sm th-text-2">{tInfo.mealTimes}</p>
+                  {tInfo.mealLocation && <p className="text-xs th-text-2">{tInfo.mealLocation}</p>}
+                  {tInfo.mealNotes && <p className="text-xs th-text-2 italic">{tInfo.mealNotes}</p>}
                 </div>
               </div>
             )}
@@ -587,8 +587,8 @@ export default function TeamOverviewPage() {
               <div className="flex gap-3">
                 <Calendar className="w-5 h-5 text-navy shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-text-primary">{t("schedule")}</p>
-                  {tInfo.scheduleDescription && <p className="text-sm text-text-secondary">{tInfo.scheduleDescription}</p>}
+                  <p className="text-sm font-semibold th-text">{t("schedule")}</p>
+                  {tInfo.scheduleDescription && <p className="text-sm th-text-2">{tInfo.scheduleDescription}</p>}
                   <a
                     href={tInfo.scheduleUrl}
                     target="_blank"
@@ -607,7 +607,7 @@ export default function TeamOverviewPage() {
                 <Phone className="w-5 h-5 text-error shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-error">{t("emergencyContact")}</p>
-                  <p className="text-sm text-text-primary">{tInfo.emergencyContact}</p>
+                  <p className="text-sm th-text">{tInfo.emergencyContact}</p>
                   {tInfo.emergencyPhone && (
                     <a href={`tel:${tInfo.emergencyPhone}`} className="text-sm font-medium text-error hover:underline">
                       {tInfo.emergencyPhone}
@@ -619,7 +619,7 @@ export default function TeamOverviewPage() {
 
             {/* Additional notes */}
             {tInfo?.additionalNotes && (
-              <div className="bg-surface rounded-lg p-3 text-sm text-text-secondary">
+              <div className="th-bg rounded-lg p-3 text-sm th-text-2">
                 {tInfo.additionalNotes}
               </div>
             )}
@@ -629,17 +629,17 @@ export default function TeamOverviewPage() {
 
       {/* Allergies */}
       {allergies.length > 0 && (
-        <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
+        <div className="th-card rounded-2xl border th-border shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle className="w-4 h-4 text-warning" />
-            <p className="text-sm font-semibold text-text-primary">{t("allergiesTitle")}</p>
+            <p className="text-sm font-semibold th-text">{t("allergiesTitle")}</p>
           </div>
           <div className="space-y-2">
             {allergies.map((a, i) => (
               <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-xl bg-warning/6 border border-warning/15">
-                <span className="text-sm font-medium text-text-primary">{a.firstName} {a.lastName}</span>
+                <span className="text-sm font-medium th-text">{a.firstName} {a.lastName}</span>
                 {a.allergies && (
-                  <span className="text-sm text-text-secondary">— {a.allergies}</span>
+                  <span className="text-sm th-text-2">— {a.allergies}</span>
                 )}
                 {a.dietaryRequirements && (
                   <Badge variant="warning">{a.dietaryRequirements}</Badge>

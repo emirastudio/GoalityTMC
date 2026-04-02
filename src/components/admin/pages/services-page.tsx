@@ -108,7 +108,7 @@ function SectionTab({
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
         active
           ? "bg-navy text-white"
-          : "bg-white text-text-secondary hover:bg-surface border border-border"
+          : "th-card th-text-2 hover:th-bg border th-border"
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -146,7 +146,7 @@ function DeleteConfirm({
       <button
         type="button"
         onClick={onCancel}
-        className="text-xs text-text-secondary cursor-pointer hover:underline"
+        className="text-xs th-text-2 cursor-pointer hover:underline"
       >
         <X className="w-3 h-3" />
       </button>
@@ -266,7 +266,7 @@ function AccommodationTab() {
 
   return (
     <Card padding={false}>
-      <div className="p-6 border-b border-border flex items-center justify-between">
+      <div className="p-6 border-b th-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CardTitle>Accommodation</CardTitle>
           <SavedBadge visible={saved} />
@@ -285,9 +285,9 @@ function AccommodationTab() {
       )}
 
       {editId !== null && (
-        <div className="p-6 border-b border-border bg-surface/40">
+        <div className="p-6 border-b th-border th-bg/40">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-text-primary">
+            <p className="text-sm font-semibold th-text">
               {editId === "new" ? "Add option" : "Edit option"}
             </p>
             <LangTabs lang={lang} onChange={setLang} />
@@ -313,7 +313,7 @@ function AccommodationTab() {
               value={form.pricePerAccompanying}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setField("pricePerAccompanying", e.target.value)} />
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-text-primary">
+              <label className="block text-sm font-medium th-text">
                 Meals included in package
               </label>
               <input
@@ -321,7 +321,7 @@ function AccommodationTab() {
                 min="0"
                 value={form.includedMeals}
                 onChange={(e) => setField("includedMeals", Number(e.target.value))}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
               />
             </div>
             {lang === "en" ? (
@@ -349,9 +349,9 @@ function AccommodationTab() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border text-left">
+              <tr className="border-b th-border text-left">
                 {["Name", "Name (RU)", "Check-in", "Check-out", "€/Player", "€/Staff", "€/Accompanying", "Meals", ""].map((h, i) => (
-                  <th key={i} className="px-4 py-3 text-xs font-medium text-text-secondary uppercase whitespace-nowrap">
+                  <th key={i} className="px-4 py-3 text-xs font-medium th-text-2 uppercase whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -359,15 +359,15 @@ function AccommodationTab() {
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-border last:border-0 hover:bg-surface/50">
-                  <td className="px-4 py-3 text-sm text-text-primary font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary">{item.nameRu}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">{formatDate(item.checkIn)}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">{formatDate(item.checkOut)}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">{formatPrice(item.pricePerPlayer)}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">{formatPrice(item.pricePerStaff)}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">{formatPrice(item.pricePerAccompanying)}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary text-center">{item.includedMeals}</td>
+                <tr key={item.id} className="border-b th-border last:border-0 hover:th-bg/50">
+                  <td className="px-4 py-3 text-sm th-text font-medium">{item.name}</td>
+                  <td className="px-4 py-3 text-sm th-text-2">{item.nameRu}</td>
+                  <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatDate(item.checkIn)}</td>
+                  <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatDate(item.checkOut)}</td>
+                  <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatPrice(item.pricePerPlayer)}</td>
+                  <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatPrice(item.pricePerStaff)}</td>
+                  <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatPrice(item.pricePerAccompanying)}</td>
+                  <td className="px-4 py-3 text-sm th-text-2 text-center">{item.includedMeals}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">
                       {deleteId === item.id ? (
@@ -375,11 +375,11 @@ function AccommodationTab() {
                       ) : (
                         <>
                           <button type="button" onClick={() => openEdit(item)}
-                            className="text-text-secondary hover:text-navy transition-colors cursor-pointer">
+                            className="th-text-2 hover:text-navy transition-colors cursor-pointer">
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button type="button" onClick={() => setDeleteId(item.id)}
-                            className="text-text-secondary hover:text-error transition-colors cursor-pointer">
+                            className="th-text-2 hover:text-error transition-colors cursor-pointer">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </>
@@ -393,7 +393,7 @@ function AccommodationTab() {
         </div>
       ) : (
         !editId && (
-          <div className="text-center py-12 text-text-secondary text-sm">
+          <div className="text-center py-12 th-text-2 text-sm">
             <Hotel className="w-8 h-8 mx-auto mb-2 opacity-30" />
             No options yet
           </div>
@@ -487,7 +487,7 @@ function MealsTab() {
 
   return (
     <Card padding={false}>
-      <div className="p-6 border-b border-border flex items-center justify-between">
+      <div className="p-6 border-b th-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CardTitle>Extra Meals</CardTitle>
           <SavedBadge visible={saved} />
@@ -502,9 +502,9 @@ function MealsTab() {
       )}
 
       {editId !== null && (
-        <div className="p-6 border-b border-border bg-surface/40">
+        <div className="p-6 border-b th-border th-bg/40">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-text-primary">
+            <p className="text-sm font-semibold th-text">
               {editId === "new" ? "Add option" : "Edit option"}
             </p>
             <LangTabs lang={lang} onChange={setLang} />
@@ -526,7 +526,7 @@ function MealsTab() {
               <input type="checkbox" id="meal-perDay" checked={form.perDay}
                 onChange={(e) => setField("perDay", e.target.checked)}
                 className="accent-navy w-4 h-4" />
-              <label htmlFor="meal-perDay" className="text-sm font-medium text-text-primary cursor-pointer">
+              <label htmlFor="meal-perDay" className="text-sm font-medium th-text cursor-pointer">
                 Per day
               </label>
             </div>
@@ -545,20 +545,20 @@ function MealsTab() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border text-left">
+              <tr className="border-b th-border text-left">
                 {["Name", "Name (RU)", "Price/Person", "Per day", ""].map((h, i) => (
-                  <th key={i} className="px-4 py-3 text-xs font-medium text-text-secondary uppercase whitespace-nowrap">{h}</th>
+                  <th key={i} className="px-4 py-3 text-xs font-medium th-text-2 uppercase whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-border last:border-0 hover:bg-surface/50">
-                  <td className="px-4 py-3 text-sm text-text-primary font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary">{item.nameRu}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">{formatPrice(item.pricePerPerson)}</td>
+                <tr key={item.id} className="border-b th-border last:border-0 hover:th-bg/50">
+                  <td className="px-4 py-3 text-sm th-text font-medium">{item.name}</td>
+                  <td className="px-4 py-3 text-sm th-text-2">{item.nameRu}</td>
+                  <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatPrice(item.pricePerPerson)}</td>
                   <td className="px-4 py-3 text-center">
-                    {item.perDay ? <Check className="w-4 h-4 text-green-600 mx-auto" /> : <span className="text-text-secondary/40">—</span>}
+                    {item.perDay ? <Check className="w-4 h-4 text-green-600 mx-auto" /> : <span className="th-text-2/40">—</span>}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">
@@ -567,11 +567,11 @@ function MealsTab() {
                       ) : (
                         <>
                           <button type="button" onClick={() => openEdit(item)}
-                            className="text-text-secondary hover:text-navy transition-colors cursor-pointer">
+                            className="th-text-2 hover:text-navy transition-colors cursor-pointer">
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button type="button" onClick={() => setDeleteId(item.id)}
-                            className="text-text-secondary hover:text-error transition-colors cursor-pointer">
+                            className="th-text-2 hover:text-error transition-colors cursor-pointer">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </>
@@ -585,7 +585,7 @@ function MealsTab() {
         </div>
       ) : (
         !editId && (
-          <div className="text-center py-12 text-text-secondary text-sm">
+          <div className="text-center py-12 th-text-2 text-sm">
             <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-30" />
             No options yet
           </div>
@@ -679,7 +679,7 @@ function TransfersTab() {
 
   return (
     <Card padding={false}>
-      <div className="p-6 border-b border-border flex items-center justify-between">
+      <div className="p-6 border-b th-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CardTitle>Transfers</CardTitle>
           <SavedBadge visible={saved} />
@@ -694,9 +694,9 @@ function TransfersTab() {
       )}
 
       {editId !== null && (
-        <div className="p-6 border-b border-border bg-surface/40">
+        <div className="p-6 border-b th-border th-bg/40">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-text-primary">
+            <p className="text-sm font-semibold th-text">
               {editId === "new" ? "Add option" : "Edit option"}
             </p>
             <LangTabs lang={lang} onChange={setLang} />
@@ -729,19 +729,19 @@ function TransfersTab() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border text-left">
+              <tr className="border-b th-border text-left">
                 {["Name", "Name (RU)", "Description", "Price/Team", ""].map((h, i) => (
-                  <th key={i} className="px-4 py-3 text-xs font-medium text-text-secondary uppercase whitespace-nowrap">{h}</th>
+                  <th key={i} className="px-4 py-3 text-xs font-medium th-text-2 uppercase whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-border last:border-0 hover:bg-surface/50">
-                  <td className="px-4 py-3 text-sm text-text-primary font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary">{item.nameRu}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary max-w-xs truncate">{item.description ?? "—"}</td>
-                  <td className="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">{formatPrice(item.pricePerPerson)}</td>
+                <tr key={item.id} className="border-b th-border last:border-0 hover:th-bg/50">
+                  <td className="px-4 py-3 text-sm th-text font-medium">{item.name}</td>
+                  <td className="px-4 py-3 text-sm th-text-2">{item.nameRu}</td>
+                  <td className="px-4 py-3 text-sm th-text-2 max-w-xs truncate">{item.description ?? "—"}</td>
+                  <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatPrice(item.pricePerPerson)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">
                       {deleteId === item.id ? (
@@ -749,11 +749,11 @@ function TransfersTab() {
                       ) : (
                         <>
                           <button type="button" onClick={() => openEdit(item)}
-                            className="text-text-secondary hover:text-navy transition-colors cursor-pointer">
+                            className="th-text-2 hover:text-navy transition-colors cursor-pointer">
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button type="button" onClick={() => setDeleteId(item.id)}
-                            className="text-text-secondary hover:text-error transition-colors cursor-pointer">
+                            className="th-text-2 hover:text-error transition-colors cursor-pointer">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </>
@@ -767,7 +767,7 @@ function TransfersTab() {
         </div>
       ) : (
         !editId && (
-          <div className="text-center py-12 text-text-secondary text-sm">
+          <div className="text-center py-12 th-text-2 text-sm">
             <Car className="w-8 h-8 mx-auto mb-2 opacity-30" />
             No options yet
           </div>
@@ -850,7 +850,7 @@ function RegistrationTab() {
           <input type="checkbox" id="reg-required" checked={form.isRequired}
             onChange={(e) => setField("isRequired", e.target.checked)}
             className="accent-navy w-4 h-4" />
-          <label htmlFor="reg-required" className="text-sm font-medium text-text-primary cursor-pointer">
+          <label htmlFor="reg-required" className="text-sm font-medium th-text cursor-pointer">
             Required
           </label>
         </div>
@@ -873,7 +873,7 @@ export function ServicesPageContent() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <h1 className="text-2xl font-bold text-text-primary">Services & Pricing</h1>
+      <h1 className="text-2xl font-bold th-text">Services & Pricing</h1>
 
       <div className="flex flex-wrap gap-2">
         <SectionTab active={tab === "accommodation"} onClick={() => setTab("accommodation")} icon={Hotel} label="Accommodation" />

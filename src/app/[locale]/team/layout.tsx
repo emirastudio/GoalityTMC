@@ -7,7 +7,6 @@ import { TeamProvider } from "@/lib/team-context";
 import { ImpersonationBanner } from "@/components/team/impersonation-banner";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { Crown } from "lucide-react";
 import { clubs, teams, people, tournamentClasses, inboxMessages, teamMessageReads, messageRecipients } from "@/db/schema";
 import { eq, and, count, sql, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
@@ -122,9 +121,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
 
           {/* Brand */}
           <div className="h-14 px-5 flex items-center gap-3 shrink-0 border-b border-white/6">
-            <div className="w-7 h-7 rounded-lg bg-mint flex items-center justify-center shrink-0">
-              <Crown className="w-4 h-4 text-[#0D1117]" />
-            </div>
+            <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
             <span className="text-[15px] font-bold text-white tracking-tight">Kings Cup</span>
           </div>
 

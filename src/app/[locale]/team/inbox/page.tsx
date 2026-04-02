@@ -123,18 +123,18 @@ export default function InboxPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">{t("title")}</h1>
-        <p className="text-text-secondary text-sm mt-1">{t("description")}</p>
+        <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
+        <p className="th-text-2 text-sm mt-1">{t("description")}</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 border-b th-border">
         <button
           onClick={() => setTab("messages")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
             tab === "messages"
               ? "border-navy text-navy"
-              : "border-transparent text-text-secondary hover:text-text-primary"
+              : "border-transparent th-text-2 hover:th-text"
           }`}
         >
           {t("messagesTab")}
@@ -149,7 +149,7 @@ export default function InboxPage() {
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             tab === "questions"
               ? "border-navy text-navy"
-              : "border-transparent text-text-secondary hover:text-text-primary"
+              : "border-transparent th-text-2 hover:th-text"
           }`}
         >
           {t("questionsTab")}
@@ -165,36 +165,36 @@ export default function InboxPage() {
                 <div key={msg.id}>
                   <button
                     onClick={() => handleOpen(msg)}
-                    className="flex items-center gap-3 w-full py-4 text-left hover:bg-surface rounded-lg px-2 -mx-2 transition-colors cursor-pointer"
+                    className="flex items-center gap-3 w-full py-4 text-left hover:th-bg rounded-lg px-2 -mx-2 transition-colors cursor-pointer"
                   >
                     <Mail
                       className={`w-5 h-5 shrink-0 ${
-                        msg.isRead ? "text-text-secondary" : "text-success"
+                        msg.isRead ? "th-text-2" : "text-success"
                       }`}
                     />
                     <div className="flex-1 min-w-0">
                       <p
                         className={`text-sm truncate ${
-                          msg.isRead ? "text-text-secondary" : "font-semibold text-text-primary"
+                          msg.isRead ? "th-text-2" : "font-semibold th-text"
                         }`}
                       >
                         {msg.subject}
                       </p>
                       {msg.sentAt && (
-                        <p className="text-xs text-text-secondary">
+                        <p className="text-xs th-text-2">
                           {new Date(msg.sentAt).toLocaleDateString()}
                         </p>
                       )}
                     </div>
                     {!msg.isRead && <Badge variant="info">{t("reply")}</Badge>}
                     {openId === msg.id ? (
-                      <ChevronDown className="w-4 h-4 text-text-secondary shrink-0" />
+                      <ChevronDown className="w-4 h-4 th-text-2 shrink-0" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-text-secondary shrink-0" />
+                      <ChevronRight className="w-4 h-4 th-text-2 shrink-0" />
                     )}
                   </button>
                   {openId === msg.id && (
-                    <div className="px-10 pb-4 text-sm text-text-primary whitespace-pre-wrap leading-relaxed">
+                    <div className="px-10 pb-4 text-sm th-text whitespace-pre-wrap leading-relaxed">
                       {msg.body}
                     </div>
                   )}
@@ -202,7 +202,7 @@ export default function InboxPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-text-secondary text-sm">
+            <div className="text-center py-8 th-text-2 text-sm">
               <Mail className="w-8 h-8 mx-auto mb-2 opacity-30" />
               {t("noMessages")}
             </div>
@@ -240,13 +240,13 @@ export default function InboxPage() {
                   required
                 />
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-primary">
+                  <label className="block text-sm font-medium th-text">
                     {t("questionBody")}
                   </label>
                   <textarea
                     value={askBody}
                     onChange={(e) => setAskBody(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm min-h-[120px] focus:outline-none focus:ring-2 focus:ring-navy/20"
+                    className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm min-h-[120px] focus:outline-none focus:ring-2 focus:ring-navy/20"
                     required
                   />
                 </div>
@@ -269,9 +269,9 @@ export default function InboxPage() {
           {/* Questions list */}
           <Card>
             {questionsLoading ? (
-              <div className="text-sm text-text-secondary py-4">Loading...</div>
+              <div className="text-sm th-text-2 py-4">Loading...</div>
             ) : questions.length === 0 ? (
-              <div className="text-center py-8 text-text-secondary text-sm">
+              <div className="text-center py-8 th-text-2 text-sm">
                 <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
                 {t("noQuestions")}
               </div>
@@ -283,7 +283,7 @@ export default function InboxPage() {
                       onClick={() =>
                         setExpandedQuestion(expandedQuestion === q.id ? null : q.id)
                       }
-                      className="flex items-center gap-3 w-full py-4 text-left hover:bg-surface rounded-lg px-2 -mx-2 transition-colors"
+                      className="flex items-center gap-3 w-full py-4 text-left hover:th-bg rounded-lg px-2 -mx-2 transition-colors"
                     >
                       <MessageSquare
                         className={`w-5 h-5 shrink-0 ${
@@ -292,7 +292,7 @@ export default function InboxPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{q.subject}</p>
-                        <p className="text-xs text-text-secondary">
+                        <p className="text-xs th-text-2">
                           {new Date(q.sentAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -302,19 +302,19 @@ export default function InboxPage() {
                         <Badge variant="warning">{t("pending")}</Badge>
                       )}
                       {expandedQuestion === q.id ? (
-                        <ChevronDown className="w-4 h-4 text-text-secondary shrink-0" />
+                        <ChevronDown className="w-4 h-4 th-text-2 shrink-0" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-text-secondary shrink-0" />
+                        <ChevronRight className="w-4 h-4 th-text-2 shrink-0" />
                       )}
                     </button>
 
                     {expandedQuestion === q.id && (
                       <div className="px-4 pb-4 space-y-3">
-                        <div className="bg-surface rounded-lg p-3">
-                          <p className="text-xs font-semibold text-text-secondary uppercase mb-1">
+                        <div className="th-bg rounded-lg p-3">
+                          <p className="text-xs font-semibold th-text-2 uppercase mb-1">
                             Your question
                           </p>
-                          <p className="text-sm text-text-primary whitespace-pre-wrap">{q.body}</p>
+                          <p className="text-sm th-text whitespace-pre-wrap">{q.body}</p>
                         </div>
                         {q.replyBody && (
                           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -324,7 +324,7 @@ export default function InboxPage() {
                                 ? `· ${new Date(q.repliedAt).toLocaleDateString()}`
                                 : ""}
                             </p>
-                            <p className="text-sm text-text-primary whitespace-pre-wrap">
+                            <p className="text-sm th-text whitespace-pre-wrap">
                               {q.replyBody}
                             </p>
                           </div>

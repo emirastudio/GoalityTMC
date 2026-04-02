@@ -57,15 +57,11 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
   return (
     <aside className="w-60 shrink-0 bg-[#161A1A] min-h-screen flex flex-col border-r border-white/4">
       {/* Logo / Org name */}
-      <div className="px-4 py-5 border-b border-white/6">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-mint/15 border border-mint/20 flex items-center justify-center shrink-0">
-            <span className="text-[11px] font-black text-mint leading-none">{initials}</span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-bold text-white truncate leading-tight">{orgName}</p>
-            <p className="text-[10px] text-white/35 leading-tight">Admin panel</p>
-          </div>
+      <div className="px-4 py-4 border-b border-white/6 flex items-center gap-3">
+        <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
+        <div className="min-w-0">
+          <p className="text-[13px] font-bold text-white truncate leading-tight">{orgName}</p>
+          <p className="text-[10px] text-white/35 leading-tight">Admin panel</p>
         </div>
       </div>
 

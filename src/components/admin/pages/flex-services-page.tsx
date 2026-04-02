@@ -122,7 +122,7 @@ function SectionTab({
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
         active
           ? "bg-navy text-white"
-          : "bg-white text-text-secondary hover:bg-surface border border-border"
+          : "th-card th-text-2 hover:th-bg border th-border"
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -165,21 +165,21 @@ function IconPicker({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary hover:bg-surface transition-colors cursor-pointer"
+        className="flex items-center gap-2 rounded-md border th-border th-card px-3 py-1.5 text-sm th-text hover:th-bg transition-colors cursor-pointer"
       >
         <Selected className="w-4 h-4 text-navy" />
-        <span className="text-xs text-text-secondary">
+        <span className="text-xs th-text-2">
           {value ?? "No icon"}
         </span>
-        <ChevronDown className="w-3 h-3 text-text-secondary ml-1" />
+        <ChevronDown className="w-3 h-3 th-text-2 ml-1" />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-border rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1 w-56">
+        <div className="absolute left-0 top-full mt-1 z-20 th-card border th-border rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1 w-56">
           <button
             type="button"
             onClick={() => { onChange(null); setOpen(false); }}
-            className="col-span-6 text-xs text-text-secondary hover:text-navy text-left px-2 py-1 rounded hover:bg-surface cursor-pointer"
+            className="col-span-6 text-xs th-text-2 hover:text-navy text-left px-2 py-1 rounded hover:th-bg cursor-pointer"
           >
             No icon
           </button>
@@ -192,7 +192,7 @@ function IconPicker({
               className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors ${
                 value === name
                   ? "bg-navy text-white"
-                  : "hover:bg-surface text-navy"
+                  : "hover:th-bg text-navy"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -238,7 +238,7 @@ function ImageUpload({
   return (
     <div className="flex items-center gap-2">
       {value ? (
-        <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-border shrink-0">
+        <div className="relative w-14 h-14 rounded-lg overflow-hidden border th-border shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="" className="w-full h-full object-cover" />
           <button
@@ -250,15 +250,15 @@ function ImageUpload({
           </button>
         </div>
       ) : (
-        <div className="w-14 h-14 rounded-lg border border-dashed border-border bg-surface flex items-center justify-center shrink-0">
-          <ImageIcon className="w-5 h-5 text-text-secondary/40" />
+        <div className="w-14 h-14 rounded-lg border border-dashed th-border th-bg flex items-center justify-center shrink-0">
+          <ImageIcon className="w-5 h-5 th-text-2/40" />
         </div>
       )}
       <button
         type="button"
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-navy hover:bg-surface transition-colors cursor-pointer disabled:opacity-40"
+        className="inline-flex items-center gap-1.5 rounded-md border th-border th-card px-3 py-1.5 text-xs font-medium th-text-2 hover:text-navy hover:th-bg transition-colors cursor-pointer disabled:opacity-40"
       >
         {uploading ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -400,7 +400,7 @@ function ServiceTypesTab() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">
+      <h2 className="text-sm font-semibold th-text-2 uppercase tracking-wide">
         {t("services.title")}
       </h2>
 
@@ -415,7 +415,7 @@ function ServiceTypesTab() {
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addService()}
           placeholder={t("services.namePlaceholder")}
-          className="flex-1 rounded-md border border-border bg-white px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+          className="flex-1 rounded-md border th-border th-card px-3 py-2 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
         />
         <button
           type="button"
@@ -434,14 +434,14 @@ function ServiceTypesTab() {
 
       {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-text-secondary">
+        <div className="flex items-center justify-center py-16 th-text-2">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           <span className="text-sm">{t("loading")}</span>
         </div>
       ) : services.length === 0 ? (
-        <div className="rounded-xl border border-border bg-white shadow-sm px-6 py-12 text-center">
-          <Layers className="w-8 h-8 text-text-secondary/40 mx-auto mb-3" />
-          <p className="text-sm text-text-secondary">{t("services.empty")}</p>
+        <div className="rounded-xl border th-border th-card shadow-sm px-6 py-12 text-center">
+          <Layers className="w-8 h-8 th-text-2/40 mx-auto mb-3" />
+          <p className="text-sm th-text-2">{t("services.empty")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -450,7 +450,7 @@ function ServiceTypesTab() {
             return (
               <div
                 key={svc.id}
-                className="rounded-xl border border-border bg-white shadow-sm p-4 flex items-center justify-between gap-3"
+                className="rounded-xl border th-border th-card shadow-sm p-4 flex items-center justify-between gap-3"
               >
                 {editId === svc.id ? (
                   <div className="flex items-center gap-2 flex-1">
@@ -463,7 +463,7 @@ function ServiceTypesTab() {
                         if (e.key === "Enter") saveEdit();
                         if (e.key === "Escape") cancelEdit();
                       }}
-                      className="flex-1 rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30"
+                      className="flex-1 rounded-md border th-border th-card px-3 py-1.5 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/30"
                       autoFocus
                     />
                     <button
@@ -482,7 +482,7 @@ function ServiceTypesTab() {
                     <button
                       type="button"
                       onClick={cancelEdit}
-                      className="text-xs text-text-secondary cursor-pointer"
+                      className="text-xs th-text-2 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -499,7 +499,7 @@ function ServiceTypesTab() {
                       <button
                         type="button"
                         onClick={() => startEdit(svc)}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-navy transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-navy transition-colors cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                         {t("edit")}
@@ -516,7 +516,7 @@ function ServiceTypesTab() {
                           <button
                             type="button"
                             onClick={() => setDeleteId(null)}
-                            className="text-xs text-text-secondary cursor-pointer"
+                            className="text-xs th-text-2 cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -525,7 +525,7 @@ function ServiceTypesTab() {
                         <button
                           type="button"
                           onClick={() => setDeleteId(svc.id)}
-                          className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-error transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-error transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           {t("delete")}
@@ -675,11 +675,11 @@ function PackageItemsSection({
   };
 
   return (
-    <div className="mt-3 pt-3 border-t border-border space-y-3">
+    <div className="mt-3 pt-3 border-t th-border space-y-3">
       {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       {loading ? (
-        <div className="flex items-center gap-2 py-4 text-text-secondary">
+        <div className="flex items-center gap-2 py-4 th-text-2">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span className="text-xs">{t("loading")}</span>
         </div>
@@ -687,7 +687,7 @@ function PackageItemsSection({
         <>
           {/* Existing items */}
           {items.length === 0 ? (
-            <p className="text-xs text-text-secondary py-2">{t("packages.noItems")}</p>
+            <p className="text-xs th-text-2 py-2">{t("packages.noItems")}</p>
           ) : (
             <div className="space-y-1.5">
               {items.map((item) => {
@@ -695,11 +695,11 @@ function PackageItemsSection({
                 return (
                   <div
                     key={item.id}
-                    className="flex items-start justify-between gap-2 rounded-lg bg-surface border border-border px-3 py-2"
+                    className="flex items-start justify-between gap-2 rounded-lg th-bg border th-border px-3 py-2"
                   >
                     <div className="flex items-start gap-2 flex-1 min-w-0">
                       {item.imageUrl ? (
-                        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-border">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border th-border">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                         </div>
@@ -713,35 +713,35 @@ function PackageItemsSection({
                           {item.serviceName}
                         </span>
                         {item.details && (
-                          <span className="text-xs text-text-secondary ml-2">
+                          <span className="text-xs th-text-2 ml-2">
                             {item.details}
                           </span>
                         )}
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                          <span className="text-xs text-text-secondary">
+                          <span className="text-xs th-text-2">
                             {pricingModeLabel(item.pricingMode)}
                           </span>
-                          <span className="text-xs font-semibold text-text-primary">
+                          <span className="text-xs font-semibold th-text">
                             {item.price}
                           </span>
                           {item.days !== null && (
-                            <span className="text-xs text-text-secondary">
+                            <span className="text-xs th-text-2">
                               {item.days} {t("items.days")}
                             </span>
                           )}
                           {item.quantity !== null && (
-                            <span className="text-xs text-text-secondary">
+                            <span className="text-xs th-text-2">
                               {t("items.qty")}: {item.quantity}
                             </span>
                           )}
                           {(item.dateFrom || item.dateTo) && (
-                            <span className="text-xs text-text-secondary">
+                            <span className="text-xs th-text-2">
                               {formatDate(item.dateFrom)} – {formatDate(item.dateTo)}
                             </span>
                           )}
                         </div>
                         {item.note && (
-                          <p className="text-xs text-text-secondary/70 mt-0.5 italic">
+                          <p className="text-xs th-text-2/70 mt-0.5 italic">
                             {item.note}
                           </p>
                         )}
@@ -760,7 +760,7 @@ function PackageItemsSection({
                         <button
                           type="button"
                           onClick={() => setDeleteItemId(null)}
-                          className="text-xs text-text-secondary cursor-pointer"
+                          className="text-xs th-text-2 cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -769,7 +769,7 @@ function PackageItemsSection({
                       <button
                         type="button"
                         onClick={() => setDeleteItemId(item.id)}
-                        className="inline-flex items-center text-xs text-text-secondary hover:text-error transition-colors cursor-pointer shrink-0"
+                        className="inline-flex items-center text-xs th-text-2 hover:text-error transition-colors cursor-pointer shrink-0"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -781,8 +781,8 @@ function PackageItemsSection({
           )}
 
           {/* Add item form */}
-          <div className="rounded-lg border border-dashed border-border bg-surface/50 p-3 space-y-3">
-            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">
+          <div className="rounded-lg border border-dashed th-border th-bg/50 p-3 space-y-3">
+            <p className="text-xs font-semibold th-text-2 uppercase tracking-wide">
               {t("items.addTitle")}
             </p>
 
@@ -791,7 +791,7 @@ function PackageItemsSection({
               <select
                 value={form.serviceId}
                 onChange={(e) => setForm((f) => ({ ...f, serviceId: e.target.value }))}
-                className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30 appearance-none"
+                className="rounded-md border th-border th-card px-3 py-1.5 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/30 appearance-none"
               >
                 <option value="">{t("items.selectService")}</option>
                 {services.map((svc) => (
@@ -805,7 +805,7 @@ function PackageItemsSection({
                 value={form.details}
                 onChange={(e) => setForm((f) => ({ ...f, details: e.target.value }))}
                 placeholder={t("items.detailsPlaceholder")}
-                className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+                className="rounded-md border th-border th-card px-3 py-1.5 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
               />
             </div>
 
@@ -814,7 +814,7 @@ function PackageItemsSection({
               <select
                 value={form.pricingMode}
                 onChange={(e) => setForm((f) => ({ ...f, pricingMode: e.target.value }))}
-                className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30 appearance-none"
+                className="rounded-md border th-border th-card px-3 py-1.5 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/30 appearance-none"
               >
                 <option value="per_person">{t("modes.per_person")}</option>
                 <option value="per_person_per_day">{t("modes.per_person_per_day")}</option>
@@ -830,7 +830,7 @@ function PackageItemsSection({
                 value={form.price}
                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                 placeholder={t("items.pricePlaceholder")}
-                className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+                className="rounded-md border th-border th-card px-3 py-1.5 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
               />
             </div>
 
@@ -841,7 +841,7 @@ function PackageItemsSection({
                 value={form.days}
                 onChange={(e) => setForm((f) => ({ ...f, days: e.target.value }))}
                 placeholder={t("items.daysPlaceholder")}
-                className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+                className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
               />
             )}
             {form.pricingMode === "per_unit" && (
@@ -850,28 +850,28 @@ function PackageItemsSection({
                 value={form.quantity}
                 onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
                 placeholder={t("items.quantityPlaceholder")}
-                className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+                className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
               />
             )}
 
             {/* Row 3: date from + date to */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-text-secondary mb-1 block">{t("items.dateFrom")}</label>
+                <label className="text-xs th-text-2 mb-1 block">{t("items.dateFrom")}</label>
                 <input
                   type="date"
                   value={form.dateFrom}
                   onChange={(e) => setForm((f) => ({ ...f, dateFrom: e.target.value }))}
-                  className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30"
+                  className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/30"
                 />
               </div>
               <div>
-                <label className="text-xs text-text-secondary mb-1 block">{t("items.dateTo")}</label>
+                <label className="text-xs th-text-2 mb-1 block">{t("items.dateTo")}</label>
                 <input
                   type="date"
                   value={form.dateTo}
                   onChange={(e) => setForm((f) => ({ ...f, dateTo: e.target.value }))}
-                  className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30"
+                  className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/30"
                 />
               </div>
             </div>
@@ -882,12 +882,12 @@ function PackageItemsSection({
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
               placeholder={t("items.notePlaceholder")}
-              className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+              className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
             />
 
             {/* Row 5: image upload */}
             <div>
-              <label className="text-xs text-text-secondary mb-1.5 block">{t("items.image")}</label>
+              <label className="text-xs th-text-2 mb-1.5 block">{t("items.image")}</label>
               <ImageUpload
                 value={form.imageUrl}
                 onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))}
@@ -1029,7 +1029,7 @@ function PackagesTab({ services }: { services: Service[] }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">
+      <h2 className="text-sm font-semibold th-text-2 uppercase tracking-wide">
         {t("packages.title")}
       </h2>
 
@@ -1043,7 +1043,7 @@ function PackagesTab({ services }: { services: Service[] }) {
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addPackage()}
           placeholder={t("packages.namePlaceholder")}
-          className="flex-1 rounded-md border border-border bg-white px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
+          className="flex-1 rounded-md border th-border th-card px-3 py-2 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/30"
         />
         <button
           type="button"
@@ -1062,21 +1062,21 @@ function PackagesTab({ services }: { services: Service[] }) {
 
       {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-text-secondary">
+        <div className="flex items-center justify-center py-16 th-text-2">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           <span className="text-sm">{t("loading")}</span>
         </div>
       ) : packages.length === 0 ? (
-        <div className="rounded-xl border border-border bg-white shadow-sm px-6 py-12 text-center">
-          <Package className="w-8 h-8 text-text-secondary/40 mx-auto mb-3" />
-          <p className="text-sm text-text-secondary">{t("packages.empty")}</p>
+        <div className="rounded-xl border th-border th-card shadow-sm px-6 py-12 text-center">
+          <Package className="w-8 h-8 th-text-2/40 mx-auto mb-3" />
+          <p className="text-sm th-text-2">{t("packages.empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">
           {packages.map((pkg) => (
             <div
               key={pkg.id}
-              className="rounded-xl border border-border bg-white shadow-sm p-4"
+              className="rounded-xl border th-border th-card shadow-sm p-4"
             >
               {/* Package header */}
               <div className="flex items-start justify-between gap-3">
@@ -1091,7 +1091,7 @@ function PackagesTab({ services }: { services: Service[] }) {
                         if (e.key === "Enter") saveEditPkg();
                         if (e.key === "Escape") setEditPkgId(null);
                       }}
-                      className="flex-1 rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-navy/30"
+                      className="flex-1 rounded-md border th-border th-card px-3 py-1.5 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/30"
                       autoFocus
                     />
                     <button
@@ -1103,7 +1103,7 @@ function PackagesTab({ services }: { services: Service[] }) {
                       {savingPkg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                       {t("save")}
                     </button>
-                    <button type="button" onClick={() => setEditPkgId(null)} className="text-xs text-text-secondary cursor-pointer">
+                    <button type="button" onClick={() => setEditPkgId(null)} className="text-xs th-text-2 cursor-pointer">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -1125,19 +1125,19 @@ function PackagesTab({ services }: { services: Service[] }) {
                         )}
                       </div>
                       {pkg.description && (
-                        <p className="text-xs text-text-secondary mt-0.5">
+                        <p className="text-xs th-text-2 mt-0.5">
                           {pkg.description}
                         </p>
                       )}
-                      <div className="flex items-center gap-4 mt-1.5 text-xs text-text-secondary">
+                      <div className="flex items-center gap-4 mt-1.5 text-xs th-text-2">
                         <span>{pkg.itemsCount} {t("packages.items")}</span>
                         <span>{pkg.assignedTeams} {t("packages.teams")}</span>
                       </div>
                     </div>
                     {expandedId === pkg.id ? (
-                      <ChevronUp className="w-4 h-4 text-text-secondary shrink-0 mt-1" />
+                      <ChevronUp className="w-4 h-4 th-text-2 shrink-0 mt-1" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-text-secondary shrink-0 mt-1" />
+                      <ChevronDown className="w-4 h-4 th-text-2 shrink-0 mt-1" />
                     )}
                   </button>
                 )}
@@ -1155,7 +1155,7 @@ function PackagesTab({ services }: { services: Service[] }) {
                     <button
                       type="button"
                       onClick={() => setDeleteId(null)}
-                      className="text-xs text-text-secondary cursor-pointer"
+                      className="text-xs th-text-2 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1166,7 +1166,7 @@ function PackagesTab({ services }: { services: Service[] }) {
                       <button
                         type="button"
                         onClick={() => startEditPkg(pkg)}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-navy transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-navy transition-colors cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -1176,7 +1176,7 @@ function PackagesTab({ services }: { services: Service[] }) {
                       onClick={() => setDeleteId(pkg.id)}
                       disabled={pkg.assignedTeams > 0}
                       title={pkg.assignedTeams > 0 ? t("packages.cannotDelete") : undefined}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-error transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-error transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1215,14 +1215,14 @@ export function FlexServicesPageContent() {
   }, [adminFetch]);
 
   return (
-    <div className="flex-1 min-h-screen bg-surface p-6 lg:p-8 space-y-6">
+    <div className="flex-1 min-h-screen th-bg p-6 lg:p-8 space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-xl font-bold text-text-primary flex items-center gap-2.5">
+        <h1 className="text-xl font-bold th-text flex items-center gap-2.5">
           <Package className="w-5 h-5 text-navy" />
           {t("pageTitle")}
         </h1>
-        <p className="text-sm text-text-secondary mt-1">
+        <p className="text-sm th-text-2 mt-1">
           {t("pageDescription")}
         </p>
       </div>

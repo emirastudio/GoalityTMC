@@ -69,3 +69,14 @@ body {
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
 }
+
+/* ── Theme utility classes (respond to data-theme) ── */
+.th-bg       { background: var(--cat-bg) !important; }
+.th-card     { background: var(--cat-card-bg) !important; border-color: var(--cat-card-border) !important; }
+.th-text     { color: var(--cat-text) !important; }
+.th-text-2   { color: var(--cat-text-secondary) !important; }
+.th-text-m   { color: var(--cat-text-muted) !important; }
+.th-border   { border-color: var(--cat-card-border) !important; }
+.th-divider  { background: var(--cat-divider) !important; }
+.th-input    { background: var(--cat-input-bg) !important; border-color: var(--cat-input-border) !important; color: var(--cat-text) !important; }
+.th-tag      { background: var(--cat-tag-bg) !important; border-color: var(--cat-tag-border) !important; color: var(--cat-tag-text) !important; }
