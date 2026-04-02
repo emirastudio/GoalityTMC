@@ -11,7 +11,7 @@ export function HealthDisclaimer() {
       <ShieldAlert className="w-5 h-5 text-gold-dark shrink-0 mt-0.5" />
       <div>
         <p className="text-sm font-semibold text-gold-dark">{t("healthDisclaimerTitle")}</p>
-        <p className="text-xs text-text-secondary mt-1 leading-relaxed">{t("healthDisclaimer")}</p>
+        <p className="text-xs th-text-2 mt-1 leading-relaxed">{t("healthDisclaimer")}</p>
       </div>
     </div>
   );

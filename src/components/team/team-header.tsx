@@ -222,11 +222,11 @@ function MobileTeamPill({
 
       {showAddModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-5" onClick={(e) => e.stopPropagation()}>
+          <div className="th-card rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-text-primary">{t("addTeam")}</h3>
-              <button onClick={() => setShowAddModal(false)} className="p-1.5 hover:bg-surface rounded-lg">
-                <X className="w-4 h-4 text-text-secondary" />
+              <h3 className="text-base font-bold th-text">{t("addTeam")}</h3>
+              <button onClick={() => setShowAddModal(false)} className="p-1.5 hover:th-bg rounded-lg">
+                <X className="w-4 h-4 th-text-2" />
               </button>
             </div>
             <div className="space-y-3">

@@ -105,34 +105,34 @@ function CountrySelect({
 
   return (
     <div ref={ref} className="relative">
-      <label className="block text-sm font-medium text-text-primary mb-1.5">
+      <label className="block text-sm font-medium th-text mb-1.5">
         {label}{required && <span className="text-error ml-0.5">*</span>}
       </label>
       <button
         type="button"
         onClick={() => { setOpen((o) => !o); setSearch(""); }}
         className={cn(
-          "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border bg-white text-sm transition-colors",
-          open ? "border-navy ring-2 ring-navy/20" : "border-border hover:border-navy/40",
-          !value && "text-text-secondary"
+          "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border th-card text-sm transition-colors",
+          open ? "border-navy ring-2 ring-navy/20" : "th-border hover:border-navy/40",
+          !value && "th-text-2"
         )}
       >
         {selected ? (
           <>
             <span className="text-xl leading-none">{selected.flag}</span>
-            <span className="flex-1 text-left text-text-primary">{selected.name}</span>
+            <span className="flex-1 text-left th-text">{selected.name}</span>
           </>
         ) : (
           <span className="flex-1 text-left">Select country...</span>
         )}
-        <ChevronDown className={cn("w-4 h-4 text-text-secondary transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("w-4 h-4 th-text-2 transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 th-card th-border border rounded-xl shadow-lg overflow-hidden">
           {/* Search */}
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
-            <Search className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2 border-b th-border">
+            <Search className="w-3.5 h-3.5 th-text-2 shrink-0" />
             <input
               ref={searchRef}
               type="text"
@@ -145,7 +145,7 @@ function CountrySelect({
           {/* List */}
           <div className="max-h-52 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="text-sm text-text-secondary text-center py-3">No results</p>
+              <p className="text-sm th-text-2 text-center py-3">No results</p>
             ) : (
               filtered.map((c) => (
                 <button
@@ -153,7 +153,7 @@ function CountrySelect({
                   type="button"
                   onClick={() => { onChange(c.name); setOpen(false); setSearch(""); }}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors hover:bg-surface",
+                    "w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors hover:th-bg",
                     value === c.name && "bg-navy/5 font-medium text-navy"
                   )}
                 >
@@ -320,14 +320,14 @@ export default function RegisterPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen th-bg">
       {/* Header */}
-      <div className="bg-white border-b border-border">
+      <div className="th-card border-b th-border">
         <div className="max-w-2xl mx-auto px-6 py-5 flex items-center gap-3">
           <Crown className="w-8 h-8 text-gold" />
           <div>
             <h1 className="text-lg font-bold text-navy">{t("title")}</h1>
-            <p className="text-sm text-text-secondary">{t("subtitle")}</p>
+            <p className="text-sm th-text-2">{t("subtitle")}</p>
           </div>
         </div>
       </div>
@@ -341,13 +341,13 @@ export default function RegisterPage() {
                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all",
                 i < stepIndex ? "bg-success text-white" :
                 i === stepIndex ? "bg-navy text-white shadow-md" :
-                "bg-border text-text-secondary"
+                "bg-border th-text-2"
               )}>
                 {i < stepIndex ? <Check className="w-4 h-4" /> : i + 1}
               </div>
               <span className={cn(
                 "text-sm font-medium hidden sm:inline",
-                i === stepIndex ? "text-navy" : "text-text-secondary"
+                i === stepIndex ? "text-navy" : "th-text-2"
               )}>
                 {t(`steps.${s}`)}
               </span>
@@ -365,8 +365,8 @@ export default function RegisterPage() {
           {step === "club" && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-text-primary">{t("club.title")}</h2>
-                <p className="text-sm text-text-secondary mt-1">{t("club.description")}</p>
+                <h2 className="text-xl font-bold th-text">{t("club.title")}</h2>
+                <p className="text-sm th-text-2 mt-1">{t("club.description")}</p>
               </div>
 
               <Input id="clubName" label={t("club.name")} value={clubName}
@@ -385,22 +385,22 @@ export default function RegisterPage() {
 
               {/* Logo upload */}
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">
-                  {t("club.badge")} <span className="text-text-secondary font-normal">{t("club.badgeOptional")}</span>
+                <label className="block text-sm font-medium th-text">
+                  {t("club.badge")} <span className="th-text-2 font-normal">{t("club.badgeOptional")}</span>
                 </label>
                 <div
                   onClick={() => logoInputRef.current?.click()}
-                  className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-navy/40 hover:bg-surface/50 transition-colors cursor-pointer"
+                  className="border-2 border-dashed th-border rounded-xl p-6 text-center hover:border-navy/40 hover:bg-surface/50 transition-colors cursor-pointer"
                 >
                   {logoPreview ? (
                     <img src={logoPreview} alt="Logo preview" className="w-20 h-20 object-contain mx-auto rounded-lg" />
                   ) : (
                     <>
                       <ImageIcon className="w-8 h-8 text-text-secondary/40 mx-auto mb-2" />
-                      <p className="text-sm text-text-secondary">
+                      <p className="text-sm th-text-2">
                         <span className="text-navy font-medium">{t("club.uploadLogo")}</span> {t("club.dragDrop")}
                       </p>
-                      <p className="text-xs text-text-secondary mt-1">{t("club.fileTypes")}</p>
+                      <p className="text-xs th-text-2 mt-1">{t("club.fileTypes")}</p>
                     </>
                   )}
                   {logoFile && <p className="text-xs text-navy mt-2 font-medium">{logoFile.name}</p>}
@@ -414,17 +414,17 @@ export default function RegisterPage() {
           {step === "teams" && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-text-primary">{t("teams.title")}</h2>
-                <p className="text-sm text-text-secondary mt-1">{t("teams.description")}</p>
+                <h2 className="text-xl font-bold th-text">{t("teams.title")}</h2>
+                <p className="text-sm th-text-2 mt-1">{t("teams.description")}</p>
               </div>
 
               <div className="space-y-4">
                 {teamsList.map((team, i) => (
-                  <div key={i} className="rounded-xl border border-border p-4 space-y-3">
+                  <div key={i} className="rounded-xl border th-border p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-navy">{t("teams.teamLabel", { n: i + 1 })}</p>
                       {teamsList.length > 1 && (
-                        <button onClick={() => removeTeam(i)} className="text-text-secondary hover:text-error cursor-pointer">
+                        <button onClick={() => removeTeam(i)} className="th-text-2 hover:text-error cursor-pointer">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
@@ -449,7 +449,7 @@ export default function RegisterPage() {
                 ))}
               </div>
 
-              <Button variant="ghost" onClick={addTeam} className="w-full border border-dashed border-border">
+              <Button variant="ghost" onClick={addTeam} className="w-full border border-dashed th-border">
                 <Plus className="w-4 h-4" />
                 {t("teams.addAnother")}
               </Button>
@@ -460,8 +460,8 @@ export default function RegisterPage() {
           {step === "contact" && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-text-primary">{t("contact.title")}</h2>
-                <p className="text-sm text-text-secondary mt-1">{t("contact.description")}</p>
+                <h2 className="text-xl font-bold th-text">{t("contact.title")}</h2>
+                <p className="text-sm th-text-2 mt-1">{t("contact.description")}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -478,8 +478,8 @@ export default function RegisterPage() {
               <Input id="contactPhone" label={t("contact.phone")} type="tel" value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)} />
 
-              <div className="border-t border-border pt-4 space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+              <div className="border-t th-border pt-4 space-y-4">
+                <p className="text-xs font-semibold uppercase tracking-wider th-text-2">
                   {t("contact.passwordSection")}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -497,55 +497,55 @@ export default function RegisterPage() {
           {step === "review" && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-text-primary">{t("review.title")}</h2>
-                <p className="text-sm text-text-secondary mt-1">{t("review.description")}</p>
+                <h2 className="text-xl font-bold th-text">{t("review.title")}</h2>
+                <p className="text-sm th-text-2 mt-1">{t("review.description")}</p>
               </div>
 
               <div className="space-y-3">
                 {/* Club */}
-                <div className="rounded-xl bg-surface p-4 space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{t("review.club")}</p>
+                <div className="rounded-xl th-bg p-4 space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider th-text-2">{t("review.club")}</p>
                   <div className="flex items-center gap-3">
                     {logoPreview && (
                       <img src={logoPreview} alt="badge" className="w-10 h-10 object-contain rounded" />
                     )}
                     <div>
                       <p className="text-sm font-medium">{clubName}</p>
-                      <p className="text-sm text-text-secondary">{city}{city && country ? ", " : ""}{country}</p>
+                      <p className="text-sm th-text-2">{city}{city && country ? ", " : ""}{country}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Teams */}
-                <div className="rounded-xl bg-surface p-4 space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                <div className="rounded-xl th-bg p-4 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider th-text-2">
                     {t("review.teams")} ({teamsList.length})
                   </p>
                   {teamsList.map((tm, i) => (
-                    <div key={i} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+                    <div key={i} className="flex items-center justify-between py-1.5 border-b th-border last:border-0">
                       <p className="text-sm font-medium">{tm.name}</p>
-                      <p className="text-sm text-text-secondary">{getClassName(tm.classId)}</p>
+                      <p className="text-sm th-text-2">{getClassName(tm.classId)}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Contact */}
-                <div className="rounded-xl bg-surface p-4 space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{t("review.contact")}</p>
+                <div className="rounded-xl th-bg p-4 space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider th-text-2">{t("review.contact")}</p>
                   <p className="text-sm font-medium">{contactName}
-                    {contactRole && <span className="text-text-secondary font-normal ml-2">
+                    {contactRole && <span className="th-text-2 font-normal ml-2">
                       · {contactRoles.find(r => r.value === contactRole)?.label}
                     </span>}
                   </p>
-                  <p className="text-sm text-text-secondary">{contactEmail}</p>
-                  {contactPhone && <p className="text-sm text-text-secondary">{contactPhone}</p>}
+                  <p className="text-sm th-text-2">{contactEmail}</p>
+                  {contactPhone && <p className="text-sm th-text-2">{contactPhone}</p>}
                 </div>
               </div>
             </div>
           )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t th-border">
             <Button variant="ghost" onClick={prev} disabled={isFirst}>
               <ChevronLeft className="w-4 h-4" /> {tc("back")}
             </Button>

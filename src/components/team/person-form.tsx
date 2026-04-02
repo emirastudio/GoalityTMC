@@ -122,7 +122,7 @@ export function PersonForm({
         </div>
 
         {/* Medical section */}
-        <div className="border-t border-border pt-4 space-y-4">
+        <div className="border-t th-border pt-4 space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary/60">
             {t("medicalDietary")}
           </p>
@@ -134,7 +134,7 @@ export function PersonForm({
         {/* GDPR */}
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" className="mt-1 accent-navy" required />
-          <span className="text-text-secondary">{t("gdprConsent")}</span>
+          <span className="th-text-2">{t("gdprConsent")}</span>
         </label>
 
         <div className="flex gap-3 pt-2">

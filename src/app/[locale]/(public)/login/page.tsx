@@ -54,25 +54,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface">
+    <div className="min-h-screen flex items-center justify-center th-bg">
       <Card className="w-full max-w-md">
         <div className="text-center mb-6">
           <div className="w-12 h-12 rounded-xl bg-mint flex items-center justify-center mx-auto mb-3">
             <span className="text-navy font-black text-xs leading-none">P.G.W.</span>
           </div>
           <h1 className="text-xl font-bold text-navy">{t("loginTitle")}</h1>
-          <p className="text-text-secondary text-sm mt-1">{t("loginSubtitle")}</p>
+          <p className="th-text-2 text-sm mt-1">{t("loginSubtitle")}</p>
         </div>
 
         {/* Mode toggle */}
-        <div className="flex mb-6 border border-border rounded-lg overflow-hidden">
+        <div className="flex mb-6 border th-border rounded-lg overflow-hidden">
           <button
             type="button"
             onClick={() => { setMode("club"); setError(""); }}
             className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer ${
               mode === "club"
                 ? "bg-navy text-white"
-                : "bg-white text-text-secondary hover:bg-surface"
+                : "th-card th-text-2 hover:th-bg"
             }`}
           >
             Club
@@ -83,7 +83,7 @@ export default function LoginPage() {
             className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer ${
               mode === "admin"
                 ? "bg-navy text-white"
-                : "bg-white text-text-secondary hover:bg-surface"
+                : "th-card th-text-2 hover:th-bg"
             }`}
           >
             Admin
@@ -115,7 +115,7 @@ export default function LoginPage() {
         {mode === "club" && (
           <div className="mt-4 text-center space-y-2">
             <div>
-              <Link href="/forgot-password" className="text-sm text-text-secondary hover:text-navy hover:underline">
+              <Link href="/forgot-password" className="text-sm th-text-2 hover:text-navy hover:underline">
                 {t("forgotPassword")}
               </Link>
             </div>

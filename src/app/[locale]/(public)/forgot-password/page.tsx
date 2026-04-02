@@ -37,12 +37,12 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface">
+    <div className="min-h-screen flex items-center justify-center th-bg">
       <Card className="w-full max-w-md">
         <div className="text-center mb-6">
           <Crown className="w-10 h-10 text-gold mx-auto mb-3" />
           <h1 className="text-xl font-bold text-navy">{t("forgotTitle")}</h1>
-          <p className="text-text-secondary text-sm mt-1">{t("forgotSubtitle")}</p>
+          <p className="th-text-2 text-sm mt-1">{t("forgotSubtitle")}</p>
         </div>
 
         {sent ? (
@@ -52,8 +52,8 @@ export default function ForgotPasswordPage() {
                 <Mail className="w-7 h-7 text-green-600" />
               </div>
             </div>
-            <p className="text-text-secondary text-sm">{t("forgotSent")}</p>
-            <p className="text-text-secondary text-xs">{t("forgotSentHint")}</p>
+            <p className="th-text-2 text-sm">{t("forgotSent")}</p>
+            <p className="th-text-2 text-xs">{t("forgotSentHint")}</p>
             <Link href="/login" className="inline-block mt-2 text-sm text-navy hover:underline font-medium">
               {t("backToLogin")}
             </Link>
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
               {loading ? "..." : t("forgotSendLink")}
             </Button>
             <div className="text-center">
-              <Link href="/login" className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-navy">
+              <Link href="/login" className="inline-flex items-center gap-1 text-sm th-text-2 hover:text-navy">
                 <ArrowLeft className="w-3.5 h-3.5" />
                 {t("backToLogin")}
               </Link>

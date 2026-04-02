@@ -35,7 +35,7 @@ export function PersonTable({ persons, columns, emptyText, addLabel, onAdd, onDe
   if (persons.length === 0) {
     return (
       <Card className="text-center py-10">
-        <p className="text-text-secondary text-sm">{emptyText}</p>
+        <p className="th-text-2 text-sm">{emptyText}</p>
         <Button className="mt-4" onClick={onAdd}>
           <Plus className="w-4 h-4" />
           {addLabel}
@@ -49,19 +49,19 @@ export function PersonTable({ persons, columns, emptyText, addLabel, onAdd, onDe
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border text-left">
+            <tr className="border-b th-border text-left">
               {columns.map((col) => (
-                <th key={col.key} className="px-4 py-3 text-xs font-medium text-text-secondary uppercase">
+                <th key={col.key} className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                   {col.label}
                 </th>
               ))}
-              <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase text-center w-20">
+              <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center w-20">
                 <Hotel className="w-3.5 h-3.5 inline" />
               </th>
-              <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase text-center w-20">
+              <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center w-20">
                 <Bus className="w-3.5 h-3.5 inline" />
               </th>
-              <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase text-center w-16">
+              <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center w-16">
                 <AlertCircle className="w-3.5 h-3.5 inline" />
               </th>
               <th className="px-4 py-3 w-10"></th>
@@ -69,7 +69,7 @@ export function PersonTable({ persons, columns, emptyText, addLabel, onAdd, onDe
           </thead>
           <tbody>
             {persons.map((p) => (
-              <tr key={p.id} className="border-b border-border last:border-0 hover:bg-surface/50">
+              <tr key={p.id} className="border-b th-border last:border-0 hover:bg-surface/50">
                 {columns.map((col) => {
                   let value = "";
                   if (col.key === "name") {
@@ -98,7 +98,7 @@ export function PersonTable({ persons, columns, emptyText, addLabel, onAdd, onDe
                   {onDelete && (
                     <button
                       onClick={() => onDelete(p.id)}
-                      className="text-text-secondary hover:text-error cursor-pointer"
+                      className="th-text-2 hover:text-error cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
