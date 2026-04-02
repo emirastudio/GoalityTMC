@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
+import { ThemeProvider, ThemeToggle } from "@/components/ui/theme-provider";
 import {
   Calendar, MapPin, Users, Trophy, ArrowRight, Globe,
   CheckCircle, Clock, ChevronRight, Mail, Phone, ExternalLink,
@@ -62,10 +63,11 @@ export default function TournamentPublicPage() {
   const brand = org.brandColor || "#272D2D";
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5]">
+    <ThemeProvider defaultTheme="light">
+    <div className="min-h-screen" style={{ background: "var(--cat-bg)" }}>
 
       {/* ── Navbar ──────────────────────────────────────── */}
-      <header className="bg-white border-b border-border sticky top-0 z-30">
+      <header className="sticky top-0 z-30" style={{ background: "var(--cat-header-bg)", borderBottom: "1px solid var(--cat-header-border)" }}>
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             {org.logo ? (
@@ -96,15 +98,18 @@ export default function TournamentPublicPage() {
             ))}
           </nav>
 
-          {t.registrationOpen && (
-            <Link
-              href={`/t/${orgSlug}/${tournamentSlug}/register`}
-              className="shrink-0 inline-flex items-center gap-1.5 text-[13px] font-semibold text-white px-4 py-2 rounded-xl transition-opacity hover:opacity-90"
-              style={{ backgroundColor: brand }}
-            >
-              Register <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            <ThemeToggle />
+            {t.registrationOpen && (
+              <Link
+                href={`/t/${orgSlug}/${tournamentSlug}/register`}
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white px-4 py-2 rounded-xl transition-opacity hover:opacity-90"
+                style={{ backgroundColor: brand }}
+              >
+                Register <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
@@ -160,18 +165,22 @@ export default function TournamentPublicPage() {
 
       {/* ── Floating card ───────────────────────────────── */}
       <div className="max-w-5xl mx-auto px-4 -mt-5">
-        <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="rounded-2xl overflow-hidden" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}>
 
           {/* Mobile tabs */}
-          <div className="flex md:hidden border-b border-border">
+          <div className="flex md:hidden" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
             {(["overview", "classes", "teams"] as Tab[]).map(key => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
                 className={cn(
                   "flex-1 py-3 text-[12px] font-semibold transition-colors capitalize",
-                  tab === key ? "text-text-primary border-b-2 border-navy" : "text-text-secondary"
+                  tab === key ? "border-b-2" : "opacity-50"
                 )}
+                style={{
+                  color: tab === key ? "var(--cat-text)" : "var(--cat-text-secondary)",
+                  borderColor: tab === key ? "var(--cat-accent)" : "transparent",
+                }}
               >
                 {key === "overview" ? "Info" : key === "classes" ? "Classes" : "Teams"}
               </button>
@@ -183,20 +192,20 @@ export default function TournamentPublicPage() {
             {tab === "overview" && (
               <div className="space-y-6">
                 {/* Registration status */}
-                <div className={cn(
-                  "rounded-xl p-4 flex items-center justify-between gap-4",
-                  t.registrationOpen ? "bg-emerald-50 border border-emerald-200" : "bg-surface border border-border"
-                )}>
+                <div className="rounded-xl p-4 flex items-center justify-between gap-4" style={t.registrationOpen
+                  ? { background: "var(--cat-badge-open-bg)", border: "1px solid var(--cat-badge-open-border)" }
+                  : { background: "var(--cat-tag-bg)", border: "1px solid var(--cat-tag-border)" }
+                }>
                   <div className="flex items-center gap-3">
                     {t.registrationOpen
-                      ? <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
-                      : <Clock className="w-5 h-5 text-text-secondary shrink-0" />}
+                      ? <CheckCircle className="w-5 h-5 shrink-0" style={{ color: "var(--cat-badge-open-text)" }} />
+                      : <Clock className="w-5 h-5 shrink-0" style={{ color: "var(--cat-text-muted)" }} />}
                     <div>
-                      <p className={cn("text-sm font-semibold", t.registrationOpen ? "text-emerald-800" : "text-text-primary")}>
+                      <p className="text-sm font-semibold" style={{ color: t.registrationOpen ? "var(--cat-badge-open-text)" : "var(--cat-text)" }}>
                         {t.registrationOpen ? "Registration is open" : "Registration is closed"}
                       </p>
                       {t.registrationDeadline && (
-                        <p className="text-xs text-text-secondary mt-0.5">
+                        <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-secondary)" }}>
                           Deadline: {fmt(t.registrationDeadline)}
                         </p>
                       )}
@@ -216,15 +225,15 @@ export default function TournamentPublicPage() {
                 {/* Description */}
                 {t.description && (
                   <div>
-                    <p className="text-xs font-semibold text-text-secondary/60 uppercase tracking-wider mb-2">About</p>
-                    <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">{t.description}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--cat-text-muted)" }}>About</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "var(--cat-text-secondary)" }}>{t.description}</p>
                   </div>
                 )}
 
                 {/* Key dates */}
                 {(t.startDate || t.endDate || t.registrationDeadline) && (
                   <div>
-                    <p className="text-xs font-semibold text-text-secondary/60 uppercase tracking-wider mb-3">Key dates</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--cat-text-muted)" }}>Key dates</p>
                     <div className="space-y-2">
                       {t.registrationDeadline && (
                         <div className="flex items-center gap-3">
@@ -232,8 +241,8 @@ export default function TournamentPublicPage() {
                             <Clock className="w-4 h-4 text-amber-600" />
                           </div>
                           <div>
-                            <p className="text-xs text-text-secondary">Registration deadline</p>
-                            <p className="text-sm font-semibold text-text-primary">{fmt(t.registrationDeadline)}</p>
+                            <p className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>Registration deadline</p>
+                            <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{fmt(t.registrationDeadline)}</p>
                           </div>
                         </div>
                       )}
@@ -243,8 +252,8 @@ export default function TournamentPublicPage() {
                             <Calendar className="w-4 h-4 text-blue-600" />
                           </div>
                           <div>
-                            <p className="text-xs text-text-secondary">Tournament starts</p>
-                            <p className="text-sm font-semibold text-text-primary">{fmt(t.startDate)}</p>
+                            <p className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>Tournament starts</p>
+                            <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{fmt(t.startDate)}</p>
                           </div>
                         </div>
                       )}
@@ -254,8 +263,8 @@ export default function TournamentPublicPage() {
                             <Trophy className="w-4 h-4 text-emerald-600" />
                           </div>
                           <div>
-                            <p className="text-xs text-text-secondary">Tournament ends</p>
-                            <p className="text-sm font-semibold text-text-primary">{fmt(t.endDate)}</p>
+                            <p className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>Tournament ends</p>
+                            <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{fmt(t.endDate)}</p>
                           </div>
                         </div>
                       )}
@@ -266,15 +275,15 @@ export default function TournamentPublicPage() {
                 {/* Contact */}
                 {(org.contactEmail || org.website) && (
                   <div>
-                    <p className="text-xs font-semibold text-text-secondary/60 uppercase tracking-wider mb-3">Contact</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--cat-text-muted)" }}>Contact</p>
                     <div className="space-y-2">
                       {org.contactEmail && (
-                        <a href={`mailto:${org.contactEmail}`} className="flex items-center gap-2 text-sm text-navy hover:underline">
+                        <a href={`mailto:${org.contactEmail}`} className="flex items-center gap-2 text-sm hover:underline" style={{ color: "var(--cat-accent)" }}>
                           <Mail className="w-4 h-4 shrink-0" /> {org.contactEmail}
                         </a>
                       )}
                       {org.website && (
-                        <a href={org.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-navy hover:underline">
+                        <a href={org.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:underline" style={{ color: "var(--cat-accent)" }}>
                           <Globe className="w-4 h-4 shrink-0" /> {org.website}
                         </a>
                       )}
@@ -287,28 +296,28 @@ export default function TournamentPublicPage() {
             {/* ── CLASSES tab ── */}
             {tab === "classes" && (
               <div className="space-y-3">
-                <p className="text-xs font-semibold text-text-secondary/60 uppercase tracking-wider mb-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--cat-text-muted)" }}>
                   {classes.length} age categories
                 </p>
                 {classes.map(cls => (
-                  <div key={cls.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-[#FAFAFA]">
+                  <div key={cls.id} className="cat-card flex items-center gap-4 p-4 rounded-xl" style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-tag-border)" }}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: brand + "18" }}>
                       <span className="text-[11px] font-bold" style={{ color: brand }}>
                         {cls.name.replace(/[^0-9U]/gi, "").slice(0, 4) || cls.name.slice(0, 3)}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-text-primary">{cls.name}</p>
+                      <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{cls.name}</p>
                       <div className="flex items-center gap-3 mt-0.5">
-                        {cls.format && <span className="text-xs text-text-secondary">{cls.format}</span>}
+                        {cls.format && <span className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>{cls.format}</span>}
                         {cls.minBirthYear && cls.maxBirthYear && (
-                          <span className="text-xs text-text-secondary">{cls.maxBirthYear}–{cls.minBirthYear}</span>
+                          <span className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>{cls.maxBirthYear}–{cls.minBirthYear}</span>
                         )}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-text-primary">{cls.teamCount}</p>
-                      <p className="text-[10px] text-text-secondary">teams</p>
+                      <p className="text-sm font-bold cat-stat" style={{ color: "var(--cat-stat-value)" }}>{cls.teamCount}</p>
+                      <p className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>teams</p>
                     </div>
                   </div>
                 ))}
@@ -324,15 +333,16 @@ export default function TournamentPublicPage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-white mt-10">
-        <div className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between text-xs text-text-secondary">
+      <footer className="cat-footer mt-10" style={{ background: "var(--cat-card-bg)" }}>
+        <div className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between text-xs" style={{ color: "var(--cat-text-secondary)" }}>
           <span>© {new Date().getFullYear()} {org.name}</span>
-          <a href="/catalog" className="flex items-center gap-1 hover:text-text-primary transition-colors">
+          <a href="/catalog" className="flex items-center gap-1 hover:opacity-80 transition-opacity">
             <Trophy className="w-3 h-3" /> Goality TMC
           </a>
         </div>
       </footer>
     </div>
+    </ThemeProvider>
   );
 }
 
@@ -362,18 +372,18 @@ function TeamsTab({ orgSlug, tournamentSlug, brand }: { orgSlug: string; tournam
       {grouped.filter(g => g.teams.length > 0).map(cls => (
         <div key={cls.id}>
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-[11px] font-semibold text-text-secondary/60 uppercase tracking-wider px-2">
+            <div className="h-px flex-1" style={{ background: "var(--cat-divider)" }} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-2" style={{ color: "var(--cat-text-muted)" }}>
               {cls.name} · {cls.teams.length} teams
             </span>
-            <div className="h-px flex-1 bg-border" />
+            <div className="h-px flex-1" style={{ background: "var(--cat-divider)" }} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {cls.teams.map(team => (
-              <div key={team.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-[#FAFAFA]">
-                <span className="text-[11px] font-mono text-text-secondary/50 w-6 shrink-0">#{team.regNumber}</span>
+              <div key={team.id} className="cat-card flex items-center gap-3 p-3 rounded-xl" style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-tag-border)" }}>
+                <span className="text-[10px] font-mono w-6 shrink-0" style={{ color: "var(--cat-text-faint)" }}>#{team.regNumber}</span>
                 {team.club?.badgeUrl ? (
-                  <img src={team.club.badgeUrl} alt="" className="w-7 h-7 rounded-lg object-contain shrink-0 border border-border" />
+                  <img src={team.club.badgeUrl} alt="" className="w-7 h-7 rounded-lg object-contain shrink-0" style={{ border: "1px solid var(--cat-card-border)" }} />
                 ) : (
                   <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center" style={{ backgroundColor: brand + "18" }}>
                     <span className="text-[9px] font-bold" style={{ color: brand }}>
@@ -382,8 +392,8 @@ function TeamsTab({ orgSlug, tournamentSlug, brand }: { orgSlug: string; tournam
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-text-primary truncate">{team.name ?? team.club?.name ?? "—"}</p>
-                  {team.club?.city && <p className="text-[11px] text-text-secondary truncate">{team.club.city}</p>}
+                  <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{team.name ?? team.club?.name ?? "—"}</p>
+                  {team.club?.city && <p className="text-[11px] truncate" style={{ color: "var(--cat-text-secondary)" }}>{team.club.city}</p>}
                 </div>
                 <span className={cn(
                   "text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0",

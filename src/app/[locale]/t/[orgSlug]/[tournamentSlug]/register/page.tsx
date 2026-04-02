@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { Trophy, Plus, X, Upload, ChevronLeft, Loader2, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 
 type OrgData = { name: string; slug: string; logo: string | null; brandColor: string };
 type TournamentData = { id: number; name: string; slug: string; registrationOpen: boolean; currency: string };
@@ -106,24 +107,29 @@ export default function RegisterPage() {
   }
 
   if (notFound) return (
-    <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
+    <ThemeProvider defaultTheme="light">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cat-bg)" }}>
       <div className="text-center">
-        <p className="text-text-secondary">Tournament not found.</p>
-        <Link href="/catalog" className="text-sm text-navy hover:underline mt-2 block">← Back to catalog</Link>
+        <p style={{ color: "var(--cat-text-secondary)" }}>Tournament not found.</p>
+        <Link href="/catalog" className="text-sm hover:underline mt-2 block" style={{ color: "var(--cat-accent)" }}>← Back to catalog</Link>
       </div>
     </div>
+    </ThemeProvider>
   );
 
   if (!org || !tournament) return (
-    <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-mint border-t-transparent rounded-full animate-spin" />
+    <ThemeProvider defaultTheme="light">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cat-bg)" }}>
+      <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--cat-accent)", borderTopColor: "transparent" }} />
     </div>
+    </ThemeProvider>
   );
 
   const brand = org.brandColor || "#272D2D";
 
   if (done) return (
-    <div className="min-h-screen bg-[#F0F2F5]">
+    <ThemeProvider defaultTheme="light">
+    <div className="min-h-screen" style={{ background: "var(--cat-bg)" }}>
       <div className="h-1" style={{ backgroundColor: brand }} />
       <div className="max-w-md mx-auto px-4 py-20 text-center">
         <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto mb-4">
@@ -142,10 +148,12 @@ export default function RegisterPage() {
         </Link>
       </div>
     </div>
+    </ThemeProvider>
   );
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5]">
+    <ThemeProvider defaultTheme="light">
+    <div className="min-h-screen" style={{ background: "var(--cat-bg)" }}>
       {/* Colored top bar */}
       <div className="h-1" style={{ backgroundColor: brand }} />
 
@@ -272,6 +280,7 @@ export default function RegisterPage() {
         </form>
       </div>
     </div>
+    </ThemeProvider>
   );
 }
 

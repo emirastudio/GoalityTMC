@@ -2,12 +2,14 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Trophy, Users, ArrowRight, Globe } from "lucide-react";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 
 export default async function HomePage() {
   const t = await getTranslations("landing");
 
   return (
-    <div className="min-h-screen bg-white">
+    <ThemeProvider defaultTheme="dark">
+    <div className="min-h-screen" style={{ background: "var(--cat-bg)" }}>
       {/* Nav bar */}
       <div className="bg-navy">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -128,5 +130,6 @@ export default async function HomePage() {
         </div>
       </div>
     </div>
+    </ThemeProvider>
   );
 }

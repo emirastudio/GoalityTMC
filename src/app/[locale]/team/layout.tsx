@@ -115,10 +115,10 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     >
       {isImpersonating && <ImpersonationBanner clubName={club.name} />}
 
-      <div className="flex min-h-screen bg-[#F0F2F5]">
+      <div className="flex min-h-screen" data-theme="light" style={{ background: "var(--cat-bg)" }}>
 
         {/* ── Desktop Sidebar ───────────────────────────────── */}
-        <aside className="hidden md:flex flex-col w-64 shrink-0 bg-[#0D1117] sticky top-0 h-screen overflow-hidden">
+        <aside data-theme="dark" className="hidden md:flex flex-col w-64 shrink-0 bg-[#0D1117] sticky top-0 h-screen overflow-hidden">
 
           {/* Brand */}
           <div className="h-14 px-5 flex items-center gap-3 shrink-0 border-b border-white/6">
@@ -186,7 +186,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
           </div>
 
           {/* Main content */}
-          <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
+          <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8" data-theme="light">
             {children}
           </main>
         </div>
