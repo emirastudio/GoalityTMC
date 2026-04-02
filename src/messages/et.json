@@ -628,6 +628,7 @@
     "confirmDelete": "Kas olete kindel?"
   },
   "orgAdmin": {
+    "dashboard": "Armatuurlaud",
     "dashboardSubtitle": "Organisatsiooni juhtpaneel",
     "newTournament": "Uus turniir",
     "tournaments": "Turniirid",

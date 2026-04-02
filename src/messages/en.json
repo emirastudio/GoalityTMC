@@ -672,6 +672,7 @@
     "confirmDelete": "Are you sure?"
   },
   "orgAdmin": {
+    "dashboard": "Dashboard",
     "dashboardSubtitle": "Organization dashboard",
     "newTournament": "New Tournament",
     "tournaments": "Tournaments",

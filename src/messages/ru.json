@@ -672,6 +672,7 @@
     "confirmDelete": "Вы уверены?"
   },
   "orgAdmin": {
+    "dashboard": "Панель",
     "dashboardSubtitle": "Панель управления организацией",
     "newTournament": "Новый турнир",
     "tournaments": "Турниры",

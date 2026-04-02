@@ -41,19 +41,20 @@ export default async function OrgDashboardPage({ params }: Props) {
 
   return (
     <div className="space-y-6 w-full">
-      {/* Header */}
+      {/* Заголовок */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("dashboard")}</h1>
+          <h1 className="text-2xl font-bold th-text">{t("dashboard")}</h1>
           {!isEmpty && (
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm th-text-2 mt-1">
               {tournaments.length} {t("tournaments").toLowerCase()} · {totalTeams} {t("teams").toLowerCase()} · {totalClubs} {t("clubs").toLowerCase()}
             </p>
           )}
         </div>
         <Link
           href={`/org/${orgSlug}/admin/tournaments`}
-          className="inline-flex items-center gap-2 bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+          style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
         >
           <Plus className="w-4 h-4" />
           {t("newTournament")}
@@ -61,12 +62,13 @@ export default async function OrgDashboardPage({ params }: Props) {
       </div>
 
       {isEmpty ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-          <Trophy className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 mb-4">{t("noTournaments")}</p>
+        <div className="th-card border th-border rounded-lg p-12 text-center">
+          <Trophy className="w-10 h-10 th-text-m mx-auto mb-3" />
+          <p className="th-text-2 mb-4">{t("noTournaments")}</p>
           <Link
             href={`/org/${orgSlug}/admin/tournaments`}
-            className="inline-flex items-center gap-2 bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-emerald-700"
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+            style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
           >
             <Plus className="w-4 h-4" />
             {t("heroCta")}
@@ -74,28 +76,28 @@ export default async function OrgDashboardPage({ params }: Props) {
         </div>
       ) : (
         <>
-          {/* Stats */}
+          {/* Статистика */}
           <div className="grid grid-cols-3 gap-4">
             {[
               { label: t("tournaments"), value: tournaments.length, icon: Trophy },
               { label: t("clubs"), value: totalClubs, icon: Users },
               { label: t("teams"), value: totalTeams, icon: Users },
             ].map(({ label, value, icon: Icon }) => (
-              <div key={label} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div key={label} className="th-card border th-border rounded-lg p-4">
                 <div className="flex items-center gap-3">
-                  <Icon className="w-5 h-5 text-gray-400" />
+                  <Icon className="w-5 h-5 th-text-2" />
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{value}</p>
-                    <p className="text-xs text-gray-500">{label}</p>
+                    <p className="text-2xl font-bold th-text">{value}</p>
+                    <p className="text-xs th-text-2">{label}</p>
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Tournament list */}
+          {/* Список турниров */}
           <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wide th-text-m mb-3">
               {t("yourTournaments")}
             </h2>
             <div className="space-y-2">
@@ -103,21 +105,21 @@ export default async function OrgDashboardPage({ params }: Props) {
                 <Link
                   key={tournament.id}
                   href={`/org/${orgSlug}/admin/tournament/${tournament.id}`}
-                  className="flex items-center gap-4 bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 group"
+                  className="flex items-center gap-4 th-card border th-border rounded-lg p-4 hover:th-bg group transition-colors"
                 >
-                  <Trophy className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <Trophy className="w-5 h-5 shrink-0" style={{ color: "var(--cat-accent)" }} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <h3 className="font-medium text-gray-900">{tournament.name}</h3>
+                      <h3 className="font-medium th-text">{tournament.name}</h3>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
                         tournament.registrationOpen
                           ? "bg-emerald-50 text-emerald-600"
-                          : "bg-gray-100 text-gray-500"
+                          : "th-tag"
                       }`}>
                         {tournament.registrationOpen ? t("regOpen") : t("regClosed")}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 text-xs th-text-2">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
                         {tournament.year}
@@ -127,7 +129,7 @@ export default async function OrgDashboardPage({ params }: Props) {
                       <span>{tournament.classCount} {t("classesCount").replace("{n}", String(tournament.classCount))}</span>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 shrink-0" />
+                  <ChevronRight className="w-4 h-4 th-text-m group-hover:th-text-2 shrink-0" />
                 </Link>
               ))}
             </div>
