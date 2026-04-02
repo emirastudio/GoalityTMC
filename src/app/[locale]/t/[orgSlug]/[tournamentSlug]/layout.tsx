@@ -59,7 +59,7 @@ export default async function TournamentLayout({ children, params }: Props) {
   return (
     <ThemeProvider defaultTheme="light">
       <TournamentPublicProvider data={data}>
-        <div data-theme="light" style={{ background: "var(--cat-bg)", minHeight: "100vh" }}>
+        <div style={{ background: "var(--cat-bg)", minHeight: "100vh" }}>
           {/* Global Goality topbar */}
           <TournamentTopbar />
 
@@ -78,7 +78,7 @@ export default async function TournamentLayout({ children, params }: Props) {
           </div>
 
           {/* Main content area */}
-          <div className="max-w-5xl mx-auto px-4">
+          <div className="w-[90%] max-w-[1400px] mx-auto">
             <div className="flex gap-5 items-start">
               {/* LEFT SIDEBAR - overlaps cover */}
               <TournamentSidebar
@@ -104,7 +104,7 @@ export default async function TournamentLayout({ children, params }: Props) {
 
           {/* Footer */}
           <footer className="border-t mt-10" style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-card-bg)" }}>
-            <div className="max-w-5xl mx-auto px-4 py-5 flex items-center justify-between text-xs" style={{ color: "var(--cat-text-muted)" }}>
+            <div className="w-[90%] max-w-[1400px] mx-auto py-5 flex items-center justify-between text-xs" style={{ color: "var(--cat-text-muted)" }}>
               <span>© {new Date().getFullYear()} {org.name}</span>
               <a href="/catalog" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity font-medium" style={{ color: "var(--cat-text-secondary)" }}>
                 <img src="/logo.png" alt="" className="w-4 h-4 rounded" /> Goality TMC

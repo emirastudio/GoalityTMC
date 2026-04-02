@@ -150,7 +150,13 @@ export default function TournamentInfoPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-[12px] font-semibold truncate" style={{ color: "var(--cat-text)" }}>{cls.name}</p>
-                <p className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{cls.teamCount} команд</p>
+                <p className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
+                  {cls.minBirthYear && cls.maxBirthYear && cls.minBirthYear !== cls.maxBirthYear
+                    ? `${cls.maxBirthYear}–${cls.minBirthYear} · ${cls.teamCount} команд`
+                    : cls.minBirthYear
+                    ? `${cls.minBirthYear} · ${cls.teamCount} команд`
+                    : `${cls.teamCount} команд`}
+                </p>
               </div>
             </div>
           ))}
