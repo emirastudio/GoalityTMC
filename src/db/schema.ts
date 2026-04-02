@@ -13,6 +13,7 @@ import {
   varchar,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 // ─── Enums ──────────────────────────────────────────────
 
@@ -1055,3 +1056,108 @@ export const registrationAttempts = pgTable("registration_attempts", {
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ═══════════════════════════════════════════════════════════
+// DRIZZLE RELATIONS — для relational query API (with: {...})
+// ═══════════════════════════════════════════════════════════
+
+// ─── Existing tables ────────────────────────────────────────
+
+export const clubsRelations = relations(clubs, ({ many }) => ({
+  teams: many(teams),
+  clubUsers: many(clubUsers),
+}));
+
+export const teamsRelations = relations(teams, ({ one, many }) => ({
+  club: one(clubs, { fields: [teams.clubId], references: [clubs.id] }),
+  people: many(people),
+  groupTeams: many(groupTeams),
+  standings: many(standings),
+  homeMatches: many(matches, { relationName: "homeTeam" }),
+  awayMatches: many(matches, { relationName: "awayTeam" }),
+}));
+
+export const peopleRelations = relations(people, ({ one }) => ({
+  team: one(teams, { fields: [people.teamId], references: [teams.id] }),
+}));
+
+export const tournamentFieldsRelations = relations(tournamentFields, ({ one, many }) => ({
+  tournament: one(tournaments, { fields: [tournamentFields.tournamentId], references: [tournaments.id] }),
+  matches: many(matches),
+}));
+
+// ─── Game Logic Relations ────────────────────────────────────
+
+export const tournamentStagesRelations = relations(tournamentStages, ({ one, many }) => ({
+  tournament: one(tournaments, { fields: [tournamentStages.tournamentId], references: [tournaments.id] }),
+  organization: one(organizations, { fields: [tournamentStages.organizationId], references: [organizations.id] }),
+  groups: many(stageGroups),
+  rounds: many(matchRounds),
+  matches: many(matches),
+  slots: many(stageSlots),
+}));
+
+export const stageGroupsRelations = relations(stageGroups, ({ one, many }) => ({
+  stage: one(tournamentStages, { fields: [stageGroups.stageId], references: [tournamentStages.id] }),
+  tournament: one(tournaments, { fields: [stageGroups.tournamentId], references: [tournaments.id] }),
+  groupTeams: many(groupTeams),
+  matches: many(matches),
+  standings: many(standings),
+  slots: many(stageSlots),
+}));
+
+export const groupTeamsRelations = relations(groupTeams, ({ one }) => ({
+  group: one(stageGroups, { fields: [groupTeams.groupId], references: [stageGroups.id] }),
+  team: one(teams, { fields: [groupTeams.teamId], references: [teams.id] }),
+}));
+
+export const matchRoundsRelations = relations(matchRounds, ({ one, many }) => ({
+  stage: one(tournamentStages, { fields: [matchRounds.stageId], references: [tournamentStages.id] }),
+  matches: many(matches),
+  slots: many(stageSlots),
+}));
+
+export const matchesRelations = relations(matches, ({ one, many }) => ({
+  tournament: one(tournaments, { fields: [matches.tournamentId], references: [tournaments.id] }),
+  stage: one(tournamentStages, { fields: [matches.stageId], references: [tournamentStages.id] }),
+  group: one(stageGroups, { fields: [matches.groupId], references: [stageGroups.id] }),
+  round: one(matchRounds, { fields: [matches.roundId], references: [matchRounds.id] }),
+  homeTeam: one(teams, { fields: [matches.homeTeamId], references: [teams.id], relationName: "homeTeam" }),
+  awayTeam: one(teams, { fields: [matches.awayTeamId], references: [teams.id], relationName: "awayTeam" }),
+  winner: one(teams, { fields: [matches.winnerId], references: [teams.id], relationName: "winner" }),
+  field: one(tournamentFields, { fields: [matches.fieldId], references: [tournamentFields.id] }),
+  events: many(matchEvents),
+  lineup: many(matchLineup),
+  resultLog: many(matchResultLog),
+}));
+
+export const matchEventsRelations = relations(matchEvents, ({ one }) => ({
+  match: one(matches, { fields: [matchEvents.matchId], references: [matches.id] }),
+  team: one(teams, { fields: [matchEvents.teamId], references: [teams.id] }),
+  person: one(people, { fields: [matchEvents.personId], references: [people.id], relationName: "eventPerson" }),
+  assistPerson: one(people, { fields: [matchEvents.assistPersonId], references: [people.id], relationName: "assistPerson" }),
+}));
+
+export const matchLineupRelations = relations(matchLineup, ({ one }) => ({
+  match: one(matches, { fields: [matchLineup.matchId], references: [matches.id] }),
+  team: one(teams, { fields: [matchLineup.teamId], references: [teams.id] }),
+  person: one(people, { fields: [matchLineup.personId], references: [people.id] }),
+}));
+
+export const standingsRelations = relations(standings, ({ one }) => ({
+  group: one(stageGroups, { fields: [standings.groupId], references: [stageGroups.id] }),
+  tournament: one(tournaments, { fields: [standings.tournamentId], references: [tournaments.id] }),
+  team: one(teams, { fields: [standings.teamId], references: [teams.id] }),
+}));
+
+export const stageSlotsRelations = relations(stageSlots, ({ one }) => ({
+  stage: one(tournamentStages, { fields: [stageSlots.stageId], references: [tournamentStages.id] }),
+  group: one(stageGroups, { fields: [stageSlots.groupId], references: [stageGroups.id] }),
+  round: one(matchRounds, { fields: [stageSlots.roundId], references: [matchRounds.id] }),
+  filledByTeam: one(teams, { fields: [stageSlots.filledByTeamId], references: [teams.id] }),
+}));
+
+export const matchResultLogRelations = relations(matchResultLog, ({ one }) => ({
+  match: one(matches, { fields: [matchResultLog.matchId], references: [matches.id] }),
+  changedByUser: one(adminUsers, { fields: [matchResultLog.changedBy], references: [adminUsers.id] }),
+}));
