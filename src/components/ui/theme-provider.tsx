@@ -28,14 +28,19 @@ export function ThemeProvider({
   children: React.ReactNode;
   defaultTheme?: Theme;
 }) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [mounted, setMounted] = useState(false);
+  // Read from localStorage immediately on client (no useEffect delay)
+  const [theme, setTheme] = useState<Theme>(() => getStoredTheme(defaultTheme));
 
-  // On mount: read persisted preference
+  // Sync if another tab changes theme
   useEffect(() => {
-    setTheme(getStoredTheme(defaultTheme));
-    setMounted(true);
-  }, [defaultTheme]);
+    function onStorage(e: StorageEvent) {
+      if (e.key === STORAGE_KEY && (e.newValue === "dark" || e.newValue === "light")) {
+        setTheme(e.newValue);
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const toggle = useCallback(() => {
     setTheme((prev) => {
@@ -45,12 +50,9 @@ export function ThemeProvider({
     });
   }, []);
 
-  // Prevent flash: use defaultTheme until mounted
-  const activeTheme = mounted ? theme : defaultTheme;
-
   return (
-    <ThemeContext.Provider value={{ theme: activeTheme, toggle }}>
-      <div data-theme={activeTheme} className="contents">
+    <ThemeContext.Provider value={{ theme, toggle }}>
+      <div data-theme={theme} className="contents" suppressHydrationWarning>
         {children}
       </div>
     </ThemeContext.Provider>

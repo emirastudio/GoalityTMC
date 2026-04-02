@@ -14,7 +14,7 @@ type Props = {
   variant?: "light" | "dark";
 };
 
-export function LanguageSwitcher({ variant = "dark" }: Props) {
+export function LanguageSwitcher({ variant: _variant }: Props) {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
@@ -23,25 +23,19 @@ export function LanguageSwitcher({ variant = "dark" }: Props) {
     router.replace(pathname, { locale: newLocale });
   }
 
-  const baseStyle = variant === "light"
-    ? "text-white/60 hover:text-white"
-    : "text-text-secondary hover:text-text-primary";
-
-  const activeStyle = variant === "light"
-    ? "text-mint font-semibold"
-    : "text-navy font-semibold";
-
   return (
     <div className="flex items-center gap-1">
-      <Globe className={`w-4 h-4 ${variant === "light" ? "text-white/40" : "text-text-secondary"}`} />
+      <Globe className="w-4 h-4" style={{ color: "var(--cat-text-muted)" }} />
       {locales.map(({ code, label }, i) => (
         <span key={code} className="flex items-center">
-          {i > 0 && <span className={`mx-0.5 ${variant === "light" ? "text-white/20" : "text-border"}`}>/</span>}
+          {i > 0 && <span className="mx-0.5" style={{ color: "var(--cat-text-faint)" }}>/</span>}
           <button
             onClick={() => switchLocale(code)}
-            className={`text-xs transition-colors cursor-pointer ${
-              locale === code ? activeStyle : baseStyle
-            }`}
+            className="text-xs transition-colors cursor-pointer hover:opacity-80"
+            style={{
+              color: locale === code ? "var(--cat-accent)" : "var(--cat-text-muted)",
+              fontWeight: locale === code ? 700 : 500,
+            }}
           >
             {label}
           </button>

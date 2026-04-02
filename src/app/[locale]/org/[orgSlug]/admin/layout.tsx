@@ -39,7 +39,7 @@ export default async function OrgAdminLayout({ children, params }: Props) {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs hidden sm:block" style={{ color: "var(--cat-text-muted)" }}>{t("adminPanel")}</span>
-              <LanguageSwitcher variant="light" />
+              <LanguageSwitcher variant="dark" />
               <ThemeToggle />
               <form action="/api/auth/logout" method="POST">
                 <button type="submit"
