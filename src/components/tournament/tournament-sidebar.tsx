@@ -2,7 +2,7 @@
 import { usePathname } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { Info, Users, Calendar, BookOpen, Hotel, Handshake, Trophy, MapPin, CheckCircle, Clock, ArrowRight } from "lucide-react";
+import { Info, Users, Calendar, BookOpen, Hotel, Handshake, Trophy, MapPin, CheckCircle, Clock, ArrowRight, TrendingUp } from "lucide-react";
 
 type Props = {
   orgSlug: string;
@@ -31,6 +31,8 @@ export function TournamentSidebar({ orgSlug, tournamentSlug, tournamentName, org
     { key: "info", label: "Информация", icon: Info, href: base },
     { key: "teams", label: "Команды", icon: Users, href: `${base}/teams` },
     { key: "schedule", label: "Расписание", icon: Calendar, href: `${base}/schedule` },
+    { key: "standings", label: "Таблицы", icon: TrendingUp, href: `${base}/standings` },
+    { key: "bracket", label: "Сетка", icon: Trophy, href: `${base}/bracket` },
     { key: "regulations", label: "Регламент", icon: BookOpen, href: `${base}/regulations` },
     { key: "participants", label: "Участникам", icon: Hotel, href: `${base}/participants` },
     { key: "partners", label: "Партнёры", icon: Handshake, href: `${base}/partners` },
