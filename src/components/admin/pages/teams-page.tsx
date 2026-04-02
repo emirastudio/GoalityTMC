@@ -63,6 +63,7 @@ export function TeamsPageContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusDropdown, setStatusDropdown] = useState<number | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ x: number; y: number } | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -88,6 +89,7 @@ export function TeamsPageContent() {
         !dropdownRef.current.contains(e.target as Node)
       ) {
         setStatusDropdown(null);
+        setDropdownPos(null);
       }
     }
     document.addEventListener("mousedown", handleClick);
@@ -106,6 +108,7 @@ export function TeamsPageContent() {
     newStatus: string
   ) {
     setStatusDropdown(null);
+    setDropdownPos(null);
     try {
       const res = await adminFetch(`/api/admin/teams/${teamId}`, {
         method: "PATCH",
@@ -331,13 +334,19 @@ export function TeamsPageContent() {
                       </td>
 
                       {/* Status (clickable) */}
-                      <td className="px-4 py-3 relative" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() =>
-                            setStatusDropdown(
-                              statusDropdown === team.id ? null : team.id
-                            )
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (statusDropdown === team.id) {
+                              setStatusDropdown(null);
+                              setDropdownPos(null);
+                            } else {
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                              setDropdownPos({ x: rect.left, y: rect.bottom + 4 });
+                              setStatusDropdown(team.id);
+                            }
+                          }}
                           className="inline-flex items-center gap-1 cursor-pointer"
                         >
                           <Badge
@@ -350,10 +359,11 @@ export function TeamsPageContent() {
                           </Badge>
                         </button>
 
-                        {statusDropdown === team.id && (
+                        {statusDropdown === team.id && dropdownPos && (
                           <div
                             ref={dropdownRef}
-                            className="absolute z-[9999] mt-1 left-4 popup-bg rounded-lg border th-border shadow-lg py-1 min-w-[140px]"
+                            className="fixed popup-bg rounded-lg border th-border shadow-lg py-1 min-w-[140px]"
+                            style={{ top: dropdownPos.y, left: dropdownPos.x, zIndex: 9999 }}
                           >
                             {allStatuses.map((s) => (
                               <button
