@@ -95,7 +95,7 @@ export default async function TournamentOverviewPage({ params }: Props) {
           style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", border: "1px solid var(--cat-badge-open-border)" }}
           target="_blank">
           <ExternalLink className="w-3.5 h-3.5" />
-          Страница турнира
+          {t("tournamentPage")}
         </Link>
       </div>
 
@@ -124,7 +124,7 @@ export default async function TournamentOverviewPage({ params }: Props) {
       {/* Quick nav */}
       <div>
         <p className="text-[11px] font-black uppercase tracking-widest mb-3" style={{ color: "var(--cat-text-muted)" }}>
-          Управление
+          {t("management")}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {quickLinks.map(({ key, icon: Icon, href, color }) => (

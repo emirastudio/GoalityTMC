@@ -1,4 +1,6 @@
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { ThemeProvider, ThemeToggle } from "@/components/ui/theme-provider";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -25,9 +27,17 @@ export default async function AdminLayout({ children, params }: Props) {
   }
 
   return (
-    <div className="flex min-h-screen" data-theme="dark" style={{ background: "var(--cat-bg)" }}>
-      <AdminSidebar />
-      <main className="flex-1 p-8" style={{ background: "var(--cat-bg)" }}>{children}</main>
-    </div>
+    <ThemeProvider defaultTheme="dark">
+      <div className="flex min-h-screen" style={{ background: "var(--cat-bg)" }}>
+        <AdminSidebar />
+        <div className="flex-1 flex flex-col">
+          <header className="flex items-center justify-end gap-3 px-8 py-4" style={{ background: "var(--cat-bg)" }}>
+            <ThemeToggle />
+            <LanguageSwitcher />
+          </header>
+          <main className="flex-1 p-8" style={{ background: "var(--cat-bg)" }}>{children}</main>
+        </div>
+      </div>
+    </ThemeProvider>
   );
 }

@@ -73,7 +73,10 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
         {groups.map((group, gi) => (
           <div key={gi}>
             {group.labelKey && (
-              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/30">
+              <p
+                className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest"
+                style={{ color: "var(--cat-text-muted)" }}
+              >
                 {t(group.labelKey)}
               </p>
             )}
@@ -87,14 +90,22 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all",
                       isActive
-                        ? "bg-mint/12 text-mint"
-                        : "text-white/60 hover:bg-white/8 hover:text-white"
+                        ? ""
+                        : "hover:opacity-80"
                     )}
+                    style={
+                      isActive
+                        ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }
+                        : { color: "var(--cat-text-secondary)" }
+                    }
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     <span className="flex-1">{t(key)}</span>
                     {badge !== undefined && badge > 0 && (
-                      <span className="text-[10px] rounded-full px-1.5 py-0.5 font-bold bg-mint text-navy">
+                      <span
+                        className="text-[10px] rounded-full px-1.5 py-0.5 font-bold"
+                        style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
+                      >
                         {badge}
                       </span>
                     )}

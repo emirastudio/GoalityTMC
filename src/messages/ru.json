@@ -730,7 +730,9 @@
     "perMonth": "в месяц за турнир",
     "clubsCount": "{n} клубов",
     "teamsCount": "{n} команд",
-    "classesCount": "{n} классов"
+    "classesCount": "{n} классов",
+    "management": "Управление",
+    "tournamentPage": "Страница турнира"
   },
   "superAdmin": {
     "title": "Платформа Goality",

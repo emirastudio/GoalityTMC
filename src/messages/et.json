@@ -686,7 +686,9 @@
     "perMonth": "kuus turniiri kohta",
     "clubsCount": "{n} klubi",
     "teamsCount": "{n} meeskonda",
-    "classesCount": "{n} klassi"
+    "classesCount": "{n} klassi",
+    "management": "Haldamine",
+    "tournamentPage": "Turniiri leht"
   },
   "superAdmin": {
     "title": "Goality platvorm",

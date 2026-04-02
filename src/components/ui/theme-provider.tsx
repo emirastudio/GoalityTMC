@@ -1,14 +1,25 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 
 export type Theme = "dark" | "light";
+
+const STORAGE_KEY = "goality-theme";
 
 const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({
   theme: "dark",
   toggle: () => {},
 });
+
+function getStoredTheme(fallback: Theme): Theme {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "dark" || stored === "light") return stored;
+  } catch { /* SSR or access denied */ }
+  return fallback;
+}
 
 export function ThemeProvider({
   children,
@@ -18,10 +29,28 @@ export function ThemeProvider({
   defaultTheme?: Theme;
 }) {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const toggle = useCallback(() => setTheme((p) => (p === "dark" ? "light" : "dark")), []);
+  const [mounted, setMounted] = useState(false);
+
+  // On mount: read persisted preference
+  useEffect(() => {
+    setTheme(getStoredTheme(defaultTheme));
+    setMounted(true);
+  }, [defaultTheme]);
+
+  const toggle = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      try { localStorage.setItem(STORAGE_KEY, next); } catch {}
+      return next;
+    });
+  }, []);
+
+  // Prevent flash: use defaultTheme until mounted
+  const activeTheme = mounted ? theme : defaultTheme;
+
   return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
-      <div data-theme={theme} className="contents">
+    <ThemeContext.Provider value={{ theme: activeTheme, toggle }}>
+      <div data-theme={activeTheme} className="contents">
         {children}
       </div>
     </ThemeContext.Provider>
@@ -45,7 +74,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       title={theme === "dark" ? "Switch to light" : "Switch to dark"}
     >
       {theme === "dark" ? (
-        <Sun className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
+        <Sun className="w-3.5 h-3.5" style={{ color: "var(--cat-text-secondary)" }} />
       ) : (
         <Moon className="w-3.5 h-3.5" style={{ color: "var(--cat-text-secondary)" }} />
       )}

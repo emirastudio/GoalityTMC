@@ -35,8 +35,8 @@ interface StaffInlineTableProps {
   onRefresh: () => void;
 }
 
-const cellInput = "w-full bg-transparent text-sm px-2 py-2 outline-none focus:bg-navy/5 focus:ring-1 focus:ring-navy/20 rounded transition-colors";
-const cellSelect = "w-full bg-transparent text-sm px-1 py-2 outline-none focus:bg-navy/5 focus:ring-1 focus:ring-navy/20 rounded transition-colors appearance-none cursor-pointer";
+const cellInput = "w-full bg-transparent text-sm px-2 py-2 outline-none focus:ring-1 rounded transition-colors";
+const cellSelect = "w-full bg-transparent text-sm px-1 py-2 outline-none focus:ring-1 rounded transition-colors appearance-none cursor-pointer";
 
 export function StaffInlineTable({ staff, teamId, roleOptions, onRefresh }: StaffInlineTableProps) {
   const t = useTranslations("staff");
@@ -137,9 +137,8 @@ export function StaffInlineTable({ staff, teamId, roleOptions, onRefresh }: Staf
               <>
                 <tr key={person.id} className={cn(
                   "border-b th-border transition-colors group",
-                  saving.has(person.id) && "bg-gold/5",
-                  expandedIds.has(person.id) && "bg-navy/5"
-                )}>
+                  saving.has(person.id) && "bg-[var(--cat-badge-open-bg)]"
+                )} style={expandedIds.has(person.id) ? { background: "var(--cat-badge-open-bg)" } : undefined}>
                   <td className="text-center px-2">
                     <span className="text-xs text-text-secondary/50 font-medium">{idx + 1}</span>
                   </td>
@@ -168,13 +167,13 @@ export function StaffInlineTable({ staff, teamId, roleOptions, onRefresh }: Staf
                   </td>
                   <td className="text-center px-1">
                     <input type="checkbox" defaultChecked={person.isResponsibleOnSite}
-                      className="accent-navy w-4 h-4 cursor-pointer"
+                      className="w-4 h-4 cursor-pointer" style={{ accentColor: "var(--cat-accent)" }}
                       onChange={(e) => saveField(person.id, "isResponsibleOnSite", e.target.checked)} />
                   </td>
                   <td className="px-1">
                     <button onClick={() => toggleExpand(person.id)}
                       className={cn("p-1.5 rounded-lg transition-colors cursor-pointer",
-                        hasMedical(person) ? "text-gold-dark hover:bg-gold/10" : "text-text-secondary/40 hover:text-text-secondary hover:th-bg"
+                        hasMedical(person) ? "text-[var(--cat-accent)] hover:opacity-80" : "text-text-secondary/40 hover:text-text-secondary hover:th-bg"
                       )} title={tp("allergies")}>
                       {expandedIds.has(person.id) ? <ChevronUp className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     </button>
@@ -188,25 +187,25 @@ export function StaffInlineTable({ staff, teamId, roleOptions, onRefresh }: Staf
                 </tr>
 
                 {expandedIds.has(person.id) && (
-                  <tr key={`${person.id}-med`} className="border-b th-border bg-navy/5">
+                  <tr key={`${person.id}-med`} className="border-b th-border" style={{ background: "var(--cat-badge-open-bg)" }}>
                     <td colSpan={9} className="px-6 py-3">
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
                           <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("allergies")}</label>
                           <input defaultValue={person.allergies ?? ""} placeholder={tp("allergiesHint")}
-                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20"
+                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
                             onBlur={(e) => saveField(person.id, "allergies", e.target.value)} />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("dietaryRequirements")}</label>
                           <input defaultValue={person.dietaryRequirements ?? ""} placeholder={tp("dietaryHint")}
-                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20"
+                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
                             onBlur={(e) => saveField(person.id, "dietaryRequirements", e.target.value)} />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("medicalNotes")}</label>
                           <input defaultValue={person.medicalNotes ?? ""} placeholder={tp("medicalHint")}
-                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20"
+                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
                             onBlur={(e) => saveField(person.id, "medicalNotes", e.target.value)} />
                         </div>
                       </div>
@@ -217,7 +216,7 @@ export function StaffInlineTable({ staff, teamId, roleOptions, onRefresh }: Staf
             ))}
 
             {/* New row */}
-            <tr className={cn("border-b th-border bg-surface/30", saving.has("new") && "bg-gold/5")}>
+            <tr className={cn("border-b th-border bg-surface/30", saving.has("new") && "bg-[var(--cat-badge-open-bg)]")}>
               <td className="text-center px-2"><span className="text-xs text-text-secondary/30">{staff.length + 1}</span></td>
               <td className="px-1">
                 <input value={newRow.firstName} onChange={(e) => setNewRow({ ...newRow, firstName: e.target.value })}
@@ -245,7 +244,7 @@ export function StaffInlineTable({ staff, teamId, roleOptions, onRefresh }: Staf
               <td className="text-center px-1">
                 <input type="checkbox" checked={newRow.isResponsibleOnSite}
                   onChange={(e) => setNewRow({ ...newRow, isResponsibleOnSite: e.target.checked })}
-                  className="accent-navy w-4 h-4 cursor-pointer" />
+                  className="w-4 h-4 cursor-pointer" style={{ accentColor: "var(--cat-accent)" }} />
               </td>
               <td className="px-1">
                 <button onClick={() => toggleExpand("new")}
@@ -263,17 +262,17 @@ export function StaffInlineTable({ staff, teamId, roleOptions, onRefresh }: Staf
                     <div className="space-y-1">
                       <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("allergies")}</label>
                       <input value={newMed.allergies} onChange={(e) => setNewMed({ ...newMed, allergies: e.target.value })}
-                        placeholder={tp("allergiesHint")} className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20" />
+                        placeholder={tp("allergiesHint")} className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("dietaryRequirements")}</label>
                       <input value={newMed.dietaryRequirements} onChange={(e) => setNewMed({ ...newMed, dietaryRequirements: e.target.value })}
-                        placeholder={tp("dietaryHint")} className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20" />
+                        placeholder={tp("dietaryHint")} className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("medicalNotes")}</label>
                       <input value={newMed.medicalNotes} onChange={(e) => setNewMed({ ...newMed, medicalNotes: e.target.value })}
-                        placeholder={tp("medicalHint")} className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20" />
+                        placeholder={tp("medicalHint")} className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15" />
                     </div>
                   </div>
                 </td>

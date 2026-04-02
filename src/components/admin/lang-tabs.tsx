@@ -18,9 +18,10 @@ export function LangTabs({
           onClick={() => onChange(l)}
           className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer uppercase tracking-wider ${
             lang === l
-              ? "bg-navy text-white shadow-sm"
+              ? "shadow-sm"
               : "text-text-secondary hover:text-text-primary"
           }`}
+          style={lang === l ? { background: "var(--cat-accent)", color: "var(--cat-text)" } : undefined}
         >
           {l}
         </button>

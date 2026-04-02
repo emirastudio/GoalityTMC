@@ -43,8 +43,8 @@ function calcAge(dob: string | null): string {
   return age > 0 && age < 100 ? String(age) : "—";
 }
 
-const cellInput = "w-full bg-transparent text-sm px-2 py-2 outline-none focus:bg-navy/5 focus:ring-1 focus:ring-navy/20 rounded transition-colors";
-const cellSelect = "w-full bg-transparent text-sm px-1 py-2 outline-none focus:bg-navy/5 focus:ring-1 focus:ring-navy/20 rounded transition-colors appearance-none cursor-pointer";
+const cellInput = "w-full bg-transparent text-sm px-2 py-2 outline-none focus:ring-1 rounded transition-colors";
+const cellSelect = "w-full bg-transparent text-sm px-1 py-2 outline-none focus:ring-1 rounded transition-colors appearance-none cursor-pointer";
 
 export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh }: PlayerInlineTableProps) {
   const t = useTranslations("players");
@@ -149,9 +149,8 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
               <>
                 <tr key={player.id} className={cn(
                   "border-b th-border transition-colors group",
-                  saving.has(player.id) && "bg-gold/5",
-                  expandedIds.has(player.id) && "bg-navy/5"
-                )}>
+                  saving.has(player.id) && "bg-[var(--cat-badge-open-bg)]"
+                )} style={expandedIds.has(player.id) ? { background: "var(--cat-badge-open-bg)" } : undefined}>
                   <td className="text-center px-2">
                     <span className="text-xs text-text-secondary/50 font-medium">{idx + 1}</span>
                   </td>
@@ -205,7 +204,7 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
                       onClick={() => toggleExpand(player.id)}
                       className={cn(
                         "p-1.5 rounded-lg transition-colors cursor-pointer",
-                        hasMedical(player) ? "text-gold-dark hover:bg-gold/10" : "text-text-secondary/40 hover:text-text-secondary hover:th-bg"
+                        hasMedical(player) ? "text-[var(--cat-accent)] hover:opacity-80" : "text-text-secondary/40 hover:text-text-secondary hover:th-bg"
                       )}
                       title={t("extraInfo")}
                     >
@@ -224,7 +223,7 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
 
                 {/* Expanded medical sub-row */}
                 {expandedIds.has(player.id) && (
-                  <tr key={`${player.id}-med`} className="border-b th-border bg-navy/5">
+                  <tr key={`${player.id}-med`} className="border-b th-border" style={{ background: "var(--cat-badge-open-bg)" }}>
                     <td colSpan={9} className="px-6 py-3">
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
@@ -232,7 +231,7 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
                           <input
                             defaultValue={player.allergies ?? ""}
                             placeholder={tp("allergiesHint")}
-                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20"
+                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border focus:outline-none focus:ring-2" style={{ background: "var(--cat-input-bg)" }}
                             onBlur={(e) => saveField(player.id, "allergies", e.target.value)}
                           />
                         </div>
@@ -241,7 +240,7 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
                           <input
                             defaultValue={player.dietaryRequirements ?? ""}
                             placeholder={tp("dietaryHint")}
-                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20"
+                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border focus:outline-none focus:ring-2" style={{ background: "var(--cat-input-bg)" }}
                             onBlur={(e) => saveField(player.id, "dietaryRequirements", e.target.value)}
                           />
                         </div>
@@ -250,7 +249,7 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
                           <input
                             defaultValue={player.medicalNotes ?? ""}
                             placeholder={tp("medicalHint")}
-                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20"
+                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border focus:outline-none focus:ring-2" style={{ background: "var(--cat-input-bg)" }}
                             onBlur={(e) => saveField(player.id, "medicalNotes", e.target.value)}
                           />
                         </div>
@@ -264,7 +263,7 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
             {/* New player row */}
             <tr className={cn(
               "border-b th-border bg-surface/30",
-              saving.has("new") && "bg-gold/5"
+              saving.has("new") && "bg-[var(--cat-badge-open-bg)]"
             )}>
               <td className="text-center px-2">
                 <span className="text-xs text-text-secondary/30">{players.length + 1}</span>
@@ -342,7 +341,7 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
                         value={newMed.allergies}
                         onChange={(e) => setNewMed({ ...newMed, allergies: e.target.value })}
                         placeholder={tp("allergiesHint")}
-                        className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20"
+                        className="w-full text-sm px-3 py-1.5 rounded-lg border th-border focus:outline-none focus:ring-2" style={{ background: "var(--cat-input-bg)" }}
                       />
                     </div>
                     <div className="space-y-1">
@@ -351,7 +350,7 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
                         value={newMed.dietaryRequirements}
                         onChange={(e) => setNewMed({ ...newMed, dietaryRequirements: e.target.value })}
                         placeholder={tp("dietaryHint")}
-                        className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20"
+                        className="w-full text-sm px-3 py-1.5 rounded-lg border th-border focus:outline-none focus:ring-2" style={{ background: "var(--cat-input-bg)" }}
                       />
                     </div>
                     <div className="space-y-1">
@@ -360,7 +359,7 @@ export function PlayerInlineTable({ players, teamId, positionOptions, onRefresh 
                         value={newMed.medicalNotes}
                         onChange={(e) => setNewMed({ ...newMed, medicalNotes: e.target.value })}
                         placeholder={tp("medicalHint")}
-                        className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-navy/20"
+                        className="w-full text-sm px-3 py-1.5 rounded-lg border th-border focus:outline-none focus:ring-2" style={{ background: "var(--cat-input-bg)" }}
                       />
                     </div>
                   </div>

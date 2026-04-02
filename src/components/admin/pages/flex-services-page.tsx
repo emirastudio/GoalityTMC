@@ -121,9 +121,10 @@ function SectionTab({
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
         active
-          ? "bg-navy text-white"
+          ? ""
           : "th-card th-text-2 hover:th-bg border th-border"
       }`}
+      style={active ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" } : undefined}
     >
       <Icon className="w-4 h-4" />
       {label}
@@ -167,7 +168,7 @@ function IconPicker({
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 rounded-md border th-border th-card px-3 py-1.5 text-sm th-text hover:th-bg transition-colors cursor-pointer"
       >
-        <Selected className="w-4 h-4 text-navy" />
+        <Selected className="w-4 h-4" style={{ color: "var(--cat-accent)" }} />
         <span className="text-xs th-text-2">
           {value ?? "No icon"}
         </span>
@@ -179,7 +180,7 @@ function IconPicker({
           <button
             type="button"
             onClick={() => { onChange(null); setOpen(false); }}
-            className="col-span-6 text-xs th-text-2 hover:text-navy text-left px-2 py-1 rounded hover:th-bg cursor-pointer"
+            className="col-span-6 text-xs th-text-2 text-left px-2 py-1 rounded hover:th-bg cursor-pointer"
           >
             No icon
           </button>
@@ -191,9 +192,10 @@ function IconPicker({
               onClick={() => { onChange(name); setOpen(false); }}
               className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors ${
                 value === name
-                  ? "bg-navy text-white"
-                  : "hover:th-bg text-navy"
+                  ? ""
+                  : "hover:th-bg"
               }`}
+              style={value === name ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" } : { color: "var(--cat-accent)" }}
             >
               <Icon className="w-4 h-4" />
             </button>
@@ -258,7 +260,7 @@ function ImageUpload({
         type="button"
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        className="inline-flex items-center gap-1.5 rounded-md border th-border th-card px-3 py-1.5 text-xs font-medium th-text-2 hover:text-navy hover:th-bg transition-colors cursor-pointer disabled:opacity-40"
+        className="inline-flex items-center gap-1.5 rounded-md border th-border th-card px-3 py-1.5 text-xs font-medium th-text-2 hover:opacity-80 hover:th-bg transition-colors cursor-pointer disabled:opacity-40"
       >
         {uploading ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -421,7 +423,8 @@ function ServiceTypesTab() {
           type="button"
           onClick={addService}
           disabled={adding || !newName.trim()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-4 py-2 text-sm font-medium text-white hover:bg-navy/90 transition-colors disabled:opacity-40 cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-colors disabled:opacity-40 cursor-pointer"
+          style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
         >
           {adding ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -470,7 +473,8 @@ function ServiceTypesTab() {
                       type="button"
                       onClick={saveEdit}
                       disabled={saving}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-navy hover:text-navy/80 cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-medium hover:opacity-80 cursor-pointer"
+                      style={{ color: "var(--cat-accent)" }}
                     >
                       {saving ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -490,16 +494,16 @@ function ServiceTypesTab() {
                 ) : (
                   <>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-navy/8 flex items-center justify-center shrink-0">
-                        <SvcIcon className="w-4 h-4 text-navy" />
+                      <div className="w-8 h-8 rounded-lg bg-[var(--cat-badge-open-bg)] flex items-center justify-center shrink-0">
+                        <SvcIcon className="w-4 h-4" style={{ color: "var(--cat-accent)" }} />
                       </div>
-                      <span className="font-medium text-sm text-navy">{svc.name}</span>
+                      <span className="font-medium text-sm" style={{ color: "var(--cat-accent)" }}>{svc.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => startEdit(svc)}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-navy transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:opacity-80 transition-colors cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                         {t("edit")}
@@ -704,12 +708,12 @@ function PackageItemsSection({
                           <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-navy/8 flex items-center justify-center shrink-0">
-                          <ItemIcon className="w-5 h-5 text-navy" />
+                        <div className="w-10 h-10 rounded-lg bg-[var(--cat-badge-open-bg)] flex items-center justify-center shrink-0">
+                          <ItemIcon className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium text-navy">
+                        <span className="text-sm font-medium" style={{ color: "var(--cat-accent)" }}>
                           {item.serviceName}
                         </span>
                         {item.details && (
@@ -899,7 +903,8 @@ function PackageItemsSection({
               type="button"
               onClick={addItem}
               disabled={adding || !form.serviceId || !form.price}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-3 py-1.5 text-xs font-medium text-white hover:bg-navy/90 transition-colors disabled:opacity-40 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium hover:opacity-90 transition-colors disabled:opacity-40 cursor-pointer"
+          style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
             >
               {adding ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1049,7 +1054,8 @@ function PackagesTab({ services }: { services: Service[] }) {
           type="button"
           onClick={addPackage}
           disabled={adding || !newName.trim()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-4 py-2 text-sm font-medium text-white hover:bg-navy/90 transition-colors disabled:opacity-40 cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-colors disabled:opacity-40 cursor-pointer"
+          style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
         >
           {adding ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -1098,7 +1104,8 @@ function PackagesTab({ services }: { services: Service[] }) {
                       type="button"
                       onClick={saveEditPkg}
                       disabled={savingPkg}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-navy hover:text-navy/80 cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-medium hover:opacity-80 cursor-pointer"
+                      style={{ color: "var(--cat-accent)" }}
                     >
                       {savingPkg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                       {t("save")}
@@ -1115,11 +1122,12 @@ function PackagesTab({ services }: { services: Service[] }) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm text-navy">
+                        <span className="font-semibold text-sm" style={{ color: "var(--cat-accent)" }}>
                           {pkg.name}
                         </span>
                         {pkg.isDefault && (
-                          <span className="inline-flex items-center rounded-full bg-gold/15 px-2 py-0.5 text-xs font-semibold text-gold">
+                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
+                          style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
                             {t("packages.default")}
                           </span>
                         )}
@@ -1166,7 +1174,7 @@ function PackagesTab({ services }: { services: Service[] }) {
                       <button
                         type="button"
                         onClick={() => startEditPkg(pkg)}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-navy transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:opacity-80 transition-colors cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -1219,7 +1227,7 @@ export function FlexServicesPageContent() {
       {/* Page header */}
       <div>
         <h1 className="text-xl font-bold th-text flex items-center gap-2.5">
-          <Package className="w-5 h-5 text-navy" />
+          <Package className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
           {t("pageTitle")}
         </h1>
         <p className="text-sm th-text-2 mt-1">

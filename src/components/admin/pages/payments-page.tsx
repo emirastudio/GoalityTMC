@@ -262,7 +262,7 @@ export function PaymentsPageContent() {
             onClick={() => setFilter(tab.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
               filter === tab.key
-                ? "border-navy text-navy"
+                ? "border-[var(--cat-accent)] text-[var(--cat-accent)]"
                 : "border-transparent th-text-2 hover:th-text"
             }`}
           >
@@ -317,7 +317,7 @@ export function PaymentsPageContent() {
                       <select
                         value={p.status}
                         onChange={(e) => handleStatusChange(p.id, e.target.value)}
-                        className="text-xs border th-border rounded-md px-2 py-1 th-card cursor-pointer focus:outline-none focus:ring-1 focus:ring-navy/20"
+                        className="text-xs border th-border rounded-md px-2 py-1 th-card cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--cat-accent)]/15"
                       >
                         <option value="pending">Pending</option>
                         <option value="received">Received</option>
@@ -352,7 +352,7 @@ export function PaymentsPageContent() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEdit(p)}
-                            className="p-1.5 rounded-lg th-text-2 hover:text-navy hover:bg-navy/5 transition-colors"
+                            className="p-1.5 rounded-lg th-text-2 hover:opacity-80 hover:opacity-80 transition-colors"
                             title="Edit payment"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -393,13 +393,13 @@ export function PaymentsPageContent() {
                   value={editTeamSearch}
                   onChange={(e) => setEditTeamSearch(e.target.value)}
                   placeholder="Search teams..."
-                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)]"
                 />
                 <select
                   value={editTeamId}
                   onChange={(e) => setEditTeamId(e.target.value)}
                   required
-                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] appearance-none cursor-pointer"
                   size={Math.min(filteredTeams(editTeamSearch).length + 1, 6)}
                 >
                   <option value="" disabled>Select a team</option>
@@ -453,7 +453,7 @@ export function PaymentsPageContent() {
                 <textarea
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
-                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-y"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-y"
                   rows={3} placeholder="Additional notes..."
                 />
               </div>
@@ -496,13 +496,13 @@ export function PaymentsPageContent() {
                   value={teamSearch}
                   onChange={(e) => setTeamSearch(e.target.value)}
                   placeholder="Search teams..."
-                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)]"
                 />
                 <select
                   value={formTeamId}
                   onChange={(e) => setFormTeamId(e.target.value)}
                   required
-                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] appearance-none cursor-pointer"
                   size={Math.min(filteredTeams(teamSearch).length + 1, 6)}
                 >
                   <option value="" disabled>Select a team</option>
@@ -555,7 +555,7 @@ export function PaymentsPageContent() {
                 <textarea
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
-                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-y"
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-y"
                   rows={3} placeholder="Additional notes..."
                 />
               </div>

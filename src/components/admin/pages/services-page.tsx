@@ -107,9 +107,10 @@ function SectionTab({
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
         active
-          ? "bg-navy text-white"
+          ? ""
           : "th-card th-text-2 hover:th-bg border th-border"
       }`}
+      style={active ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" } : undefined}
     >
       <Icon className="w-4 h-4" />
       {label}
@@ -259,7 +260,7 @@ function AccommodationTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-5 h-5 animate-spin text-navy" />
+        <Loader2 className="w-5 h-5 animate-spin" />
       </div>
     );
   }
@@ -375,7 +376,7 @@ function AccommodationTab() {
                       ) : (
                         <>
                           <button type="button" onClick={() => openEdit(item)}
-                            className="th-text-2 hover:text-navy transition-colors cursor-pointer">
+                            className="th-text-2 hover:opacity-80 transition-colors cursor-pointer">
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button type="button" onClick={() => setDeleteId(item.id)}
@@ -482,7 +483,7 @@ function MealsTab() {
     setForm((prev) => ({ ...prev, [field]: value }));
 
   if (loading) {
-    return <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin text-navy" /></div>;
+    return <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin" /></div>;
   }
 
   return (
@@ -567,7 +568,7 @@ function MealsTab() {
                       ) : (
                         <>
                           <button type="button" onClick={() => openEdit(item)}
-                            className="th-text-2 hover:text-navy transition-colors cursor-pointer">
+                            className="th-text-2 hover:opacity-80 transition-colors cursor-pointer">
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button type="button" onClick={() => setDeleteId(item.id)}
@@ -674,7 +675,7 @@ function TransfersTab() {
     setForm((prev) => ({ ...prev, [field]: value }));
 
   if (loading) {
-    return <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin text-navy" /></div>;
+    return <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin" /></div>;
   }
 
   return (
@@ -749,7 +750,7 @@ function TransfersTab() {
                       ) : (
                         <>
                           <button type="button" onClick={() => openEdit(item)}
-                            className="th-text-2 hover:text-navy transition-colors cursor-pointer">
+                            className="th-text-2 hover:opacity-80 transition-colors cursor-pointer">
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button type="button" onClick={() => setDeleteId(item.id)}
@@ -827,7 +828,7 @@ function RegistrationTab() {
     setForm((prev) => ({ ...prev, [field]: value }));
 
   if (loading) {
-    return <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin text-navy" /></div>;
+    return <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin" /></div>;
   }
 
   return (

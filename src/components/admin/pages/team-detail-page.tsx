@@ -197,7 +197,7 @@ function SectionHeader({ label, count, open, onToggle }: {
 }) {
   return (
     <button onClick={onToggle}
-      className="flex items-center gap-2 text-sm font-semibold th-text hover:text-navy transition-colors cursor-pointer w-full text-left py-1">
+      className="flex items-center gap-2 text-sm font-semibold th-text hover:opacity-80 transition-colors cursor-pointer w-full text-left py-1">
       {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       {label}
       <span className="inline-flex items-center justify-center w-5 h-5 rounded-full th-bg border th-border text-xs font-medium th-text-2">
@@ -218,7 +218,7 @@ function InfoRow({ icon, label, value, href }: {
         <span className="text-xs th-text-2 block">{label}</span>
         {href ? (
           <a href={href} target="_blank" rel="noopener noreferrer"
-            className="text-navy hover:underline font-medium flex items-center gap-1">
+            className="text-[var(--cat-accent)] hover:underline font-medium flex items-center gap-1">
             {value} <ExternalLink className="w-3 h-3" />
           </a>
         ) : (
@@ -422,12 +422,12 @@ function PackageItemOverridesCard({
               {/* Item header */}
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-navy/8 flex items-center justify-center shrink-0">
-                    <Icon className="w-4 h-4 text-navy" />
+                  <div className="w-8 h-8 rounded-lg bg-[var(--cat-accent)]/8 flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 text-[var(--cat-accent)]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-navy">
+                      <span className="text-sm font-medium text-[var(--cat-accent)]">
                         {item.serviceName ?? "—"}
                       </span>
                       {item.details && (
@@ -469,7 +469,7 @@ function PackageItemOverridesCard({
                   <button
                     type="button"
                     onClick={() => isEditing ? setEditingId(null) : startEdit(item)}
-                    className="text-xs font-medium text-navy hover:text-navy/70 transition-colors cursor-pointer"
+                    className="text-xs font-medium text-[var(--cat-accent)] hover:opacity-80 transition-colors cursor-pointer"
                   >
                     {isEditing ? "Cancel" : ov ? "Edit" : "Override"}
                   </button>
@@ -487,7 +487,7 @@ function PackageItemOverridesCard({
                         value={editPrice}
                         onChange={(e) => setEditPrice(e.target.value)}
                         placeholder={item.price}
-                        className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
+                        className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
                       />
                     </div>
                     <div>
@@ -497,7 +497,7 @@ function PackageItemOverridesCard({
                         value={editReason}
                         onChange={(e) => setEditReason(e.target.value)}
                         placeholder="e.g. Early bird, VIP, Sponsor"
-                        className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
+                        className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
                       />
                     </div>
                   </div>
@@ -712,7 +712,7 @@ function PackagePricingCard({
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={() => commitEdit(serviceType, serviceId, basePrice)}
             onKeyDown={(e) => handleKeyDown(e, serviceType, serviceId, basePrice)}
-            className="w-24 rounded-lg border-2 border-navy px-2 py-1 text-sm font-semibold text-navy focus:outline-none tabular-nums"
+            className="w-24 rounded-lg border-2 border-[var(--cat-accent)] px-2 py-1 text-sm font-semibold text-[var(--cat-accent)] focus:outline-none tabular-nums"
           />
         </div>
       );
@@ -725,7 +725,7 @@ function PackagePricingCard({
           disabled={isSaving}
           className={`text-sm font-semibold tabular-nums rounded-lg px-2.5 py-1 border transition-all cursor-pointer ${
             isCustom
-              ? "bg-navy/5 text-navy border-navy/30 hover:bg-navy/10"
+              ? "bg-[var(--cat-accent)]/5 text-[var(--cat-accent)] border-[var(--cat-accent)]/20 hover:opacity-80"
               : "bg-transparent th-text border-transparent hover:th-bg hover:th-border"
           } disabled:opacity-50`}
         >
@@ -788,7 +788,7 @@ function PackagePricingCard({
         <select
           value={selectedPackageId}
           onChange={(e) => onSelectPackage(e.target.value)}
-          className="flex-1 rounded-lg border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer"
+          className="flex-1 rounded-lg border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] appearance-none cursor-pointer"
         >
           <option value="">{pkg ? "Change package..." : "Assign package..."}</option>
           {packages.map((p) => (
@@ -945,7 +945,7 @@ function PackagePricingCard({
               <button
                 onClick={saveFreeSlots}
                 disabled={savingFree}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy/90 disabled:opacity-50 transition-colors cursor-pointer"
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--cat-accent)] text-[var(--cat-accent-text)] hover:opacity-80 disabled:opacity-50 transition-colors cursor-pointer"
               >
                 {savingFree ? "Saving…" : savedFree ? "✓ Saved" : "Save"}
               </button>
@@ -973,7 +973,7 @@ function PackagePricingCard({
                           set(String(parseInt(e.target.value) || 0));
                         }
                       }}
-                      className="w-16 rounded-lg border th-border px-2 py-1.5 text-sm font-semibold text-center focus:outline-none focus:border-navy"
+                      className="w-16 rounded-lg border th-border px-2 py-1.5 text-sm font-semibold text-center focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     {!isText && <span className="text-xs th-text-2">free</span>}
                   </div>
@@ -1220,7 +1220,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
     return (
       <div className="space-y-4">
         <button onClick={() => router.push(`/${locale}/admin/teams`)}
-          className="flex items-center gap-2 text-sm th-text-2 hover:text-navy cursor-pointer">
+          className="flex items-center gap-2 text-sm th-text-2 hover:opacity-80 cursor-pointer">
           <ArrowLeft className="w-4 h-4" /> Back to Teams
         </button>
         <Alert variant="error">{error ?? "Team not found"}</Alert>
@@ -1264,7 +1264,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
 
       {/* ── Back nav ── */}
       <button onClick={() => router.push(`/${locale}/admin/teams`)}
-        className="flex items-center gap-2 text-sm th-text-2 hover:text-navy transition-colors cursor-pointer">
+        className="flex items-center gap-2 text-sm th-text-2 hover:opacity-80 transition-colors cursor-pointer">
         <ArrowLeft className="w-4 h-4" /> All Teams
       </button>
 
@@ -1313,7 +1313,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             {/* Status dropdown */}
             <select value={team.status} onChange={(e) => handleStatusChange(e.target.value as TeamStatus)}
               disabled={savingStatus}
-              className="rounded-lg border th-border th-card px-3 py-1.5 text-sm font-medium th-text focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy appearance-none cursor-pointer disabled:opacity-50">
+              className="rounded-lg border th-border th-card px-3 py-1.5 text-sm font-medium th-text focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] appearance-none cursor-pointer disabled:opacity-50">
               {allStatuses.map((s) => (
                 <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
               ))}
@@ -1390,14 +1390,14 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             )}
             {club.contactEmail && (
               <a href={`mailto:${club.contactEmail}`}
-                className="flex items-center gap-2 text-sm text-navy hover:underline">
+                className="flex items-center gap-2 text-sm text-[var(--cat-accent)] hover:underline">
                 <Mail className="w-4 h-4" />
                 {club.contactEmail}
               </a>
             )}
             {club.contactPhone && (
               <a href={`tel:${club.contactPhone}`}
-                className="flex items-center gap-2 text-sm th-text-2 hover:text-navy">
+                className="flex items-center gap-2 text-sm th-text-2 hover:opacity-80">
                 <Phone className="w-4 h-4" />
                 {club.contactPhone}
               </a>
@@ -1487,7 +1487,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                               {resolveServiceName("accommodation", accRows[0].serviceId)}
                             </span>
                           </div>
-                          <span className="text-sm font-semibold text-navy">{fmtEuro(accTotal)}</span>
+                          <span className="text-sm font-semibold text-[var(--cat-accent)]">{fmtEuro(accTotal)}</span>
                         </div>
                         <div className="px-3 py-2 space-y-1">
                           {accRows.map((b) => (
@@ -1519,14 +1519,14 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                               )}
                             </div>
                           </div>
-                          <span className="text-sm font-semibold text-navy">{fmtEuro(b.total)}</span>
+                          <span className="text-sm font-semibold text-[var(--cat-accent)]">{fmtEuro(b.total)}</span>
                         </div>
                       );
                     })}
 
                     <div className="flex justify-between items-center pt-2 border-t th-border">
                       <span className="text-sm font-semibold th-text">Grand Total</span>
-                      <span className="text-lg font-bold text-navy">{fmtEuro(finance.totalFromBookings)}</span>
+                      <span className="text-lg font-bold text-[var(--cat-accent)]">{fmtEuro(finance.totalFromBookings)}</span>
                     </div>
                   </>
                 );
@@ -1568,7 +1568,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           {payments.length > 0 && (
             <div>
               <button onClick={() => setShowPayments(!showPayments)}
-                className="flex items-center gap-1 text-xs font-medium th-text-2 hover:text-navy cursor-pointer mb-2">
+                className="flex items-center gap-1 text-xs font-medium th-text-2 hover:opacity-80 cursor-pointer mb-2">
                 {showPayments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 Payment history ({payments.length})
               </button>
@@ -1634,7 +1634,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             </div>
             <div className="rounded-lg border th-border th-bg/50 p-3">
               <p className="text-xs th-text-2">Total beds</p>
-              <p className="text-xl font-bold text-navy">{team.accomPlayers + team.accomStaff + team.accomAccompanying}</p>
+              <p className="text-xl font-bold text-[var(--cat-accent)]">{team.accomPlayers + team.accomStaff + team.accomAccompanying}</p>
             </div>
           </div>
         ) : team.accomDeclined ? (
@@ -1721,12 +1721,12 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                   <p className="text-sm th-text-2 italic">
                     Отели не добавлены.{" "}
                     <button onClick={() => router.push(`/${locale}/admin/tournaments`)}
-                      className="text-navy hover:underline cursor-pointer">Добавить в турнире</button>
+                      className="text-[var(--cat-accent)] hover:underline cursor-pointer">Добавить в турнире</button>
                   </p>
                 ) : (
                   <div className="space-y-3">
                     <select
-                      className="w-full rounded-lg border th-border px-3 py-2 text-sm th-card focus:outline-none focus:border-navy"
+                      className="w-full rounded-lg border th-border px-3 py-2 text-sm th-card focus:outline-none focus:border-[var(--cat-accent)]"
                       value={team.hotelId ?? ""}
                       onChange={async (e) => {
                         const val = e.target.value;
@@ -1744,11 +1744,11 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                       ))}
                     </select>
                     {assignedHotel && (
-                      <div className="rounded-lg bg-navy/5 border border-navy/15 p-3 space-y-1.5">
-                        <p className="text-sm font-semibold text-navy">{assignedHotel.name}</p>
+                      <div className="rounded-lg bg-[var(--cat-accent)]/5 border border-[var(--cat-accent)]/20 p-3 space-y-1.5">
+                        <p className="text-sm font-semibold text-[var(--cat-accent)]">{assignedHotel.name}</p>
                         {assignedHotel.address && <p className="text-xs th-text-2">{assignedHotel.address}</p>}
                         {assignedHotel.contactName && <p className="text-xs th-text-2">Контакт: {assignedHotel.contactName}</p>}
-                        {assignedHotel.contactPhone && <a href={`tel:${assignedHotel.contactPhone}`} className="text-xs text-navy hover:underline block">{assignedHotel.contactPhone}</a>}
+                        {assignedHotel.contactPhone && <a href={`tel:${assignedHotel.contactPhone}`} className="text-xs text-[var(--cat-accent)] hover:underline block">{assignedHotel.contactPhone}</a>}
                         {assignedHotel.contactEmail && <p className="text-xs th-text-2">{assignedHotel.contactEmail}</p>}
                         {assignedHotel.notes && <p className="text-xs th-text-2 italic">{assignedHotel.notes}</p>}
                       </div>
@@ -2041,7 +2041,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           onBlur={handleNotesBlur}
           rows={3}
           placeholder="Internal notes visible only to admins..."
-          className="w-full rounded-lg border th-border th-card px-3 py-2.5 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-y"
+          className="w-full rounded-lg border th-border th-card px-3 py-2.5 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-y"
         />
       </Card>
 
@@ -2079,7 +2079,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 <label className="block text-sm font-medium th-text mb-1.5">Notes (optional)</label>
                 <textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows={2}
                   placeholder="Additional notes..."
-                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/20 resize-none" />
+                  className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 resize-none" />
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <Button variant="secondary" type="button" onClick={() => { setShowPaymentModal(false); resetPaymentForm(); }}>

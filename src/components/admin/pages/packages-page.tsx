@@ -76,9 +76,10 @@ function SectionTab({
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
         active
-          ? "bg-navy text-white"
+          ? ""
           : "th-card th-text-2 hover:th-bg border th-border"
       }`}
+      style={active ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" } : undefined}
     >
       <Icon className="w-4 h-4" />
       {label}
@@ -259,7 +260,8 @@ function PackagesTab() {
           {editId === null && (
             <Button
               onClick={openNew}
-              className="bg-navy hover:bg-navy/90 text-white"
+              className="hover:opacity-90"
+              style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
               size="sm"
             >
               <Plus className="w-4 h-4 mr-1.5" />
@@ -333,7 +335,7 @@ function PackagesTab() {
                   { key: "includeMeals", label: "🍽️ Extra Meals" },
                 ] as const
               ).map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer select-none th-bg rounded-lg px-3 py-2 border th-border hover:border-navy/30 transition-colors">
+                <label key={key} className="flex items-center gap-2 cursor-pointer select-none th-bg rounded-lg px-3 py-2 border th-border hover:opacity-80 transition-colors">
                   <input
                     type="checkbox"
                     className="w-4 h-4 accent-navy shrink-0"
@@ -368,7 +370,8 @@ function PackagesTab() {
             <Button
               onClick={saveForm}
               disabled={saving}
-              className="bg-navy hover:bg-navy/90 text-white"
+              className="hover:opacity-90"
+              style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
               size="sm"
             >
               {saving ? (
@@ -407,7 +410,7 @@ function PackagesTab() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-sm th-text">{pkg.name}</span>
                   {pkg.isDefault && (
-                    <span className="inline-flex items-center rounded-full bg-gold/15 px-2 py-0.5 text-xs font-semibold text-gold">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
                       Default
                     </span>
                   )}
@@ -451,7 +454,8 @@ function PackagesTab() {
                   type="button"
                   disabled={publishing === pkg.id || pkg.assignedTeams === 0}
                   onClick={() => publishAll(pkg.id)}
-                  className="text-xs font-semibold text-white bg-navy hover:bg-navy/80 px-3 py-1 rounded-md transition-colors disabled:opacity-40 cursor-pointer"
+                  className="text-xs font-semibold hover:opacity-90 px-3 py-1 rounded-md transition-colors disabled:opacity-40 cursor-pointer"
+                  style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
                 >
                   {publishing === pkg.id ? "..." : "Publish All"}
                 </button>
@@ -462,7 +466,7 @@ function PackagesTab() {
                   type="button"
                   onClick={() => openEdit(pkg)}
                   disabled={editId !== null}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-navy transition-colors cursor-pointer disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:opacity-80 transition-colors cursor-pointer disabled:opacity-40"
                 >
                   <Pencil className="w-3.5 h-3.5" />
                   Edit
@@ -709,7 +713,8 @@ function AssignmentsTab() {
               disabled={bulkAssigning}
               variant="secondary"
               size="sm"
-              className="border-navy text-navy hover:bg-navy hover:text-white transition-colors"
+              className="hover:opacity-90 transition-colors"
+              style={{ borderColor: "var(--cat-accent)", color: "var(--cat-accent)" }}
             >
               {bulkAssigning ? (
                 <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -773,7 +778,7 @@ function AssignmentsTab() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 flex-wrap">
                           {team.currentPackage ? (
-                            <span className="inline-flex items-center rounded-full bg-navy/10 px-2.5 py-1 text-xs font-semibold text-navy">
+                            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
                               {team.currentPackage.name}
                             </span>
                           ) : (
@@ -784,11 +789,10 @@ function AssignmentsTab() {
                               type="button"
                               onClick={() => togglePublish(team.id, team.currentPackage!.isPublished)}
                               disabled={togglingPublish === team.id}
-                              className={`text-xs font-semibold px-2 py-0.5 rounded-full transition-colors cursor-pointer ${
-                                team.currentPackage.isPublished
-                                  ? "bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700"
-                                  : "bg-orange-100 text-orange-700 hover:bg-green-100 hover:text-green-700"
-                              }`}
+                              className="text-xs font-semibold px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+                              style={team.currentPackage.isPublished
+                                ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }
+                                : { background: "rgba(245,158,11,0.1)", color: "#F59E0B" }}
                             >
                               {togglingPublish === team.id ? "..." : team.currentPackage.isPublished ? "✓ Published" : "Unpublished"}
                             </button>
@@ -827,7 +831,7 @@ function AssignmentsTab() {
                               </select>
                               <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 th-text-2" />
                               {isAssigning && (
-                                <Loader2 className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-navy animate-spin" />
+                                <Loader2 className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin" style={{ color: "var(--cat-accent)" }} />
                               )}
                             </div>
                           )}
@@ -872,7 +876,7 @@ export function PackagesPageContent() {
       {/* Page header */}
       <div>
         <h1 className="text-xl font-bold th-text flex items-center gap-2.5">
-          <Layers className="w-5 h-5 text-navy" />
+          <Layers className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
           Packages
         </h1>
         <p className="text-sm th-text-2 mt-1">

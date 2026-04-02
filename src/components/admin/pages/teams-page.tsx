@@ -226,7 +226,7 @@ export function TeamsPageContent() {
               placeholder={tc("search") + "..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-navy/20"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
             />
           </div>
         </div>
@@ -274,7 +274,7 @@ export function TeamsPageContent() {
                           : `/${locale}/admin/teams/${team.id}`;
                         router.push(path);
                       }}
-                      className="border-b th-border last:border-0 hover:bg-navy/5 cursor-pointer"
+                      className="border-b th-border last:border-0 hover:opacity-80 cursor-pointer"
                     >
                       {/* Reg number */}
                       <td className="px-4 py-3">
@@ -363,7 +363,7 @@ export function TeamsPageContent() {
                                 }
                                 className={`w-full text-left px-3 py-2 text-sm hover:th-bg flex items-center gap-2 cursor-pointer ${
                                   team.status === s
-                                    ? "font-medium text-navy"
+                                    ? "font-medium text-[var(--cat-accent)]"
                                     : "th-text"
                                 }`}
                               >
@@ -387,7 +387,7 @@ export function TeamsPageContent() {
                           onClick={() =>
                             handleCopyInvite(team.club?.id, team.id)
                           }
-                          className="text-navy hover:text-navy-light text-xs flex items-center gap-1 cursor-pointer"
+                          className="text-[var(--cat-accent)] hover:opacity-80 text-xs flex items-center gap-1 cursor-pointer"
                         >
                           {copiedId === team.id ? (
                             <>

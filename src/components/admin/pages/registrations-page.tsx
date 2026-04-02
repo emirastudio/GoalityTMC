@@ -188,7 +188,7 @@ export function RegistrationsPageContent() {
       {!loading && visible.length > 0 && (
         <div className="rounded-xl border th-border overflow-hidden shadow-sm">
           <table className="w-full text-sm border-collapse">
-            <thead className="bg-navy">
+            <thead className="bg-[var(--cat-accent)]">
               <tr>
                 <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">Time</th>
                 <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">Club</th>
@@ -206,7 +206,7 @@ export function RegistrationsPageContent() {
                   <tr
                     key={row.id}
                     onClick={() => setExpanded(expanded === row.id ? null : row.id)}
-                    className={`border-b th-border last:border-0 cursor-pointer hover:bg-navy/3 transition-colors ${
+                    className={`border-b th-border last:border-0 cursor-pointer hover:opacity-80 transition-colors ${
                       i % 2 === 0 ? "th-card" : "th-bg/40"
                     } ${row.status !== "success" ? "border-l-2 border-l-error/40" : ""}`}
                   >
@@ -242,7 +242,7 @@ export function RegistrationsPageContent() {
 
                   {/* Expanded detail row */}
                   {expanded === row.id && (
-                    <tr key={`${row.id}-detail`} className="bg-navy/5 border-b th-border">
+                    <tr key={`${row.id}-detail`} className="bg-[var(--cat-accent)]/5 border-b th-border">
                       <td colSpan={8} className="px-4 py-3">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                           <div>

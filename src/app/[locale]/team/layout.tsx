@@ -5,6 +5,8 @@ import { TeamSwitcher } from "@/components/club/team-switcher";
 import { SidebarFooter } from "@/components/team/sidebar-footer";
 import { TeamProvider } from "@/lib/team-context";
 import { ImpersonationBanner } from "@/components/team/impersonation-banner";
+import { ThemeProvider, ThemeToggle } from "@/components/ui/theme-provider";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { clubs, teams, people, tournamentClasses, inboxMessages, teamMessageReads, messageRecipients } from "@/db/schema";
@@ -105,92 +107,109 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     .toUpperCase();
 
   return (
-    <TeamProvider
-      initialTeamId={activeTeam?.id ?? null}
-      initialClubId={club.id}
-      initialTournamentId={club.tournamentId}
-      initialInboxCount={inboxCount}
-      isTeamManager={isTeamManager}
-    >
-      {isImpersonating && <ImpersonationBanner clubName={club.name} />}
+    <ThemeProvider defaultTheme="dark">
+      <TeamProvider
+        initialTeamId={activeTeam?.id ?? null}
+        initialClubId={club.id}
+        initialTournamentId={club.tournamentId}
+        initialInboxCount={inboxCount}
+        isTeamManager={isTeamManager}
+      >
+        {isImpersonating && <ImpersonationBanner clubName={club.name} />}
 
-      <div className="flex min-h-screen" data-theme="dark" style={{ background: "var(--cat-bg)" }}>
+        <div className="flex min-h-screen" style={{ background: "var(--cat-bg)" }}>
 
-        {/* ── Desktop Sidebar ───────────────────────────────── */}
-        <aside className="hidden md:flex flex-col w-64 shrink-0 bg-[#0D1117] sticky top-0 h-screen overflow-hidden">
+          {/* ── Desktop Sidebar ───────────────────────────────── */}
+          <aside
+            className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 h-screen overflow-hidden"
+            style={{ background: "var(--cat-sidebar-bg, var(--cat-bg))" }}
+          >
 
-          {/* Brand */}
-          <div className="h-14 px-5 flex items-center gap-3 shrink-0 border-b border-white/6">
-            <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
-            <span className="text-[15px] font-bold text-white tracking-tight">Kings Cup</span>
-          </div>
+            {/* Brand */}
+            <div className="h-14 px-5 flex items-center gap-3 shrink-0" style={{ borderBottom: "1px solid var(--cat-card-border)" }}>
+              <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
+              <span className="text-[15px] font-bold tracking-tight" style={{ color: "var(--cat-text-primary)" }}>Kings Cup</span>
+            </div>
 
-          {/* Club / team switcher */}
-          <div className="px-4 py-4 border-b border-white/6 shrink-0">
-            {isTeamManager ? (
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-mint/15 border border-mint/20 flex items-center justify-center shrink-0">
-                  <span className="text-[12px] font-bold text-mint">{clubInitials}</span>
+            {/* Club / team switcher */}
+            <div className="px-4 py-4 shrink-0" style={{ borderBottom: "1px solid var(--cat-card-border)" }}>
+              {isTeamManager ? (
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-mint/15 border border-mint/20 flex items-center justify-center shrink-0">
+                    <span className="text-[12px] font-bold text-mint">{clubInitials}</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-bold truncate" style={{ color: "var(--cat-text-primary)" }}>{club.name}</p>
+                    <p className="text-[11px] truncate" style={{ color: "var(--cat-text-muted)" }}>{activeTeam?.name}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-bold text-white truncate">{club.name}</p>
-                  <p className="text-[11px] text-white/40 truncate">{activeTeam?.name}</p>
-                </div>
-              </div>
-            ) : (
-              <TeamSwitcher
+              ) : (
+                <TeamSwitcher
+                  clubName={club.name}
+                  clubBadgeUrl={club.badgeUrl ?? null}
+                  clubId={club.id}
+                  teams={enrichedTeams}
+                  classes={classes.map((c) => ({ id: c.id, name: c.name }))}
+                  dark
+                />
+              )}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex-1 px-3 py-3 overflow-y-auto">
+              <TeamSidebar />
+            </div>
+
+            {/* Lang + Logout */}
+            <SidebarFooter />
+          </aside>
+
+          {/* ── Right side ───────────────────────────────────── */}
+          <div className="flex-1 flex flex-col min-w-0">
+
+            {/* Desktop top header bar */}
+            <div
+              className="hidden md:flex items-center justify-end gap-3 h-14 px-6 shrink-0"
+              style={{
+                background: "var(--cat-card-bg)",
+                borderBottom: "1px solid var(--cat-card-border)",
+              }}
+            >
+              <LanguageSwitcher variant="dark" />
+              <ThemeToggle />
+            </div>
+
+            {/* Mobile header only */}
+            <div className="md:hidden">
+              <TeamHeader
+                teamName={activeTeam?.name}
+                regNumber={activeTeam?.regNumber}
+                year={2026}
                 clubName={club.name}
                 clubBadgeUrl={club.badgeUrl ?? null}
                 clubId={club.id}
-                teams={enrichedTeams}
+                teams={enrichedTeams.map((t) => ({
+                  id: t.id,
+                  name: t.name,
+                  className: t.className,
+                  status: t.status,
+                  playersCount: t.playersCount,
+                }))}
                 classes={classes.map((c) => ({ id: c.id, name: c.name }))}
-                dark
+                isTeamManager={isTeamManager}
               />
-            )}
+            </div>
+
+            {/* Main content */}
+            <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
+              {children}
+            </main>
           </div>
-
-          {/* Navigation */}
-          <div className="flex-1 px-3 py-3 overflow-y-auto">
-            <TeamSidebar />
-          </div>
-
-          {/* Lang + Logout */}
-          <SidebarFooter />
-        </aside>
-
-        {/* ── Right side ───────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0">
-
-          {/* Mobile header only */}
-          <div className="md:hidden">
-            <TeamHeader
-              teamName={activeTeam?.name}
-              regNumber={activeTeam?.regNumber}
-              year={2026}
-              clubName={club.name}
-              clubBadgeUrl={club.badgeUrl ?? null}
-              clubId={club.id}
-              teams={enrichedTeams.map((t) => ({
-                id: t.id,
-                name: t.name,
-                className: t.className,
-                status: t.status,
-                playersCount: t.playersCount,
-              }))}
-              classes={classes.map((c) => ({ id: c.id, name: c.name }))}
-              isTeamManager={isTeamManager}
-            />
-          </div>
-
-          {/* Main content */}
-          <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
-            {children}
-          </main>
         </div>
-      </div>
 
-      {/* Mobile bottom nav */}
-      <MobileNav />
-    </TeamProvider>
+        {/* Mobile bottom nav */}
+        <MobileNav />
+      </TeamProvider>
+    </ThemeProvider>
   );
 }

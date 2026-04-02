@@ -23,10 +23,10 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 shrink-0 bg-navy min-h-screen flex flex-col">
-      <div className="p-4 flex items-center gap-3 border-b border-white/6">
+    <aside className="w-60 shrink-0 min-h-screen flex flex-col" style={{ background: "var(--cat-accent)" }}>
+      <div className="p-4 flex items-center gap-3 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
         <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
-        <span className="text-[15px] font-bold text-white tracking-tight">Goality</span>
+        <span className="text-[15px] font-bold tracking-tight" style={{ color: "var(--cat-text)" }}>Goality</span>
       </div>
       <nav className="flex-1 px-3 space-y-0.5">
         {navItems.map((item) => {
@@ -40,9 +40,13 @@ export function AdminSidebar() {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-white/15 text-gold"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
+                  ? ""
+                  : "hover:opacity-90"
               )}
+              style={isActive
+                ? { background: "var(--cat-tag-bg)", color: "var(--cat-accent)" }
+                : { color: "var(--cat-text-secondary)" }
+              }
             >
               <Icon className="w-4.5 h-4.5" />
               {label}
@@ -54,7 +58,8 @@ export function AdminSidebar() {
         <form action="/api/auth/logout" method="POST">
           <button
             type="submit"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/50 hover:text-white hover:bg-white/10 transition-colors w-full cursor-pointer"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:opacity-90 transition-colors w-full cursor-pointer"
+            style={{ color: "var(--cat-text-muted)" }}
           >
             <LogOut className="w-4.5 h-4.5" />
             {t("dashboard") === "Dashboard" ? "Log out" : "Выйти"}

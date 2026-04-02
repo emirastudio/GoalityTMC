@@ -37,7 +37,7 @@ export function MobileNav() {
   return (
     <>
       {/* Bottom nav bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#1C2121] border-t border-white/8 md:hidden safe-area-pb">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t md:hidden safe-area-pb" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
         <div className="flex items-stretch h-16">
           {mainItems.map(({ key, icon: Icon, href }) => {
             const active = pathname.startsWith(href);
@@ -48,8 +48,9 @@ export function MobileNav() {
                 onClick={() => setMoreOpen(false)}
                 className={cn(
                   "flex flex-col items-center justify-center gap-1 flex-1 text-[10px] font-medium transition-colors relative",
-                  active ? "text-mint" : "text-white/40"
+                  active ? "text-mint" : ""
                 )}
+                style={!active ? { color: "var(--cat-text-muted)" } : undefined}
               >
                 <Icon className="w-5 h-5" />
                 <span>{t(key)}</span>
@@ -65,8 +66,9 @@ export function MobileNav() {
             onClick={() => setMoreOpen(!moreOpen)}
             className={cn(
               "flex flex-col items-center justify-center gap-1 flex-1 text-[10px] font-medium transition-colors",
-              moreOpen ? "text-mint" : "text-white/40"
+              moreOpen ? "text-mint" : ""
             )}
+            style={!moreOpen ? { color: "var(--cat-text-muted)" } : undefined}
           >
             {moreOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             <span>{moreOpen ? "Close" : "More"}</span>
@@ -81,9 +83,9 @@ export function MobileNav() {
             className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden"
             onClick={() => setMoreOpen(false)}
           />
-          <div className="fixed bottom-16 left-0 right-0 z-40 bg-[#1C2121] border-t border-white/8 rounded-t-2xl shadow-2xl md:hidden">
+          <div className="fixed bottom-16 left-0 right-0 z-40 border-t rounded-t-2xl shadow-2xl md:hidden" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
             <div className="p-4">
-              <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-4" />
+              <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--cat-tag-bg)" }} />
               <div className="grid grid-cols-4 gap-2">
                 {moreItems.map(({ key, icon: Icon, href, badge }) => {
                   const active = pathname.startsWith(href);
@@ -96,13 +98,14 @@ export function MobileNav() {
                         "flex flex-col items-center gap-1.5 p-3 rounded-xl text-[11px] font-medium transition-colors relative",
                         active
                           ? "bg-mint/15 text-mint"
-                          : "bg-white/6 text-white/50 hover:bg-white/10"
+                          : "hover:opacity-90"
                       )}
+                      style={!active ? { background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" } : undefined}
                     >
                       <Icon className="w-5 h-5" />
                       <span className="text-center leading-tight">{t(key)}</span>
                       {badge !== undefined && badge > 0 && (
-                        <span className="absolute top-2 right-2 w-4 h-4 bg-mint text-navy text-[9px] font-bold rounded-full flex items-center justify-center">
+                        <span className="absolute top-2 right-2 w-4 h-4 bg-mint text-[9px] font-bold rounded-full flex items-center justify-center" style={{ color: "var(--cat-accent)" }}>
                           {badge}
                         </span>
                       )}

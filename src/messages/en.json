@@ -730,7 +730,9 @@
     "perMonth": "per month per tournament",
     "clubsCount": "{n} clubs",
     "teamsCount": "{n} teams",
-    "classesCount": "{n} classes"
+    "classesCount": "{n} classes",
+    "management": "Management",
+    "tournamentPage": "Tournament page"
   },
   "superAdmin": {
     "title": "Goality Platform",

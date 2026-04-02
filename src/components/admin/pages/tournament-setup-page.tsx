@@ -131,7 +131,7 @@ function SectionTab({
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
         active
-          ? "bg-navy text-white"
+          ? "bg-[var(--cat-accent)] text-[var(--cat-accent-text)]"
           : "th-card th-text-2 hover:th-bg border th-border"
       }`}
     >
@@ -484,7 +484,7 @@ export function TournamentSetupPageContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-navy" />
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--cat-accent)]" />
       </div>
     );
   }
@@ -610,7 +610,7 @@ export function TournamentSetupPageContent() {
                 id="currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+                className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)]"
               >
                 <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
@@ -689,14 +689,14 @@ export function TournamentSetupPageContent() {
                               updateClass(idx, "name", e.target.value)
                             }
                             placeholder="e.g. U12"
-                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                           />
                         </td>
                         <td className="px-4 py-2">
                           <select
                             value={cls.format ?? ""}
                             onChange={(e) => updateClass(idx, "format", e.target.value || null)}
-                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy th-card"
+                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)] th-card"
                           >
                             <option value="">—</option>
                             {FORMATS.map((f) => (
@@ -716,7 +716,7 @@ export function TournamentSetupPageContent() {
                               )
                             }
                             placeholder="2014"
-                            className="w-28 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-28 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -730,7 +730,7 @@ export function TournamentSetupPageContent() {
                                 e.target.value ? Number(e.target.value) : null
                               )
                             }
-                            className="w-20 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-20 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -744,7 +744,7 @@ export function TournamentSetupPageContent() {
                                 e.target.value ? Number(e.target.value) : null
                               )
                             }
-                            className="w-20 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-20 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                           />
                         </td>
                         <td className="px-4 py-2 text-center">
@@ -848,7 +848,7 @@ export function TournamentSetupPageContent() {
                               updateProduct(idx, "name", e.target.value)
                             }
                             placeholder="Product name"
-                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -857,7 +857,7 @@ export function TournamentSetupPageContent() {
                             onChange={(e) =>
                               updateProduct(idx, "category", e.target.value)
                             }
-                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy th-card"
+                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)] th-card"
                           >
                             {CATEGORIES.map((cat) => (
                               <option key={cat} value={cat}>
@@ -874,7 +874,7 @@ export function TournamentSetupPageContent() {
                             onChange={(e) =>
                               updateProduct(idx, "price", e.target.value)
                             }
-                            className="w-28 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                            className="w-28 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                           />
                         </td>
                         <td className="px-4 py-2 text-center">
@@ -975,13 +975,13 @@ export function TournamentSetupPageContent() {
               field._deleted ? null : (
                 <div key={field.id ?? `new-${idx}`} className="p-5 space-y-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-navy bg-navy/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">{idx + 1}</span>
+                    <span className="text-xs font-bold text-[var(--cat-accent)] bg-[var(--cat-accent)]/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">{idx + 1}</span>
                     <input
                       type="text"
                       value={field.name}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, name: e.target.value } : f))}
                       placeholder="Pitch / base name"
-                      className="flex-1 rounded-lg border th-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-navy"
+                      className="flex-1 rounded-lg border th-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     <button
                       type="button"
@@ -997,28 +997,28 @@ export function TournamentSetupPageContent() {
                       value={field.address}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, address: e.target.value } : f))}
                       placeholder="Address"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     <input
                       type="url"
                       value={field.mapUrl}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, mapUrl: e.target.value } : f))}
                       placeholder="Map link (Google Maps)"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     <input
                       type="url"
                       value={field.scheduleUrl}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, scheduleUrl: e.target.value } : f))}
                       placeholder="Schedule / bus link"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     <input
                       type="text"
                       value={field.notes}
                       onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, notes: e.target.value } : f))}
                       placeholder="Additional info"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                   </div>
                 </div>
@@ -1051,13 +1051,13 @@ export function TournamentSetupPageContent() {
               hotel._deleted ? null : (
                 <div key={hotel.id ?? `new-${idx}`} className="p-5 space-y-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-navy bg-navy/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">{idx + 1}</span>
+                    <span className="text-xs font-bold text-[var(--cat-accent)] bg-[var(--cat-accent)]/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">{idx + 1}</span>
                     <input
                       type="text"
                       value={hotel.name}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, name: e.target.value } : h))}
                       placeholder="Hotel name"
-                      className="flex-1 rounded-lg border th-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-navy"
+                      className="flex-1 rounded-lg border th-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     <button
                       type="button"
@@ -1073,28 +1073,28 @@ export function TournamentSetupPageContent() {
                       value={hotel.address}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, address: e.target.value } : h))}
                       placeholder="Address"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     <input
                       type="text"
                       value={hotel.contactName}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, contactName: e.target.value } : h))}
                       placeholder="Contact person"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     <input
                       type="tel"
                       value={hotel.contactPhone}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, contactPhone: e.target.value } : h))}
                       placeholder="Phone"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     <input
                       type="email"
                       value={hotel.contactEmail}
                       onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, contactEmail: e.target.value } : h))}
                       placeholder="Email"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                     />
                     <div className="md:col-span-2">
                       <input
@@ -1102,7 +1102,7 @@ export function TournamentSetupPageContent() {
                         value={hotel.notes}
                         onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, notes: e.target.value } : h))}
                         placeholder="Notes (breakfast, parking, etc.)"
-                        className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
+                        className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                       />
                     </div>
                   </div>
@@ -1131,7 +1131,7 @@ export function TournamentSetupPageContent() {
                 <label className="block text-sm font-medium th-text mb-1.5">Hotel notes</label>
                 <textarea
                   rows={2}
-                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-none"
+                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-none"
                   value={tInfo.hotelNotes ?? ""}
                   onChange={(e) => setTInfo((p) => ({ ...p, hotelNotes: e.target.value }))}
                   placeholder="Breakfast included, free parking..."
@@ -1162,7 +1162,7 @@ export function TournamentSetupPageContent() {
                 <label className="block text-sm font-medium th-text mb-1.5">Meal notes</label>
                 <textarea
                   rows={2}
-                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-none"
+                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-none"
                   value={tInfo.mealNotes ?? ""}
                   onChange={(e) => setTInfo((p) => ({ ...p, mealNotes: e.target.value }))}
                   placeholder="Vegetarian menu available on request..."
@@ -1194,7 +1194,7 @@ export function TournamentSetupPageContent() {
                 <label className="block text-sm font-medium th-text mb-1.5">Additional notes for teams</label>
                 <textarea
                   rows={3}
-                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy resize-none"
+                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-none"
                   value={tInfo.additionalNotes ?? ""}
                   onChange={(e) => setTInfo((p) => ({ ...p, additionalNotes: e.target.value }))}
                   placeholder="Important information for all participants..."
