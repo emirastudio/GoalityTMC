@@ -113,11 +113,11 @@ interface ServicePackage { id: number; name: string; isDefault: boolean }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const STATUS_COLORS: Record<TeamStatus, string> = {
-  draft: "th-bg th-text-2 th-border",
-  open: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  confirmed: "bg-amber-50 text-amber-700 border-amber-200",
-  cancelled: "bg-red-50 text-red-600 border-red-200",
+const STATUS_STYLES: Record<TeamStatus, { background: string; color: string; borderColor: string }> = {
+  draft: { background: "var(--cat-card-bg)", color: "var(--cat-text-secondary)", borderColor: "var(--cat-card-border)" },
+  open: { background: "var(--badge-success-bg)", color: "var(--badge-success-color)", borderColor: "var(--badge-success-border)" },
+  confirmed: { background: "var(--badge-warning-bg)", color: "var(--badge-warning-color)", borderColor: "var(--badge-warning-border)" },
+  cancelled: { background: "var(--badge-error-bg)", color: "var(--badge-error-color)", borderColor: "var(--badge-error-border)" },
 };
 
 const PAYMENT_STATUS_BADGE: Record<string, "warning" | "success" | "error"> = {
@@ -170,24 +170,19 @@ function StatTile({ label, value, sub, detail, color = "default" }: {
   label: string; value: string | number; sub?: string; detail?: string;
   color?: "default" | "green" | "red" | "amber";
 }) {
-  const colors = {
-    default: "th-border th-bg/50",
-    green: "border-emerald-200 bg-emerald-50",
-    red: "border-red-200 bg-red-50",
-    amber: "border-amber-200 bg-amber-50",
+  const styles = {
+    default: { borderColor: "var(--cat-card-border)", background: "var(--cat-card-bg)", color: "var(--cat-text)" },
+    green:   { borderColor: "var(--badge-success-border)", background: "var(--badge-success-bg)", color: "var(--badge-success-color)" },
+    red:     { borderColor: "var(--badge-error-border)", background: "var(--badge-error-bg)", color: "var(--badge-error-color)" },
+    amber:   { borderColor: "var(--badge-warning-border)", background: "var(--badge-warning-bg)", color: "var(--badge-warning-color)" },
   };
-  const textColors = {
-    default: "th-text",
-    green: "text-emerald-700",
-    red: "text-red-600",
-    amber: "text-amber-700",
-  };
+  const s = styles[color];
   return (
-    <div className={`rounded-xl border p-4 ${colors[color]}`}>
+    <div className="rounded-xl border p-4" style={{ borderColor: s.borderColor, background: s.background }}>
       <p className="text-xs font-medium th-text-2 uppercase tracking-wide">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${textColors[color]}`}>{value}</p>
+      <p className="text-2xl font-bold mt-1" style={{ color: s.color }}>{value}</p>
       {sub && <p className="text-xs th-text-2 mt-0.5">{sub}</p>}
-      {detail && <p className="text-xs th-text-2/70 mt-1">{detail}</p>}
+      {detail && <p className="text-xs th-text-2 mt-1">{detail}</p>}
     </div>
   );
 }
@@ -236,12 +231,14 @@ function MedicalBadge({ allergies, dietary, medical }: {
   return (
     <div className="mt-1 flex flex-wrap gap-1">
       {allergies && (
-        <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5">
+        <span className="inline-flex items-center gap-1 text-xs rounded-full px-2 py-0.5 border"
+          style={{ background: "var(--badge-warning-bg)", color: "var(--badge-warning-color)", borderColor: "var(--badge-warning-border)" }}>
           ⚠ {allergies}
         </span>
       )}
       {dietary && (
-        <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5">
+        <span className="inline-flex items-center gap-1 text-xs rounded-full px-2 py-0.5 border"
+          style={{ background: "var(--badge-info-bg)", color: "var(--badge-info-color)", borderColor: "var(--badge-info-border)" }}>
           🥗 {dietary}
         </span>
       )}
@@ -411,13 +408,14 @@ function PackageItemOverridesCard({
           return (
             <div
               key={item.id}
-              className={`rounded-xl border px-4 py-3 transition-colors ${
+              className="rounded-xl border px-4 py-3 transition-colors th-border th-card"
+              style={
                 ov?.isDisabled
-                  ? "border-red-200 bg-red-50/50"
+                  ? { borderColor: "var(--badge-error-border)", background: "var(--badge-error-bg)" }
                   : ov
-                  ? "border-amber-200 bg-amber-50/50"
-                  : "th-border th-card"
-              }`}
+                  ? { borderColor: "var(--badge-warning-border)", background: "var(--badge-warning-bg)" }
+                  : {}
+              }
             >
               {/* Item header */}
               <div className="flex items-center justify-between gap-3">
@@ -434,7 +432,8 @@ function PackageItemOverridesCard({
                         <span className="text-xs th-text-2">{item.details}</span>
                       )}
                       {ov?.isDisabled && (
-                        <span className="text-xs font-semibold text-red-600 bg-red-100 rounded px-1.5 py-0.5">
+                        <span className="text-xs font-semibold rounded px-1.5 py-0.5 border"
+                          style={{ background: "var(--badge-error-bg)", color: "var(--badge-error-color)", borderColor: "var(--badge-error-border)" }}>
                           Disabled for this team
                         </span>
                       )}
@@ -444,7 +443,7 @@ function PackageItemOverridesCard({
                       {ov?.customPrice && ov.customPrice !== item.price ? (
                         <>
                           <span className="text-xs th-text-2 line-through">€{item.price}</span>
-                          <span className="text-xs font-semibold text-amber-700">€{ov.customPrice}</span>
+                          <span className="text-xs font-semibold" style={{ color: "var(--badge-warning-color)" }}>€{ov.customPrice}</span>
                         </>
                       ) : (
                         <span className="text-xs font-semibold th-text">€{item.price}</span>
@@ -767,11 +766,11 @@ function PackagePricingCard({
               <button
                 onClick={onTogglePublish}
                 disabled={togglingPublish}
-                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors cursor-pointer disabled:opacity-50 ${
-                  pkg.isPublished
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                    : "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
-                }`}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors cursor-pointer disabled:opacity-50 hover:opacity-80"
+                style={pkg.isPublished
+                  ? { background: "var(--badge-success-bg)", color: "var(--badge-success-color)", borderColor: "var(--badge-success-border)" }
+                  : { background: "var(--badge-warning-bg)", color: "var(--badge-warning-color)", borderColor: "var(--badge-warning-border)" }
+                }
               >
                 {pkg.isPublished
                   ? <><Eye className="w-3.5 h-3.5" />Published</>
@@ -850,7 +849,8 @@ function PackagePricingCard({
                         <Hotel className="w-3.5 h-3.5 th-text-2 shrink-0" />
                         <span className="text-sm font-medium th-text">{a.name}</span>
                         {a.includedMeals > 0 && (
-                          <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1.5">{a.includedMeals} meals</span>
+                          <span className="text-xs rounded px-1.5 border"
+                            style={{ background: "var(--badge-success-bg)", color: "var(--badge-success-color)", borderColor: "var(--badge-success-border)" }}>{a.includedMeals} meals</span>
                         )}
                       </div>
                     </td>
@@ -893,11 +893,11 @@ function PackagePricingCard({
                         <button
                           onClick={() => giftTransfer(t.id)}
                           title={effectivePrice("transfer", t.id, parseFloat(t.pricePerPerson)) === 0 ? "Remove gift — restore price" : "Gift this transfer (set to free)"}
-                          className={`text-xs px-2 py-1 rounded-lg border transition-colors cursor-pointer shrink-0 ${
-                            effectivePrice("transfer", t.id, parseFloat(t.pricePerPerson)) === 0
-                              ? "bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
-                              : "th-bg th-border th-text-2 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
-                          }`}
+                          className="text-xs px-2 py-1 rounded-lg border transition-colors cursor-pointer shrink-0 hover:opacity-80"
+                          style={effectivePrice("transfer", t.id, parseFloat(t.pricePerPerson)) === 0
+                            ? { background: "var(--badge-success-bg)", borderColor: "var(--badge-success-border)", color: "var(--badge-success-color)" }
+                            : { background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)" }
+                          }
                         >
                           🎁
                         </button>
@@ -982,7 +982,8 @@ function PackagePricingCard({
             </div>
             <p className="text-xs th-text-2 mt-1">Leave meals empty to use default (from accommodation option)</p>
             {(parseInt(freePlayers) > 0 || parseInt(freeStaff) > 0 || parseInt(freeAccom) > 0) && (
-              <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs text-emerald-700">
+              <div className="mt-3 rounded-lg border px-3 py-2 text-xs"
+                style={{ background: "var(--badge-success-bg)", borderColor: "var(--badge-success-border)", color: "var(--badge-success-color)" }}>
                 The team will see: {[
                   parseInt(freePlayers) > 0 ? `${freePlayers} free player${parseInt(freePlayers) > 1 ? "s" : ""}` : null,
                   parseInt(freeStaff) > 0 ? `${freeStaff} free staff` : null,
@@ -1287,7 +1288,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <h1 className="text-2xl font-bold th-text">{team.name}</h1>
                 <span className="text-lg font-semibold th-text-2">#{team.regNumber}</span>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${STATUS_COLORS[team.status]}`}>
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full border" style={STATUS_STYLES[team.status]}>
                   {team.status.charAt(0).toUpperCase() + team.status.slice(1)}
                 </span>
               </div>
@@ -1330,7 +1331,8 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               size="sm"
               onClick={handleLoginAs}
               disabled={!club || loggingIn}
-              className="bg-amber-500 hover:bg-amber-600 text-white border-0"
+              className="hover:opacity-80 text-white border-0"
+              style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)" }}
             >
               <LogIn className="w-4 h-4" />
               {loggingIn ? "..." : "Login as"}
@@ -1550,15 +1552,19 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               <p className="text-xs th-text-2">Ordered</p>
               <p className="text-lg font-bold th-text">{fmtEuro(finance.totalFromBookings)}</p>
             </div>
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-center">
+            <div className="rounded-lg border p-3 text-center"
+              style={{ borderColor: "var(--badge-success-border)", background: "var(--badge-success-bg)" }}>
               <p className="text-xs th-text-2">Paid</p>
-              <p className="text-lg font-bold text-emerald-700">{fmtEuro(finance.totalPaid)}</p>
+              <p className="text-lg font-bold" style={{ color: "var(--badge-success-color)" }}>{fmtEuro(finance.totalPaid)}</p>
             </div>
-            <div className={`rounded-lg border p-3 text-center ${
-              finance.balance <= 0 ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"
-            }`}>
+            <div className="rounded-lg border p-3 text-center"
+              style={finance.balance <= 0
+                ? { borderColor: "var(--badge-success-border)", background: "var(--badge-success-bg)" }
+                : { borderColor: "var(--badge-error-border)", background: "var(--badge-error-bg)" }
+              }>
               <p className="text-xs th-text-2">Balance</p>
-              <p className={`text-lg font-bold ${finance.balance <= 0 ? "text-emerald-700" : "text-red-600"}`}>
+              <p className="text-lg font-bold"
+                style={{ color: finance.balance <= 0 ? "var(--badge-success-color)" : "var(--badge-error-color)" }}>
                 {finance.balance > 0 ? "-" : ""}{fmtEuro(Math.abs(finance.balance))}
               </p>
             </div>
@@ -1604,7 +1610,8 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           <div className="flex items-center justify-between gap-3">
             <CardTitle>🏨 Accommodation Pre-Booking</CardTitle>
             {team.accomConfirmed ? (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-300">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border"
+                style={{ background: "var(--badge-success-bg)", color: "var(--badge-success-color)", borderColor: "var(--badge-success-border)" }}>
                 ✅ Confirmed
               </span>
             ) : team.accomDeclined ? (
@@ -1612,7 +1619,8 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 Declined
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-300">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border"
+                style={{ background: "var(--badge-warning-bg)", color: "var(--badge-warning-color)", borderColor: "var(--badge-warning-border)" }}>
                 ⏳ Pending
               </span>
             )}
@@ -1886,17 +1894,22 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
 
         {/* Medical alert */}
         {hasMedical && (
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-            <p className="text-sm font-semibold text-amber-800 flex items-center gap-2 mb-2">
+          <div className="mb-4 rounded-lg border p-3"
+            style={{ borderColor: "var(--badge-warning-border)", background: "var(--badge-warning-bg)" }}>
+            <p className="text-sm font-semibold flex items-center gap-2 mb-2"
+              style={{ color: "var(--badge-warning-color)" }}>
               <AlertTriangle className="w-4 h-4" /> Medical / Dietary ({medicalPeople.length} persons)
             </p>
             <div className="space-y-1">
               {medicalPeople.map((p) => (
                 <div key={p.id} className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="font-medium text-amber-900">{p.firstName} {p.lastName}</span>
-                  {p.allergies && <span className="th-card border border-amber-200 rounded-full px-2 py-0.5 text-amber-700">⚠ {p.allergies}</span>}
-                  {p.dietaryRequirements && <span className="th-card border border-blue-200 rounded-full px-2 py-0.5 text-blue-700">🥗 {p.dietaryRequirements}</span>}
-                  {p.medicalNotes && <span className="th-card border border-red-200 rounded-full px-2 py-0.5 text-red-600">💊 {p.medicalNotes}</span>}
+                  <span className="font-medium th-text">{p.firstName} {p.lastName}</span>
+                  {p.allergies && <span className="th-card border rounded-full px-2 py-0.5"
+                    style={{ borderColor: "var(--badge-warning-border)", color: "var(--badge-warning-color)" }}>⚠ {p.allergies}</span>}
+                  {p.dietaryRequirements && <span className="th-card border rounded-full px-2 py-0.5"
+                    style={{ borderColor: "var(--badge-info-border)", color: "var(--badge-info-color)" }}>🥗 {p.dietaryRequirements}</span>}
+                  {p.medicalNotes && <span className="th-card border rounded-full px-2 py-0.5"
+                    style={{ borderColor: "var(--badge-error-border)", color: "var(--badge-error-color)" }}>💊 {p.medicalNotes}</span>}
                 </div>
               ))}
             </div>
@@ -1920,7 +1933,8 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                     </thead>
                     <tbody>
                       {players.map((p, i) => (
-                        <tr key={p.id} className={`border-b th-border last:border-0 ${(p.allergies || p.dietaryRequirements) ? "bg-amber-50/60" : ""}`}>
+                        <tr key={p.id} className="border-b th-border last:border-0"
+                          style={(p.allergies || p.dietaryRequirements) ? { background: "var(--badge-warning-bg)" } : {}}>
                           <td className="py-2.5 pr-3 th-text-2 tabular-nums">{p.shirtNumber ?? i + 1}</td>
                           <td className="py-2.5 pr-3 font-medium th-text whitespace-nowrap">
                             {p.firstName} {p.lastName}
@@ -1935,10 +1949,10 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                           </td>
                           <td className="py-2.5 pr-3 th-text-2 text-xs">{p.position ?? "—"}</td>
                           <td className="py-2.5 pr-3 text-xs">
-                            {p.needsHotel ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
+                            {p.needsHotel ? <span className="font-medium" style={{ color: "var(--cat-accent)" }}>✓</span> : <span className="th-text-2">—</span>}
                           </td>
                           <td className="py-2.5 text-xs">
-                            {p.needsTransfer ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
+                            {p.needsTransfer ? <span className="font-medium" style={{ color: "var(--cat-accent)" }}>✓</span> : <span className="th-text-2">—</span>}
                           </td>
                         </tr>
                       ))}
@@ -1972,10 +1986,10 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                           </td>
                           <td className="py-2.5 pr-3 th-text-2 text-xs">{p.role ?? p.position ?? "—"}</td>
                           <td className="py-2.5 pr-3 text-xs">
-                            {p.needsHotel ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
+                            {p.needsHotel ? <span className="font-medium" style={{ color: "var(--cat-accent)" }}>✓</span> : <span className="th-text-2">—</span>}
                           </td>
                           <td className="py-2.5 text-xs">
-                            {p.needsTransfer ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
+                            {p.needsTransfer ? <span className="font-medium" style={{ color: "var(--cat-accent)" }}>✓</span> : <span className="th-text-2">—</span>}
                           </td>
                         </tr>
                       ))}
@@ -2005,10 +2019,10 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                         <tr key={p.id} className="border-b th-border last:border-0">
                           <td className="py-2.5 pr-3 font-medium th-text">{p.firstName} {p.lastName}</td>
                           <td className="py-2.5 pr-3 text-xs">
-                            {p.needsHotel ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
+                            {p.needsHotel ? <span className="font-medium" style={{ color: "var(--cat-accent)" }}>✓</span> : <span className="th-text-2">—</span>}
                           </td>
                           <td className="py-2.5 text-xs">
-                            {p.needsTransfer ? <span className="text-emerald-600 font-medium">✓</span> : <span className="th-text-2">—</span>}
+                            {p.needsTransfer ? <span className="font-medium" style={{ color: "var(--cat-accent)" }}>✓</span> : <span className="th-text-2">—</span>}
                           </td>
                         </tr>
                       ))}

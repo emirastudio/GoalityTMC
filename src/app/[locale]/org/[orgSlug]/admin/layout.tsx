@@ -32,7 +32,7 @@ export default async function OrgAdminLayout({ children, params }: Props) {
         <GlobalHeader rightContent={<AdminHeaderActions logoutLabel={t("logOut")} isSuper={!!session.isSuper} currentArea="org" />} />
         <div className="flex flex-1 min-h-0">
           <OrgAdminSidebar orgSlug={orgSlug} orgName={organization.name} />
-          <main className="flex-1 p-6 md:p-8 min-w-0" style={{ background: "var(--cat-bg)" }}>
+          <main className="flex-1 p-6 md:p-8 min-w-0 admin-main-bg">
             {children}
           </main>
         </div>

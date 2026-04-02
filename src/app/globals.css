@@ -82,3 +82,38 @@ body {
 .th-tag      { background: var(--cat-tag-bg) !important; border-color: var(--cat-tag-border) !important; color: var(--cat-tag-text) !important; }
 /* Непрозрачный фон для попапов/дропдаунов — никакого просвечивания контента */
 .popup-bg    { background: var(--cat-dropdown-bg) !important; border-color: var(--cat-card-border) !important; }
+/* ── Глобальный фикс: поля ввода в тёмной теме всегда получают правильный цвет текста */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--cat-input-bg) !important;
+  color: var(--cat-text) !important;
+  border-color: var(--cat-input-border);
+}
+[data-theme="dark"] select option {
+  background: var(--cat-dropdown-bg);
+  color: var(--cat-text);
+}
+/* Премиум фон для главной области контента */
+.admin-main-bg {
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(43,254,186,0.035) 0%, transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(99,102,241,0.025) 0%, transparent 50%),
+    var(--cat-bg);
+}
+/* Премиум карточка с тонким свечением акцента сверху */
+.premium-card {
+  position: relative;
+  overflow: hidden;
+}
+.premium-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cat-accent), transparent);
+  opacity: 0.25;
+  pointer-events: none;
+}
