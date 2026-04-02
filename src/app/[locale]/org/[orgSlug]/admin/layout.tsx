@@ -43,10 +43,8 @@ export default async function OrgAdminLayout({ children, params }: Props) {
               <ThemeToggle />
               <form action="/api/auth/logout" method="POST">
                 <button type="submit"
-                  className="text-xs font-medium transition-colors cursor-pointer px-2 py-1 rounded-md"
-                  style={{ color: "var(--cat-text-muted)" }}
-                  onMouseEnter={(e) => { (e.target as HTMLElement).style.background = "var(--cat-tag-bg)"; }}
-                  onMouseLeave={(e) => { (e.target as HTMLElement).style.background = "transparent"; }}>
+                  className="text-xs font-medium transition-colors cursor-pointer px-2 py-1 rounded-md hover:opacity-70"
+                  style={{ color: "var(--cat-text-muted)" }}>
                   {t("logOut")}
                 </button>
               </form>
