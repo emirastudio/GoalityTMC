@@ -572,3 +572,36 @@
     transform: none !important;
   }
 }
+
+/* ══════════════════════════════════════════════════
+   Тёмная тема: переопределяем Tailwind brand-цвета
+   Это исправляет text-navy, border-navy, bg-navy,
+   text-success, text-gold и т.д. во всём приложении
+   ══════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+  /* navy → mint accent */
+  --color-navy:       #2BFEBA;
+  --color-navy-light: rgba(43, 254, 186, 0.65);
+  --color-navy-dark:  #00D98F;
+
+  /* gold/mint уже mint, оставляем */
+  --color-gold:       #2BFEBA;
+  --color-gold-light: rgba(43, 254, 186, 0.45);
+  --color-gold-dark:  #00D98F;
+  --color-mint:       #2BFEBA;
+  --color-mint-light: rgba(43, 254, 186, 0.45);
+  --color-mint-dark:  #00D98F;
+
+  /* success → mint (согласуется с акцентом) */
+  --color-success:       #2BFEBA;
+  --color-success-light: rgba(43, 254, 186, 0.15);
+
+  /* text primary/secondary → тёмная тема */
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: rgba(255, 255, 255, 0.55);
+
+  /* surface / border */
+  --color-surface: #0A0E14;
+  --color-border:  rgba(255, 255, 255, 0.08);
+}

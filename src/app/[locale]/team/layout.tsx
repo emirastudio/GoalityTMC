@@ -129,12 +129,13 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
           <div className="px-4 py-4 shrink-0 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
             {isTeamManager ? (
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
-                  <span className="text-[12px] font-bold text-emerald-600">{clubInitials}</span>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+                  style={{ background: "var(--badge-success-bg)", borderColor: "var(--badge-success-border)" }}>
+                  <span className="text-[12px] font-bold" style={{ color: "var(--badge-success-color)" }}>{clubInitials}</span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[13px] font-bold truncate text-gray-900">{club.name}</p>
-                  <p className="text-[11px] truncate text-gray-500">{activeTeam?.name}</p>
+                  <p className="text-[13px] font-bold truncate th-text">{club.name}</p>
+                  <p className="text-[11px] truncate th-text-2">{activeTeam?.name}</p>
                 </div>
               </div>
             ) : (

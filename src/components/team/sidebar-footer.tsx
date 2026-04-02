@@ -14,14 +14,14 @@ export function SidebarFooter() {
   const router = useRouter();
 
   return (
-    <div className="px-4 py-4 shrink-0 border-t border-gray-200">
+    <div className="px-4 py-4 shrink-0 border-t th-border">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-0.5 rounded-lg p-0.5 bg-gray-50">
+        <div className="flex items-center gap-0.5 rounded-lg p-0.5 th-bg border th-border">
           {locales.map(({ code, label }) => (
             <button
               key={code}
               onClick={() => router.replace(pathname, { locale: code })}
-              className="px-2 py-1 text-[10px] font-semibold rounded-md hover:bg-gray-200 transition-colors cursor-pointer text-gray-500"
+              className="px-2 py-1 text-[10px] font-semibold rounded-md hover:opacity-80 transition-colors cursor-pointer th-text-2"
             >
               {label}
             </button>
@@ -30,7 +30,7 @@ export function SidebarFooter() {
         <form action="/api/auth/logout" method="POST">
           <button
             type="submit"
-            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center cursor-pointer transition-colors text-gray-500"
+            className="w-8 h-8 rounded-lg hover:opacity-80 flex items-center justify-center cursor-pointer transition-colors th-text-2"
             title="Log out"
           >
             <LogOut className="w-4 h-4" />

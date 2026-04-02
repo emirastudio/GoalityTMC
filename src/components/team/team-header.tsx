@@ -47,23 +47,23 @@ export function TeamHeader({
   const { inboxCount } = useTeam();
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
+    <header className="sticky top-0 z-30 border-b" style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)", backdropFilter: "blur(8px)" }}>
       <div className="flex items-center justify-between px-4 md:px-6 h-14 gap-3">
         {/* Left: Logo + breadcrumb */}
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-600">
-              <Crown className="w-4 h-4 text-white" />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "var(--cat-accent)" }}>
+              <Crown className="w-4 h-4" style={{ color: "var(--cat-accent-text)" }} />
             </div>
-            <span className="text-[15px] font-bold tracking-tight hidden sm:block text-gray-900">
+            <span className="text-[15px] font-bold tracking-tight hidden sm:block th-text">
               Kings Cup
             </span>
           </div>
 
           {teamName && (
             <>
-              <span className="hidden md:block text-gray-300">/</span>
-              <span className="text-sm font-medium hidden md:block truncate text-gray-600">
+              <span className="hidden md:block th-text-2">/</span>
+              <span className="text-sm font-medium hidden md:block truncate th-text-2">
                 {teamName}
               </span>
             </>
@@ -85,7 +85,7 @@ export function TeamHeader({
         {/* Right: year + notifications + lang + logout */}
         <div className="flex items-center gap-1.5 shrink-0">
           {year && (
-            <span className="text-[11px] font-semibold rounded-md px-2 py-1 hidden sm:inline text-gray-500 border border-gray-200">
+            <span className="text-[11px] font-semibold rounded-md px-2 py-1 hidden sm:inline th-text-2 border th-border">
               {year}
             </span>
           )}
@@ -93,10 +93,10 @@ export function TeamHeader({
           {/* Inbox badge */}
           {inboxCount > 0 && (
             <div className="relative">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                <Bell className="w-4 h-4 text-gray-600" />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center th-card border th-border">
+                <Bell className="w-4 h-4 th-text-2" />
               </div>
-              <span className="absolute -top-1 -right-1 w-4 h-4 text-[9px] font-bold rounded-full flex items-center justify-center bg-emerald-600 text-white">
+              <span className="absolute -top-1 -right-1 w-4 h-4 text-[9px] font-bold rounded-full flex items-center justify-center text-white" style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
                 {inboxCount > 9 ? "9+" : inboxCount}
               </span>
             </div>
@@ -107,9 +107,9 @@ export function TeamHeader({
           <form action="/api/auth/logout" method="POST">
             <button
               type="submit"
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer bg-gray-100"
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-80 transition-colors cursor-pointer th-card border th-border"
             >
-              <LogOut className="w-4 h-4 text-gray-600" />
+              <LogOut className="w-4 h-4 th-text-2" />
             </button>
           </form>
         </div>
@@ -169,23 +169,24 @@ function MobileTeamPill({
       <button
         onClick={() => canSwitch && setOpen((v) => !v)}
         className={cn(
-          "md:hidden flex items-center gap-1.5 rounded-lg px-2 py-1.5 max-w-[180px] min-w-0 border border-gray-200 bg-gray-50",
-          canSwitch && "hover:bg-gray-100 active:bg-gray-200"
+          "md:hidden flex items-center gap-1.5 rounded-lg px-2 py-1.5 max-w-[180px] min-w-0 border th-border th-card",
+          canSwitch && "hover:opacity-80 active:opacity-70"
         )}
       >
         {clubBadgeUrl ? (
           <img src={clubBadgeUrl} alt={clubName} className="w-5 h-5 rounded-md object-contain shrink-0" />
         ) : (
-          <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 bg-emerald-50">
-            <span className="text-[8px] font-bold text-emerald-600">{initials}</span>
+          <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 border"
+            style={{ background: "var(--badge-success-bg)", borderColor: "var(--badge-success-border)" }}>
+            <span className="text-[8px] font-bold" style={{ color: "var(--badge-success-color)" }}>{initials}</span>
           </div>
         )}
-        <span className="text-[12px] font-semibold truncate flex-1 text-left text-gray-900">
+        <span className="text-[12px] font-semibold truncate flex-1 text-left th-text">
           {activeTeam?.name ?? clubName}
         </span>
         {canSwitch && (
           <ChevronDown
-            className={cn("w-3 h-3 shrink-0 transition-transform text-gray-400", open && "rotate-180")}
+            className={cn("w-3 h-3 shrink-0 transition-transform th-text-2", open && "rotate-180")}
           />
         )}
       </button>
@@ -193,28 +194,29 @@ function MobileTeamPill({
       {open && canSwitch && (
         <>
           <div className="fixed inset-0 z-40 md:hidden" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl shadow-lg overflow-hidden md:hidden mx-4 bg-white border border-gray-200">
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl shadow-lg overflow-hidden md:hidden mx-4 popup-bg border th-border">
             {teams.map((team) => (
               <button
                 key={team.id}
                 onClick={() => { setTeamId(team.id); setOpen(false); }}
                 className={cn(
-                  "w-full text-left flex items-center gap-2.5 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0",
-                  team.id === activeTeam?.id && "bg-gray-50"
+                  "w-full text-left flex items-center gap-2.5 px-4 py-3 hover:opacity-80 transition-colors border-b th-border last:border-0",
+                  team.id === activeTeam?.id && "th-bg"
                 )}
               >
                 <span className={cn("w-2 h-2 rounded-full shrink-0", statusDot[team.status])} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate text-gray-900">{team.name}</p>
-                  <p className="text-xs text-gray-500">{team.className} · {t(team.status)}</p>
+                  <p className="text-sm font-medium truncate th-text">{team.name}</p>
+                  <p className="text-xs th-text-2">{team.className} · {t(team.status)}</p>
                 </div>
-                {team.id === activeTeam?.id && <Check className="w-4 h-4 shrink-0 text-emerald-600" />}
+                {team.id === activeTeam?.id && <Check className="w-4 h-4 shrink-0 text-[var(--cat-accent)]" />}
               </button>
             ))}
             {!isTeamManager && (
               <button
                 onClick={() => { setOpen(false); setShowAddModal(true); }}
-                className="w-full text-left flex items-center gap-2 px-4 py-3 hover:bg-gray-50 transition-colors text-emerald-600 border-t border-gray-200"
+                className="w-full text-left flex items-center gap-2 px-4 py-3 hover:opacity-80 transition-colors border-t th-border"
+                style={{ color: "var(--cat-accent)" }}
               >
                 <Plus className="w-4 h-4" />
                 <span className="text-sm font-medium">{t("addTeam")}</span>
@@ -235,22 +237,22 @@ function MobileTeamPill({
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-[12px] font-medium text-gray-600 mb-1 block">{t("teamName")}</label>
+                <label className="text-[12px] font-medium th-text-2 mb-1 block">{t("teamName")}</label>
                 <input
                   type="text"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   placeholder={`${clubName} U12`}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none th-input"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-gray-600 mb-1 block">{t("class")}</label>
+                <label className="text-[12px] font-medium th-text-2 mb-1 block">{t("class")}</label>
                 <select
                   value={newTeamClassId}
                   onChange={(e) => setNewTeamClassId(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500 bg-white"
+                  className="w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none th-input appearance-none"
                 >
                   <option value="">{t("selectClass")}</option>
                   {classes.map((c) => (
@@ -261,7 +263,8 @@ function MobileTeamPill({
               <button
                 onClick={handleAddTeam}
                 disabled={!newTeamName.trim() || !newTeamClassId || adding}
-                className="w-full mt-2 rounded-lg py-2.5 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-emerald-600 text-white hover:bg-emerald-700"
+                className="w-full mt-2 rounded-lg py-2.5 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors hover:opacity-90"
+                style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
               >
                 {adding ? "..." : t("addTeam")}
               </button>
