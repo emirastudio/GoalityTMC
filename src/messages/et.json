@@ -893,6 +893,20 @@
     "step3": "Kontaktisik",
     "step4": "Ülevaatus ja esitamine",
     "heroQuote": "Lihtne ja kiire. Registreerisime 5 minutiga.",
-    "heroQuoteAuthor": "FC Tallinn esindaja"
+    "heroQuoteAuthor": "FC Tallinn esindaja",
+    "findTitle": "Leia oma klubi kõigepealt",
+    "findSubtitle": "Kontrolli, kas sinu klubi on juba meie süsteemis — see aitab vältida topeltkirjeid.",
+    "findWarning": "Sama klubi mitu meeskonda peavad registreeruma ühe ühise konto all, mitte looma eraldi klubisid.",
+    "findPlaceholder": "Alusta klubi nime sisestamist...",
+    "findHint": "Otsimiseks sisesta vähemalt 2 tähemärki",
+    "findNoResults": "Selle nimega klubisid ei leitud",
+    "foundCount": "Leitud {count} klubi — kas sinu oma on siin?",
+    "createNewBtn": "Minu klubi pole nimekirjas — loo uus",
+    "foundTitle": "Klubi on juba registreeritud",
+    "foundMessage": "See klubi on juba meie süsteemis. Kui oled sellest klubist, logi klubi portaali sisse või võta ühendust klubi administraatoriga, et lisada oma meeskond.",
+    "foundTeams": "Registreeritud meeskondi: {count}",
+    "signInToClub": "Logi klubi portaali",
+    "backToSearch": "← Tagasi otsingusse",
+    "continueCreate": "Jätka — loo siiski uus klubi"
   }
 }

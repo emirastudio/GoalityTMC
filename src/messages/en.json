@@ -937,6 +937,20 @@
     "step3": "Contact person",
     "step4": "Review & Submit",
     "heroQuote": "Simple and fast. We registered in 5 minutes.",
-    "heroQuoteAuthor": "FC Tallinn representative"
+    "heroQuoteAuthor": "FC Tallinn representative",
+    "findTitle": "Find your club first",
+    "findSubtitle": "Check if your club is already in our system before creating a new one — this prevents duplicates.",
+    "findWarning": "Multiple teams from the same club must register under one shared club account, not as separate clubs.",
+    "findPlaceholder": "Start typing your club name...",
+    "findHint": "Type at least 2 characters to search",
+    "findNoResults": "No clubs found with that name",
+    "foundCount": "{count} club(s) found — is yours here?",
+    "createNewBtn": "My club is not in the list — create new",
+    "foundTitle": "Club already registered",
+    "foundMessage": "This club is already in our system. If you're from this club, please sign in to the club portal or contact your administrator to add your team.",
+    "foundTeams": "{count} team(s) registered",
+    "signInToClub": "Sign in to club portal",
+    "backToSearch": "← Back to search",
+    "continueCreate": "Continue — create new club anyway"
   }
 }
