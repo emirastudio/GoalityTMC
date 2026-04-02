@@ -53,7 +53,18 @@
     "resetError": "Invalid or expired reset link. Please request a new one.",
     "passwordTooShort": "Password must be at least 6 characters",
     "passwordMismatch": "Passwords do not match",
-    "noAccount": "Don't have an account?"
+    "noAccount": "Don't have an account?",
+    "modeClub": "Club",
+    "modeOrganizer": "Organizer",
+    "backToHome": "Back to home",
+    "loginHeroTitle": "Welcome back\nto the game.",
+    "loginHeroSubtitle": "Manage your tournament, track registrations and payments — all from one place.",
+    "loginHeroBullet1": "Full tournament control in minutes",
+    "loginHeroBullet2": "Club & team management self-service",
+    "loginHeroBullet3": "Real-time payment tracking",
+    "loginHeroQuote": "Setup took 20 minutes. Clubs loved the self-service registration.",
+    "loginHeroQuoteAuthor": "Kings Cup organizer — Tallinn, Estonia",
+    "superAdminLink": "Super admin"
   },
   "nav": {
     "overview": "Overview",

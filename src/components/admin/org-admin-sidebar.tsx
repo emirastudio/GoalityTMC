@@ -55,13 +55,15 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
   const initials = orgName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <aside className="w-60 shrink-0 bg-[#161A1A] min-h-screen flex flex-col border-r border-white/4">
+    <aside className="w-60 shrink-0 min-h-screen flex flex-col border-r"
+      style={{ background: "#ffffff", borderColor: "rgba(0,0,0,0.06)" }}>
       {/* Logo / Org name */}
-      <div className="px-4 py-4 border-b border-white/6 flex items-center gap-3">
+      <div className="px-4 py-4 border-b flex items-center gap-3"
+        style={{ borderColor: "rgba(0,0,0,0.06)" }}>
         <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
         <div className="min-w-0">
-          <p className="text-[13px] font-bold text-white truncate leading-tight">{orgName}</p>
-          <p className="text-[10px] text-white/35 leading-tight">Admin panel</p>
+          <p className="text-[13px] font-bold truncate leading-tight" style={{ color: "#111827" }}>{orgName}</p>
+          <p className="text-[10px] leading-tight" style={{ color: "#9CA3AF" }}>Admin panel</p>
         </div>
       </div>
 
@@ -76,13 +78,13 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all",
                 isActive
-                  ? "bg-mint/12 text-mint"
-                  : "text-white/55 hover:bg-white/6 hover:text-white"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
               )}
             >
-              <Icon className="w-4 h-4 shrink-0" />
+              <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-emerald-600" : "text-gray-400")} />
               <span className="flex-1">{t(key)}</span>
-              {isActive && <ChevronRight className="w-3 h-3 opacity-50" />}
+              {isActive && <ChevronRight className="w-3 h-3 opacity-40" />}
             </Link>
           );
         })}
@@ -91,7 +93,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
         {tournamentNav.length > 0 && (
           <>
             <div className="pt-4 pb-1.5 px-3">
-              <span className="text-[10px] font-semibold text-white/25 uppercase tracking-widest">
+              <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#9CA3AF" }}>
                 {t("tournaments")}
               </span>
             </div>
@@ -109,13 +111,13 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
                   className={cn(
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all",
                     isActive
-                      ? "bg-mint/12 text-mint"
-                      : "text-white/55 hover:bg-white/6 hover:text-white"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
                   )}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-emerald-600" : "text-gray-400")} />
                   <span className="flex-1">{t(key)}</span>
-                  {isActive && <ChevronRight className="w-3 h-3 opacity-50" />}
+                  {isActive && <ChevronRight className="w-3 h-3 opacity-40" />}
                 </Link>
               );
             })}
@@ -124,11 +126,11 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
       </nav>
 
       {/* Logout */}
-      <div className="p-3 border-t border-white/6">
+      <div className="p-3 border-t" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
         <form action="/api/auth/logout" method="POST">
           <button
             type="submit"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-white/35 hover:text-white/70 hover:bg-white/6 transition-all w-full cursor-pointer"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all w-full cursor-pointer"
           >
             <LogOut className="w-4 h-4 shrink-0" />
             <span>Log out</span>

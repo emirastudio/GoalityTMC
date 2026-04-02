@@ -6,14 +6,14 @@ import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
-import { ArrowRight, Trophy, Users, CreditCard, CheckCircle, ArrowLeft } from "lucide-react";
+import { ArrowRight, Trophy, Users, CreditCard, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"club" | "admin">("club");
+  const [mode, setMode] = useState<"club" | "organizer">("club");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,7 +21,7 @@ export default function LoginPage() {
     setError("");
 
     const form = new FormData(e.currentTarget);
-    const endpoint = mode === "admin" ? "/api/auth/admin-login" : "/api/auth/club-login";
+    const endpoint = mode === "organizer" ? "/api/auth/admin-login" : "/api/auth/club-login";
 
     const res = await fetch(endpoint, {
       method: "POST",
@@ -34,7 +34,7 @@ export default function LoginPage() {
 
     if (res.ok) {
       const data = await res.json();
-      if (mode === "admin") {
+      if (mode === "organizer") {
         if (data.isSuper) {
           router.push("/admin/dashboard");
         } else if (data.organizationSlug) {
@@ -50,6 +50,8 @@ export default function LoginPage() {
     }
     setLoading(false);
   }
+
+  const heroLines = t("loginHeroTitle").split("\n");
 
   return (
     <ThemeProvider defaultTheme="dark">
@@ -90,22 +92,22 @@ export default function LoginPage() {
                   Tournament Management Core
                 </span>
               </div>
-              <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-[1.05] mb-5"
+              <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-[1.1] mb-5"
                 style={{ color: "var(--cat-text)" }}>
-                Welcome back<br />
-                <span style={{ color: "var(--cat-accent)" }}>to the game.</span>
+                {heroLines[0]}<br />
+                <span style={{ color: "var(--cat-accent)" }}>{heroLines[1]}</span>
               </h1>
               <p className="text-[15px] leading-relaxed" style={{ color: "var(--cat-text-secondary)" }}>
-                Manage your tournament, track registrations and payments — all from one place.
+                {t("loginHeroSubtitle")}
               </p>
             </div>
 
             {/* Value bullets */}
             <ul className="space-y-3.5">
               {[
-                { icon: Trophy, text: "Full tournament control in minutes" },
-                { icon: Users, text: "Club & team management self-service" },
-                { icon: CreditCard, text: "Real-time payment tracking" },
+                { icon: Trophy, text: t("loginHeroBullet1") },
+                { icon: Users, text: t("loginHeroBullet2") },
+                { icon: CreditCard, text: t("loginHeroBullet3") },
               ].map(({ icon: Icon, text }) => (
                 <li key={text} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -122,10 +124,10 @@ export default function LoginPage() {
           <div className="relative z-10 mx-10 mb-10 p-5 rounded-2xl border"
             style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
             <p className="text-[13px] italic mb-2" style={{ color: "var(--cat-text-secondary)" }}>
-              "Setup took 20 minutes. Clubs loved the self-service registration."
+              "{t("loginHeroQuote")}"
             </p>
             <p className="text-[11px] font-semibold" style={{ color: "var(--cat-text-muted)" }}>
-              Kings Cup organizer — Tallinn, Estonia
+              {t("loginHeroQuoteAuthor")}
             </p>
           </div>
         </div>
@@ -159,9 +161,9 @@ export default function LoginPage() {
                 <p className="text-[14px]" style={{ color: "var(--cat-text-secondary)" }}>{t("loginSubtitle")}</p>
               </div>
 
-              {/* Mode toggle */}
+              {/* Mode toggle: Club / Organizer */}
               <div className="flex mb-6 p-1 rounded-xl" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}>
-                {(["club", "admin"] as const).map((m) => (
+                {(["club", "organizer"] as const).map((m) => (
                   <button
                     key={m}
                     type="button"
@@ -172,7 +174,7 @@ export default function LoginPage() {
                       : { color: "var(--cat-text-secondary)" }
                     }
                   >
-                    {m === "club" ? "Club" : "Admin"}
+                    {m === "club" ? t("modeClub") : t("modeOrganizer")}
                   </button>
                 ))}
               </div>
@@ -187,7 +189,7 @@ export default function LoginPage() {
                   <input
                     name="email"
                     type="email"
-                    placeholder={mode === "admin" ? "admin@goality.ee" : "club@example.com"}
+                    placeholder={mode === "organizer" ? "organizer@example.com" : "club@example.com"}
                     required
                     className="w-full px-4 py-3 rounded-xl text-[14px] outline-none transition-all"
                     style={{
@@ -206,12 +208,10 @@ export default function LoginPage() {
                     <label className="block text-[12px] font-semibold" style={{ color: "var(--cat-text-secondary)" }}>
                       {t("password")}
                     </label>
-                    {mode === "club" && (
-                      <Link href="/forgot-password" className="text-[11px] font-medium hover:opacity-80 transition-opacity"
-                        style={{ color: "var(--cat-accent)" }}>
-                        {t("forgotPassword")}
-                      </Link>
-                    )}
+                    <Link href="/forgot-password" className="text-[11px] font-medium hover:opacity-80 transition-opacity"
+                      style={{ color: "var(--cat-accent)" }}>
+                      {t("forgotPassword")}
+                    </Link>
                   </div>
                   <input
                     name="password"
@@ -256,7 +256,7 @@ export default function LoginPage() {
               {/* Register link */}
               {mode === "club" && (
                 <p className="mt-6 text-center text-[13px]" style={{ color: "var(--cat-text-muted)" }}>
-                  {t("noAccount") || "Don't have an account?"}{" "}
+                  {t("noAccount")}{" "}
                   <Link href="/club/register" className="font-semibold hover:opacity-80 transition-opacity"
                     style={{ color: "var(--cat-accent)" }}>
                     {t("registerNewClub")}
@@ -268,7 +268,16 @@ export default function LoginPage() {
               <div className="mt-8 text-center">
                 <Link href="/" className="inline-flex items-center gap-1.5 text-[12px] hover:opacity-80 transition-opacity"
                   style={{ color: "var(--cat-text-muted)" }}>
-                  <ArrowLeft className="w-3 h-3" /> Back to home
+                  <ArrowLeft className="w-3 h-3" /> {t("backToHome")}
+                </Link>
+              </div>
+
+              {/* Hidden super admin link */}
+              <div className="mt-6 text-center">
+                <Link href="/admin/dashboard"
+                  className="text-[10px] opacity-20 hover:opacity-50 transition-opacity"
+                  style={{ color: "var(--cat-text-muted)" }}>
+                  {t("superAdminLink")}
                 </Link>
               </div>
             </div>

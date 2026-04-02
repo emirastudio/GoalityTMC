@@ -53,7 +53,18 @@
     "resetError": "Link on kehtetu või aegunud. Palun taotle uus.",
     "passwordTooShort": "Parool peab olema vähemalt 6 tähemärki",
     "passwordMismatch": "Paroolid ei kattu",
-    "noAccount": "Pole kontot?"
+    "noAccount": "Pole kontot?",
+    "modeClub": "Klubi",
+    "modeOrganizer": "Korraldaja",
+    "backToHome": "Tagasi avalehele",
+    "loginHeroTitle": "Tere tulemast\ntagasi mängu.",
+    "loginHeroSubtitle": "Halda oma turniiri, jälgi registreerimisi ja makseid — kõik ühes kohas.",
+    "loginHeroBullet1": "Täielik turniiri kontroll minutitega",
+    "loginHeroBullet2": "Klubi ja meeskonna iseteenindus",
+    "loginHeroBullet3": "Reaalajas maksete jälgimine",
+    "loginHeroQuote": "Seadistamine võttis 20 minutit. Klubid armastasid iseteeninduslikku registreerimist.",
+    "loginHeroQuoteAuthor": "Kings Cup korraldaja — Tallinn, Eesti",
+    "superAdminLink": "Superadmin"
   },
   "nav": {
     "overview": "Ülevaade",
