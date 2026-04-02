@@ -25,11 +25,9 @@ export default async function AdminLayout({ children, params }: Props) {
   }
 
   return (
-    <div className="flex min-h-screen" data-theme="light" style={{ background: "var(--cat-bg)" }}>
-      <div data-theme="dark" className="contents">
-        <AdminSidebar />
-      </div>
-      <main className="flex-1 p-8" data-theme="light" style={{ background: "var(--cat-bg)" }}>{children}</main>
+    <div className="flex min-h-screen" data-theme="dark" style={{ background: "var(--cat-bg)" }}>
+      <AdminSidebar />
+      <main className="flex-1 p-8" style={{ background: "var(--cat-bg)" }}>{children}</main>
     </div>
   );
 }

@@ -22,26 +22,26 @@ export default async function OrgAdminLayout({ children, params }: Props) {
   }
 
   return (
-    <div className="flex min-h-screen" style={{ background: "var(--cat-bg)" }} data-theme="light">
-      <div data-theme="dark" className="contents">
-        <OrgAdminSidebar orgSlug={orgSlug} orgName={organization.name} />
-      </div>
+    <div className="flex min-h-screen" data-theme="dark" style={{ background: "var(--cat-bg)" }}>
+      <OrgAdminSidebar orgSlug={orgSlug} orgName={organization.name} />
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 bg-[#1C2121] border-b border-white/6 px-6 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-mint" />
-            <span className="text-sm font-semibold text-white/70">{organization.name}</span>
+        <header className="h-14 border-b border-white/6 px-6 flex items-center justify-between shrink-0"
+          style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)" }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full" style={{ background: "var(--cat-accent)", boxShadow: "0 0 6px var(--cat-accent-glow)" }} />
+            <span className="text-sm font-semibold" style={{ color: "var(--cat-text-secondary)" }}>{organization.name}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-white/25 hidden sm:block">Admin Panel</span>
+            <span className="text-xs hidden sm:block" style={{ color: "var(--cat-text-muted)" }}>Admin Panel</span>
             <form action="/api/auth/logout" method="POST">
-              <button type="submit" className="text-xs font-medium text-white/30 hover:text-white/60 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-white/6">
+              <button type="submit" className="text-xs font-medium transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-white/6"
+                style={{ color: "var(--cat-text-muted)" }}>
                 Log out
               </button>
             </form>
           </div>
         </header>
-        <main className="flex-1 p-6 md:p-8" data-theme="light" style={{ background: "var(--cat-bg)" }}>{children}</main>
+        <main className="flex-1 p-6 md:p-8" style={{ background: "var(--cat-bg)" }}>{children}</main>
       </div>
     </div>
   );
