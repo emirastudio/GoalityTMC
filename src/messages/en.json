@@ -101,7 +101,8 @@
     "profile": "Profile",
     "club": "Club",
     "setup": "Setup",
-    "servicesPackages": "Services & Packages"
+    "servicesPackages": "Services & Packages",
+    "schedule": "Schedule"
   },
   "team": {
     "regNumber": "Registration number",
