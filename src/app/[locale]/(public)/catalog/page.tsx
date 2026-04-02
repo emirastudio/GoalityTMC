@@ -7,7 +7,8 @@ import {
 import { db } from "@/db";
 import { tournaments, organizations, teams, clubs, tournamentClasses } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
-import { ThemeToggle, ThemeProvider } from "@/components/ui/theme-provider";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import { GlobalHeader, PublicHeaderActions } from "@/components/ui/global-header";
 
 /* ── Helpers ── */
 
@@ -105,29 +106,13 @@ export default async function CatalogPage() {
       <div className="min-h-screen transition-colors duration-300" style={{ background: "var(--cat-bg)" }}>
 
         {/* ═══════ Header ═══════ */}
-        <header className="sticky top-0 z-50 backdrop-blur-xl border-b" style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)" }}>
-          <div className="max-w-[1400px] mx-auto px-6 h-14 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="Goality" className="w-9 h-9 rounded-xl object-contain" style={{ boxShadow: "0 4px 14px var(--cat-accent-glow)" }} />
-              <span className="font-bold text-[15px] tracking-tight" style={{ color: "var(--cat-text)" }}>Goality</span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-8">
-              <Link href="/catalog" className="text-[13px] font-medium relative" style={{ color: "var(--cat-text)" }}>
-                Tournaments
-                <span className="absolute bottom-[-18px] left-0 right-0 h-[2px] rounded-full" style={{ background: "var(--cat-accent)" }} />
-              </Link>
-              <Link href="#" className="text-[13px] font-medium hover:opacity-80 transition-opacity" style={{ color: "var(--cat-text-secondary)" }}>About</Link>
-              <Link href="#" className="text-[13px] font-medium hover:opacity-80 transition-opacity" style={{ color: "var(--cat-text-secondary)" }}>For organizers</Link>
-            </nav>
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <Link href="/login" className="text-[13px] font-medium hover:opacity-80 transition-opacity" style={{ color: "var(--cat-text-muted)" }}>Sign in</Link>
-              <Link href="/onboarding" className="cat-cta-glow text-[13px] font-semibold px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity" style={{ background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))", color: "var(--cat-accent-text)" }}>
-                Get started
-              </Link>
-            </div>
-          </div>
-        </header>
+        <GlobalHeader
+          navLinks={[
+            { label: "Tournaments", href: "/catalog" },
+            { label: "For organizers", href: "/onboarding" },
+          ]}
+          rightContent={<PublicHeaderActions />}
+        />
 
         {/* ═══════ Hero ═══════ */}
         <section className="relative overflow-hidden cat-hero-decor">

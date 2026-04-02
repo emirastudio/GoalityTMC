@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { authorizeOrg } from "@/lib/tenant";
 import { redirect } from "next/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { GlobalHeader, AdminHeaderActions } from "@/components/ui/global-header";
 import { getTranslations } from "next-intl/server";
 
 type Props = {
@@ -27,22 +28,11 @@ export default async function OrgAdminLayout({ children, params }: Props) {
 
   return (
     <ThemeProvider defaultTheme="light">
-      <div className="flex min-h-screen bg-gray-50">
-        <OrgAdminSidebar orgSlug={orgSlug} orgName={organization.name} />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 border-b border-gray-200 bg-white px-6 flex items-center justify-between shrink-0">
-            <span className="text-sm font-medium text-gray-700">{organization.name}</span>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400 hidden sm:block">{t("adminPanel")}</span>
-              <form action="/api/auth/logout" method="POST">
-                <button type="submit"
-                  className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer px-2 py-1">
-                  {t("logOut")}
-                </button>
-              </form>
-            </div>
-          </header>
-          <main className="flex-1 p-6 md:p-8 bg-gray-50">
+      <div className="flex flex-col min-h-screen" style={{ background: "var(--cat-bg)" }}>
+        <GlobalHeader rightContent={<AdminHeaderActions logoutLabel={t("logOut")} />} />
+        <div className="flex flex-1 min-h-0">
+          <OrgAdminSidebar orgSlug={orgSlug} orgName={organization.name} />
+          <main className="flex-1 p-6 md:p-8 min-w-0" style={{ background: "var(--cat-bg)" }}>
             {children}
           </main>
         </div>

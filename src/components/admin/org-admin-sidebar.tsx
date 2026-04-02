@@ -13,7 +13,6 @@ import {
   Package,
   TableProperties,
   ClipboardList,
-  LogOut,
   Wrench,
 } from "lucide-react";
 
@@ -52,14 +51,11 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
     : [];
 
   return (
-    <aside className="w-56 shrink-0 min-h-screen flex flex-col border-r border-gray-200 bg-white">
-      {/* Logo / Org name */}
-      <div className="px-4 py-4 border-b border-gray-200 flex items-center gap-3">
-        <img src="/logo.png" alt="Goality" className="w-7 h-7 rounded-lg object-contain shrink-0" />
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-gray-900 truncate">{orgName}</p>
-          <p className="text-[10px] text-gray-400">{tAdmin("adminPanel")}</p>
-        </div>
+    <aside className="w-52 shrink-0 flex flex-col border-r" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+      {/* Org name context */}
+      <div className="px-4 py-3 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
+        <p className="text-xs font-semibold truncate" style={{ color: "var(--cat-text)" }}>{orgName}</p>
+        <p className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{tAdmin("adminPanel")}</p>
       </div>
 
       {/* Org navigation */}
@@ -70,13 +66,13 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
             <Link
               key={`org-${key}`}
               href={href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
-                isActive
-                  ? "bg-emerald-50 text-emerald-600 font-medium"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-opacity"
+              style={isActive
+                ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", fontWeight: 500 }
+                : { color: "var(--cat-text-secondary)" }
+              }
             >
-              <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-600" : "text-gray-400"}`} />
+              <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "var(--cat-accent)" : "var(--cat-text-muted)" }} />
               <span>{t(key)}</span>
             </Link>
           );
@@ -86,7 +82,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
         {tournamentNav.length > 0 && (
           <>
             <div className="pt-4 pb-1.5 px-3">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
                 {t("tournaments")}
               </span>
             </div>
@@ -101,13 +97,13 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
                 <Link
                   key={`t-${key}`}
                   href={href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
-                    isActive
-                      ? "bg-emerald-50 text-emerald-600 font-medium"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-opacity"
+                  style={isActive
+                    ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", fontWeight: 500 }
+                    : { color: "var(--cat-text-secondary)" }
+                  }
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-600" : "text-gray-400"}`} />
+                  <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "var(--cat-accent)" : "var(--cat-text-muted)" }} />
                   <span>{t(key)}</span>
                 </Link>
               );
@@ -116,18 +112,6 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
         )}
       </nav>
 
-      {/* Logout */}
-      <div className="p-3 border-t border-gray-200">
-        <form action="/api/auth/logout" method="POST">
-          <button
-            type="submit"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 w-full cursor-pointer"
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            <span>{tAdmin("logOut")}</span>
-          </button>
-        </form>
-      </div>
     </aside>
   );
 }

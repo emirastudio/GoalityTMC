@@ -4,13 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ThemeProvider, ThemeToggle } from "@/components/ui/theme-provider";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import {
   ArrowRight, Trophy, Users, Globe, CheckCircle, Shield, Zap, BarChart3,
   Calendar, Hotel, Bus, CreditCard, Mail, ClipboardList, ChevronRight,
   Star, Sparkles, Play, Building2, UserCheck, Package, MessageSquare,
   TrendingUp, Lock, Layers, Database,
 } from "lucide-react";
+import { GlobalHeader, PublicHeaderActions } from "@/components/ui/global-header";
 
 /* ── Animated counter ── */
 function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
@@ -84,39 +84,15 @@ export default function HomePage() {
       <div className="min-h-screen overflow-x-hidden" style={{ background: "var(--cat-bg)" }}>
 
         {/* ══════════ NAVBAR ══════════ */}
-        <header className="sticky top-0 z-50 backdrop-blur-xl border-b" style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)" }}>
-          <div className="max-w-[1200px] mx-auto px-6 h-14 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain" style={{ boxShadow: "0 4px 14px var(--cat-accent-glow)" }} />
-              <span className="font-bold text-[15px] tracking-tight" style={{ color: "var(--cat-text)" }}>Goality</span>
-              <span className="hidden sm:inline text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>TMC</span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-1">
-              {[
-                { label: t("navProduct"), href: "#product" },
-                { label: t("navFeatures"), href: "#features" },
-                { label: t("navForWho"), href: "#for-who" },
-                { label: t("navCatalog"), href: "/catalog" },
-              ].map(({ label, href }) => (
-                <a key={label} href={href} className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors" style={{ color: "var(--cat-text-secondary)" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--cat-text)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "var(--cat-text-secondary)")}
-                >
-                  {label}
-                </a>
-              ))}
-            </nav>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <LanguageSwitcher variant="light" />
-              <Link href="/login" className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors" style={{ color: "var(--cat-text-secondary)" }}>{t("navSignIn")}</Link>
-              <Link href="/onboarding" className="cat-cta-glow inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90"
-                style={{ background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))", color: "var(--cat-accent-text)" }}>
-                {t("navGetStarted")} <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        </header>
+        <GlobalHeader
+          navLinks={[
+            { label: t("navProduct"), href: "#product", anchor: true },
+            { label: t("navFeatures"), href: "#features", anchor: true },
+            { label: t("navForWho"), href: "#for-who", anchor: true },
+            { label: t("navCatalog"), href: "/catalog" },
+          ]}
+          rightContent={<PublicHeaderActions signInLabel={t("navSignIn")} getStartedLabel={t("navGetStarted")} />}
+        />
 
         {/* ══════════ HERO ══════════ */}
         <section className="cat-banner cat-hero-decor relative overflow-hidden" style={{ background: "linear-gradient(135deg, var(--cat-banner-from), var(--cat-banner-via), var(--cat-banner-to))" }}>

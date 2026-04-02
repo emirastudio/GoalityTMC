@@ -1,0 +1,132 @@
+"use client";
+
+import { Link } from "@/i18n/navigation";
+import { ThemeToggle } from "@/components/ui/theme-provider";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { ArrowRight } from "lucide-react";
+
+export type NavLink = { label: string; href: string; anchor?: boolean };
+
+type Props = {
+  navLinks?: NavLink[];
+  rightContent?: React.ReactNode;
+};
+
+export function GlobalHeader({ navLinks = [], rightContent }: Props) {
+  return (
+    <header
+      className="sticky top-0 z-50 backdrop-blur-xl border-b shrink-0"
+      style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)" }}
+    >
+      <div className="h-14 px-6 grid grid-cols-[auto_1fr_auto] items-center gap-4">
+
+        {/* ── Left: Logo ── */}
+        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+          <img
+            src="/logo.png"
+            alt="Goality"
+            className="w-8 h-8 rounded-xl object-contain"
+            style={{ boxShadow: "0 4px 14px var(--cat-accent-glow)" }}
+          />
+          <span className="font-bold text-[15px] tracking-tight" style={{ color: "var(--cat-text)" }}>
+            Goality
+          </span>
+          <span
+            className="hidden sm:inline text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest"
+            style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
+          >
+            TMC
+          </span>
+        </Link>
+
+        {/* ── Center: Nav links ── */}
+        <nav className="hidden md:flex items-center justify-center gap-1">
+          {navLinks.map(({ label, href, anchor }) =>
+            anchor ? (
+              <a
+                key={href}
+                href={href}
+                className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors"
+                style={{ color: "var(--cat-text-secondary)" }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = "var(--cat-text)")}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = "var(--cat-text-secondary)")}
+              >
+                {label}
+              </a>
+            ) : (
+              <Link
+                key={href}
+                href={href}
+                className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors"
+                style={{ color: "var(--cat-text-secondary)" }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = "var(--cat-text)")}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = "var(--cat-text-secondary)")}
+              >
+                {label}
+              </Link>
+            )
+          )}
+        </nav>
+
+        {/* ── Right: Controls + custom content ── */}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <LanguageSwitcher />
+          {rightContent}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/**
+ * Reusable right-side buttons for public pages (Sign in + Get started).
+ * Pass as `rightContent` to GlobalHeader.
+ */
+export function PublicHeaderActions({
+  signInLabel = "Sign in",
+  getStartedLabel = "Get started",
+}: {
+  signInLabel?: string;
+  getStartedLabel?: string;
+}) {
+  return (
+    <>
+      <Link
+        href="/login"
+        className="hidden sm:block px-3 py-1.5 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70"
+        style={{ color: "var(--cat-text-muted)" }}
+      >
+        {signInLabel}
+      </Link>
+      <Link
+        href="/onboarding"
+        className="hidden sm:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90"
+        style={{
+          background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))",
+          color: "var(--cat-accent-text)",
+        }}
+      >
+        {getStartedLabel} <ArrowRight className="w-3.5 h-3.5" />
+      </Link>
+    </>
+  );
+}
+
+/**
+ * Reusable logout button for admin pages.
+ * Pass as `rightContent` to GlobalHeader.
+ */
+export function AdminHeaderActions({ logoutLabel = "Log out" }: { logoutLabel?: string }) {
+  return (
+    <form action="/api/auth/logout" method="POST">
+      <button
+        type="submit"
+        className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70 cursor-pointer"
+        style={{ color: "var(--cat-text-muted)" }}
+      >
+        {logoutLabel}
+      </button>
+    </form>
+  );
+}

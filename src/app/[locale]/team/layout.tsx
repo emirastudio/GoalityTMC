@@ -5,7 +5,8 @@ import { TeamSwitcher } from "@/components/club/team-switcher";
 import { SidebarFooter } from "@/components/team/sidebar-footer";
 import { TeamProvider } from "@/lib/team-context";
 import { ImpersonationBanner } from "@/components/team/impersonation-banner";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import { GlobalHeader, AdminHeaderActions } from "@/components/ui/global-header";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { clubs, teams, people, tournamentClasses, inboxMessages, teamMessageReads, messageRecipients } from "@/db/schema";
@@ -106,6 +107,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     .toUpperCase();
 
   return (
+    <ThemeProvider defaultTheme="light">
     <TeamProvider
       initialTeamId={activeTeam?.id ?? null}
       initialClubId={club.id}
@@ -115,19 +117,16 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     >
       {isImpersonating && <ImpersonationBanner clubName={club.name} />}
 
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-screen" style={{ background: "var(--cat-bg)" }}>
+        <GlobalHeader rightContent={<AdminHeaderActions />} />
+
+        <div className="flex flex-1 min-h-0">
 
         {/* ── Desktop Sidebar ───────────────────────────────── */}
-        <aside className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 h-screen overflow-hidden bg-white border-r border-gray-200">
-
-          {/* Brand */}
-          <div className="h-14 px-5 flex items-center gap-3 shrink-0 border-b border-gray-200">
-            <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
-            <span className="text-[15px] font-bold tracking-tight text-gray-900">Kings Cup</span>
-          </div>
+        <aside className="hidden md:flex flex-col w-60 shrink-0 overflow-hidden border-r" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
 
           {/* Club / team switcher */}
-          <div className="px-4 py-4 shrink-0 border-b border-gray-200">
+          <div className="px-4 py-4 shrink-0 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
             {isTeamManager ? (
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
@@ -161,11 +160,6 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
         {/* ── Right side ───────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-w-0">
 
-          {/* Desktop top header bar */}
-          <div className="hidden md:flex items-center justify-end gap-3 h-14 px-6 shrink-0 bg-white border-b border-gray-200">
-            <LanguageSwitcher />
-          </div>
-
           {/* Mobile header only */}
           <div className="md:hidden">
             <TeamHeader
@@ -192,10 +186,12 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
             {children}
           </main>
         </div>
+        </div> {/* end flex row */}
       </div>
 
       {/* Mobile bottom nav */}
       <MobileNav />
     </TeamProvider>
+    </ThemeProvider>
   );
 }

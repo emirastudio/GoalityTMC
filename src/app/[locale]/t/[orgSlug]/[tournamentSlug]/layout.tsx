@@ -4,7 +4,7 @@ import { eq, and, count } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { TournamentPublicProvider } from "@/lib/tournament-public-context";
-import { TournamentTopbar } from "@/components/tournament/tournament-topbar";
+import { GlobalHeader, PublicHeaderActions } from "@/components/ui/global-header";
 import { TournamentSidebar } from "@/components/tournament/tournament-sidebar";
 
 type Props = {
@@ -53,8 +53,11 @@ export default async function TournamentLayout({ children, params }: Props) {
   return (
     <ThemeProvider defaultTheme="light">
       <TournamentPublicProvider data={data}>
-        <div className="min-h-screen bg-gray-50">
-          <TournamentTopbar />
+        <div className="min-h-screen" style={{ background: "var(--cat-bg)" }}>
+          <GlobalHeader
+            navLinks={[{ label: "Catalog", href: "/catalog" }]}
+            rightContent={<PublicHeaderActions />}
+          />
 
           <div className="max-w-6xl mx-auto px-4 py-6">
             <div className="flex gap-6">
@@ -78,7 +81,7 @@ export default async function TournamentLayout({ children, params }: Props) {
             </div>
           </div>
 
-          <footer className="border-t border-gray-200 bg-white mt-10">
+          <footer className="border-t mt-10" style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-card-bg)" }}>
             <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-xs text-gray-500">
               <span>&copy; {new Date().getFullYear()} {org.name}</span>
               <a href="/catalog" className="flex items-center gap-1.5 hover:text-gray-700">
