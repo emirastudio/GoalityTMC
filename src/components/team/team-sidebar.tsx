@@ -16,7 +16,6 @@ import {
   Building2,
   FileText,
   UserCircle,
-  Package,
 } from "lucide-react";
 import { useTeam } from "@/lib/team-context";
 
@@ -52,7 +51,6 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
     {
       labelKey: "logistics",
       items: [
-        { key: "services", icon: Package, href: "/team/services" },
         { key: "booking", icon: ShoppingCart, href: "/team/booking" },
         { key: "economy", icon: Wallet, href: "/team/economy" },
         { key: "travel", icon: Plane, href: "/team/travel" },
@@ -84,12 +82,11 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
                   <Link
                     key={key}
                     href={href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors",
-                      isActive
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    )}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors hover:opacity-80"
+                    style={isActive
+                      ? { background: "rgba(0,0,0,0.05)", color: "var(--cat-text)", fontWeight: 600, borderLeft: "2px solid var(--cat-accent)", paddingLeft: "10px" }
+                      : { color: "var(--cat-text-secondary)", borderLeft: "2px solid transparent", paddingLeft: "10px" }
+                    }
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     <span className="flex-1">{t(key)}</span>

@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { ThemeToggle } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { ArrowRight } from "lucide-react";
+import { DevNavWidget } from "@/components/ui/dev-nav-widget";
 
 export type NavLink = { label: string; href: string; anchor?: boolean };
 
@@ -121,16 +122,27 @@ export function PublicHeaderActions({
  * Reusable logout button for admin pages.
  * Pass as `rightContent` to GlobalHeader.
  */
-export function AdminHeaderActions({ logoutLabel = "Log out" }: { logoutLabel?: string }) {
+export function AdminHeaderActions({
+  logoutLabel = "Log out",
+  isSuper = false,
+  currentArea = "super" as "super" | "org" | "team",
+}: {
+  logoutLabel?: string;
+  isSuper?: boolean;
+  currentArea?: "super" | "org" | "team";
+}) {
   return (
-    <form action="/api/auth/logout" method="POST">
-      <button
-        type="submit"
-        className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70 cursor-pointer"
-        style={{ color: "var(--cat-text-muted)" }}
-      >
-        {logoutLabel}
-      </button>
-    </form>
+    <div className="flex items-center gap-3">
+      {isSuper && <DevNavWidget currentArea={currentArea} />}
+      <form action="/api/auth/logout" method="POST">
+        <button
+          type="submit"
+          className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70 cursor-pointer"
+          style={{ color: "var(--cat-text-muted)" }}
+        >
+          {logoutLabel}
+        </button>
+      </form>
+    </div>
   );
 }

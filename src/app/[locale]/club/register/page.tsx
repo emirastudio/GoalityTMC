@@ -135,7 +135,7 @@ function CountrySelect({
       </button>
 
       {open && (
-        <div className="absolute z-50 w-full mt-1 th-card th-border border rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 popup-bg th-border border rounded-xl shadow-lg overflow-hidden">
           <div className="flex items-center gap-2 px-3 py-2 border-b th-border">
             <Search className="w-3.5 h-3.5 th-text-2 shrink-0" />
             <input

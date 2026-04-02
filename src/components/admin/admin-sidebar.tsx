@@ -23,7 +23,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 shrink-0 min-h-screen flex flex-col" style={{ background: "var(--cat-accent)" }}>
+    <aside className="w-60 shrink-0 min-h-screen flex flex-col border-r" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
       <div className="p-4 flex items-center gap-3 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
         <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
         <span className="text-[15px] font-bold tracking-tight" style={{ color: "var(--cat-text)" }}>Goality</span>
@@ -37,15 +37,10 @@ export function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                isActive
-                  ? ""
-                  : "hover:opacity-90"
-              )}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:opacity-90"
               style={isActive
-                ? { background: "var(--cat-tag-bg)", color: "var(--cat-accent)" }
-                : { color: "var(--cat-text-secondary)" }
+                ? { background: "rgba(0,0,0,0.05)", color: "var(--cat-text)", fontWeight: 600, borderLeft: "2px solid var(--cat-accent)", paddingLeft: "10px" }
+                : { color: "var(--cat-text-secondary)", borderLeft: "2px solid transparent", paddingLeft: "10px" }
               }
             >
               <Icon className="w-4.5 h-4.5" />

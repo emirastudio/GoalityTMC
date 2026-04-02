@@ -16,6 +16,7 @@
   --cat-accent-text: #0A0E14;
   --cat-accent-glow: rgba(43, 254, 186, 0.35);
   --cat-card-bg: rgba(255, 255, 255, 0.04);
+  --cat-dropdown-bg: #141920;
   --cat-card-border: rgba(255, 255, 255, 0.08);
   --cat-card-hover-bg: rgba(255, 255, 255, 0.06);
   --cat-card-hover-border: rgba(255, 255, 255, 0.18);
@@ -53,6 +54,31 @@
   --cat-feature-pattern: radial-gradient(circle at 20% 80%, rgba(43,254,186,0.03) 0%, transparent 50%);
   --cat-gradient-line: linear-gradient(90deg, transparent, var(--cat-accent), transparent);
   --cat-stat-underline: linear-gradient(90deg, transparent, var(--cat-accent), transparent);
+  /* Переменные для Badge — тёмная тема */
+  --badge-default-bg: rgba(120,120,140,0.1);
+  --badge-default-border: rgba(120,120,140,0.22);
+  --badge-default-color: rgba(200,200,215,0.9);
+  --badge-default-shadow: none;
+  --badge-success-bg: linear-gradient(135deg, rgba(43,254,186,0.12), rgba(0,217,143,0.08));
+  --badge-success-border: rgba(43,254,186,0.35);
+  --badge-success-color: #2BFEBA;
+  --badge-success-shadow: 0 0 10px rgba(43,254,186,0.18), inset 0 0 12px rgba(43,254,186,0.05);
+  --badge-warning-bg: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(245,158,11,0.08));
+  --badge-warning-border: rgba(251,191,36,0.38);
+  --badge-warning-color: #F59E0B;
+  --badge-warning-shadow: 0 0 10px rgba(251,191,36,0.18), inset 0 0 12px rgba(251,191,36,0.05);
+  --badge-error-bg: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.08));
+  --badge-error-border: rgba(239,68,68,0.32);
+  --badge-error-color: #F87171;
+  --badge-error-shadow: 0 0 10px rgba(239,68,68,0.15), inset 0 0 12px rgba(239,68,68,0.05);
+  --badge-gold-bg: linear-gradient(135deg, rgba(251,191,36,0.14), rgba(217,119,6,0.08));
+  --badge-gold-border: rgba(251,191,36,0.42);
+  --badge-gold-color: #FBBF24;
+  --badge-gold-shadow: 0 0 12px rgba(251,191,36,0.22), inset 0 0 14px rgba(251,191,36,0.06);
+  --badge-info-bg: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,70,229,0.08));
+  --badge-info-border: rgba(99,102,241,0.32);
+  --badge-info-color: #818CF8;
+  --badge-info-shadow: 0 0 10px rgba(99,102,241,0.15), inset 0 0 12px rgba(99,102,241,0.05);
 }
 
 /* ── Light Theme ── */
@@ -69,6 +95,7 @@
   --cat-accent-text: #ffffff;
   --cat-accent-glow: rgba(5, 150, 105, 0.2);
   --cat-card-bg: #ffffff;
+  --cat-dropdown-bg: #ffffff;
   --cat-card-border: rgba(0, 0, 0, 0.06);
   --cat-card-hover-bg: #ffffff;
   --cat-card-hover-border: rgba(5, 150, 105, 0.25);
@@ -106,6 +133,31 @@
   --cat-feature-pattern: radial-gradient(circle at 80% 20%, rgba(5,150,105,0.04) 0%, transparent 50%);
   --cat-gradient-line: linear-gradient(90deg, transparent, var(--cat-accent), transparent);
   --cat-stat-underline: linear-gradient(90deg, transparent, #A7F3D0, transparent);
+  /* Переменные для Badge — светлая тема */
+  --badge-default-bg: rgba(100,100,115,0.08);
+  --badge-default-border: rgba(100,100,115,0.18);
+  --badge-default-color: #6B7280;
+  --badge-default-shadow: none;
+  --badge-success-bg: linear-gradient(135deg, rgba(5,150,105,0.1), rgba(16,185,129,0.06));
+  --badge-success-border: rgba(5,150,105,0.3);
+  --badge-success-color: #059669;
+  --badge-success-shadow: 0 0 8px rgba(5,150,105,0.12);
+  --badge-warning-bg: linear-gradient(135deg, rgba(217,119,6,0.1), rgba(245,158,11,0.06));
+  --badge-warning-border: rgba(217,119,6,0.28);
+  --badge-warning-color: #D97706;
+  --badge-warning-shadow: 0 0 8px rgba(217,119,6,0.1);
+  --badge-error-bg: linear-gradient(135deg, rgba(220,38,38,0.08), rgba(239,68,68,0.05));
+  --badge-error-border: rgba(220,38,38,0.25);
+  --badge-error-color: #DC2626;
+  --badge-error-shadow: 0 0 8px rgba(220,38,38,0.1);
+  --badge-gold-bg: linear-gradient(135deg, rgba(180,100,0,0.1), rgba(217,119,6,0.06));
+  --badge-gold-border: rgba(180,100,0,0.3);
+  --badge-gold-color: #B45309;
+  --badge-gold-shadow: 0 0 10px rgba(180,100,0,0.12);
+  --badge-info-bg: linear-gradient(135deg, rgba(79,70,229,0.08), rgba(99,102,241,0.05));
+  --badge-info-border: rgba(79,70,229,0.25);
+  --badge-info-color: #4F46E5;
+  --badge-info-shadow: 0 0 8px rgba(79,70,229,0.1);
 }
 
 /* ══════════════════════════════════════════════════

@@ -80,3 +80,5 @@ body {
 .th-divider  { background: var(--cat-divider) !important; }
 .th-input    { background: var(--cat-input-bg) !important; border-color: var(--cat-input-border) !important; color: var(--cat-text) !important; }
 .th-tag      { background: var(--cat-tag-bg) !important; border-color: var(--cat-tag-border) !important; color: var(--cat-tag-text) !important; }
+/* Непрозрачный фон для попапов/дропдаунов — никакого просвечивания контента */
+.popup-bg    { background: var(--cat-dropdown-bg) !important; border-color: var(--cat-card-border) !important; }

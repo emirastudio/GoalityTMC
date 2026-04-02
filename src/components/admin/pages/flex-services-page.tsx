@@ -176,7 +176,7 @@ function IconPicker({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-20 th-card border th-border rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1 w-56">
+        <div className="absolute left-0 top-full mt-1 z-20 popup-bg border th-border rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1 w-56">
           <button
             type="button"
             onClick={() => { onChange(null); setOpen(false); }}

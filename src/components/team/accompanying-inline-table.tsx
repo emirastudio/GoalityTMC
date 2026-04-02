@@ -25,7 +25,13 @@ interface AccompanyingInlineTableProps {
   onRefresh: () => void;
 }
 
-const cellInput = "w-full bg-transparent text-sm px-2 py-2 outline-none focus:bg-[var(--cat-accent)]/5 focus:ring-1 focus:ring-[var(--cat-accent)]/15 rounded transition-colors";
+/* Базовые стили ячеек — цвет текста через inline style */
+const cellCls = "w-full bg-transparent text-sm px-2 py-2 outline-none rounded transition-colors focus:ring-1 focus:ring-[var(--cat-accent)]/20";
+const cellStyle = { color: "var(--cat-text)" } as React.CSSProperties;
+
+const theadStyle: React.CSSProperties = { background: "var(--cat-card-bg)" };
+const medRowStyle: React.CSSProperties = { background: "var(--cat-badge-open-bg)" };
+const newRowStyle: React.CSSProperties = { background: "var(--cat-badge-open-bg)" };
 
 export function AccompanyingInlineTable({ persons, teamId, onRefresh }: AccompanyingInlineTableProps) {
   const tp = useTranslations("people");
@@ -103,7 +109,7 @@ export function AccompanyingInlineTable({ persons, teamId, onRefresh }: Accompan
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b th-border bg-surface/50">
+            <tr className="border-b th-border" style={theadStyle}>
               <th className="text-center px-2 py-2.5 text-[11px] font-semibold uppercase tracking-wider th-text-2 w-10">№</th>
               <th className="text-left px-2 py-2.5 text-[11px] font-semibold uppercase tracking-wider th-text-2">{tp("firstName")}</th>
               <th className="text-left px-2 py-2.5 text-[11px] font-semibold uppercase tracking-wider th-text-2">{tp("lastName")}</th>
@@ -116,66 +122,64 @@ export function AccompanyingInlineTable({ persons, teamId, onRefresh }: Accompan
           <tbody>
             {persons.map((person, idx) => (
               <>
-                <tr key={person.id} className={cn(
-                  "border-b th-border transition-colors group",
-                  saving.has(person.id) && "bg-[var(--cat-badge-open-bg)]",
-                  expandedIds.has(person.id) && "bg-[var(--cat-accent)]/5"
-                )}>
-                  <td className="text-center px-2"><span className="text-xs text-text-secondary/50 font-medium">{idx + 1}</span></td>
+                <tr key={person.id}
+                  className={cn("border-b th-border transition-colors group", saving.has(person.id) && "bg-[var(--cat-badge-open-bg)]")}
+                  style={expandedIds.has(person.id) ? medRowStyle : undefined}>
+                  <td className="text-center px-2">
+                    <span className="text-xs font-medium" style={{ color: "var(--cat-text-muted)" }}>{idx + 1}</span>
+                  </td>
                   <td className="px-1">
-                    <input defaultValue={person.firstName} className={cellInput}
+                    <input defaultValue={person.firstName} className={cellCls} style={cellStyle}
                       onBlur={(e) => saveField(person.id, "firstName", e.target.value)} />
                   </td>
                   <td className="px-1">
-                    <input defaultValue={person.lastName} className={cellInput}
+                    <input defaultValue={person.lastName} className={cellCls} style={cellStyle}
                       onBlur={(e) => saveField(person.id, "lastName", e.target.value)} />
                   </td>
                   <td className="px-1">
-                    <input type="email" defaultValue={person.email ?? ""} className={cellInput}
+                    <input type="email" defaultValue={person.email ?? ""} className={cellCls} style={cellStyle}
                       placeholder="email@..." onBlur={(e) => saveField(person.id, "email", e.target.value)} />
                   </td>
                   <td className="px-1">
-                    <input type="tel" defaultValue={person.phone ?? ""} className={cn(cellInput, "w-32")}
+                    <input type="tel" defaultValue={person.phone ?? ""} className={cn(cellCls, "w-32")} style={cellStyle}
                       placeholder="+372..." onBlur={(e) => saveField(person.id, "phone", e.target.value)} />
                   </td>
                   <td className="px-1">
                     <button onClick={() => toggleExpand(person.id)}
                       className={cn("p-1.5 rounded-lg transition-colors cursor-pointer",
-                        hasMedical(person) ? "text-[var(--cat-accent)] hover:opacity-80" : "text-text-secondary/40 hover:text-text-secondary hover:th-bg"
-                      )}>
+                        hasMedical(person) ? "text-[var(--cat-accent)] hover:opacity-80" : "hover:opacity-60"
+                      )}
+                      style={hasMedical(person) ? undefined : { color: "var(--cat-text-muted)" }}>
                       {expandedIds.has(person.id) ? <ChevronUp className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     </button>
                   </td>
                   <td className="px-1">
                     <button onClick={() => deletePerson(person.id)}
-                      className="p-1.5 text-text-secondary/30 hover:text-error rounded-lg transition-colors cursor-pointer opacity-0 group-hover:opacity-100">
+                      className="p-1.5 rounded-lg transition-colors cursor-pointer opacity-0 group-hover:opacity-100 hover:text-red-500"
+                      style={{ color: "var(--cat-text-muted)" }}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </td>
                 </tr>
 
+                {/* Медданные */}
                 {expandedIds.has(person.id) && (
-                  <tr key={`${person.id}-med`} className="border-b th-border bg-[var(--cat-accent)]/5">
+                  <tr key={`${person.id}-med`} className="border-b th-border" style={medRowStyle}>
                     <td colSpan={7} className="px-6 py-3">
                       <div className="grid grid-cols-3 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("allergies")}</label>
-                          <input defaultValue={person.allergies ?? ""} placeholder={tp("allergiesHint")}
-                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
-                            onBlur={(e) => saveField(person.id, "allergies", e.target.value)} />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("dietaryRequirements")}</label>
-                          <input defaultValue={person.dietaryRequirements ?? ""} placeholder={tp("dietaryHint")}
-                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
-                            onBlur={(e) => saveField(person.id, "dietaryRequirements", e.target.value)} />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("medicalNotes")}</label>
-                          <input defaultValue={person.medicalNotes ?? ""} placeholder={tp("medicalHint")}
-                            className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
-                            onBlur={(e) => saveField(person.id, "medicalNotes", e.target.value)} />
-                        </div>
+                        {[
+                          { key: "allergies", label: tp("allergies"), placeholder: tp("allergiesHint"), val: person.allergies },
+                          { key: "dietaryRequirements", label: tp("dietaryRequirements"), placeholder: tp("dietaryHint"), val: person.dietaryRequirements },
+                          { key: "medicalNotes", label: tp("medicalNotes"), placeholder: tp("medicalHint"), val: person.medicalNotes },
+                        ].map(({ key, label, placeholder, val }) => (
+                          <div key={key} className="space-y-1">
+                            <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{label}</label>
+                            <input defaultValue={val ?? ""} placeholder={placeholder}
+                              className="w-full text-sm px-3 py-1.5 rounded-lg border th-border focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20"
+                              style={{ background: "var(--cat-input-bg)", color: "var(--cat-text)" }}
+                              onBlur={(e) => saveField(person.id, key, e.target.value)} />
+                          </div>
+                        ))}
                       </div>
                     </td>
                   </tr>
@@ -183,53 +187,56 @@ export function AccompanyingInlineTable({ persons, teamId, onRefresh }: Accompan
               </>
             ))}
 
-            {/* New row */}
-            <tr className={cn("border-b th-border bg-surface/30", saving.has("new") && "bg-[var(--cat-badge-open-bg)]")}>
-              <td className="text-center px-2"><span className="text-xs text-text-secondary/30">{persons.length + 1}</span></td>
+            {/* Строка нового */}
+            <tr className={cn("border-b th-border", saving.has("new") && "bg-[var(--cat-badge-open-bg)]")} style={newRowStyle}>
+              <td className="text-center px-2">
+                <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{persons.length + 1}</span>
+              </td>
               <td className="px-1">
                 <input value={newRow.firstName} onChange={(e) => setNewRow({ ...newRow, firstName: e.target.value })}
-                  onBlur={handleNewBlur} placeholder={tp("firstName")} className={cn(cellInput, "placeholder:text-text-secondary/30")} />
+                  onBlur={handleNewBlur} placeholder={tp("firstName")} className={cellCls} style={cellStyle} />
               </td>
               <td className="px-1">
                 <input value={newRow.lastName} onChange={(e) => setNewRow({ ...newRow, lastName: e.target.value })}
-                  onBlur={handleNewBlur} placeholder={tp("lastName")} className={cn(cellInput, "placeholder:text-text-secondary/30")} />
+                  onBlur={handleNewBlur} placeholder={tp("lastName")} className={cellCls} style={cellStyle} />
               </td>
               <td className="px-1">
                 <input type="email" value={newRow.email} onChange={(e) => setNewRow({ ...newRow, email: e.target.value })}
-                  placeholder="email@..." className={cn(cellInput, "placeholder:text-text-secondary/30")} />
+                  placeholder="email@..." className={cellCls} style={cellStyle} />
               </td>
               <td className="px-1">
                 <input type="tel" value={newRow.phone} onChange={(e) => setNewRow({ ...newRow, phone: e.target.value })}
-                  placeholder="+372..." className={cn(cellInput, "placeholder:text-text-secondary/30 w-32")} />
+                  placeholder="+372..." className={cn(cellCls, "w-32")} style={cellStyle} />
               </td>
               <td className="px-1">
                 <button onClick={() => toggleExpand("new")}
-                  className="p-1.5 text-text-secondary/30 hover:text-text-secondary rounded-lg transition-colors cursor-pointer">
+                  className="p-1.5 rounded-lg transition-colors cursor-pointer hover:opacity-60"
+                  style={{ color: "var(--cat-text-muted)" }}>
                   {expandedIds.has("new") ? <ChevronUp className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 </button>
               </td>
               <td />
             </tr>
 
+            {/* Медданные новой строки */}
             {expandedIds.has("new") && (
-              <tr className="border-b th-border bg-surface/30">
+              <tr className="border-b th-border" style={newRowStyle}>
                 <td colSpan={7} className="px-6 py-3">
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("allergies")}</label>
-                      <input value={newMed.allergies} onChange={(e) => setNewMed({ ...newMed, allergies: e.target.value })}
-                        placeholder={tp("allergiesHint")} className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("dietaryRequirements")}</label>
-                      <input value={newMed.dietaryRequirements} onChange={(e) => setNewMed({ ...newMed, dietaryRequirements: e.target.value })}
-                        placeholder={tp("dietaryHint")} className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{tp("medicalNotes")}</label>
-                      <input value={newMed.medicalNotes} onChange={(e) => setNewMed({ ...newMed, medicalNotes: e.target.value })}
-                        placeholder={tp("medicalHint")} className="w-full text-sm px-3 py-1.5 rounded-lg border th-border th-card focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15" />
-                    </div>
+                    {[
+                      { key: "allergies" as const, label: tp("allergies"), placeholder: tp("allergiesHint") },
+                      { key: "dietaryRequirements" as const, label: tp("dietaryRequirements"), placeholder: tp("dietaryHint") },
+                      { key: "medicalNotes" as const, label: tp("medicalNotes"), placeholder: tp("medicalHint") },
+                    ].map(({ key, label, placeholder }) => (
+                      <div key={key} className="space-y-1">
+                        <label className="text-[10px] font-semibold uppercase tracking-wider th-text-2">{label}</label>
+                        <input value={newMed[key]}
+                          onChange={(e) => setNewMed({ ...newMed, [key]: e.target.value })}
+                          placeholder={placeholder}
+                          className="w-full text-sm px-3 py-1.5 rounded-lg border th-border focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20"
+                          style={{ background: "var(--cat-input-bg)", color: "var(--cat-text)" }} />
+                      </div>
+                    ))}
                   </div>
                 </td>
               </tr>
@@ -237,7 +244,8 @@ export function AccompanyingInlineTable({ persons, teamId, onRefresh }: Accompan
           </tbody>
         </table>
       </div>
-      <div className="px-4 py-2.5 text-[11px] text-text-secondary/60 bg-surface/30 border-t th-border">
+
+      <div className="px-4 py-2.5 text-[11px] border-t th-border" style={{ color: "var(--cat-text-muted)", background: "var(--cat-card-bg)" }}>
         {tp("firstName")} + {tp("lastName")} → auto-save
       </div>
     </Card>

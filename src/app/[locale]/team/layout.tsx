@@ -118,7 +118,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
       {isImpersonating && <ImpersonationBanner clubName={club.name} />}
 
       <div className="flex flex-col min-h-screen" style={{ background: "var(--cat-bg)" }}>
-        <GlobalHeader rightContent={<AdminHeaderActions />} />
+        <GlobalHeader rightContent={<AdminHeaderActions isSuper={!!session.isSuper} currentArea="team" />} />
 
         <div className="flex flex-1 min-h-0">
 

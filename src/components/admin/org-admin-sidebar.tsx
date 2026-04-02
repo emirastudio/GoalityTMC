@@ -68,8 +68,8 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
               href={href}
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-opacity"
               style={isActive
-                ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", fontWeight: 500 }
-                : { color: "var(--cat-text-secondary)" }
+                ? { background: "rgba(0,0,0,0.05)", color: "var(--cat-text)", fontWeight: 600, borderLeft: "2px solid var(--cat-accent)", paddingLeft: "10px" }
+                : { color: "var(--cat-text-secondary)", borderLeft: "2px solid transparent", paddingLeft: "10px" }
               }
             >
               <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "var(--cat-accent)" : "var(--cat-text-muted)" }} />

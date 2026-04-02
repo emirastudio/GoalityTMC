@@ -6,7 +6,7 @@ import { usePathname, Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, ShoppingCart, Wallet, Menu, X,
-  Mail, Shield, UserPlus, Plane, Building2, FileText, UserCircle, Package,
+  Mail, Shield, UserPlus, Plane, Building2, FileText, UserCircle,
 } from "lucide-react";
 import { useTeam } from "@/lib/team-context";
 
@@ -25,7 +25,6 @@ export function MobileNav() {
 
   const moreItems = [
     { key: "inbox",        icon: Mail,       href: "/team/inbox",    badge: inboxCount },
-    { key: "services",     icon: Package,    href: "/team/services" },
     { key: "staff",        icon: Shield,     href: "/team/staff" },
     { key: "accompanying", icon: UserPlus,   href: "/team/accompanying" },
     { key: "travel",       icon: Plane,      href: "/team/travel" },
@@ -83,7 +82,7 @@ export function MobileNav() {
             className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden"
             onClick={() => setMoreOpen(false)}
           />
-          <div className="fixed bottom-16 left-0 right-0 z-40 border-t rounded-t-2xl shadow-2xl md:hidden" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+          <div className="fixed bottom-16 left-0 right-0 z-40 border-t rounded-t-2xl shadow-2xl md:hidden" style={{ background: "var(--cat-dropdown-bg)", borderColor: "var(--cat-card-border)" }}>
             <div className="p-4">
               <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--cat-tag-bg)" }} />
               <div className="grid grid-cols-4 gap-2">

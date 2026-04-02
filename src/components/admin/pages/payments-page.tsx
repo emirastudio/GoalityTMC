@@ -378,7 +378,7 @@ export function PaymentsPageContent() {
       {/* Edit Payment Modal */}
       {editingPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setEditingPayment(null)}>
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <Card className="popup-bg w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <CardTitle>Edit Payment</CardTitle>
               <button onClick={() => setEditingPayment(null)} className="p-1 hover:th-bg rounded-lg">
@@ -481,7 +481,7 @@ export function PaymentsPageContent() {
       {/* Add Payment Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setShowModal(false); resetForm(); }}>
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <Card className="popup-bg w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <CardTitle>Add Payment</CardTitle>
               <button onClick={() => { setShowModal(false); resetForm(); }} className="p-1 hover:th-bg rounded-lg">

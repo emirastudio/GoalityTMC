@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clubUsers, clubs, tournaments, organizations } from "@/db/schema";
+import { clubUsers, clubs, tournaments, organizations, adminUsers } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { verifyPassword, createToken, setSessionCookie } from "@/lib/auth";
 
@@ -40,6 +40,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Если у клубного пользователя есть super_admin аккаунт — ставим флаг
+  const adminUser = await db.query.adminUsers.findFirst({
+    where: eq(adminUsers.email, email.toLowerCase().trim()),
+  });
+  const isSuper = adminUser?.role === "super_admin";
+
   const token = createToken({
     userId: user.id,
     role: "club",
@@ -48,6 +54,7 @@ export async function POST(req: NextRequest) {
     organizationId,
     organizationSlug,
     ...(user.teamId ? { teamId: user.teamId } : {}),
+    ...(isSuper ? { isSuper: true } : {}),
   });
 
   await setSessionCookie(token);

@@ -435,7 +435,7 @@ export default function AdminOverviewPage() {
               Columns {extraCols.size > 0 && `(${extraCols.size})`}
             </button>
             {showColPicker && (
-              <div className="absolute right-0 top-full mt-1 th-card border th-border rounded-xl shadow-lg p-2 z-20 min-w-[180px]">
+              <div className="absolute right-0 top-full mt-1 popup-bg border th-border rounded-xl shadow-lg p-2 z-20 min-w-[180px]">
                 {EXTRA_COLS.map((c) => (
                   <label
                     key={c.key}

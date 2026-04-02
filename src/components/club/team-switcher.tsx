@@ -151,7 +151,7 @@ export function TeamSwitcher({ clubName, clubBadgeUrl, clubId, teams, classes, d
           </button>
 
           {open && (
-            <div className={cn("absolute top-full left-0 right-0 mt-1 z-50 rounded-xl border shadow-2xl overflow-hidden", !dark && "th-card th-border shadow-lg")} style={dark ? { background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" } : undefined}>
+            <div className={cn("absolute top-full left-0 right-0 mt-1 z-50 rounded-xl border th-border shadow-2xl overflow-hidden popup-bg")}>
               {teams.map((team) => (
                 <button
                   key={team.id}
@@ -204,7 +204,7 @@ export function TeamSwitcher({ clubName, clubBadgeUrl, clubId, teams, classes, d
       {/* Add Team Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={() => setShowAddModal(false)}>
-          <div className="th-card rounded-2xl shadow-xl w-full max-w-sm mx-4 p-5" onClick={e => e.stopPropagation()}>
+          <div className="popup-bg rounded-2xl shadow-xl w-full max-w-sm mx-4 p-5 border th-border" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold th-text">{t("addTeam")}</h3>
               <button onClick={() => setShowAddModal(false)} className="p-1 hover:th-bg rounded-lg">

@@ -2050,7 +2050,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
       ══════════════════════════════════════════════════════════════════ */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-md">
+          <Card className="popup-bg w-full max-w-md">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle><CreditCard className="w-5 h-5 inline mr-2" />Add Payment</CardTitle>
