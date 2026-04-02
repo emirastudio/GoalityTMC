@@ -50,37 +50,14 @@ export default async function TournamentLayout({ children, params }: Props) {
     classes: classesWithCounts,
   };
 
-  // Hex to rgba helper for cover gradient
-  const r = parseInt(brand.slice(1, 3), 16);
-  const g = parseInt(brand.slice(3, 5), 16);
-  const b = parseInt(brand.slice(5, 7), 16);
-  const coverGradient = `linear-gradient(135deg, rgb(${r},${g},${b}) 0%, rgba(${Math.max(r-20,0)},${Math.max(g-20,0)},${Math.max(b-20,0)},1) 100%)`;
-
   return (
     <ThemeProvider defaultTheme="light">
       <TournamentPublicProvider data={data}>
-        <div style={{ background: "var(--cat-bg)", minHeight: "100vh" }}>
-          {/* Global Goality topbar */}
+        <div className="min-h-screen bg-gray-50">
           <TournamentTopbar />
 
-          {/* Cover banner */}
-          <div className="relative h-44 overflow-hidden" style={{ background: coverGradient }}>
-            {/* Decorative mesh */}
-            <div className="absolute inset-0 opacity-[0.08]"
-              style={{ backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-            <div className="absolute inset-0"
-              style={{ background: `radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.08) 0%, transparent 60%)` }} />
-            {/* Org + tournament watermark */}
-            <div className="absolute bottom-5 left-6">
-              <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest">{org.name}</p>
-              <h1 className="text-2xl font-black text-white/20 leading-tight">{tournament.name}</h1>
-            </div>
-          </div>
-
-          {/* Main content area */}
-          <div className="w-[90%] max-w-[1400px] mx-auto">
-            <div className="flex gap-5 items-start">
-              {/* LEFT SIDEBAR - overlaps cover */}
+          <div className="max-w-6xl mx-auto px-4 py-6">
+            <div className="flex gap-6">
               <TournamentSidebar
                 orgSlug={orgSlug}
                 tournamentSlug={tournamentSlug}
@@ -95,18 +72,16 @@ export default async function TournamentLayout({ children, params }: Props) {
                 country={org.country}
               />
 
-              {/* RIGHT CONTENT - overlaps cover slightly less */}
-              <main className="-mt-8 flex-1 min-w-0 pb-16">
+              <main className="flex-1 min-w-0">
                 {children}
               </main>
             </div>
           </div>
 
-          {/* Footer */}
-          <footer className="border-t mt-10" style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-card-bg)" }}>
-            <div className="w-[90%] max-w-[1400px] mx-auto py-5 flex items-center justify-between text-xs" style={{ color: "var(--cat-text-muted)" }}>
-              <span>© {new Date().getFullYear()} {org.name}</span>
-              <a href="/catalog" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity font-medium" style={{ color: "var(--cat-text-secondary)" }}>
+          <footer className="border-t border-gray-200 bg-white mt-10">
+            <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-xs text-gray-500">
+              <span>&copy; {new Date().getFullYear()} {org.name}</span>
+              <a href="/catalog" className="flex items-center gap-1.5 hover:text-gray-700">
                 <img src="/logo.png" alt="" className="w-4 h-4 rounded" /> Goality TMC
               </a>
             </div>

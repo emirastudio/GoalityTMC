@@ -6,17 +6,14 @@ import { ArrowRight } from "lucide-react";
 
 export function TournamentTopbar() {
   return (
-    <header className="sticky top-0 z-50 h-12 flex items-center px-4 md:px-8 gap-4"
-      style={{ background: "var(--cat-header-bg)", borderBottom: "1px solid var(--cat-header-border)", backdropFilter: "blur(12px)" }}>
-      {/* Logo */}
+    <header className="sticky top-0 z-50 h-12 flex items-center px-4 md:px-8 gap-4 bg-white border-b border-gray-200">
       <Link href="/" className="flex items-center gap-2 shrink-0">
         <img src="/logo.png" alt="Goality" className="w-6 h-6 object-contain" />
-        <span className="font-black text-[14px] tracking-tight hidden sm:block" style={{ color: "var(--cat-text)" }}>Goality TMC</span>
+        <span className="font-bold text-sm text-gray-900 hidden sm:block">Goality TMC</span>
       </Link>
 
-      {/* Nav */}
       <nav className="flex items-center gap-1 ml-2">
-        <Link href="/catalog" className="text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors hover:opacity-80" style={{ color: "var(--cat-text-secondary)" }}>
+        <Link href="/catalog" className="text-xs font-medium px-3 py-1.5 rounded text-gray-600 hover:text-gray-900">
           Catalog
         </Link>
       </nav>
@@ -25,8 +22,7 @@ export function TournamentTopbar() {
         <ThemeToggle />
         <LanguageSwitcher variant="light" />
         <Link href="/login"
-          className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-90"
-          style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
+          className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded bg-gray-900 text-white hover:bg-gray-800">
           Sign in <ArrowRight className="w-3 h-3" />
         </Link>
       </div>

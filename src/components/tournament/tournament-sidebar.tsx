@@ -37,30 +37,26 @@ export function TournamentSidebar({ orgSlug, tournamentSlug, tournamentName, org
   ];
 
   return (
-    <aside className="w-56 shrink-0 -mt-20 relative z-10">
+    <aside className="w-56 shrink-0">
       <div className="sticky top-14 space-y-3">
-        {/* Main card */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}>
-          {/* Logo */}
-          <div className="px-4 pt-4 pb-3 flex flex-col items-center text-center" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          {/* Logo + info */}
+          <div className="px-4 pt-4 pb-3 flex flex-col items-center text-center border-b border-gray-200">
             {logoUrl ? (
-              <img src={logoUrl} alt={tournamentName} className="w-20 h-20 rounded-2xl object-contain mb-3"
-                style={{ border: "3px solid var(--cat-card-border)", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }} />
+              <img src={logoUrl} alt={tournamentName} className="w-16 h-16 rounded-lg object-contain mb-2 border border-gray-200" />
             ) : (
-              <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-3 shrink-0"
-                style={{ background: brandColor, boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}>
-                <Trophy className="w-9 h-9 text-white/80" />
+              <div className="w-16 h-16 rounded-lg flex items-center justify-center mb-2 bg-gray-100">
+                <Trophy className="w-7 h-7 text-gray-400" />
               </div>
             )}
-            <p className="text-[13px] font-bold leading-tight" style={{ color: "var(--cat-text)" }}>{tournamentName}</p>
-            <p className="text-[11px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>{orgName}</p>
+            <p className="text-sm font-semibold text-gray-900">{tournamentName}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{orgName}</p>
 
-            {/* Status badge */}
-            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold"
-              style={registrationOpen
-                ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-badge-open-text)", border: "1px solid var(--cat-badge-open-border)" }
-                : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-tag-border)" }
-              }>
+            {/* Status */}
+            <div className={cn(
+              "mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border",
+              registrationOpen ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-500 border-gray-200"
+            )}>
               {registrationOpen ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
               {registrationOpen ? "Reg. open" : "Reg. closed"}
             </div>
@@ -68,14 +64,14 @@ export function TournamentSidebar({ orgSlug, tournamentSlug, tournamentName, org
             {/* Dates & location */}
             <div className="mt-2 space-y-1 w-full text-left">
               {(startDate || endDate) && (
-                <div className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--cat-text-secondary)" }}>
-                  <Calendar className="w-3 h-3 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <Calendar className="w-3 h-3 shrink-0 text-gray-400" />
                   <span>{fmtShort(startDate)}{endDate ? ` – ${fmtShort(endDate)}` : ""}</span>
                 </div>
               )}
               {city && (
-                <div className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--cat-text-secondary)" }}>
-                  <MapPin className="w-3 h-3 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <MapPin className="w-3 h-3 shrink-0 text-gray-400" />
                   <span>{city}{country ? `, ${country}` : ""}</span>
                 </div>
               )}
@@ -89,13 +85,9 @@ export function TournamentSidebar({ orgSlug, tournamentSlug, tournamentName, org
               return (
                 <Link key={key} href={href}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[12px] font-medium transition-all",
-                    isActive ? "font-semibold" : "hover:opacity-80"
-                  )}
-                  style={isActive
-                    ? { background: brandColor + "18", color: brandColor }
-                    : { color: "var(--cat-text-secondary)" }
-                  }>
+                    "flex items-center gap-2 px-3 py-2 rounded text-xs font-medium transition-colors",
+                    isActive ? "bg-gray-100 text-gray-900 font-semibold" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  )}>
                   <Icon className="w-3.5 h-3.5 shrink-0" />
                   {label}
                 </Link>
@@ -107,8 +99,7 @@ export function TournamentSidebar({ orgSlug, tournamentSlug, tournamentName, org
           {registrationOpen && (
             <div className="p-3 pt-0">
               <Link href={`${base}/register`}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-[12px] font-bold transition-opacity hover:opacity-90"
-                style={{ background: brandColor, color: "#ffffff" }}>
+                className="flex items-center justify-center gap-2 w-full py-2 rounded text-xs font-semibold bg-gray-900 text-white hover:bg-gray-800">
                 Зарегистрироваться <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>

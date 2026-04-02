@@ -36,7 +36,7 @@ interface TeamHeaderProps {
 const statusDot: Record<string, string> = {
   draft:     "bg-gray-400",
   open:      "bg-emerald-400",
-  confirmed: "bg-mint",
+  confirmed: "bg-emerald-600",
   cancelled: "bg-red-400",
 };
 
@@ -47,35 +47,23 @@ export function TeamHeader({
   const { inboxCount } = useTeam();
 
   return (
-    <header
-      className="sticky top-0 z-30"
-      style={{ background: "var(--cat-card-bg)", borderBottom: "1px solid var(--cat-card-border)" }}
-    >
+    <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
       <div className="flex items-center justify-between px-4 md:px-6 h-14 gap-3">
         {/* Left: Logo + breadcrumb */}
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex items-center gap-2 shrink-0">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "var(--cat-accent)" }}
-            >
-              <Crown className="w-4 h-4" style={{ color: "var(--cat-accent-text)" }} />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-600">
+              <Crown className="w-4 h-4 text-white" />
             </div>
-            <span
-              className="text-[15px] font-bold tracking-tight hidden sm:block"
-              style={{ color: "var(--cat-text)" }}
-            >
+            <span className="text-[15px] font-bold tracking-tight hidden sm:block text-gray-900">
               Kings Cup
             </span>
           </div>
 
           {teamName && (
             <>
-              <span className="hidden md:block" style={{ color: "var(--cat-text-muted)" }}>/</span>
-              <span
-                className="text-sm font-medium hidden md:block truncate"
-                style={{ color: "var(--cat-text-secondary)" }}
-              >
+              <span className="hidden md:block text-gray-300">/</span>
+              <span className="text-sm font-medium hidden md:block truncate text-gray-600">
                 {teamName}
               </span>
             </>
@@ -97,10 +85,7 @@ export function TeamHeader({
         {/* Right: year + notifications + lang + logout */}
         <div className="flex items-center gap-1.5 shrink-0">
           {year && (
-            <span
-              className="text-[11px] font-semibold rounded-md px-2 py-1 hidden sm:inline"
-              style={{ color: "var(--cat-text-muted)", border: "1px solid var(--cat-card-border)" }}
-            >
+            <span className="text-[11px] font-semibold rounded-md px-2 py-1 hidden sm:inline text-gray-500 border border-gray-200">
               {year}
             </span>
           )}
@@ -108,16 +93,10 @@ export function TeamHeader({
           {/* Inbox badge */}
           {inboxCount > 0 && (
             <div className="relative">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: "var(--cat-tag-bg)" }}
-              >
-                <Bell className="w-4 h-4" style={{ color: "var(--cat-text-secondary)" }} />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                <Bell className="w-4 h-4 text-gray-600" />
               </div>
-              <span
-                className="absolute -top-1 -right-1 w-4 h-4 text-[9px] font-bold rounded-full flex items-center justify-center"
-                style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
-              >
+              <span className="absolute -top-1 -right-1 w-4 h-4 text-[9px] font-bold rounded-full flex items-center justify-center bg-emerald-600 text-white">
                 {inboxCount > 9 ? "9+" : inboxCount}
               </span>
             </div>
@@ -128,10 +107,9 @@ export function TeamHeader({
           <form action="/api/auth/logout" method="POST">
             <button
               type="submit"
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-80 transition-colors cursor-pointer"
-              style={{ background: "var(--cat-tag-bg)" }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer bg-gray-100"
             >
-              <LogOut className="w-4 h-4" style={{ color: "var(--cat-text-secondary)" }} />
+              <LogOut className="w-4 h-4 text-gray-600" />
             </button>
           </form>
         </div>
@@ -191,31 +169,23 @@ function MobileTeamPill({
       <button
         onClick={() => canSwitch && setOpen((v) => !v)}
         className={cn(
-          "md:hidden flex items-center gap-1.5 rounded-lg px-2 py-1.5 max-w-[180px] min-w-0",
-          canSwitch && "hover:opacity-80 active:opacity-70"
+          "md:hidden flex items-center gap-1.5 rounded-lg px-2 py-1.5 max-w-[180px] min-w-0 border border-gray-200 bg-gray-50",
+          canSwitch && "hover:bg-gray-100 active:bg-gray-200"
         )}
-        style={{ border: "1px solid var(--cat-card-border)", background: "var(--cat-tag-bg)" }}
       >
         {clubBadgeUrl ? (
           <img src={clubBadgeUrl} alt={clubName} className="w-5 h-5 rounded-md object-contain shrink-0" />
         ) : (
-          <div
-            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: "var(--cat-badge-open-bg)" }}
-          >
-            <span className="text-[8px] font-bold" style={{ color: "var(--cat-accent)" }}>{initials}</span>
+          <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 bg-emerald-50">
+            <span className="text-[8px] font-bold text-emerald-600">{initials}</span>
           </div>
         )}
-        <span
-          className="text-[12px] font-semibold truncate flex-1 text-left"
-          style={{ color: "var(--cat-text)" }}
-        >
+        <span className="text-[12px] font-semibold truncate flex-1 text-left text-gray-900">
           {activeTeam?.name ?? clubName}
         </span>
         {canSwitch && (
           <ChevronDown
-            className={cn("w-3 h-3 shrink-0 transition-transform", open && "rotate-180")}
-            style={{ color: "var(--cat-text-muted)" }}
+            className={cn("w-3 h-3 shrink-0 transition-transform text-gray-400", open && "rotate-180")}
           />
         )}
       </button>
@@ -223,35 +193,28 @@ function MobileTeamPill({
       {open && canSwitch && (
         <>
           <div className="fixed inset-0 z-40 md:hidden" onClick={() => setOpen(false)} />
-          <div
-            className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl shadow-2xl overflow-hidden md:hidden mx-4"
-            style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}
-          >
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl shadow-lg overflow-hidden md:hidden mx-4 bg-white border border-gray-200">
             {teams.map((team) => (
               <button
                 key={team.id}
                 onClick={() => { setTeamId(team.id); setOpen(false); }}
                 className={cn(
-                  "w-full text-left flex items-center gap-2.5 px-4 py-3 hover:opacity-80 transition-colors last:border-0"
+                  "w-full text-left flex items-center gap-2.5 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0",
+                  team.id === activeTeam?.id && "bg-gray-50"
                 )}
-                style={{
-                  borderBottom: "1px solid var(--cat-card-border)",
-                  ...(team.id === activeTeam?.id ? { background: "var(--cat-tag-bg)" } : {}),
-                }}
               >
                 <span className={cn("w-2 h-2 rounded-full shrink-0", statusDot[team.status])} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: "var(--cat-text)" }}>{team.name}</p>
-                  <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{team.className} · {t(team.status)}</p>
+                  <p className="text-sm font-medium truncate text-gray-900">{team.name}</p>
+                  <p className="text-xs text-gray-500">{team.className} · {t(team.status)}</p>
                 </div>
-                {team.id === activeTeam?.id && <Check className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />}
+                {team.id === activeTeam?.id && <Check className="w-4 h-4 shrink-0 text-emerald-600" />}
               </button>
             ))}
             {!isTeamManager && (
               <button
                 onClick={() => { setOpen(false); setShowAddModal(true); }}
-                className="w-full text-left flex items-center gap-2 px-4 py-3 hover:opacity-80 transition-colors"
-                style={{ color: "var(--cat-accent)", borderTop: "1px solid var(--cat-card-border)" }}
+                className="w-full text-left flex items-center gap-2 px-4 py-3 hover:bg-gray-50 transition-colors text-emerald-600 border-t border-gray-200"
               >
                 <Plus className="w-4 h-4" />
                 <span className="text-sm font-medium">{t("addTeam")}</span>
@@ -262,32 +225,32 @@ function MobileTeamPill({
       )}
 
       {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}>
-          <div className="th-card rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-sm mx-4 p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold th-text">{t("addTeam")}</h3>
-              <button onClick={() => setShowAddModal(false)} className="p-1.5 hover:th-bg rounded-lg">
-                <X className="w-4 h-4 th-text-2" />
+              <h3 className="text-base font-bold text-gray-900">{t("addTeam")}</h3>
+              <button onClick={() => setShowAddModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                <X className="w-4 h-4 text-gray-500" />
               </button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-[12px] font-medium th-text-2 mb-1 block">{t("teamName")}</label>
+                <label className="text-[12px] font-medium text-gray-600 mb-1 block">{t("teamName")}</label>
                 <input
                   type="text"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   placeholder={`${clubName} U12`}
-                  className="w-full rounded-xl th-border border px-3 py-2.5 text-sm focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/10"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="text-[12px] font-medium th-text-2 mb-1 block">{t("class")}</label>
+                <label className="text-[12px] font-medium text-gray-600 mb-1 block">{t("class")}</label>
                 <select
                   value={newTeamClassId}
                   onChange={(e) => setNewTeamClassId(e.target.value)}
-                  className="w-full rounded-xl th-border border px-3 py-2.5 text-sm focus:outline-none focus:border-navy th-card"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500 bg-white"
                 >
                   <option value="">{t("selectClass")}</option>
                   {classes.map((c) => (
@@ -298,8 +261,7 @@ function MobileTeamPill({
               <button
                 onClick={handleAddTeam}
                 disabled={!newTeamName.trim() || !newTeamClassId || adding}
-                className="w-full mt-2 rounded-xl py-2.5 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                style={{ background: "var(--cat-accent)", color: "white" }}
+                className="w-full mt-2 rounded-lg py-2.5 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-emerald-600 text-white hover:bg-emerald-700"
               >
                 {adding ? "..." : t("addTeam")}
               </button>
@@ -322,16 +284,12 @@ function LanguageSwitcher() {
   ];
 
   return (
-    <div
-      className="flex items-center gap-0.5 rounded-lg p-0.5"
-      style={{ border: "1px solid var(--cat-card-border)", background: "var(--cat-tag-bg)" }}
-    >
+    <div className="flex items-center gap-0.5 rounded-lg p-0.5 border border-gray-200 bg-gray-50">
       {locales.map(({ code, label }) => (
         <button
           key={code}
           onClick={() => router.replace(pathname, { locale: code })}
-          className="px-1.5 py-1 text-[10px] font-semibold rounded-md hover:opacity-80 transition-colors cursor-pointer"
-          style={{ color: "var(--cat-text-muted)" }}
+          className="px-1.5 py-1 text-[10px] font-semibold rounded-md hover:bg-gray-200 transition-colors cursor-pointer text-gray-500"
         >
           {label}
         </button>

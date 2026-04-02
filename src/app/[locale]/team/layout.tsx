@@ -5,7 +5,6 @@ import { TeamSwitcher } from "@/components/club/team-switcher";
 import { SidebarFooter } from "@/components/team/sidebar-footer";
 import { TeamProvider } from "@/lib/team-context";
 import { ImpersonationBanner } from "@/components/team/impersonation-banner";
-import { ThemeProvider, ThemeToggle } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
@@ -107,109 +106,96 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     .toUpperCase();
 
   return (
-    <ThemeProvider defaultTheme="dark">
-      <TeamProvider
-        initialTeamId={activeTeam?.id ?? null}
-        initialClubId={club.id}
-        initialTournamentId={club.tournamentId}
-        initialInboxCount={inboxCount}
-        isTeamManager={isTeamManager}
-      >
-        {isImpersonating && <ImpersonationBanner clubName={club.name} />}
+    <TeamProvider
+      initialTeamId={activeTeam?.id ?? null}
+      initialClubId={club.id}
+      initialTournamentId={club.tournamentId}
+      initialInboxCount={inboxCount}
+      isTeamManager={isTeamManager}
+    >
+      {isImpersonating && <ImpersonationBanner clubName={club.name} />}
 
-        <div className="flex min-h-screen" style={{ background: "var(--cat-bg)" }}>
+      <div className="flex min-h-screen bg-gray-50">
 
-          {/* ── Desktop Sidebar ───────────────────────────────── */}
-          <aside
-            className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 h-screen overflow-hidden"
-            style={{ background: "var(--cat-sidebar-bg, var(--cat-bg))" }}
-          >
+        {/* ── Desktop Sidebar ───────────────────────────────── */}
+        <aside className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 h-screen overflow-hidden bg-white border-r border-gray-200">
 
-            {/* Brand */}
-            <div className="h-14 px-5 flex items-center gap-3 shrink-0" style={{ borderBottom: "1px solid var(--cat-card-border)" }}>
-              <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
-              <span className="text-[15px] font-bold tracking-tight" style={{ color: "var(--cat-text-primary)" }}>Kings Cup</span>
-            </div>
+          {/* Brand */}
+          <div className="h-14 px-5 flex items-center gap-3 shrink-0 border-b border-gray-200">
+            <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0" />
+            <span className="text-[15px] font-bold tracking-tight text-gray-900">Kings Cup</span>
+          </div>
 
-            {/* Club / team switcher */}
-            <div className="px-4 py-4 shrink-0" style={{ borderBottom: "1px solid var(--cat-card-border)" }}>
-              {isTeamManager ? (
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-mint/15 border border-mint/20 flex items-center justify-center shrink-0">
-                    <span className="text-[12px] font-bold text-mint">{clubInitials}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-bold truncate" style={{ color: "var(--cat-text-primary)" }}>{club.name}</p>
-                    <p className="text-[11px] truncate" style={{ color: "var(--cat-text-muted)" }}>{activeTeam?.name}</p>
-                  </div>
+          {/* Club / team switcher */}
+          <div className="px-4 py-4 shrink-0 border-b border-gray-200">
+            {isTeamManager ? (
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
+                  <span className="text-[12px] font-bold text-emerald-600">{clubInitials}</span>
                 </div>
-              ) : (
-                <TeamSwitcher
-                  clubName={club.name}
-                  clubBadgeUrl={club.badgeUrl ?? null}
-                  clubId={club.id}
-                  teams={enrichedTeams}
-                  classes={classes.map((c) => ({ id: c.id, name: c.name }))}
-                  dark
-                />
-              )}
-            </div>
-
-            {/* Navigation */}
-            <div className="flex-1 px-3 py-3 overflow-y-auto">
-              <TeamSidebar />
-            </div>
-
-            {/* Lang + Logout */}
-            <SidebarFooter />
-          </aside>
-
-          {/* ── Right side ───────────────────────────────────── */}
-          <div className="flex-1 flex flex-col min-w-0">
-
-            {/* Desktop top header bar */}
-            <div
-              className="hidden md:flex items-center justify-end gap-3 h-14 px-6 shrink-0"
-              style={{
-                background: "var(--cat-card-bg)",
-                borderBottom: "1px solid var(--cat-card-border)",
-              }}
-            >
-              <LanguageSwitcher variant="dark" />
-              <ThemeToggle />
-            </div>
-
-            {/* Mobile header only */}
-            <div className="md:hidden">
-              <TeamHeader
-                teamName={activeTeam?.name}
-                regNumber={activeTeam?.regNumber}
-                year={2026}
+                <div className="min-w-0">
+                  <p className="text-[13px] font-bold truncate text-gray-900">{club.name}</p>
+                  <p className="text-[11px] truncate text-gray-500">{activeTeam?.name}</p>
+                </div>
+              </div>
+            ) : (
+              <TeamSwitcher
                 clubName={club.name}
                 clubBadgeUrl={club.badgeUrl ?? null}
                 clubId={club.id}
-                teams={enrichedTeams.map((t) => ({
-                  id: t.id,
-                  name: t.name,
-                  className: t.className,
-                  status: t.status,
-                  playersCount: t.playersCount,
-                }))}
+                teams={enrichedTeams}
                 classes={classes.map((c) => ({ id: c.id, name: c.name }))}
-                isTeamManager={isTeamManager}
               />
-            </div>
-
-            {/* Main content */}
-            <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
-              {children}
-            </main>
+            )}
           </div>
-        </div>
 
-        {/* Mobile bottom nav */}
-        <MobileNav />
-      </TeamProvider>
-    </ThemeProvider>
+          {/* Navigation */}
+          <div className="flex-1 px-3 py-3 overflow-y-auto">
+            <TeamSidebar />
+          </div>
+
+          {/* Lang + Logout */}
+          <SidebarFooter />
+        </aside>
+
+        {/* ── Right side ───────────────────────────────────── */}
+        <div className="flex-1 flex flex-col min-w-0">
+
+          {/* Desktop top header bar */}
+          <div className="hidden md:flex items-center justify-end gap-3 h-14 px-6 shrink-0 bg-white border-b border-gray-200">
+            <LanguageSwitcher />
+          </div>
+
+          {/* Mobile header only */}
+          <div className="md:hidden">
+            <TeamHeader
+              teamName={activeTeam?.name}
+              regNumber={activeTeam?.regNumber}
+              year={2026}
+              clubName={club.name}
+              clubBadgeUrl={club.badgeUrl ?? null}
+              clubId={club.id}
+              teams={enrichedTeams.map((t) => ({
+                id: t.id,
+                name: t.name,
+                className: t.className,
+                status: t.status,
+                playersCount: t.playersCount,
+              }))}
+              classes={classes.map((c) => ({ id: c.id, name: c.name }))}
+              isTeamManager={isTeamManager}
+            />
+          </div>
+
+          {/* Main content */}
+          <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
+            {children}
+          </main>
+        </div>
+      </div>
+
+      {/* Mobile bottom nav */}
+      <MobileNav />
+    </TeamProvider>
   );
 }

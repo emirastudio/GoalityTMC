@@ -12,18 +12,18 @@ type TeamEntry = {
 type GroupedClass = { id: number; name: string; format: string | null; teams: TeamEntry[] };
 
 const COUNTRY_FLAG: Record<string, string> = {
-  "Estonia": "🇪🇪", "EE": "🇪🇪", "EST": "🇪🇪",
-  "Latvia": "🇱🇻", "LV": "🇱🇻", "LAT": "🇱🇻",
-  "Lithuania": "🇱🇹", "LT": "🇱🇹", "LTU": "🇱🇹",
-  "Finland": "🇫🇮", "FI": "🇫🇮", "FIN": "🇫🇮",
-  "Sweden": "🇸🇪", "SE": "🇸🇪", "SWE": "🇸🇪",
-  "Norway": "🇳🇴", "NO": "🇳🇴", "NOR": "🇳🇴",
-  "Denmark": "🇩🇰", "DK": "🇩🇰", "DEN": "🇩🇰",
-  "Germany": "🇩🇪", "DE": "🇩🇪", "GER": "🇩🇪",
-  "Poland": "🇵🇱", "PL": "🇵🇱", "POL": "🇵🇱",
-  "Ukraine": "🇺🇦", "UA": "🇺🇦", "UKR": "🇺🇦",
-  "Russia": "🇷🇺", "RU": "🇷🇺", "RUS": "🇷🇺",
-  "Belarus": "🇧🇾", "BY": "🇧🇾", "BLR": "🇧🇾",
+  "Estonia": "\u{1F1EA}\u{1F1EA}", "EE": "\u{1F1EA}\u{1F1EA}", "EST": "\u{1F1EA}\u{1F1EA}",
+  "Latvia": "\u{1F1F1}\u{1F1FB}", "LV": "\u{1F1F1}\u{1F1FB}", "LAT": "\u{1F1F1}\u{1F1FB}",
+  "Lithuania": "\u{1F1F1}\u{1F1F9}", "LT": "\u{1F1F1}\u{1F1F9}", "LTU": "\u{1F1F1}\u{1F1F9}",
+  "Finland": "\u{1F1EB}\u{1F1EE}", "FI": "\u{1F1EB}\u{1F1EE}", "FIN": "\u{1F1EB}\u{1F1EE}",
+  "Sweden": "\u{1F1F8}\u{1F1EA}", "SE": "\u{1F1F8}\u{1F1EA}", "SWE": "\u{1F1F8}\u{1F1EA}",
+  "Norway": "\u{1F1F3}\u{1F1F4}", "NO": "\u{1F1F3}\u{1F1F4}", "NOR": "\u{1F1F3}\u{1F1F4}",
+  "Denmark": "\u{1F1E9}\u{1F1F0}", "DK": "\u{1F1E9}\u{1F1F0}", "DEN": "\u{1F1E9}\u{1F1F0}",
+  "Germany": "\u{1F1E9}\u{1F1EA}", "DE": "\u{1F1E9}\u{1F1EA}", "GER": "\u{1F1E9}\u{1F1EA}",
+  "Poland": "\u{1F1F5}\u{1F1F1}", "PL": "\u{1F1F5}\u{1F1F1}", "POL": "\u{1F1F5}\u{1F1F1}",
+  "Ukraine": "\u{1F1FA}\u{1F1E6}", "UA": "\u{1F1FA}\u{1F1E6}", "UKR": "\u{1F1FA}\u{1F1E6}",
+  "Russia": "\u{1F1F7}\u{1F1FA}", "RU": "\u{1F1F7}\u{1F1FA}", "RUS": "\u{1F1F7}\u{1F1FA}",
+  "Belarus": "\u{1F1E7}\u{1F1FE}", "BY": "\u{1F1E7}\u{1F1FE}", "BLR": "\u{1F1E7}\u{1F1FE}",
 };
 
 function getFlag(country: string | null | undefined): string {
@@ -33,7 +33,6 @@ function getFlag(country: string | null | undefined): string {
 
 export default function TeamsPage() {
   const { org, tournament: t, classes } = useTournamentPublic();
-  const brand = org.brandColor;
   const [grouped, setGrouped] = useState<GroupedClass[] | null>(null);
   const [activeTab, setActiveTab] = useState<number | null>(null);
 
@@ -48,15 +47,14 @@ export default function TeamsPage() {
   }, [org.slug, t.slug]);
 
   if (!grouped) return (
-    <div className="rounded-2xl p-12 flex justify-center" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}>
-      <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: brand, borderTopColor: "transparent" }} />
+    <div className="bg-white border border-gray-200 rounded-lg p-12 flex justify-center">
+      <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   const totalTeams = grouped.reduce((s, g) => s + g.teams.length, 0);
   const activeGroup = grouped.find(g => g.id === activeTab);
 
-  // Birth year label from context classes
   function birthYearLabel(classId: number): string {
     const cls = classes.find(c => c.id === classId);
     if (!cls) return "";
@@ -68,26 +66,25 @@ export default function TeamsPage() {
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}>
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="px-5 pt-5 pb-3" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
-        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--cat-text-muted)" }}>
+      <div className="px-5 pt-5 pb-3 border-b border-gray-200">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
           Команды · {totalTeams} зарегистрировано
         </p>
       </div>
 
-      {/* Class tabs — horizontal scroll */}
-      <div className="flex overflow-x-auto" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
+      {/* Class tabs */}
+      <div className="flex overflow-x-auto border-b border-gray-200">
         {grouped.filter(g => g.teams.length > 0).map(g => (
           <button
             key={g.id}
             onClick={() => setActiveTab(g.id)}
-            className="shrink-0 px-4 py-3 text-[12px] font-semibold transition-all border-b-2"
-            style={{
-              color: activeTab === g.id ? brand : "var(--cat-text-secondary)",
-              borderColor: activeTab === g.id ? brand : "transparent",
-              background: "transparent",
-            }}
+            className={`shrink-0 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
+              activeTab === g.id
+                ? "text-gray-900 border-gray-900"
+                : "text-gray-500 border-transparent hover:text-gray-700"
+            }`}
           >
             {g.name}
             <span className="ml-1.5 text-[10px] opacity-60">({g.teams.length})</span>
@@ -95,57 +92,41 @@ export default function TeamsPage() {
         ))}
       </div>
 
-      {/* Team list for active tab */}
+      {/* Team list */}
       <div className="p-4">
         {!activeGroup || activeGroup.teams.length === 0 ? (
-          <p className="text-center py-8 text-[13px]" style={{ color: "var(--cat-text-secondary)" }}>
+          <p className="text-center py-8 text-sm text-gray-500">
             Команды ещё не зарегистрированы
           </p>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {activeGroup.teams.map((team, idx) => (
-              <div
-                key={team.id}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-tag-border)" }}
-              >
-                {/* Number */}
-                <span className="text-[11px] font-mono w-5 shrink-0 text-right" style={{ color: "var(--cat-text-faint)" }}>
+              <div key={team.id} className="flex items-center gap-3 px-3 py-2.5 rounded border border-gray-100 bg-gray-50">
+                <span className="text-xs font-mono w-5 shrink-0 text-right text-gray-400">
                   {idx + 1}
                 </span>
 
-                {/* Club badge */}
                 {team.club?.badgeUrl ? (
-                  <img
-                    src={team.club.badgeUrl}
-                    alt=""
-                    className="w-9 h-9 rounded-xl object-contain shrink-0"
-                    style={{ border: "1px solid var(--cat-card-border)" }}
-                  />
+                  <img src={team.club.badgeUrl} alt="" className="w-8 h-8 rounded object-contain shrink-0 border border-gray-200" />
                 ) : (
-                  <div
-                    className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-[10px] font-bold"
-                    style={{ background: brand + "15", color: brand }}
-                  >
+                  <div className="w-8 h-8 rounded shrink-0 flex items-center justify-center text-[10px] font-bold bg-gray-200 text-gray-600">
                     {team.club?.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() ?? "?"}
                   </div>
                 )}
 
-                {/* Name + city */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold truncate leading-tight" style={{ color: "var(--cat-text)" }}>
+                  <p className="text-sm font-medium text-gray-900 truncate leading-tight">
                     {team.name ?? team.club?.name ?? "—"}
                   </p>
                   {team.club?.city && (
-                    <p className="text-[11px] truncate mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">
                       {team.club.city}
                     </p>
                   )}
                 </div>
 
-                {/* Country flag */}
                 {team.club?.country && (
-                  <span className="text-xl shrink-0" title={team.club.country}>
+                  <span className="text-lg shrink-0" title={team.club.country}>
                     {getFlag(team.club.country)}
                   </span>
                 )}

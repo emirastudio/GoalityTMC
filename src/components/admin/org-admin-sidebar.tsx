@@ -15,7 +15,6 @@ import {
   ClipboardList,
   LogOut,
   Wrench,
-  ChevronRight,
 } from "lucide-react";
 
 type Props = {
@@ -53,17 +52,13 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
     : [];
 
   return (
-    <aside className="w-60 shrink-0 min-h-screen flex flex-col border-r"
-      style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-
+    <aside className="w-56 shrink-0 min-h-screen flex flex-col border-r border-gray-200 bg-white">
       {/* Logo / Org name */}
-      <div className="px-4 py-4 border-b flex items-center gap-3"
-        style={{ borderColor: "var(--cat-card-border)" }}>
-        <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain shrink-0"
-          style={{ boxShadow: "0 2px 8px var(--cat-accent-glow)" }} />
+      <div className="px-4 py-4 border-b border-gray-200 flex items-center gap-3">
+        <img src="/logo.png" alt="Goality" className="w-7 h-7 rounded-lg object-contain shrink-0" />
         <div className="min-w-0">
-          <p className="text-[13px] font-bold truncate leading-tight" style={{ color: "var(--cat-text)" }}>{orgName}</p>
-          <p className="text-[10px] leading-tight" style={{ color: "var(--cat-text-muted)" }}>{tAdmin("adminPanel")}</p>
+          <p className="text-sm font-semibold text-gray-900 truncate">{orgName}</p>
+          <p className="text-[10px] text-gray-400">{tAdmin("adminPanel")}</p>
         </div>
       </div>
 
@@ -75,15 +70,14 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
             <Link
               key={`org-${key}`}
               href={href}
-              style={isActive
-                ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }
-                : { color: "var(--cat-text-muted)" }
-              }
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all hover:opacity-80"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
+                isActive
+                  ? "bg-emerald-50 text-emerald-600 font-medium"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
             >
-              <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "var(--cat-accent)" : "var(--cat-text-muted)" }} />
-              <span className="flex-1" style={{ color: isActive ? "var(--cat-accent)" : "var(--cat-text-secondary)" }}>{t(key)}</span>
-              {isActive && <ChevronRight className="w-3 h-3 opacity-50" style={{ color: "var(--cat-accent)" }} />}
+              <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-600" : "text-gray-400"}`} />
+              <span>{t(key)}</span>
             </Link>
           );
         })}
@@ -92,7 +86,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
         {tournamentNav.length > 0 && (
           <>
             <div className="pt-4 pb-1.5 px-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--cat-text-muted)" }}>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
                 {t("tournaments")}
               </span>
             </div>
@@ -107,15 +101,14 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
                 <Link
                   key={`t-${key}`}
                   href={href}
-                  style={isActive
-                    ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }
-                    : { color: "var(--cat-text-muted)" }
-                  }
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all hover:opacity-80"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
+                    isActive
+                      ? "bg-emerald-50 text-emerald-600 font-medium"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "var(--cat-accent)" : "var(--cat-text-muted)" }} />
-                  <span className="flex-1" style={{ color: isActive ? "var(--cat-accent)" : "var(--cat-text-secondary)" }}>{t(key)}</span>
-                  {isActive && <ChevronRight className="w-3 h-3 opacity-50" style={{ color: "var(--cat-accent)" }} />}
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-600" : "text-gray-400"}`} />
+                  <span>{t(key)}</span>
                 </Link>
               );
             })}
@@ -124,14 +117,13 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
       </nav>
 
       {/* Logout */}
-      <div className="p-3 border-t" style={{ borderColor: "var(--cat-card-border)" }}>
+      <div className="p-3 border-t border-gray-200">
         <form action="/api/auth/logout" method="POST">
           <button
             type="submit"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all w-full cursor-pointer hover:opacity-80"
-            style={{ color: "var(--cat-text-muted)" }}
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 w-full cursor-pointer"
           >
-            <LogOut className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
+            <LogOut className="w-4 h-4 shrink-0" />
             <span>{tAdmin("logOut")}</span>
           </button>
         </form>

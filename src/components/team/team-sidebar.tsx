@@ -73,10 +73,7 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
         {groups.map((group, gi) => (
           <div key={gi}>
             {group.labelKey && (
-              <p
-                className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest"
-                style={{ color: "var(--cat-text-muted)" }}
-              >
+              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                 {t(group.labelKey)}
               </p>
             )}
@@ -88,24 +85,16 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
                     key={key}
                     href={href}
                     className={cn(
-                      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all",
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors",
                       isActive
-                        ? ""
-                        : "hover:opacity-80"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     )}
-                    style={
-                      isActive
-                        ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }
-                        : { color: "var(--cat-text-secondary)" }
-                    }
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     <span className="flex-1">{t(key)}</span>
                     {badge !== undefined && badge > 0 && (
-                      <span
-                        className="text-[10px] rounded-full px-1.5 py-0.5 font-bold"
-                        style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
-                      >
+                      <span className="text-[10px] rounded-full px-1.5 py-0.5 font-bold bg-emerald-600 text-white">
                         {badge}
                       </span>
                     )}

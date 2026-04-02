@@ -17,8 +17,6 @@ export default async function AdminLayout({ children, params }: Props) {
     redirect(`/${locale}/login`);
   }
 
-  // Only super admins can access /admin (platform-level)
-  // Org admins should use /org/[slug]/admin
   if (!session.isSuper) {
     if (session.organizationSlug) {
       redirect(`/${locale}/org/${session.organizationSlug}/admin`);
@@ -27,15 +25,15 @@ export default async function AdminLayout({ children, params }: Props) {
   }
 
   return (
-    <ThemeProvider defaultTheme="dark">
-      <div className="flex min-h-screen" style={{ background: "var(--cat-bg)" }}>
+    <ThemeProvider defaultTheme="light">
+      <div className="flex min-h-screen bg-gray-50">
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="flex items-center justify-end gap-3 px-8 py-4" style={{ background: "var(--cat-bg)" }}>
+          <header className="flex items-center justify-end gap-3 px-8 py-4 bg-white border-b border-gray-200">
             <ThemeToggle />
             <LanguageSwitcher />
           </header>
-          <main className="flex-1 p-8" style={{ background: "var(--cat-bg)" }}>{children}</main>
+          <main className="flex-1 p-8">{children}</main>
         </div>
       </div>
     </ThemeProvider>

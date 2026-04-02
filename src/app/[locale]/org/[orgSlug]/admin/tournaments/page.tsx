@@ -7,7 +7,7 @@ import { tournaments as tournamentsTable, teams, clubs } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { Link } from "@/i18n/navigation";
-import { Trophy, Calendar, Plus, ChevronRight, ArrowLeft, Users, Sparkles } from "lucide-react";
+import { Trophy, Calendar, Plus, ChevronRight, ArrowLeft, Users } from "lucide-react";
 
 type Props = {
   params: Promise<{ locale: string; orgSlug: string }>;
@@ -52,47 +52,27 @@ export default async function TournamentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6 max-w-[800px]">
-
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href={`/org/${orgSlug}/admin`}
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:opacity-70"
-          style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
+          className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100 text-gray-500 hover:bg-gray-200">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <Sparkles className="w-3 h-3" style={{ color: "var(--cat-accent)" }} />
-            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "var(--cat-accent)" }}>
-              {organization.name}
-            </span>
-          </div>
-          <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>{t("tournaments")}</h1>
+          <p className="text-xs text-gray-400">{organization.name}</p>
+          <h1 className="text-xl font-bold text-gray-900">{t("tournaments")}</h1>
         </div>
       </div>
 
-      {/* Create tournament card */}
-      <div className="rounded-2xl border overflow-hidden"
-        style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}>
-        {/* Card header */}
-        <div className="px-6 py-4 border-b flex items-center gap-3"
-          style={{ borderColor: "var(--cat-divider)", background: "var(--cat-tag-bg)" }}>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, var(--cat-accent), var(--cat-accent-dark))" }}>
-            <Plus className="w-4 h-4" style={{ color: "var(--cat-accent-text)" }} />
-          </div>
-          <div>
-            <p className="text-[13px] font-bold" style={{ color: "var(--cat-text)" }}>{t("newTournament")}</p>
-            <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentNamePlaceholder")}</p>
-          </div>
+      {/* Create tournament */}
+      <div className="bg-white border border-gray-200 rounded-lg">
+        <div className="px-4 py-3 border-b border-gray-100">
+          <p className="text-sm font-medium text-gray-900">{t("newTournament")}</p>
         </div>
-
-        {/* Form */}
-        <form action={createTournament} className="p-6">
+        <form action={createTournament} className="p-4">
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <label className="block text-[11px] font-bold uppercase tracking-wider mb-2"
-                style={{ color: "var(--cat-text-muted)" }}>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
                 {t("tournamentName")}
               </label>
               <input
@@ -100,17 +80,11 @@ export default async function TournamentsPage({ params }: Props) {
                 name="name"
                 required
                 placeholder={t("tournamentNamePlaceholder")}
-                className="cat-search w-full rounded-xl px-4 py-2.5 text-[13px] outline-none transition-all"
-                style={{
-                  background: "var(--cat-input-bg)",
-                  border: "1px solid var(--cat-input-border)",
-                  color: "var(--cat-text)",
-                }}
+                className="w-full rounded-lg px-3 py-2 text-sm bg-gray-50 border border-gray-200 text-gray-900 outline-none focus:border-emerald-500"
               />
             </div>
             <div className="w-28">
-              <label className="block text-[11px] font-bold uppercase tracking-wider mb-2"
-                style={{ color: "var(--cat-text-muted)" }}>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
                 {t("year")}
               </label>
               <input
@@ -118,22 +92,12 @@ export default async function TournamentsPage({ params }: Props) {
                 name="year"
                 required
                 defaultValue={new Date().getFullYear()}
-                className="cat-search w-full rounded-xl px-4 py-2.5 text-[13px] outline-none transition-all"
-                style={{
-                  background: "var(--cat-input-bg)",
-                  border: "1px solid var(--cat-input-border)",
-                  color: "var(--cat-text)",
-                }}
+                className="w-full rounded-lg px-3 py-2 text-sm bg-gray-50 border border-gray-200 text-gray-900 outline-none focus:border-emerald-500"
               />
             </div>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-opacity hover:opacity-90 shrink-0"
-              style={{
-                background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))",
-                color: "var(--cat-accent-text)",
-                boxShadow: "0 3px 12px var(--cat-accent-glow)",
-              }}>
+              className="inline-flex items-center gap-2 bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-emerald-700 shrink-0">
               <Plus className="w-4 h-4" />
               {t("create")}
             </button>
@@ -144,65 +108,46 @@ export default async function TournamentsPage({ params }: Props) {
       {/* Tournament list */}
       {tournaments.length > 0 ? (
         <div>
-          <p className="text-[11px] font-black uppercase tracking-widest mb-3" style={{ color: "var(--cat-text-muted)" }}>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
             {t("yourTournaments")} · {tournaments.length}
-          </p>
-          <div className="space-y-3">
+          </h2>
+          <div className="space-y-2">
             {tournaments.map((tournament) => (
               <Link
                 key={tournament.id}
                 href={`/org/${orgSlug}/admin/tournament/${tournament.id}`}
-                className="cat-card flex items-center gap-4 rounded-2xl p-5 border group"
-                style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}
+                className="flex items-center gap-4 bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 group"
               >
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: "linear-gradient(135deg, var(--cat-accent), var(--cat-accent-dark))" }}>
-                  <Trophy className="w-5 h-5" style={{ color: "var(--cat-accent-text)" }} />
-                </div>
-
+                <Trophy className="w-5 h-5 text-emerald-600 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                    <h3 className="font-bold text-[15px]" style={{ color: "var(--cat-text)" }}>{tournament.name}</h3>
-                    <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full"
-                      style={tournament.registrationOpen
-                        ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", border: "1px solid var(--cat-badge-open-border)" }
-                        : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-tag-border)" }
-                      }>
-                      <span className="w-1.5 h-1.5 rounded-full"
-                        style={{ background: tournament.registrationOpen ? "var(--cat-accent)" : "var(--cat-text-muted)" }} />
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <h3 className="font-medium text-gray-900">{tournament.name}</h3>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      tournament.registrationOpen
+                        ? "bg-emerald-50 text-emerald-600"
+                        : "bg-gray-100 text-gray-500"
+                    }`}>
                       {tournament.registrationOpen ? t("regOpen") : t("regClosed")}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1.5 text-[12px]" style={{ color: "var(--cat-text-secondary)" }}>
-                      <Calendar className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
                       {tournament.year}
                     </span>
-                    <span className="flex items-center gap-1.5 text-[12px]" style={{ color: "var(--cat-text-secondary)" }}>
-                      <Users className="w-3.5 h-3.5" style={{ color: "#3B82F6" }} />
-                      {tournament.clubCount} {t("clubs").toLowerCase()}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[12px]" style={{ color: "var(--cat-text-secondary)" }}>
-                      <Users className="w-3.5 h-3.5" style={{ color: "#10B981" }} />
-                      {tournament.teamCount} {t("teams").toLowerCase()}
-                    </span>
+                    <span>{tournament.clubCount} {t("clubs").toLowerCase()}</span>
+                    <span>{tournament.teamCount} {t("teams").toLowerCase()}</span>
                   </div>
                 </div>
-
-                <ChevronRight className="w-5 h-5 opacity-30 group-hover:opacity-70 transition-opacity shrink-0"
-                  style={{ color: "var(--cat-text-secondary)" }} />
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 shrink-0" />
               </Link>
             ))}
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl p-12 text-center border"
-          style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-            style={{ background: "var(--cat-badge-open-bg)" }}>
-            <Trophy className="w-7 h-7" style={{ color: "var(--cat-accent)" }} />
-          </div>
-          <p className="text-[13px]" style={{ color: "var(--cat-text-secondary)" }}>{t("noTournaments")}</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+          <Trophy className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-sm text-gray-500">{t("noTournaments")}</p>
         </div>
       )}
     </div>

@@ -13,7 +13,6 @@ type ClubEntry = { name: string; badgeUrl: string | null; city: string | null };
 
 export default function TournamentInfoPage() {
   const { org, tournament: t, stats, classes } = useTournamentPublic();
-  const brand = org.brandColor;
   const [clubs, setClubs] = useState<ClubEntry[]>([]);
 
   useEffect(() => {
@@ -47,30 +46,25 @@ export default function TournamentInfoPage() {
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-3">
         {statItems.map(({ value, label }) => (
-          <div key={label} className="rounded-2xl p-4 text-center"
-            style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}>
-            <p className="text-2xl font-black" style={{ color: brand }}>{value}</p>
-            <p className="text-[11px] font-medium mt-0.5" style={{ color: "var(--cat-text-muted)" }}>{label}</p>
+          <div key={label} className="bg-white border border-gray-200 rounded-lg p-4 text-center">
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Registration status */}
-      <div className="rounded-2xl p-4 flex items-center justify-between gap-4"
-        style={t.registrationOpen
-          ? { background: "var(--cat-badge-open-bg)", border: "1px solid var(--cat-badge-open-border)" }
-          : { background: "var(--cat-tag-bg)", border: "1px solid var(--cat-tag-border)" }
-        }>
+      <div className={`rounded-lg p-4 flex items-center justify-between gap-4 border ${t.registrationOpen ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}>
         <div className="flex items-center gap-3">
           {t.registrationOpen
-            ? <CheckCircle className="w-5 h-5 shrink-0" style={{ color: "var(--cat-badge-open-text)" }} />
-            : <Clock className="w-5 h-5 shrink-0" style={{ color: "var(--cat-text-muted)" }} />}
+            ? <CheckCircle className="w-5 h-5 shrink-0 text-green-600" />
+            : <Clock className="w-5 h-5 shrink-0 text-gray-400" />}
           <div>
-            <p className="text-sm font-semibold" style={{ color: t.registrationOpen ? "var(--cat-badge-open-text)" : "var(--cat-text)" }}>
+            <p className={`text-sm font-semibold ${t.registrationOpen ? "text-green-700" : "text-gray-900"}`}>
               {t.registrationOpen ? "Регистрация открыта" : "Регистрация закрыта"}
             </p>
             {t.registrationDeadline && (
-              <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-secondary)" }}>
+              <p className="text-xs text-gray-500 mt-0.5">
                 Дедлайн: {fmt(t.registrationDeadline)}
               </p>
             )}
@@ -78,58 +72,49 @@ export default function TournamentInfoPage() {
         </div>
         {t.registrationOpen && (
           <Link href={`/t/${org.slug}/${t.slug}/register`}
-            className="shrink-0 inline-flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2 rounded-xl text-white hover:opacity-90 transition-opacity"
-            style={{ background: brand }}>
+            className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded bg-gray-900 text-white hover:bg-gray-800">
             Зарегистрироваться <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         )}
       </div>
 
-      {/* About + Key dates in 2 columns */}
+      {/* About + Key dates */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* About */}
         {t.description && (
-          <div className="rounded-2xl p-5" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}>
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--cat-text-muted)" }}>О турнире</p>
-            <p className="text-[13px] leading-relaxed whitespace-pre-line" style={{ color: "var(--cat-text-secondary)" }}>{t.description}</p>
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">О турнире</p>
+            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{t.description}</p>
           </div>
         )}
 
-        {/* Key dates */}
         {(t.startDate || t.endDate || t.registrationDeadline) && (
-          <div className="rounded-2xl p-5" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}>
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--cat-text-muted)" }}>Ключевые даты</p>
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Ключевые даты</p>
             <div className="space-y-3">
               {t.registrationDeadline && (
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-amber-50 border border-amber-200">
-                    <Clock className="w-4 h-4 text-amber-600" />
-                  </div>
+                  <Clock className="w-4 h-4 text-gray-400 shrink-0" />
                   <div>
-                    <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>Дедлайн регистрации</p>
-                    <p className="text-[13px] font-semibold" style={{ color: "var(--cat-text)" }}>{fmt(t.registrationDeadline)}</p>
+                    <p className="text-xs text-gray-500">Дедлайн регистрации</p>
+                    <p className="text-sm font-medium text-gray-900">{fmt(t.registrationDeadline)}</p>
                   </div>
                 </div>
               )}
               {t.startDate && (
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-blue-50 border border-blue-200">
-                    <Calendar className="w-4 h-4 text-blue-600" />
-                  </div>
+                  <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
                   <div>
-                    <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>Начало турнира</p>
-                    <p className="text-[13px] font-semibold" style={{ color: "var(--cat-text)" }}>{fmt(t.startDate)}</p>
+                    <p className="text-xs text-gray-500">Начало турнира</p>
+                    <p className="text-sm font-medium text-gray-900">{fmt(t.startDate)}</p>
                   </div>
                 </div>
               )}
               {t.endDate && (
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-emerald-50 border border-emerald-200">
-                    <Trophy className="w-4 h-4 text-emerald-600" />
-                  </div>
+                  <Trophy className="w-4 h-4 text-gray-400 shrink-0" />
                   <div>
-                    <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>Конец турнира</p>
-                    <p className="text-[13px] font-semibold" style={{ color: "var(--cat-text)" }}>{fmt(t.endDate)}</p>
+                    <p className="text-xs text-gray-500">Конец турнира</p>
+                    <p className="text-sm font-medium text-gray-900">{fmt(t.endDate)}</p>
                   </div>
                 </div>
               )}
@@ -139,18 +124,17 @@ export default function TournamentInfoPage() {
       </div>
 
       {/* Age classes */}
-      <div className="rounded-2xl p-5" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}>
-        <p className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: "var(--cat-text-muted)" }}>Возрастные категории · {classes.length} класса</p>
+      <div className="bg-white border border-gray-200 rounded-lg p-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-4">Возрастные категории · {classes.length} класса</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {classes.map(cls => (
-            <div key={cls.id} className="flex items-center gap-2.5 p-3 rounded-xl" style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-tag-border)" }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-black"
-                style={{ background: brand + "15", color: brand }}>
+            <div key={cls.id} className="flex items-center gap-2.5 p-3 rounded border border-gray-200 bg-gray-50">
+              <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 text-xs font-bold bg-gray-200 text-gray-700">
                 {cls.name.match(/\d+/)?.[0] ? `U${cls.name.match(/\d+/)?.[0]}` : cls.name.slice(0, 3)}
               </div>
               <div className="min-w-0">
-                <p className="text-[12px] font-semibold truncate" style={{ color: "var(--cat-text)" }}>{cls.name}</p>
-                <p className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
+                <p className="text-xs font-semibold text-gray-900 truncate">{cls.name}</p>
+                <p className="text-[10px] text-gray-500">
                   {cls.minBirthYear && cls.maxBirthYear && cls.minBirthYear !== cls.maxBirthYear
                     ? `${cls.maxBirthYear}–${cls.minBirthYear} · ${cls.teamCount} команд`
                     : cls.minBirthYear
@@ -163,60 +147,53 @@ export default function TournamentInfoPage() {
         </div>
       </div>
 
-      {/* Clubs logos grid */}
+      {/* Clubs grid */}
       {clubs.length > 0 && (
-        <div className="rounded-2xl p-5" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}>
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: "var(--cat-text-muted)" }}>
+        <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-4">
             Участвующие клубы · {clubs.length} клуба
           </p>
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
             {clubs.map((club) => (
-              <div key={club.name} className="flex flex-col items-center gap-1.5 group">
+              <div key={club.name} className="flex flex-col items-center gap-1.5">
                 {club.badgeUrl ? (
-                  <img src={club.badgeUrl} alt={club.name} className="w-12 h-12 rounded-xl object-contain"
-                    style={{ border: "1px solid var(--cat-card-border)" }} />
+                  <img src={club.badgeUrl} alt={club.name} className="w-10 h-10 rounded object-contain border border-gray-200" />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[12px] font-bold"
-                    style={{ background: brand + "18", color: brand, border: "1px solid " + brand + "30" }}>
+                  <div className="w-10 h-10 rounded flex items-center justify-center text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
                     {club.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
                   </div>
                 )}
-                <p className="text-[9px] text-center leading-tight line-clamp-2" style={{ color: "var(--cat-text-muted)" }}>{club.name}</p>
+                <p className="text-[9px] text-center leading-tight line-clamp-2 text-gray-500">{club.name}</p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Main partner banner (MOCK) */}
-      <div className="rounded-2xl overflow-hidden relative"
-        style={{ background: "linear-gradient(135deg, #1a1a2e, #16213e)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="absolute inset-0 opacity-5"
-          style={{ backgroundImage: "radial-gradient(circle at 70% 50%, white, transparent 60%)" }} />
-        <div className="relative z-10 p-6 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/40 mb-1">Главный партнёр</p>
-            <p className="text-lg font-black text-white">SportsMaster Estonia</p>
-            <p className="text-[13px] text-white/60 mt-0.5">Official Equipment Partner</p>
-          </div>
-          <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
-            <Star className="w-8 h-8 text-white/40" />
-          </div>
+      {/* Main partner banner */}
+      <div className="bg-gray-100 border border-gray-200 rounded-lg p-6 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Главный партнёр</p>
+          <p className="text-lg font-bold text-gray-900">SportsMaster Estonia</p>
+          <p className="text-sm text-gray-500 mt-0.5">Official Equipment Partner</p>
+        </div>
+        <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center shrink-0">
+          <Star className="w-7 h-7 text-gray-400" />
         </div>
       </div>
 
       {/* Contact */}
       {(org.contactEmail || org.website) && (
-        <div className="rounded-2xl p-5" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}>
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--cat-text-muted)" }}>Контакты</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Контакты</p>
           <div className="space-y-2">
             {org.contactEmail && (
-              <a href={`mailto:${org.contactEmail}`} className="flex items-center gap-2 text-[13px] hover:opacity-80 transition-opacity" style={{ color: "var(--cat-accent)" }}>
+              <a href={`mailto:${org.contactEmail}`} className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
                 <Mail className="w-4 h-4 shrink-0" /> {org.contactEmail}
               </a>
             )}
             {org.website && (
-              <a href={org.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[13px] hover:opacity-80 transition-opacity" style={{ color: "var(--cat-accent)" }}>
+              <a href={org.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
                 <Globe className="w-4 h-4 shrink-0" /> {org.website}
               </a>
             )}

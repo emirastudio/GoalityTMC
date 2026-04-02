@@ -8,8 +8,8 @@ import { teams, clubs, payments } from "@/db/schema";
 import { eq, count, sum } from "drizzle-orm";
 import {
   Users, Wallet, Trophy, ArrowLeft, Settings,
-  Package, Mail, ClipboardList, Layers, Wrench,
-  TableProperties, ChevronRight, ExternalLink,
+  Package, Mail, ClipboardList, Wrench,
+  ExternalLink,
 } from "lucide-react";
 
 type Props = {
@@ -41,58 +41,51 @@ export default async function TournamentOverviewPage({ params }: Props) {
   const basePath = `/org/${orgSlug}/admin/tournament/${tournamentId}`;
 
   const quickLinks = [
-    { key: "registrations", icon: ClipboardList, href: `${basePath}/registrations`, color: "#3B82F6" },
-    { key: "teams", icon: Users, href: `${basePath}/teams`, color: "#10B981" },
-    { key: "servicesPackages", icon: Package, href: `${basePath}/services-packages`, color: "#8B5CF6" },
-    { key: "payments", icon: Wallet, href: `${basePath}/payments`, color: "#F59E0B" },
-    { key: "messages", icon: Mail, href: `${basePath}/messages`, color: "#EF4444" },
-    { key: "setup", icon: Wrench, href: `${basePath}/setup`, color: "#06B6D4" },
-    { key: "settings", icon: Settings, href: `${basePath}/settings`, color: "#9CA3AF" },
+    { key: "registrations", icon: ClipboardList, href: `${basePath}/registrations` },
+    { key: "teams", icon: Users, href: `${basePath}/teams` },
+    { key: "servicesPackages", icon: Package, href: `${basePath}/services-packages` },
+    { key: "payments", icon: Wallet, href: `${basePath}/payments` },
+    { key: "messages", icon: Mail, href: `${basePath}/messages` },
+    { key: "setup", icon: Wrench, href: `${basePath}/setup` },
+    { key: "settings", icon: Settings, href: `${basePath}/settings` },
   ];
 
   const stats = [
-    { label: t("clubs"), value: Number(clubCount?.value ?? 0), color: "#3B82F6", icon: Users },
-    { label: t("teams"), value: Number(teamCount?.value ?? 0), color: "#10B981", icon: Users },
+    { label: t("clubs"), value: Number(clubCount?.value ?? 0), icon: Users },
+    { label: t("teams"), value: Number(teamCount?.value ?? 0), icon: Users },
     {
       label: t("payments"),
       value: `${tournament.currency ?? ""} ${Number(paymentSum?.value ?? 0).toFixed(0)}`,
-      color: "#F59E0B",
       icon: Wallet,
     },
   ];
 
   return (
     <div className="space-y-6 max-w-[900px]">
-
       {/* Header */}
       <div className="flex items-start gap-4">
         <Link href={`/org/${orgSlug}/admin`}
-          className="w-8 h-8 rounded-lg flex items-center justify-center mt-1 transition-all hover:opacity-70 shrink-0"
-          style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
+          className="w-8 h-8 rounded-lg flex items-center justify-center mt-1 bg-gray-100 text-gray-500 hover:bg-gray-200 shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-black" style={{ color: "var(--cat-text)" }}>{tournament.name}</h1>
-            <span className="flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full"
-              style={tournament.registrationOpen
-                ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", border: "1px solid var(--cat-badge-open-border)" }
-                : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-tag-border)" }
-              }>
-              <span className="w-1.5 h-1.5 rounded-full"
-                style={{ background: tournament.registrationOpen ? "var(--cat-accent)" : "var(--cat-text-muted)" }} />
+            <h1 className="text-2xl font-bold text-gray-900">{tournament.name}</h1>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${
+              tournament.registrationOpen
+                ? "bg-emerald-50 text-emerald-600"
+                : "bg-gray-100 text-gray-500"
+            }`}>
               {tournament.registrationOpen ? t("regOpen") : t("regClosed")}
             </span>
           </div>
-          <p className="text-[13px] mt-0.5" style={{ color: "var(--cat-text-secondary)" }}>
+          <p className="text-sm text-gray-500 mt-0.5">
             {organization.name} · {tournament.year}
           </p>
         </div>
-        {/* Public link */}
         <Link
           href={`/t/${organization.slug}/${tournament.slug}`}
-          className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-xl transition-opacity hover:opacity-80 shrink-0"
-          style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", border: "1px solid var(--cat-badge-open-border)" }}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:text-emerald-700 shrink-0"
           target="_blank">
           <ExternalLink className="w-3.5 h-3.5" />
           {t("tournamentPage")}
@@ -101,20 +94,13 @@ export default async function TournamentOverviewPage({ params }: Props) {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        {stats.map(({ label, value, color, icon: Icon }) => (
-          <div key={label}
-            className="cat-card rounded-2xl p-5 border relative overflow-hidden"
-            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}>
-            <div className="absolute top-0 right-0 w-20 h-20 rounded-full pointer-events-none opacity-[0.08] -translate-y-1/2 translate-x-1/2"
-              style={{ background: `radial-gradient(circle, ${color}, transparent)` }} />
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: color + "18", color }}>
-                <Icon className="w-5 h-5" />
-              </div>
+        {stats.map(({ label, value, icon: Icon }) => (
+          <div key={label} className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Icon className="w-5 h-5 text-gray-400" />
               <div>
-                <p className="text-2xl font-black leading-tight" style={{ color: "var(--cat-text)" }}>{value}</p>
-                <p className="text-[12px]" style={{ color: "var(--cat-text-muted)" }}>{label}</p>
+                <p className="text-2xl font-bold text-gray-900">{value}</p>
+                <p className="text-xs text-gray-500">{label}</p>
               </div>
             </div>
           </div>
@@ -123,22 +109,18 @@ export default async function TournamentOverviewPage({ params }: Props) {
 
       {/* Quick nav */}
       <div>
-        <p className="text-[11px] font-black uppercase tracking-widest mb-3" style={{ color: "var(--cat-text-muted)" }}>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
           {t("management")}
-        </p>
+        </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {quickLinks.map(({ key, icon: Icon, href, color }) => (
+          {quickLinks.map(({ key, icon: Icon, href }) => (
             <Link
               key={key}
               href={href}
-              className="cat-card cat-feature flex flex-col items-center gap-3 rounded-2xl p-5 border text-center"
-              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}
+              className="flex flex-col items-center gap-2 bg-white border border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50"
             >
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center cat-feature-icon"
-                style={{ background: color + "18", color }}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <span className="text-[12px] font-semibold leading-tight" style={{ color: "var(--cat-text-secondary)" }}>
+              <Icon className="w-5 h-5 text-gray-400" />
+              <span className="text-xs font-medium text-gray-600">
                 {tNav(key)}
               </span>
             </Link>
