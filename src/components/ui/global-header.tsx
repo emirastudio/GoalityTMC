@@ -18,16 +18,20 @@ export function GlobalHeader({ navLinks = [], rightContent }: Props) {
       className="sticky top-0 z-50 backdrop-blur-xl border-b shrink-0"
       style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)" }}
     >
-      <div className="h-14 px-6 grid grid-cols-[auto_1fr_auto] items-center gap-4">
+      {/* Centered inner container — 90% width, max 1400px */}
+      <div className="h-14 w-[90%] max-w-[1400px] mx-auto grid grid-cols-[auto_1fr_auto] items-center gap-6">
 
         {/* ── Left: Logo ── */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <img
-            src="/logo.png"
-            alt="Goality"
-            className="w-8 h-8 rounded-xl object-contain"
-            style={{ boxShadow: "0 4px 14px var(--cat-accent-glow)" }}
-          />
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              boxShadow: "0 0 0 1px rgba(255,255,255,0.10), 0 4px 14px var(--cat-accent-glow)",
+            }}
+          >
+            <img src="/logo.png" alt="Goality" className="w-full h-full object-contain" />
+          </div>
           <span className="font-bold text-[15px] tracking-tight" style={{ color: "var(--cat-text)" }}>
             Goality
           </span>
@@ -46,7 +50,7 @@ export function GlobalHeader({ navLinks = [], rightContent }: Props) {
               <a
                 key={href}
                 href={href}
-                className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors"
+                className="px-4 py-1.5 rounded-lg text-[13px] font-medium transition-colors"
                 style={{ color: "var(--cat-text-secondary)" }}
                 onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = "var(--cat-text)")}
                 onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = "var(--cat-text-secondary)")}
@@ -57,7 +61,7 @@ export function GlobalHeader({ navLinks = [], rightContent }: Props) {
               <Link
                 key={href}
                 href={href}
-                className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors"
+                className="px-4 py-1.5 rounded-lg text-[13px] font-medium transition-colors"
                 style={{ color: "var(--cat-text-secondary)" }}
                 onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = "var(--cat-text)")}
                 onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = "var(--cat-text-secondary)")}
@@ -69,10 +73,16 @@ export function GlobalHeader({ navLinks = [], rightContent }: Props) {
         </nav>
 
         {/* ── Right: Controls + custom content ── */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <ThemeToggle />
           <LanguageSwitcher />
-          {rightContent}
+          {rightContent && (
+            <>
+              {/* Thin separator */}
+              <div className="w-px h-4 shrink-0" style={{ background: "var(--cat-card-border)" }} />
+              {rightContent}
+            </>
+          )}
         </div>
       </div>
     </header>
@@ -91,17 +101,17 @@ export function PublicHeaderActions({
   getStartedLabel?: string;
 }) {
   return (
-    <>
+    <div className="flex items-center gap-3">
       <Link
         href="/login"
         className="hidden sm:block px-3 py-1.5 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70"
-        style={{ color: "var(--cat-text-muted)" }}
+        style={{ color: "var(--cat-text-secondary)" }}
       >
         {signInLabel}
       </Link>
       <Link
         href="/onboarding"
-        className="hidden sm:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90"
+        className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90"
         style={{
           background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))",
           color: "var(--cat-accent-text)",
@@ -109,7 +119,7 @@ export function PublicHeaderActions({
       >
         {getStartedLabel} <ArrowRight className="w-3.5 h-3.5" />
       </Link>
-    </>
+    </div>
   );
 }
 
