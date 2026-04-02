@@ -62,54 +62,55 @@ export default async function TournamentOverviewPage({ params }: Props) {
 
   return (
     <div className="space-y-6 max-w-[900px]">
-      {/* Header */}
+      {/* Заголовок турнира */}
       <div className="flex items-start gap-4">
         <Link href={`/org/${orgSlug}/admin`}
-          className="w-8 h-8 rounded-lg flex items-center justify-center mt-1 bg-gray-100 text-gray-500 hover:bg-gray-200 shrink-0">
+          className="w-8 h-8 rounded-lg flex items-center justify-center mt-1 th-card th-border border th-text-2 hover:th-bg shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900">{tournament.name}</h1>
+            <h1 className="text-2xl font-bold th-text">{tournament.name}</h1>
             <span className={`text-xs px-2 py-0.5 rounded-full ${
               tournament.registrationOpen
                 ? "bg-emerald-50 text-emerald-600"
-                : "bg-gray-100 text-gray-500"
+                : "th-tag"
             }`}>
               {tournament.registrationOpen ? t("regOpen") : t("regClosed")}
             </span>
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm th-text-2 mt-0.5">
             {organization.name} · {tournament.year}
           </p>
         </div>
         <Link
           href={`/t/${organization.slug}/${tournament.slug}`}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:text-emerald-700 shrink-0"
+          className="inline-flex items-center gap-1.5 text-xs font-medium shrink-0"
+          style={{ color: "var(--cat-accent)" }}
           target="_blank">
           <ExternalLink className="w-3.5 h-3.5" />
           {t("tournamentPage")}
         </Link>
       </div>
 
-      {/* Stats */}
+      {/* Статистика */}
       <div className="grid grid-cols-3 gap-4">
         {stats.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-lg p-4">
+          <div key={label} className="th-card border th-border rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <Icon className="w-5 h-5 text-gray-400" />
+              <Icon className="w-5 h-5 th-text-2" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{value}</p>
-                <p className="text-xs text-gray-500">{label}</p>
+                <p className="text-2xl font-bold th-text">{value}</p>
+                <p className="text-xs th-text-2">{label}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Quick nav */}
+      {/* Быстрая навигация */}
       <div>
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide th-text-m mb-3">
           {t("management")}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -117,10 +118,10 @@ export default async function TournamentOverviewPage({ params }: Props) {
             <Link
               key={key}
               href={href}
-              className="flex flex-col items-center gap-2 bg-white border border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50"
+              className="flex flex-col items-center gap-2 th-card border th-border rounded-lg p-4 text-center hover:th-bg transition-colors"
             >
-              <Icon className="w-5 h-5 text-gray-400" />
-              <span className="text-xs font-medium text-gray-600">
+              <Icon className="w-5 h-5 th-text-2" />
+              <span className="text-xs font-medium th-text-2">
                 {tNav(key)}
               </span>
             </Link>
