@@ -9,7 +9,9 @@ import {
   decimal,
   pgEnum,
   uniqueIndex,
+  index,
   varchar,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 // ─── Enums ──────────────────────────────────────────────
@@ -674,6 +676,363 @@ export const adminUsers = pgTable("admin_users", {
   role: adminRoleEnum("role").default("admin").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ═══════════════════════════════════════════════════════════
+// GAME LOGIC — Матчи, этапы, результаты, протоколы
+// ═══════════════════════════════════════════════════════════
+
+// ─── Enums ─────────────────────────────────────────────────
+
+export const stageTypeEnum = pgEnum("stage_type", [
+  "group",       // круговой внутри групп
+  "knockout",    // плей-офф на вылет
+  "league",      // все со всеми (чемпионат)
+  "swiss",       // швейцарская система
+  "double_elim", // двойное выбывание
+]);
+
+export const stageStatusEnum = pgEnum("stage_status", [
+  "pending",   // ещё не начался
+  "active",    // идёт
+  "finished",  // завершён
+]);
+
+export const matchStatusEnum = pgEnum("match_status", [
+  "scheduled",  // запланирован
+  "live",       // идёт прямо сейчас
+  "finished",   // завершён
+  "postponed",  // перенесён
+  "cancelled",  // отменён
+  "walkover",   // технический результат
+]);
+
+export const matchResultTypeEnum = pgEnum("match_result_type", [
+  "regular",    // основное время
+  "extra_time", // экстра-тайм
+  "penalties",  // пенальти
+  "walkover",   // технический
+  "technical",  // дисквалификация
+]);
+
+export const matchEventTypeEnum = pgEnum("match_event_type", [
+  "goal",
+  "own_goal",
+  "yellow",
+  "red",
+  "yellow_red",
+  "penalty_scored",
+  "penalty_missed",
+  "substitution_in",
+  "substitution_out",
+  "injury",
+]);
+
+// ─── Этапы турнира ─────────────────────────────────────────
+// Каждый турнир состоит из 1+ этапов (групповой → плей-офф)
+
+export const tournamentStages = pgTable("tournament_stages", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" })
+    .notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  nameRu: varchar("name_ru", { length: 100 }),
+  nameEt: varchar("name_et", { length: 100 }),
+  type: stageTypeEnum("type").notNull(),
+  order: integer("order").notNull(),
+  status: stageStatusEnum("status").default("pending").notNull(),
+  // Настройки этапа: очки за победу/ничью/поражение, длительность матча
+  settings: jsonb("settings").$type<{
+    pointsWin?: number;
+    pointsDraw?: number;
+    pointsLoss?: number;
+    matchDurationMinutes?: number;
+    extraTimeMinutes?: number;
+    hasPenalties?: boolean;
+    hasExtraTime?: boolean;
+    teamsCount?: number;
+    groupsCount?: number;
+    teamsPerGroup?: number;
+  }>().default({}),
+  // Порядок тайбрейков: head_to_head, goal_diff, goals_scored, away_goals, fair_play
+  tiebreakers: jsonb("tiebreakers").$type<string[]>().default([
+    "head_to_head_points",
+    "head_to_head_goal_diff",
+    "goal_diff",
+    "goals_scored",
+    "fair_play",
+  ]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_stages_tournament").on(table.tournamentId),
+  index("idx_stages_organization").on(table.organizationId),
+]);
+
+// ─── Группы внутри этапа ───────────────────────────────────
+// Групповой этап: группы A, B, C, D...
+
+export const stageGroups = pgTable("stage_groups", {
+  id: serial("id").primaryKey(),
+  stageId: integer("stage_id")
+    .references(() => tournamentStages.id, { onDelete: "cascade" })
+    .notNull(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  name: varchar("name", { length: 20 }).notNull(), // "A", "B", "Group 1"
+  order: integer("order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_stage_groups_stage").on(table.stageId),
+]);
+
+// ─── Команды в группах ─────────────────────────────────────
+
+export const groupTeams = pgTable("group_teams", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id")
+    .references(() => stageGroups.id, { onDelete: "cascade" })
+    .notNull(),
+  teamId: integer("team_id")
+    .references(() => teams.id, { onDelete: "cascade" })
+    .notNull(),
+  seedNumber: integer("seed_number"), // 1-4 для жеребьёвки по корзинам
+}, (table) => [
+  uniqueIndex("idx_group_teams_unique").on(table.groupId, table.teamId),
+]);
+
+// ─── Раунды плей-офф ───────────────────────────────────────
+// Финал, 1/2 финала, 1/4 финала, 1/8 финала...
+
+export const matchRounds = pgTable("match_rounds", {
+  id: serial("id").primaryKey(),
+  stageId: integer("stage_id")
+    .references(() => tournamentStages.id, { onDelete: "cascade" })
+    .notNull(),
+  name: varchar("name", { length: 50 }).notNull(),      // "Финал"
+  nameRu: varchar("name_ru", { length: 50 }),
+  nameEt: varchar("name_et", { length: 50 }),
+  shortName: varchar("short_name", { length: 10 }),     // "F", "SF", "QF", "R16"
+  order: integer("order").notNull(),                     // 1=финал, 2=полуфинал...
+  matchCount: integer("match_count").default(1).notNull(), // 1, 2, 4, 8, 16
+  isTwoLegged: boolean("is_two_legged").default(false).notNull(),
+  hasThirdPlace: boolean("has_third_place").default(false).notNull(),
+}, (table) => [
+  index("idx_match_rounds_stage").on(table.stageId),
+]);
+
+// ─── Матчи ─────────────────────────────────────────────────
+// Главная таблица игровой логики
+
+export const matches = pgTable("matches", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" })
+    .notNull(),
+  stageId: integer("stage_id")
+    .references(() => tournamentStages.id, { onDelete: "cascade" })
+    .notNull(),
+  groupId: integer("group_id")
+    .references(() => stageGroups.id, { onDelete: "set null" }),    // null для плей-офф
+  roundId: integer("round_id")
+    .references(() => matchRounds.id, { onDelete: "set null" }),    // null для группового
+  matchNumber: integer("match_number"),                              // глобальный номер
+
+  homeTeamId: integer("home_team_id")
+    .references(() => teams.id, { onDelete: "set null" }),
+  awayTeamId: integer("away_team_id")
+    .references(() => teams.id, { onDelete: "set null" }),
+
+  fieldId: integer("field_id")
+    .references(() => tournamentFields.id, { onDelete: "set null" }),
+
+  scheduledAt: timestamp("scheduled_at"),
+  startedAt: timestamp("started_at"),
+  finishedAt: timestamp("finished_at"),
+
+  status: matchStatusEnum("status").default("scheduled").notNull(),
+
+  // Счёт основного времени
+  homeScore: integer("home_score"),
+  awayScore: integer("away_score"),
+  // Экстра-тайм
+  homeExtraScore: integer("home_extra_score"),
+  awayExtraScore: integer("away_extra_score"),
+  // Серия пенальти
+  homePenalties: integer("home_penalties"),
+  awayPenalties: integer("away_penalties"),
+
+  winnerId: integer("winner_id")
+    .references(() => teams.id, { onDelete: "set null" }),
+  resultType: matchResultTypeEnum("result_type"),
+
+  isPublic: boolean("is_public").default(true).notNull(),
+  notes: text("notes"),
+  version: integer("version").default(0).notNull(), // optimistic locking
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),                // soft delete — никогда не удаляем
+}, (table) => [
+  index("idx_matches_tournament_status").on(table.tournamentId, table.status),
+  index("idx_matches_org_scheduled").on(table.organizationId, table.scheduledAt),
+  index("idx_matches_home_team").on(table.homeTeamId),
+  index("idx_matches_away_team").on(table.awayTeamId),
+  index("idx_matches_field_time").on(table.fieldId, table.scheduledAt),
+  index("idx_matches_stage").on(table.stageId),
+  index("idx_matches_group").on(table.groupId),
+]);
+
+// ─── Протокол матча (события) ──────────────────────────────
+// Голы, карточки, замены — каждое событие = строка
+
+export const matchEvents = pgTable("match_events", {
+  id: serial("id").primaryKey(),
+  matchId: integer("match_id")
+    .references(() => matches.id, { onDelete: "cascade" })
+    .notNull(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  teamId: integer("team_id")
+    .references(() => teams.id, { onDelete: "cascade" })
+    .notNull(),
+  personId: integer("person_id")
+    .references(() => people.id, { onDelete: "set null" }),
+  eventType: matchEventTypeEnum("event_type").notNull(),
+  minute: integer("minute").notNull(),
+  minuteExtra: integer("minute_extra"),                // 90+3 → minute=90, extra=3
+  assistPersonId: integer("assist_person_id")
+    .references(() => people.id, { onDelete: "set null" }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_match_events_match").on(table.matchId),
+  index("idx_match_events_tournament").on(table.tournamentId),
+  index("idx_match_events_person").on(table.personId),
+]);
+
+// ─── Составы (заявка на матч) ───────────────────────────────
+
+export const matchLineup = pgTable("match_lineup", {
+  id: serial("id").primaryKey(),
+  matchId: integer("match_id")
+    .references(() => matches.id, { onDelete: "cascade" })
+    .notNull(),
+  teamId: integer("team_id")
+    .references(() => teams.id, { onDelete: "cascade" })
+    .notNull(),
+  personId: integer("person_id")
+    .references(() => people.id, { onDelete: "cascade" })
+    .notNull(),
+  isStarting: boolean("is_starting").default(true).notNull(),
+  shirtNumber: integer("shirt_number"),
+  position: varchar("position", { length: 30 }),
+  rating: decimal("rating", { precision: 3, scale: 1 }), // оценка 1.0–10.0
+}, (table) => [
+  uniqueIndex("idx_match_lineup_unique").on(table.matchId, table.personId),
+  index("idx_match_lineup_match").on(table.matchId),
+]);
+
+// ─── Таблица группы (precomputed) ──────────────────────────
+// Пересчитывается после каждого матча — не считаем на лету
+
+export const standings = pgTable("standings", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id")
+    .references(() => stageGroups.id, { onDelete: "cascade" })
+    .notNull(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  teamId: integer("team_id")
+    .references(() => teams.id, { onDelete: "cascade" })
+    .notNull(),
+  played: integer("played").default(0).notNull(),
+  won: integer("won").default(0).notNull(),
+  drawn: integer("drawn").default(0).notNull(),
+  lost: integer("lost").default(0).notNull(),
+  goalsFor: integer("goals_for").default(0).notNull(),
+  goalsAgainst: integer("goals_against").default(0).notNull(),
+  goalDiff: integer("goal_diff").default(0).notNull(),  // goalsFor - goalsAgainst
+  points: integer("points").default(0).notNull(),
+  position: integer("position"),                         // место в группе (1,2,3...)
+  form: jsonb("form").$type<string[]>().default([]),    // ["W","D","L","W","W"]
+  headToHead: jsonb("head_to_head").$type<Record<string, unknown>>().default({}),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_standings_group_team").on(table.groupId, table.teamId),
+  index("idx_standings_tournament").on(table.tournamentId),
+]);
+
+// ─── Правила квалификации между этапами ────────────────────
+// Топ-2 из каждой группы → плей-офф
+
+export const qualificationRules = pgTable("qualification_rules", {
+  id: serial("id").primaryKey(),
+  fromStageId: integer("from_stage_id")
+    .references(() => tournamentStages.id, { onDelete: "cascade" })
+    .notNull(),
+  targetStageId: integer("target_stage_id")
+    .references(() => tournamentStages.id, { onDelete: "cascade" })
+    .notNull(),
+  fromRank: integer("from_rank").notNull(),              // с 1-го места
+  toRank: integer("to_rank").notNull(),                  // по 2-е место
+  targetSlot: varchar("target_slot", { length: 50 }),   // "winner","runner_up","best_third"
+  condition: jsonb("condition").$type<Record<string, unknown>>().default({}),
+});
+
+// ─── Слоты в сетке плей-офф ────────────────────────────────
+// Заполняются автоматически после завершения группового этапа
+
+export const stageSlots = pgTable("stage_slots", {
+  id: serial("id").primaryKey(),
+  stageId: integer("stage_id")
+    .references(() => tournamentStages.id, { onDelete: "cascade" })
+    .notNull(),
+  groupId: integer("group_id")
+    .references(() => stageGroups.id, { onDelete: "set null" }),
+  roundId: integer("round_id")
+    .references(() => matchRounds.id, { onDelete: "set null" }),
+  slotLabel: varchar("slot_label", { length: 100 }),    // "Победитель группы A"
+  slotLabelRu: varchar("slot_label_ru", { length: 100 }),
+  slotLabelEt: varchar("slot_label_et", { length: 100 }),
+  slotPosition: varchar("slot_position", { length: 10 }), // "home" | "away"
+  filledByTeamId: integer("filled_by_team_id")
+    .references(() => teams.id, { onDelete: "set null" }),
+  order: integer("order").default(0).notNull(),
+}, (table) => [
+  index("idx_stage_slots_stage").on(table.stageId),
+]);
+
+// ─── Audit log изменений результатов ───────────────────────
+// Кто, когда и почему изменил счёт
+
+export const matchResultLog = pgTable("match_result_log", {
+  id: serial("id").primaryKey(),
+  matchId: integer("match_id")
+    .references(() => matches.id, { onDelete: "cascade" })
+    .notNull(),
+  changedBy: integer("changed_by")
+    .references(() => adminUsers.id, { onDelete: "set null" }),
+  oldHomeScore: integer("old_home_score"),
+  oldAwayScore: integer("old_away_score"),
+  newHomeScore: integer("new_home_score"),
+  newAwayScore: integer("new_away_score"),
+  oldStatus: matchStatusEnum("old_status"),
+  newStatus: matchStatusEnum("new_status"),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_result_log_match").on(table.matchId),
+]);
 
 // ─── Registration Attempts Log ──────────────────────────────
 export const registrationAttempts = pgTable("registration_attempts", {
