@@ -353,7 +353,7 @@ export function TeamsPageContent() {
                         {statusDropdown === team.id && (
                           <div
                             ref={dropdownRef}
-                            className="absolute z-20 mt-1 left-4 popup-bg rounded-lg border th-border shadow-lg py-1 min-w-[140px]"
+                            className="absolute z-[9999] mt-1 left-4 popup-bg rounded-lg border th-border shadow-lg py-1 min-w-[140px]"
                           >
                             {allStatuses.map((s) => (
                               <button

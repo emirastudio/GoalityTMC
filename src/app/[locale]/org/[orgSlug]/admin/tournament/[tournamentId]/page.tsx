@@ -61,7 +61,7 @@ export default async function TournamentOverviewPage({ params }: Props) {
   ];
 
   return (
-    <div className="space-y-6 max-w-[900px]">
+    <div className="space-y-6 w-full">
       {/* Заголовок турнира */}
       <div className="flex items-start gap-4">
         <Link href={`/org/${orgSlug}/admin`}
