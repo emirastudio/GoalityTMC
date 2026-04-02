@@ -4,6 +4,7 @@ import { routing } from "./i18n/routing";
 export default createMiddleware(routing);
 
 export const config = {
-  // Match all locale-prefixed paths including new org/ routes
-  matcher: ["/", "/(en|ru|et)/:path*"],
+  // Match all paths except API routes, Next.js internals, and static files
+  // This allows next-intl to redirect /catalog → /en/catalog automatically
+  matcher: ["/((?!api|_next|_vercel|\\..*).*)"],
 };
