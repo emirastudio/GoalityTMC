@@ -958,6 +958,7 @@
     "foundTeams": "{count} team(s) registered",
     "signInToClub": "Sign in to club portal",
     "backToSearch": "← Back to search",
-    "continueCreate": "Continue — create new club anyway"
+    "continueCreate": "Continue — create new club anyway",
+    "teamsInClub": "Teams in this club — sign in to yours"
   }
 }

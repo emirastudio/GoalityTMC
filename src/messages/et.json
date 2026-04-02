@@ -914,6 +914,7 @@
     "foundTeams": "Registreeritud meeskondi: {count}",
     "signInToClub": "Logi klubi portaali",
     "backToSearch": "← Tagasi otsingusse",
-    "continueCreate": "Jätka — loo siiski uus klubi"
+    "continueCreate": "Jätka — loo siiski uus klubi",
+    "teamsInClub": "Selle klubi meeskonnad — logi oma meeskonda"
   }
 }

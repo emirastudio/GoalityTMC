@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
-import { ArrowRight, Trophy, Users, CreditCard, ArrowLeft } from "lucide-react";
+import { ArrowRight, Trophy, Users, CreditCard, ArrowLeft, Building2, Shield } from "lucide-react";
+
+type EmailHint = {
+  clubId: number;
+  clubName: string;
+  clubBadge: string | null;
+  teamName: string | null;
+  className: string | null;
+  isClubAdmin: boolean;
+};
 
 export default function LoginPage() {
   const t = useTranslations("auth");
@@ -14,6 +23,22 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"club" | "organizer">("club");
+  const [email, setEmail] = useState("");
+  const [emailHint, setEmailHint] = useState<EmailHint | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Lookup club/team by email as user types
+  useEffect(() => {
+    if (mode !== "club") { setEmailHint(null); return; }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const e = email.trim();
+    if (!e.includes("@") || !e.includes(".")) { setEmailHint(null); return; }
+    debounceRef.current = setTimeout(async () => {
+      const res = await fetch(`/api/public/clubs/by-email?email=${encodeURIComponent(e)}`);
+      const data = await res.json();
+      setEmailHint(data ?? null);
+    }, 500);
+  }, [email, mode]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -64,7 +89,6 @@ export default function LoginPage() {
               style={{ background: "radial-gradient(circle, #8B5CF6, transparent 70%)" }} />
           </div>
 
-          {/* Logo */}
           <div className="relative z-10 p-10">
             <Link href="/" className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
@@ -75,7 +99,6 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* Center */}
           <div className="relative z-10 flex-1 flex flex-col justify-center px-14 pb-10">
             <div className="mb-8">
               <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-6 border"
@@ -126,7 +149,6 @@ export default function LoginPage() {
         {/* ── Right panel ─────────────────────────── */}
         <div className="flex-1 flex flex-col">
 
-          {/* Top bar */}
           <div className="flex items-center justify-between px-6 py-4 lg:px-10">
             <Link href="/" className="flex items-center gap-2 lg:hidden">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
@@ -145,11 +167,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Form area */}
           <div className="flex-1 flex items-center justify-center px-6 py-8 lg:px-16">
             <div className="w-full max-w-[400px]">
 
-              {/* Heading */}
               <div className="mb-8">
                 <h2 className="text-2xl font-black mb-1.5" style={{ color: "var(--cat-text)" }}>{t("loginTitle")}</h2>
                 <p className="text-[14px]" style={{ color: "var(--cat-text-secondary)" }}>{t("loginSubtitle")}</p>
@@ -161,7 +181,7 @@ export default function LoginPage() {
                   <button
                     key={m}
                     type="button"
-                    onClick={() => { setMode(m); setError(""); }}
+                    onClick={() => { setMode(m); setError(""); setEmailHint(null); }}
                     className="flex-1 py-2 text-[13px] font-semibold rounded-lg transition-all cursor-pointer"
                     style={mode === m
                       ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)", boxShadow: "0 2px 8px var(--cat-accent-glow)" }
@@ -182,6 +202,8 @@ export default function LoginPage() {
                   <input
                     name="email"
                     type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
                     placeholder={mode === "organizer" ? "organizer@example.com" : "club@example.com"}
                     required
                     autoFocus
@@ -190,6 +212,45 @@ export default function LoginPage() {
                     onFocus={e => e.currentTarget.style.borderColor = "var(--cat-accent)"}
                     onBlur={e => e.currentTarget.style.borderColor = "var(--cat-input-border)"}
                   />
+
+                  {/* Email hint — club/team context */}
+                  {emailHint && (
+                    <div
+                      className="mt-2 flex items-center gap-2.5 px-3 py-2.5 rounded-xl border"
+                      style={{
+                        background: "var(--cat-card-bg)",
+                        borderColor: "var(--cat-accent)",
+                        boxShadow: "0 0 0 2px var(--cat-accent-glow)",
+                      }}
+                    >
+                      {/* Club badge */}
+                      <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center overflow-hidden"
+                        style={{ background: "var(--cat-badge-open-bg)" }}>
+                        {emailHint.clubBadge ? (
+                          <img src={emailHint.clubBadge} alt={emailHint.clubName} className="w-full h-full object-contain" />
+                        ) : (
+                          <Building2 className="w-4 h-4" style={{ color: "var(--cat-accent)" }} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--cat-text-muted)" }}>
+                          {t("signingInAs")}
+                        </p>
+                        <p className="text-[13px] font-bold truncate" style={{ color: "var(--cat-text)" }}>
+                          {emailHint.clubName}
+                          {emailHint.teamName && (
+                            <span className="font-normal" style={{ color: "var(--cat-text-secondary)" }}>
+                              {" · "}{emailHint.teamName}
+                              {emailHint.className && ` (${emailHint.className})`}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      {emailHint.isClubAdmin && (
+                        <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>

@@ -408,6 +408,8 @@ function ClubSearchPanel({
 
 // ─── Club found panel ─────────────────────────────────────────────────────────
 
+type TeamInfo = { id: number; name: string; className: string };
+
 function ClubFoundPanel({
   club,
   onBack,
@@ -419,6 +421,14 @@ function ClubFoundPanel({
   onCreateAnyway: () => void;
   tcr: ReturnType<typeof useTranslations>;
 }) {
+  const [teams, setTeams] = useState<TeamInfo[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/public/clubs/${club.id}/teams`)
+      .then(r => r.json())
+      .then(data => setTeams(Array.isArray(data) ? data : []));
+  }, [club.id]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -474,6 +484,36 @@ function ClubFoundPanel({
         <LogIn className="w-4 h-4" />
         {tcr("signInToClub")}
       </Link>
+
+      {/* Teams list */}
+      {teams.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--cat-text-muted)" }}>
+            {tcr("teamsInClub")}
+          </p>
+          {teams.map((team) => (
+            <Link
+              key={team.id}
+              href="/login"
+              className="flex items-center justify-between px-4 py-3 rounded-xl border transition-all hover:opacity-80 group"
+              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}
+            >
+              <div>
+                <p className="text-[13px] font-semibold" style={{ color: "var(--cat-text)" }}>{team.name}</p>
+                {team.className && (
+                  <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>{team.className}</p>
+                )}
+              </div>
+              <div
+                className="text-[11px] font-semibold flex items-center gap-1 px-2.5 py-1 rounded-lg"
+                style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}
+              >
+                <LogIn className="w-3 h-3" /> {tcr("signInToClub")}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Divider */}
       <div className="flex items-center gap-3">
