@@ -33,13 +33,7 @@ export function GlobalHeader({ navLinks = [], rightContent }: Props) {
             <img src="/playGrowWin1.png" alt="Goality" className="w-full h-full object-contain" />
           </div>
           <span className="font-bold text-[15px] tracking-tight" style={{ color: "var(--cat-text)" }}>
-            Goality
-          </span>
-          <span
-            className="hidden sm:inline text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest"
-            style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
-          >
-            TMC
+            Goality TMC
           </span>
         </Link>
 
