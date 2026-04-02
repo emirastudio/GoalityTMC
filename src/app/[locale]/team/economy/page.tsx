@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTeam } from "@/lib/team-context";
-import { CreditCard, Clock } from "lucide-react";
+import { CreditCard, Clock, TrendingUp, Wallet, Receipt, CheckCircle2 } from "lucide-react";
 
 type OrderLine = {
   productName: string;
@@ -60,68 +59,126 @@ export default function EconomyPage() {
   }
 
   const balanceNum = parseFloat(data.balance);
+  const totalToPay = parseFloat(data.totalToPay);
+  const totalPaid = parseFloat(data.totalPaid);
+  const paidPercent = totalToPay > 0 ? Math.min(100, Math.round((totalPaid / totalToPay) * 100)) : 0;
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <Card>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("description")}</CardDescription>
+    <div className="space-y-5 max-w-2xl">
 
-        {/* Orders breakdown */}
-        {data.orders.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold text-navy mb-3">{t("subtotal")}</h3>
-            <div className="space-y-2">
-              {data.orders.map((order, i) => (
-                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg th-bg">
-                  <div>
-                    <p className="text-sm font-medium">{getLocalName(order)}</p>
-                    <p className="text-xs th-text-2">
-                      {order.quantity} × {parseFloat(order.unitPrice).toFixed(0)} {tc("euro")}
-                    </p>
-                  </div>
-                  <p className="text-sm font-medium">{parseFloat(order.total).toFixed(0)} {tc("euro")}</p>
-                </div>
-              ))}
+      {/* ── Заголовок страницы ── */}
+      <div className="mb-2">
+        <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
+        <p className="text-sm th-text-2 mt-1">{t("description")}</p>
+      </div>
+
+      {/* ── Три карточки сводки ── */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Заказано */}
+        <div className="th-card rounded-2xl border th-border p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-semibold th-text-2 uppercase tracking-wider">{t("totalToPay")}</p>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(99,102,241,0.12)" }}>
+              <Receipt className="w-3.5 h-3.5" style={{ color: "rgb(99,102,241)" }} />
             </div>
           </div>
-        )}
+          <p className="text-2xl font-bold th-text">{totalToPay.toFixed(0)}<span className="text-sm font-normal th-text-2 ml-1">{tc("euro")}</span></p>
+        </div>
 
-        {/* Summary */}
-        <div className="mt-6 space-y-3">
-          <div className="flex justify-between py-3 border-b th-border">
-            <span className="text-sm font-semibold">{t("totalToPay")}:</span>
-            <span className="text-lg font-bold text-navy">{parseFloat(data.totalToPay).toFixed(0)} {tc("euro")}</span>
+        {/* Оплачено */}
+        <div className="th-card rounded-2xl border th-border p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-semibold th-text-2 uppercase tracking-wider">{t("received")}</p>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "var(--badge-success-bg)" }}>
+              <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "var(--badge-success-color)" }} />
+            </div>
           </div>
-          <div className="flex justify-between py-3 border-b th-border">
-            <span className="text-sm font-semibold">{t("received")}:</span>
-            <span className="text-lg font-bold text-success">{parseFloat(data.totalPaid).toFixed(0)} {tc("euro")}</span>
+          <p className="text-2xl font-bold" style={{ color: "var(--badge-success-color)" }}>{totalPaid.toFixed(0)}<span className="text-sm font-normal th-text-2 ml-1">{tc("euro")}</span></p>
+        </div>
+
+        {/* Баланс */}
+        <div className="rounded-2xl border p-4 shadow-sm" style={{
+          background: balanceNum >= 0 ? "var(--badge-success-bg)" : "var(--badge-error-bg)",
+          borderColor: balanceNum >= 0 ? "var(--badge-success-border)" : "var(--badge-error-border)",
+        }}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-semibold th-text-2 uppercase tracking-wider">{t("balance")}</p>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center th-card border th-border">
+              <Wallet className="w-3.5 h-3.5 th-text-2" />
+            </div>
           </div>
-          <div className="flex justify-between py-3">
-            <span className="text-sm font-semibold">{t("balance")}:</span>
-            <span className={`text-lg font-bold ${balanceNum >= 0 ? "text-success" : "text-error"}`}>
-              {balanceNum >= 0 ? "+" : ""}{parseFloat(data.balance).toFixed(0)} {tc("euro")}
-            </span>
+          <p className="text-2xl font-bold" style={{ color: balanceNum >= 0 ? "var(--badge-success-color)" : "var(--badge-error-color)" }}>
+            {balanceNum >= 0 ? "+" : ""}{balanceNum.toFixed(0)}<span className="text-sm font-normal th-text-2 ml-1">{tc("euro")}</span>
+          </p>
+        </div>
+      </div>
+
+      {/* ── Прогресс оплаты ── */}
+      {totalToPay > 0 && (
+        <div className="th-card rounded-2xl border th-border shadow-sm p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 th-text-2" />
+              <p className="text-sm font-semibold th-text">{t("received")}</p>
+            </div>
+            <span className="text-sm font-bold" style={{ color: "var(--cat-accent)" }}>{paidPercent}%</span>
+          </div>
+          <div className="w-full h-2 th-bg rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${paidPercent}%`, background: "var(--cat-accent)", boxShadow: "0 0 8px var(--cat-accent-glow)" }}
+            />
+          </div>
+          <p className="text-xs th-text-2 mt-2">{totalPaid.toFixed(0)} {tc("euro")} / {totalToPay.toFixed(0)} {tc("euro")}</p>
+        </div>
+      )}
+
+      {/* ── Детализация заказов ── */}
+      {data.orders.length > 0 && (
+        <div className="th-card rounded-2xl border th-border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b th-border flex items-center gap-2">
+            <Receipt className="w-4 h-4 th-text-2" />
+            <p className="text-sm font-semibold th-text">{t("subtotal")}</p>
+          </div>
+          <div className="divide-y divide-[var(--cat-card-border)]">
+            {data.orders.map((order, i) => (
+              <div key={i} className="flex items-center justify-between px-5 py-3.5 hover:opacity-80 transition-opacity">
+                <div>
+                  <p className="text-sm font-medium th-text">{getLocalName(order)}</p>
+                  <p className="text-xs th-text-2 mt-0.5">
+                    {order.quantity} × {parseFloat(order.unitPrice).toFixed(0)} {tc("euro")}
+                  </p>
+                </div>
+                <p className="text-sm font-semibold th-text">{parseFloat(order.total).toFixed(0)} <span className="th-text-2 font-normal">{tc("euro")}</span></p>
+              </div>
+            ))}
+            {/* Итого строка */}
+            <div className="flex items-center justify-between px-5 py-4" style={{ background: "var(--cat-bg)" }}>
+              <p className="text-sm font-bold th-text">{t("totalToPay")}</p>
+              <p className="text-lg font-bold" style={{ color: "var(--cat-accent)" }}>{totalToPay.toFixed(0)} {tc("euro")}</p>
+            </div>
           </div>
         </div>
-      </Card>
+      )}
 
-      {/* Payment history */}
+      {/* ── История платежей ── */}
       {data.payments.length > 0 && (
-        <Card>
-          <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="w-5 h-5 text-navy" />
-            <CardTitle className="mb-0">{t("received")}</CardTitle>
+        <div className="th-card rounded-2xl border th-border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b th-border flex items-center gap-2">
+            <CreditCard className="w-4 h-4 th-text-2" />
+            <p className="text-sm font-semibold th-text">{t("received")}</p>
           </div>
-          <div className="space-y-3">
+          <div className="divide-y divide-[var(--cat-card-border)]">
             {data.payments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between py-3 px-3 rounded-lg th-bg">
+              <div key={payment.id} className="flex items-center justify-between px-5 py-3.5">
                 <div className="flex items-center gap-3">
-                  <Clock className="w-4 h-4 th-text-2" />
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center th-bg border th-border">
+                    <Clock className="w-3.5 h-3.5 th-text-2" />
+                  </div>
                   <div>
-                    <p className="text-sm font-medium">{parseFloat(payment.amount).toFixed(0)} {payment.currency}</p>
+                    <p className="text-sm font-semibold th-text">{parseFloat(payment.amount).toFixed(0)} {payment.currency}</p>
                     {payment.reference && (
-                      <p className="text-xs th-text-2">{payment.reference}</p>
+                      <p className="text-xs th-text-2 mt-0.5">{payment.reference}</p>
                     )}
                   </div>
                 </div>
@@ -138,7 +195,7 @@ export default function EconomyPage() {
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

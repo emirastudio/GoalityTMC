@@ -179,32 +179,32 @@ function AccommodationQuestCard({
   // ── State 3: Confirmed ───────────────────────────────────────────────────────
   if (displayState === "confirmed") {
     return (
-      <div className="rounded-xl border-2 border-success bg-emerald-50 p-5">
+      <div className="rounded-xl border-2 p-5" style={{ borderColor: "var(--badge-success-border)", background: "var(--badge-success-bg)" }}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <CheckCircle className="w-6 h-6 text-success shrink-0 mt-0.5" />
+            <CheckCircle className="w-6 h-6 shrink-0 mt-0.5" style={{ color: "var(--badge-success-color)" }} />
             <div>
-              <p className="text-base font-bold text-emerald-800 mb-1">{ta("confirmedTitle")}</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-emerald-700">
+              <p className="text-base font-bold th-text mb-1">{ta("confirmedTitle")}</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm th-text-2">
                 {accomPlayers > 0 && <span>{accomPlayers} {ta("players").toLowerCase()}</span>}
                 {accomStaff > 0 && <span>{accomStaff} {ta("staff").toLowerCase()}</span>}
                 {accomAccompanying > 0 && <span>{accomAccompanying} {ta("accompanying").toLowerCase()}</span>}
               </div>
               {(accomCheckIn || accomCheckOut) && (
-                <div className="mt-1.5 text-sm text-emerald-700">
+                <div className="mt-1.5 text-sm th-text-2">
                   {accomCheckIn && <span>{ta("arrivalLabel")}: {accomCheckIn}</span>}
                   {accomCheckIn && accomCheckOut && <span> · </span>}
                   {accomCheckOut && <span>{ta("departureLabel")}: {accomCheckOut}</span>}
                 </div>
               )}
               {accomNotes && (
-                <p className="mt-1.5 text-xs text-emerald-600 italic">{accomNotes}</p>
+                <p className="mt-1.5 text-xs th-text-2 italic">{accomNotes}</p>
               )}
             </div>
           </div>
           <button
             onClick={() => setFormOpen(true)}
-            className="text-xs text-emerald-700 border border-emerald-300 rounded-lg px-3 py-1.5 hover:bg-emerald-100 transition-colors shrink-0 cursor-pointer"
+            className="text-xs th-text-2 border th-border rounded-lg px-3 py-1.5 hover:opacity-80 transition-colors shrink-0 cursor-pointer th-card"
           >
             {ta("editBtn")}
           </button>
@@ -216,12 +216,12 @@ function AccommodationQuestCard({
   // ── State 2: Form expanded ───────────────────────────────────────────────────
   if (displayState === "form") {
     return (
-      <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-5 space-y-5">
+      <div className="rounded-xl border-2 p-5 space-y-5" style={{ borderColor: "var(--badge-warning-border)", background: "var(--badge-warning-bg)" }}>
         <div className="flex items-center gap-3">
-          <Hotel className="w-6 h-6 text-amber-700 shrink-0" />
+          <Hotel className="w-6 h-6 shrink-0" style={{ color: "var(--badge-warning-color)" }} />
           <div>
-            <p className="text-base font-bold text-amber-900">{ta("formTitle")}</p>
-            <p className="text-sm text-amber-700">{ta("formSubtitle")}</p>
+            <p className="text-base font-bold th-text">{ta("formTitle")}</p>
+            <p className="text-sm th-text-2">{ta("formSubtitle")}</p>
           </div>
         </div>
 
@@ -235,7 +235,7 @@ function AccommodationQuestCard({
             ] as { label: string; val: string; set: (v: string) => void }[]
           ).map(({ label, val, set }) => (
             <div key={label}>
-              <label className="block text-xs font-semibold text-amber-800 mb-1">{label}</label>
+              <label className="block text-xs font-semibold th-text-2 mb-1">{label}</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -247,7 +247,7 @@ function AccommodationQuestCard({
                   const raw = e.target.value.replace(/[^0-9]/g, "");
                   set(raw === "" ? "" : String(parseInt(raw, 10)));
                 }}
-                className="w-full rounded-lg border border-amber-300 th-card px-3 py-2 text-sm th-text focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                className="w-full rounded-lg th-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20 focus:border-[var(--cat-accent)]"
               />
             </div>
           ))}
@@ -256,34 +256,34 @@ function AccommodationQuestCard({
         {/* Dates row */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-amber-800 mb-1">{ta("checkIn")}</label>
+            <label className="block text-xs font-semibold th-text-2 mb-1">{ta("checkIn")}</label>
             <input
               type="date"
               value={checkIn}
               onChange={(e) => setCheckIn(e.target.value)}
-              className="w-full rounded-lg border border-amber-300 th-card px-3 py-2 text-sm th-text focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg th-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20 focus:border-[var(--cat-accent)]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-amber-800 mb-1">{ta("checkOut")}</label>
+            <label className="block text-xs font-semibold th-text-2 mb-1">{ta("checkOut")}</label>
             <input
               type="date"
               value={checkOut}
               onChange={(e) => setCheckOut(e.target.value)}
-              className="w-full rounded-lg border border-amber-300 th-card px-3 py-2 text-sm th-text focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg th-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20 focus:border-[var(--cat-accent)]"
             />
           </div>
         </div>
 
         {/* Notes */}
         <div>
-          <label className="block text-xs font-semibold text-amber-800 mb-1">{ta("notes")}</label>
+          <label className="block text-xs font-semibold th-text-2 mb-1">{ta("notes")}</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder={ta("notesPlaceholder")}
-            className="w-full rounded-lg border border-amber-300 th-card px-3 py-2 text-sm th-text focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 resize-none"
+            className="w-full rounded-lg th-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20 focus:border-[var(--cat-accent)] resize-none"
           />
         </div>
 
@@ -292,13 +292,14 @@ function AccommodationQuestCard({
           <button
             onClick={handleConfirm}
             disabled={saving}
-            className="flex-1 bg-navy text-white font-semibold rounded-xl py-3 text-sm hover:bg-navy/90 transition-colors disabled:opacity-50 cursor-pointer"
+            className="flex-1 font-semibold rounded-xl py-3 text-sm hover:opacity-90 transition-colors disabled:opacity-50 cursor-pointer"
+            style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
           >
             {saving ? ta("saving") : ta("confirmBtn")}
           </button>
           <button
             onClick={() => setFormOpen(false)}
-            className="text-sm th-text-2 hover:th-text cursor-pointer"
+            className="text-sm th-text-2 hover:opacity-70 cursor-pointer"
           >
             {ta("cancel")}
           </button>
@@ -309,29 +310,30 @@ function AccommodationQuestCard({
 
   // ── State 1: Unanswered ──────────────────────────────────────────────────────
   return (
-    <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-5">
+    <div className="rounded-xl border-2 p-5" style={{ borderColor: "var(--badge-warning-border)", background: "var(--badge-warning-bg)" }}>
       <div className="flex items-start gap-3 mb-4">
-        <Hotel className="w-6 h-6 text-amber-700 shrink-0 mt-0.5" />
+        <Hotel className="w-6 h-6 shrink-0 mt-0.5" style={{ color: "var(--badge-warning-color)" }} />
         <div>
-          <p className="text-base font-bold text-amber-900">{ta("questTitle")}</p>
-          <p className="text-sm text-amber-700 mt-0.5">{ta("questSubtitle")}</p>
+          <p className="text-base font-bold th-text">{ta("questTitle")}</p>
+          <p className="text-sm th-text-2 mt-0.5">{ta("questSubtitle")}</p>
         </div>
       </div>
 
       {confirmDecline ? (
-        <div className="rounded-lg bg-amber-100 border border-amber-300 p-4 space-y-3">
-          <p className="text-sm font-medium text-amber-900">{ta("confirmDeclineQuestion")}</p>
+        <div className="rounded-lg th-card border th-border p-4 space-y-3">
+          <p className="text-sm font-medium th-text">{ta("confirmDeclineQuestion")}</p>
           <div className="flex gap-2">
             <button
               onClick={handleDecline}
               disabled={saving}
-              className="flex-1 bg-amber-600 text-white font-semibold rounded-lg py-2 text-sm hover:bg-amber-700 transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 font-semibold rounded-lg py-2 text-sm hover:opacity-90 transition-colors disabled:opacity-50 cursor-pointer"
+              style={{ background: "var(--badge-warning-color)", color: "#ffffff" }}
             >
               {saving ? "..." : ta("confirmDeclineYes")}
             </button>
             <button
               onClick={() => setConfirmDecline(false)}
-              className="flex-1 border border-amber-400 text-amber-800 font-semibold rounded-lg py-2 text-sm hover:bg-amber-100 cursor-pointer"
+              className="flex-1 border th-border th-text-2 font-semibold rounded-lg py-2 text-sm hover:opacity-80 th-card cursor-pointer"
             >
               {ta("confirmDeclineBack")}
             </button>
@@ -341,13 +343,15 @@ function AccommodationQuestCard({
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => setFormOpen(true)}
-            className="flex-1 bg-navy text-white font-semibold rounded-xl py-3 text-sm hover:bg-navy/90 transition-colors cursor-pointer flex items-center justify-center gap-2"
+            className="flex-1 font-semibold rounded-xl py-3 text-sm hover:opacity-90 transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-[0_0_14px_var(--cat-accent-glow)]"
+            style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
           >
             <CheckCircle className="w-4 h-4" /> {ta("yesBtn")}
           </button>
           <button
             onClick={() => setConfirmDecline(true)}
-            className="flex-1 border-2 border-amber-400 text-amber-800 font-semibold rounded-xl py-3 text-sm hover:bg-amber-100 transition-colors cursor-pointer"
+            className="flex-1 border-2 th-text-2 font-semibold rounded-xl py-3 text-sm hover:opacity-80 transition-colors cursor-pointer th-card"
+            style={{ borderColor: "var(--badge-warning-border)" }}
           >
             {ta("noBtn")}
           </button>
@@ -415,7 +419,7 @@ export default function TeamOverviewPage() {
 
       {/* ── Page header (Bidibet style) ── */}
       <div className="mb-2">
-        <p className="text-[11px] font-semibold text-text-secondary/50 uppercase tracking-widest mb-1.5">
+        <p className="text-[11px] font-semibold th-text-2 uppercase tracking-widest mb-1.5">
           {today}
         </p>
         <h1 className="text-2xl font-bold th-text">{t("registrationProgress")}</h1>
@@ -432,7 +436,7 @@ export default function TeamOverviewPage() {
         ].map(({ icon: Icon, value, label, color }) => (
           <div key={label} className="th-card rounded-2xl p-5 border th-border shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[11px] font-semibold text-text-secondary/60 uppercase tracking-wider">{label}</p>
+              <p className="text-[11px] font-semibold th-text-2 uppercase tracking-wider">{label}</p>
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
                 <Icon className="w-4 h-4" />
               </div>
@@ -448,14 +452,14 @@ export default function TeamOverviewPage() {
         <div className="px-5 py-4 border-b th-border">
           <p className="text-sm font-semibold th-text">{t("financeSummary")}</p>
         </div>
-        <div className="grid grid-cols-3 divide-x divide-border">
+        <div className="grid grid-cols-3 divide-x divide-[var(--cat-card-border)]">
           {[
             { label: t("totalOrdered"), value: parseFloat(finance.totalOrdered).toFixed(0), color: "th-text", prefix: "€" },
             { label: t("totalPaid"), value: parseFloat(finance.totalPaid).toFixed(0), color: "text-success", prefix: "€" },
             { label: t("balanceLabel"), value: (balanceNum < 0 ? "" : "+") + parseFloat(finance.balance).toFixed(0), color: balanceNum < 0 ? "text-error" : "text-success", prefix: "€" },
           ].map(({ label, value, color, prefix }) => (
             <div key={label} className="px-5 py-4">
-              <p className="text-[11px] font-semibold text-text-secondary/60 uppercase tracking-wider mb-2">{label}</p>
+              <p className="text-[11px] font-semibold th-text-2 uppercase tracking-wider mb-2">{label}</p>
               <p className={`text-2xl font-bold ${color}`}>{prefix}{value}</p>
             </div>
           ))}
@@ -603,7 +607,7 @@ export default function TeamOverviewPage() {
 
             {/* Emergency */}
             {tInfo?.emergencyContact && (
-              <div className="flex gap-3 bg-red-50 rounded-lg p-3 -mx-1">
+              <div className="flex gap-3 rounded-lg p-3 -mx-1" style={{ background: "var(--badge-error-bg)", borderLeft: "3px solid var(--badge-error-border)" }}>
                 <Phone className="w-5 h-5 text-error shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-error">{t("emergencyContact")}</p>
