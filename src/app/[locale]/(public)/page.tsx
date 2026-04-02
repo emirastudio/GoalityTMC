@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ThemeProvider, ThemeToggle } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -76,6 +77,8 @@ function ForCard({ emoji, title, points, color }: { emoji: string; title: string
 }
 
 export default function HomePage() {
+  const t = useTranslations("landing");
+
   return (
     <ThemeProvider defaultTheme="dark">
       <div className="min-h-screen overflow-x-hidden" style={{ background: "var(--cat-bg)" }}>
@@ -90,10 +93,10 @@ export default function HomePage() {
             </Link>
             <nav className="hidden md:flex items-center gap-1">
               {[
-                { label: "Product", href: "#product" },
-                { label: "Features", href: "#features" },
-                { label: "For who", href: "#for-who" },
-                { label: "Catalog", href: "/catalog" },
+                { label: t("navProduct"), href: "#product" },
+                { label: t("navFeatures"), href: "#features" },
+                { label: t("navForWho"), href: "#for-who" },
+                { label: t("navCatalog"), href: "/catalog" },
               ].map(({ label, href }) => (
                 <a key={label} href={href} className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors" style={{ color: "var(--cat-text-secondary)" }}
                   onMouseEnter={e => (e.currentTarget.style.color = "var(--cat-text)")}
@@ -106,10 +109,10 @@ export default function HomePage() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <LanguageSwitcher variant="light" />
-              <Link href="/login" className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors" style={{ color: "var(--cat-text-secondary)" }}>Sign in</Link>
+              <Link href="/login" className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors" style={{ color: "var(--cat-text-secondary)" }}>{t("navSignIn")}</Link>
               <Link href="/onboarding" className="cat-cta-glow inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90"
                 style={{ background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))", color: "var(--cat-accent-text)" }}>
-                Get started <ArrowRight className="w-3.5 h-3.5" />
+                {t("navGetStarted")} <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
@@ -132,7 +135,7 @@ export default function HomePage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-8 border" style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)" }}>
               <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
-              <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--cat-accent)" }}>Tournament Management Cloud</span>
+              <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--cat-accent)" }}>{t("heroBadge")}</span>
             </div>
 
             {/* Title */}
@@ -143,31 +146,31 @@ export default function HomePage() {
             </h1>
 
             <p className="text-xl md:text-2xl font-semibold mb-4 max-w-3xl mx-auto" style={{ color: "var(--cat-text)" }}>
-              The all-in-one platform for youth football tournaments
+              {t("heroSubtitle")}
             </p>
             <p className="text-[15px] md:text-base max-w-2xl mx-auto leading-relaxed mb-12" style={{ color: "var(--cat-text-secondary)" }}>
-              From club registration to hotel assignments, payments and schedules — Goality TMC handles everything so organizers can focus on the game, not the spreadsheets.
+              {t("heroDesc")}
             </p>
 
             {/* CTAs */}
             <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
               <Link href="/onboarding" className="cat-cta-glow inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-[15px] font-bold transition-opacity hover:opacity-90"
                 style={{ background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))", color: "var(--cat-accent-text)", boxShadow: "0 8px 30px var(--cat-accent-glow)" }}>
-                Start free — no credit card <ArrowRight className="w-4 h-4" />
+                {t("heroCta1")} <ArrowRight className="w-4 h-4" />
               </Link>
               <Link href="/catalog" className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-[15px] font-semibold border transition-all hover:opacity-80"
                 style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}>
-                <Play className="w-4 h-4" style={{ color: "var(--cat-accent)" }} /> Browse tournaments
+                <Play className="w-4 h-4" style={{ color: "var(--cat-accent)" }} /> {t("heroCta2")}
               </Link>
             </div>
 
             {/* Stats row */}
             <div className="flex flex-wrap items-center justify-center gap-12">
               {[
-                { value: 500, suffix: "+", label: "Teams managed" },
-                { value: 12, suffix: "", label: "Countries" },
-                { value: 40, suffix: "+", label: "Tournaments" },
-                { value: 99, suffix: "%", label: "Organizer satisfaction" },
+                { value: 500, suffix: "+", label: t("statTeams") },
+                { value: 12, suffix: "", label: t("statCountries") },
+                { value: 40, suffix: "+", label: t("statTournaments") },
+                { value: 99, suffix: "%", label: t("statSatisfaction") },
               ].map(({ value, suffix, label }) => (
                 <div key={label} className="text-center cat-stat">
                   <p className="text-3xl md:text-4xl font-black mb-1" style={{ color: "var(--cat-accent)" }}>
@@ -186,37 +189,22 @@ export default function HomePage() {
         {/* ══════════ PRODUCT OVERVIEW ══════════ */}
         <section id="product" className="max-w-[1200px] mx-auto px-6 py-24">
           <div className="text-center mb-16">
-            <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--cat-accent)" }}>What is Goality TMC?</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--cat-accent)" }}>{t("productEyebrow")}</p>
             <h2 className="text-4xl md:text-5xl font-black mb-6" style={{ color: "var(--cat-text)" }}>
-              One platform.<br />
-              <span style={{ color: "var(--cat-accent)" }}>Infinite possibilities.</span>
+              {t("productTitle1")}<br />
+              <span style={{ color: "var(--cat-accent)" }}>{t("productTitle2")}</span>
             </h2>
             <p className="text-[15px] max-w-2xl mx-auto leading-relaxed" style={{ color: "var(--cat-text-secondary)" }}>
-              Goality TMC is a cloud-based tournament management system designed specifically for youth football. We eliminate manual work, reduce errors, and create a seamless experience for organizers, clubs, and players.
+              {t("productDesc")}
             </p>
           </div>
 
           {/* 3-column value props */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {[
-              {
-                icon: Zap,
-                title: "Launch in minutes",
-                desc: "Set up your tournament, add age classes, configure services and open registration — all in under 10 minutes. No IT knowledge required.",
-                color: "#F59E0B",
-              },
-              {
-                icon: Globe,
-                title: "Multi-country ready",
-                desc: "Support for multiple languages (EN / RU / ET), currencies, and international club registration. Built for European tournaments.",
-                color: "#3B82F6",
-              },
-              {
-                icon: Shield,
-                title: "Secure & reliable",
-                desc: "Role-based access control — super admin, org admin, club managers. Your data is safe, your workflow is structured.",
-                color: "#10B981",
-              },
+              { icon: Zap, title: t("vp1Title"), desc: t("vp1Desc"), color: "#F59E0B" },
+              { icon: Globe, title: t("vp2Title"), desc: t("vp2Desc"), color: "#3B82F6" },
+              { icon: Shield, title: t("vp3Title"), desc: t("vp3Desc"), color: "#10B981" },
             ].map(item => (
               <FeatureCard key={item.title} {...item} />
             ))}
@@ -231,21 +219,14 @@ export default function HomePage() {
               {/* Left: text */}
               <div className="p-10 md:p-14 flex flex-col justify-center">
                 <div className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-widest w-fit" style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", border: "1px solid var(--cat-badge-open-border)" }}>
-                  <TrendingUp className="w-3.5 h-3.5" /> For organizers
+                  <TrendingUp className="w-3.5 h-3.5" /> {t("orgBadge")}
                 </div>
-                <h3 className="text-3xl font-black mb-4" style={{ color: "var(--cat-text)" }}>From chaos to control</h3>
+                <h3 className="text-3xl font-black mb-4" style={{ color: "var(--cat-text)" }}>{t("orgTitle")}</h3>
                 <p className="text-[14px] leading-relaxed mb-8" style={{ color: "var(--cat-text-secondary)" }}>
-                  Stop juggling spreadsheets, WhatsApp groups, and email threads. Goality TMC gives you a single command center to manage everything — before, during, and after the tournament.
+                  {t("orgDesc")}
                 </p>
                 <ul className="space-y-3">
-                  {[
-                    "Club & team registration with auto-approval",
-                    "Hotel & room assignment dashboard",
-                    "Transfer & bus scheduling",
-                    "Service packages with pricing & invoices",
-                    "Real-time payment tracking",
-                    "Direct messaging to all clubs",
-                  ].map(item => (
+                  {[t("orgItem1"), t("orgItem2"), t("orgItem3"), t("orgItem4"), t("orgItem5"), t("orgItem6")].map(item => (
                     <li key={item} className="flex items-center gap-3">
                       <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--cat-badge-open-bg)" }}>
                         <CheckCircle className="w-3 h-3" style={{ color: "var(--cat-accent)" }} />
@@ -255,18 +236,17 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <Link href="/onboarding" className="mt-8 inline-flex items-center gap-2 font-semibold text-[13px]" style={{ color: "var(--cat-accent)" }}>
-                  Create your tournament <ChevronRight className="w-4 h-4" />
+                  {t("orgCta")} <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
               {/* Right: mock dashboard */}
               <div className="p-8 flex items-center justify-center" style={{ background: "linear-gradient(135deg, var(--cat-banner-from), var(--cat-banner-to))" }}>
                 <div className="w-full max-w-sm space-y-3">
-                  {/* Mini stat cards */}
                   {[
-                    { label: "Registered clubs", value: "24", icon: Building2, color: "#3B82F6" },
-                    { label: "Teams confirmed", value: "68", icon: Users, color: "#10B981" },
-                    { label: "Payments received", value: "€14,200", icon: CreditCard, color: "#F59E0B" },
-                    { label: "Messages sent", value: "142", icon: MessageSquare, color: "#8B5CF6" },
+                    { label: t("dashRegistered"), value: "24", icon: Building2, color: "#3B82F6" },
+                    { label: t("dashTeams"), value: "68", icon: Users, color: "#10B981" },
+                    { label: t("dashPayments"), value: "€14,200", icon: CreditCard, color: "#F59E0B" },
+                    { label: t("dashMessages"), value: "142", icon: MessageSquare, color: "#8B5CF6" },
                   ].map(({ label, value, icon: Icon, color }, i) => (
                     <div key={label} className="cat-card flex items-center gap-4 px-4 py-3 rounded-xl border" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", animationDelay: `${i * 100}ms` }}>
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: color + "18", color }}>
@@ -289,26 +269,26 @@ export default function HomePage() {
         <section id="features" style={{ background: "linear-gradient(180deg, var(--cat-bg), var(--cat-banner-from))" }}>
           <div className="max-w-[1200px] mx-auto px-6 py-24">
             <div className="text-center mb-16">
-              <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--cat-accent)" }}>Everything included</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--cat-accent)" }}>{t("featuresEyebrow")}</p>
               <h2 className="text-4xl md:text-5xl font-black" style={{ color: "var(--cat-text)" }}>
-                Built for the whole ecosystem
+                {t("featuresTitle")}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[
-                { icon: ClipboardList, title: "Club Registration", desc: "Self-service portal for clubs to register, add teams, upload badges and set login credentials.", color: "#10B981", delay: 0 },
-                { icon: Package, title: "Service Packages", desc: "Bundle accommodation, meals, transfers and extras into packages with per-team pricing.", color: "#3B82F6", delay: 50 },
-                { icon: Hotel, title: "Hotel Management", desc: "Assign rooms to teams, track occupancy, manage check-in/check-out and special requests.", color: "#8B5CF6", delay: 100 },
-                { icon: Bus, title: "Transfer Scheduling", desc: "Organize bus routes, assign teams to vehicles, track arrival and departure logistics.", color: "#F59E0B", delay: 150 },
-                { icon: CreditCard, title: "Payment Tracking", desc: "Monitor invoices, record payments, calculate balances and export financial summaries.", color: "#EF4444", delay: 200 },
-                { icon: Mail, title: "Club Inbox", desc: "Send announcements, updates and tournament info directly to all clubs or specific teams.", color: "#06B6D4", delay: 250 },
-                { icon: UserCheck, title: "Roster Management", desc: "Clubs add players, staff and accompanying persons with full profile and medical info.", color: "#EC4899", delay: 300 },
-                { icon: Calendar, title: "Schedule & Protocols", desc: "Match schedule, results and tournament protocols — all in one place for everyone.", color: "#10B981", delay: 350 },
-                { icon: BarChart3, title: "Live Dashboard", desc: "Real-time overview of registrations, payments, accommodation — everything in one screen.", color: "#F59E0B", delay: 400 },
-                { icon: Globe, title: "Multi-language", desc: "Full support for English, Russian and Estonian — automatically adapts to the user's locale.", color: "#3B82F6", delay: 450 },
-                { icon: Lock, title: "Role-based Access", desc: "Super admin, org admin, club manager — each with the exact permissions they need.", color: "#8B5CF6", delay: 500 },
-                { icon: Layers, title: "Multi-tournament", desc: "Manage multiple tournaments under one organization with shared settings and branding.", color: "#EF4444", delay: 550 },
+                { icon: ClipboardList, title: t("f1Title"), desc: t("f1Desc"), color: "#10B981", delay: 0 },
+                { icon: Package, title: t("f2Title"), desc: t("f2Desc"), color: "#3B82F6", delay: 50 },
+                { icon: Hotel, title: t("f3Title"), desc: t("f3Desc"), color: "#8B5CF6", delay: 100 },
+                { icon: Bus, title: t("f4Title"), desc: t("f4Desc"), color: "#F59E0B", delay: 150 },
+                { icon: CreditCard, title: t("f5Title"), desc: t("f5Desc"), color: "#EF4444", delay: 200 },
+                { icon: Mail, title: t("f6Title"), desc: t("f6Desc"), color: "#06B6D4", delay: 250 },
+                { icon: UserCheck, title: t("f7Title"), desc: t("f7Desc"), color: "#EC4899", delay: 300 },
+                { icon: Calendar, title: t("f8Title"), desc: t("f8Desc"), color: "#10B981", delay: 350 },
+                { icon: BarChart3, title: t("f9Title"), desc: t("f9Desc"), color: "#F59E0B", delay: 400 },
+                { icon: Globe, title: t("f10Title"), desc: t("f10Desc"), color: "#3B82F6", delay: 450 },
+                { icon: Lock, title: t("f11Title"), desc: t("f11Desc"), color: "#8B5CF6", delay: 500 },
+                { icon: Layers, title: t("f12Title"), desc: t("f12Desc"), color: "#EF4444", delay: 550 },
               ].map(item => (
                 <FeatureCard key={item.title} {...item} />
               ))}
@@ -319,36 +299,18 @@ export default function HomePage() {
         {/* ══════════ PROBLEMS WE SOLVE ══════════ */}
         <section className="max-w-[1200px] mx-auto px-6 py-24">
           <div className="text-center mb-16">
-            <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--cat-accent)" }}>Why Goality TMC?</p>
-            <h2 className="text-4xl md:text-5xl font-black mb-6" style={{ color: "var(--cat-text)" }}>We solve real problems</h2>
+            <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--cat-accent)" }}>{t("problemsEyebrow")}</p>
+            <h2 className="text-4xl md:text-5xl font-black mb-6" style={{ color: "var(--cat-text)" }}>{t("problemsTitle")}</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
-              {
-                before: "❌ Excel spreadsheets with 200 clubs",
-                after: "✅ Digital registration — clubs apply online in 3 minutes",
-              },
-              {
-                before: "❌ WhatsApp chaos for hotel assignments",
-                after: "✅ Visual room dashboard with drag-and-drop assignment",
-              },
-              {
-                before: "❌ Manual invoice generation in Word",
-                after: "✅ Automatic package pricing, invoices and payment tracking",
-              },
-              {
-                before: "❌ Email threads that nobody reads",
-                after: "✅ Built-in club inbox with read receipts",
-              },
-              {
-                before: "❌ No visibility on who paid and how much",
-                after: "✅ Real-time financial dashboard with balance per team",
-              },
-              {
-                before: "❌ Players list collected via PDF forms",
-                after: "✅ Clubs manage own rosters — players, staff, medical data",
-              },
+              { before: t("p1Before"), after: t("p1After") },
+              { before: t("p2Before"), after: t("p2After") },
+              { before: t("p3Before"), after: t("p3After") },
+              { before: t("p4Before"), after: t("p4After") },
+              { before: t("p5Before"), after: t("p5After") },
+              { before: t("p6Before"), after: t("p6After") },
             ].map(({ before, after }) => (
               <div key={before} className="cat-card rounded-2xl p-5 border" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}>
                 <p className="text-[13px] mb-3" style={{ color: "var(--cat-text-muted)" }}>{before}</p>
@@ -362,48 +324,30 @@ export default function HomePage() {
         <section id="for-who" style={{ background: "linear-gradient(180deg, var(--cat-bg), var(--cat-banner-to))" }}>
           <div className="max-w-[1200px] mx-auto px-6 py-24">
             <div className="text-center mb-16">
-              <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--cat-accent)" }}>For who</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--cat-accent)" }}>{t("forWhoEyebrow")}</p>
               <h2 className="text-4xl md:text-5xl font-black" style={{ color: "var(--cat-text)" }}>
-                Every role, perfectly served
+                {t("forWhoTitle")}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <ForCard
                 emoji="🏟️"
-                title="Tournament Organizers"
+                title={t("org1Title")}
                 color="#10B981"
-                points={[
-                  "Set up tournament in minutes",
-                  "Manage registrations & payments",
-                  "Assign hotels, buses, services",
-                  "Send messages to all clubs",
-                  "Full financial overview",
-                ]}
+                points={[t("org1p1"), t("org1p2"), t("org1p3"), t("org1p4"), t("org1p5")]}
               />
               <ForCard
                 emoji="🏃"
-                title="Football Clubs"
+                title={t("club1Title")}
                 color="#3B82F6"
-                points={[
-                  "Register online — no forms",
-                  "Manage multiple teams",
-                  "Add players & staff",
-                  "Book services & accommodation",
-                  "Track payments & balance",
-                ]}
+                points={[t("club1p1"), t("club1p2"), t("club1p3"), t("club1p4"), t("club1p5")]}
               />
               <ForCard
                 emoji="⚽"
-                title="Players & Families"
+                title={t("player1Title")}
                 color="#8B5CF6"
-                points={[
-                  "See team schedule & venue",
-                  "Hotel & transport info",
-                  "Medical & dietary data tracked",
-                  "Tournament bracket & results",
-                  "All info in one place",
-                ]}
+                points={[t("player1p1"), t("player1p2"), t("player1p3"), t("player1p4"), t("player1p5")]}
               />
             </div>
           </div>
@@ -420,10 +364,10 @@ export default function HomePage() {
                 {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-current" style={{ color: "#F59E0B" }} />)}
               </div>
               <blockquote className="text-xl md:text-2xl font-bold mb-6 max-w-3xl mx-auto" style={{ color: "var(--cat-text)" }}>
-                "Finally a system that understands what tournament organizers actually need. Setup took 20 minutes, clubs loved the self-service registration."
+                "{t("trustQuote")}"
               </blockquote>
               <p className="text-[13px] font-semibold" style={{ color: "var(--cat-text-secondary)" }}>
-                Kings Cup organizer — Tallinn, Estonia
+                {t("trustAuthor")}
               </p>
             </div>
           </div>
@@ -433,7 +377,6 @@ export default function HomePage() {
         <section className="max-w-[1200px] mx-auto px-6 pb-24">
           <div className="cat-banner rounded-3xl p-12 md:p-20 text-center relative overflow-hidden"
             style={{ background: "linear-gradient(135deg, var(--cat-banner-from), var(--cat-banner-via), var(--cat-banner-to))" }}>
-            {/* glow */}
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute top-[-30%] left-[30%] w-[600px] h-[600px] rounded-full opacity-[0.08]" style={{ background: `radial-gradient(circle, var(--cat-accent), transparent)` }} />
             </div>
@@ -442,24 +385,24 @@ export default function HomePage() {
                 <Trophy className="w-8 h-8" style={{ color: "var(--cat-accent)" }} />
               </div>
               <h2 className="text-4xl md:text-6xl font-black mb-6" style={{ color: "var(--cat-text)" }}>
-                Ready to run<br />
-                <span style={{ color: "var(--cat-accent)" }}>your best tournament?</span>
+                {t("ctaTitle1")}<br />
+                <span style={{ color: "var(--cat-accent)" }}>{t("ctaTitle2")}</span>
               </h2>
               <p className="text-[15px] max-w-xl mx-auto mb-10" style={{ color: "var(--cat-text-secondary)" }}>
-                Join organizers across Europe who trust Goality TMC to deliver flawless tournaments. Free to start, scales with your event.
+                {t("ctaDesc")}
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link href="/onboarding" className="cat-cta-glow inline-flex items-center gap-2 px-10 py-4 rounded-2xl text-[15px] font-bold hover:opacity-90 transition-opacity"
                   style={{ background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))", color: "var(--cat-accent-text)", boxShadow: "0 8px 30px var(--cat-accent-glow)" }}>
-                  Create tournament — free <ArrowRight className="w-4 h-4" />
+                  {t("ctaPrimary")} <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link href="/catalog" className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl text-[15px] font-semibold border hover:opacity-80 transition-opacity"
                   style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}>
-                  Browse tournaments
+                  {t("ctaSecondary")}
                 </Link>
               </div>
               <p className="mt-6 text-[12px]" style={{ color: "var(--cat-text-muted)" }}>
-                No credit card required · Setup in 10 minutes · Cancel anytime
+                {t("ctaDisclaimer")}
               </p>
             </div>
           </div>
@@ -470,14 +413,14 @@ export default function HomePage() {
           <div className="max-w-[1200px] mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Goality" className="w-7 h-7 rounded-lg object-contain" />
-              <span className="text-[13px] font-semibold" style={{ color: "var(--cat-text)" }}>Goality Sport Group</span>
+              <span className="text-[13px] font-semibold" style={{ color: "var(--cat-text)" }}>{t("footerCompany")}</span>
               <span className="text-[12px]" style={{ color: "var(--cat-text-muted)" }}>© {new Date().getFullYear()}</span>
             </div>
             <div className="flex items-center gap-6">
               {[
-                { label: "Catalog", href: "/catalog" },
-                { label: "Sign in", href: "/login" },
-                { label: "For organizers", href: "/onboarding" },
+                { label: t("footerCatalog"), href: "/catalog" },
+                { label: t("footerSignIn"), href: "/login" },
+                { label: t("footerOrganizers"), href: "/onboarding" },
               ].map(({ label, href }) => (
                 <Link key={label} href={href} className="text-[12px] transition-opacity hover:opacity-80" style={{ color: "var(--cat-text-secondary)" }}>{label}</Link>
               ))}
