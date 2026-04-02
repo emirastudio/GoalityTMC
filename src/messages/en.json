@@ -66,7 +66,14 @@
     "loginHeroQuoteAuthor": "Kings Cup organizer — Tallinn, Estonia",
     "superAdminLink": "Super admin",
     "noOrgAccount": "Want to organize a tournament?",
-    "registerOrg": "Create your organization"
+    "registerOrg": "Create your organization",
+    "findYourClub": "Find your club",
+    "findYourClubSubtitle": "Start typing your club name to sign in",
+    "skipToLogin": "I know my credentials — go to login",
+    "signingInAs": "Signing in as",
+    "changeClub": "Change",
+    "clubNotRegistered": "Club not registered yet?",
+    "registerNow": "Register a new club"
   },
   "nav": {
     "overview": "Overview",

@@ -66,7 +66,14 @@
     "loginHeroQuoteAuthor": "Kings Cup korraldaja — Tallinn, Eesti",
     "superAdminLink": "Superadmin",
     "noOrgAccount": "Soovite turniiri korraldada?",
-    "registerOrg": "Looge organisatsioon"
+    "registerOrg": "Looge organisatsioon",
+    "findYourClub": "Leia oma klubi",
+    "findYourClubSubtitle": "Alusta klubi nime sisestamist sisselogimiseks",
+    "skipToLogin": "Tean oma andmeid — mine sisselogimisele",
+    "signingInAs": "Logimine sisse kui",
+    "changeClub": "Muuda",
+    "clubNotRegistered": "Klubi pole veel registreeritud?",
+    "registerNow": "Registreeri klubi"
   },
   "nav": {
     "overview": "Ülevaade",
