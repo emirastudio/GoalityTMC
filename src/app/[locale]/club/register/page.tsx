@@ -107,7 +107,7 @@ function CountrySelect({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative z-10">
       <label className="block text-sm font-medium th-text mb-1.5">
         {label}{required && <span className="text-error ml-0.5">*</span>}
       </label>
@@ -142,7 +142,8 @@ function CountrySelect({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search..."
-              className="flex-1 text-sm outline-none bg-transparent placeholder:text-text-secondary/60"
+              className="flex-1 text-sm outline-none bg-transparent"
+              style={{ color: "var(--cat-text)" }}
             />
           </div>
           {/* List */}
@@ -156,13 +157,14 @@ function CountrySelect({
                   type="button"
                   onClick={() => { onChange(c.name); setOpen(false); setSearch(""); }}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors hover:th-bg",
-                    value === c.name && "bg-navy/5 font-medium text-navy"
+                    "w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors hover:th-bg th-text",
+                    value === c.name && "bg-navy/5 font-medium"
                   )}
+                  style={{ color: value === c.name ? "var(--cat-accent)" : "var(--cat-text)" }}
                 >
                   <span className="text-xl leading-none">{c.flag}</span>
                   <span>{c.name}</span>
-                  {value === c.name && <Check className="w-3.5 h-3.5 ml-auto text-navy" />}
+                  {value === c.name && <Check className="w-3.5 h-3.5 ml-auto" style={{ color: "var(--cat-accent)" }} />}
                 </button>
               ))
             )}
