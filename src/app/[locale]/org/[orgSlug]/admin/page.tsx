@@ -6,11 +6,14 @@ import { db } from "@/db";
 import { teams, clubs, tournamentClasses } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
+import type { LucideProps } from "lucide-react";
 import {
   Trophy, Users, Plus, ChevronRight, Sparkles, Star,
   Calendar, CheckCircle, Lock, ArrowRight, Zap,
   Globe, TrendingUp, CreditCard, MessageSquare, Building2,
 } from "lucide-react";
+
+type LucideIcon = React.ComponentType<LucideProps>;
 
 type Props = {
   params: Promise<{ locale: string; orgSlug: string }>;
@@ -159,7 +162,7 @@ export default async function OrgDashboardPage({ params }: Props) {
                   { icon: Globe, key: "heroBenefit1" as const },
                   { icon: Users, key: "heroBenefit2" as const },
                   { icon: CheckCircle, key: "heroBenefit3" as const },
-                ] as { icon: React.ComponentType<{ className?: string }>, key: "heroBenefit1" | "heroBenefit2" | "heroBenefit3" }[]).map(({ icon: Icon, key }) => (
+                ] as { icon: LucideIcon, key: "heroBenefit1" | "heroBenefit2" | "heroBenefit3" }[]).map(({ icon: Icon, key }) => (
                   <div key={key} className="flex flex-col items-center gap-2">
                     <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
                       style={{ background: "var(--cat-badge-open-bg)", border: "1px solid var(--cat-badge-open-border)" }}>
@@ -180,7 +183,7 @@ export default async function OrgDashboardPage({ params }: Props) {
               { step: "01", icon: Trophy, titleKey: "step1Title" as const, descKey: "step1Desc" as const, color: "var(--cat-accent)" },
               { step: "02", icon: Users, titleKey: "step2Title" as const, descKey: "step2Desc" as const, color: "#3B82F6" },
               { step: "03", icon: TrendingUp, titleKey: "step3Title" as const, descKey: "step3Desc" as const, color: "#8B5CF6" },
-            ] as { step: string, icon: React.ComponentType<{ className?: string }>, titleKey: "step1Title" | "step2Title" | "step3Title", descKey: "step1Desc" | "step2Desc" | "step3Desc", color: string }[]).map(({ step, icon: Icon, titleKey, descKey, color }) => (
+            ] as { step: string, icon: LucideIcon, titleKey: "step1Title" | "step2Title" | "step3Title", descKey: "step1Desc" | "step2Desc" | "step3Desc", color: string }[]).map(({ step, icon: Icon, titleKey, descKey, color }) => (
               <div key={step}
                 className="cat-card cat-feature rounded-2xl p-6 border"
                 style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}>
@@ -245,7 +248,7 @@ export default async function OrgDashboardPage({ params }: Props) {
                     { key: "dashStat2" as const, value: "68", icon: Users, color: "#2BFEBA" },
                     { key: "dashStat3" as const, value: "€14 200", icon: CreditCard, color: "#F59E0B" },
                     { key: "dashStat4" as const, value: "142", icon: MessageSquare, color: "#8B5CF6" },
-                  ] as { key: "dashStat1" | "dashStat2" | "dashStat3" | "dashStat4", value: string, icon: React.ComponentType<{ className?: string }>, color: string }[]).map(({ key, value, icon: Icon, color }, i) => (
+                  ] as { key: "dashStat1" | "dashStat2" | "dashStat3" | "dashStat4", value: string, icon: LucideIcon, color: string }[]).map(({ key, value, icon: Icon, color }, i) => (
                     <div key={key}
                       className="cat-card flex items-center gap-3 px-4 py-3 rounded-xl border"
                       style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.07)", animationDelay: `${i * 80}ms` }}>
@@ -274,7 +277,7 @@ export default async function OrgDashboardPage({ params }: Props) {
               { labelKey: "tournaments" as const, value: tournaments.length, color: "#F59E0B", icon: Trophy },
               { labelKey: "clubs" as const, value: totalClubs, color: "#3B82F6", icon: Users },
               { labelKey: "teams" as const, value: totalTeams, color: "#10B981", icon: Users },
-            ] as { labelKey: "tournaments" | "clubs" | "teams", value: number, color: string, icon: React.ComponentType<{ className?: string }> }[]).map(({ labelKey, value, color, icon: Icon }) => (
+            ] as { labelKey: "tournaments" | "clubs" | "teams", value: number, color: string, icon: LucideIcon }[]).map(({ labelKey, value, color, icon: Icon }) => (
               <div key={labelKey}
                 className="cat-card rounded-2xl p-5 border relative overflow-hidden"
                 style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}>
@@ -331,7 +334,7 @@ export default async function OrgDashboardPage({ params }: Props) {
                         { label: t("clubsCount").replace("{n}", String(tournament.clubCount)), color: "#3B82F6", icon: Users },
                         { label: t("teamsCount").replace("{n}", String(tournament.teamCount)), color: "#10B981", icon: Users },
                         { label: t("classesCount").replace("{n}", String(tournament.classCount)), color: "#8B5CF6", icon: Zap },
-                      ] as { label: string, color: string, icon: React.ComponentType<{ className?: string }> }[]).map(({ label, color, icon: Icon }) => (
+                      ] as { label: string, color: string, icon: LucideIcon }[]).map(({ label, color, icon: Icon }) => (
                         <div key={label} className="flex items-center gap-1.5">
                           <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: color + "15" }}>
                             <Icon className="w-3 h-3" style={{ color }} />
