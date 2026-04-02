@@ -37,9 +37,9 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <button
       onClick={toggle}
-      className={className ?? "w-8 h-8 rounded-lg flex items-center justify-center border transition-all"}
+      className={className ?? "w-8 h-8 rounded-lg flex items-center justify-center border transition-all outline-none focus:outline-none hover:opacity-70"}
       style={{
-        background: "var(--cat-card-bg)",
+        background: "var(--cat-tag-bg)",
         borderColor: "var(--cat-card-border)",
       }}
       title={theme === "dark" ? "Switch to light" : "Switch to dark"}
