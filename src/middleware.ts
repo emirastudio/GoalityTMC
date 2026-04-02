@@ -6,5 +6,5 @@ export default createMiddleware(routing);
 export const config = {
   // Match all paths except API routes, Next.js internals, and static files
   // This allows next-intl to redirect /catalog → /en/catalog automatically
-  matcher: ["/((?!api|_next|_vercel|\\..*).*)"],
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)" ],
 };
