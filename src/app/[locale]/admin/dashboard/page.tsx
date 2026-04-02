@@ -26,21 +26,21 @@ export default async function SuperAdminDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">{t("title")}</h1>
-        <p className="text-text-secondary mt-1">{t("subtitle")}</p>
+        <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
+        <p className="th-text-2 mt-1">{t("subtitle")}</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {stats.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="bg-white rounded-xl border border-border p-6">
+          <div key={label} className="th-card rounded-xl border th-border p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-navy/10 flex items-center justify-center">
                 <Icon className="w-5 h-5 text-navy" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-text-primary">{value}</p>
-                <p className="text-sm text-text-secondary">{label}</p>
+                <p className="text-2xl font-bold th-text">{value}</p>
+                <p className="text-sm th-text-2">{label}</p>
               </div>
             </div>
           </div>
@@ -50,7 +50,7 @@ export default async function SuperAdminDashboardPage() {
       {/* Organizations List */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-text-primary">{t("organizations")}</h2>
+          <h2 className="text-lg font-semibold th-text">{t("organizations")}</h2>
           <Link
             href="/admin/organizations"
             className="text-sm text-navy font-medium hover:underline flex items-center gap-1"
@@ -60,25 +60,25 @@ export default async function SuperAdminDashboardPage() {
         </div>
 
         {recentOrgs.length === 0 ? (
-          <div className="bg-white rounded-xl border border-border p-12 text-center">
+          <div className="th-card rounded-xl border th-border p-12 text-center">
             <Building2 className="w-12 h-12 text-text-secondary/30 mx-auto mb-4" />
-            <p className="text-text-secondary">{t("noOrganizations")}</p>
+            <p className="th-text-2">{t("noOrganizations")}</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <div className="th-card rounded-xl border th-border overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="px-6 py-3 text-xs font-medium text-text-secondary uppercase">{t("orgName")}</th>
-                  <th className="px-6 py-3 text-xs font-medium text-text-secondary uppercase">{t("country")}</th>
-                  <th className="px-6 py-3 text-xs font-medium text-text-secondary uppercase">{t("plan")}</th>
-                  <th className="px-6 py-3 text-xs font-medium text-text-secondary uppercase">{t("contact")}</th>
-                  <th className="px-6 py-3 text-xs font-medium text-text-secondary uppercase">{t("createdAt")}</th>
+                <tr className="border-b th-border text-left">
+                  <th className="px-6 py-3 text-xs font-medium th-text-2 uppercase">{t("orgName")}</th>
+                  <th className="px-6 py-3 text-xs font-medium th-text-2 uppercase">{t("country")}</th>
+                  <th className="px-6 py-3 text-xs font-medium th-text-2 uppercase">{t("plan")}</th>
+                  <th className="px-6 py-3 text-xs font-medium th-text-2 uppercase">{t("contact")}</th>
+                  <th className="px-6 py-3 text-xs font-medium th-text-2 uppercase">{t("createdAt")}</th>
                 </tr>
               </thead>
               <tbody>
                 {recentOrgs.map((org) => (
-                  <tr key={org.id} className="border-b border-border last:border-0 hover:bg-navy/5">
+                  <tr key={org.id} className="border-b th-border last:border-0 hover:bg-navy/5">
                     <td className="px-6 py-3">
                       <Link
                         href={`/org/${org.slug}/admin`}
@@ -86,9 +86,9 @@ export default async function SuperAdminDashboardPage() {
                       >
                         {org.name}
                       </Link>
-                      <p className="text-xs text-text-secondary">/{org.slug}</p>
+                      <p className="text-xs th-text-2">/{org.slug}</p>
                     </td>
-                    <td className="px-6 py-3 text-sm text-text-secondary">
+                    <td className="px-6 py-3 text-sm th-text-2">
                       {org.country ?? "-"}{org.city ? `, ${org.city}` : ""}
                     </td>
                     <td className="px-6 py-3">
@@ -100,10 +100,10 @@ export default async function SuperAdminDashboardPage() {
                         {org.plan}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-sm text-text-secondary">
+                    <td className="px-6 py-3 text-sm th-text-2">
                       {org.contactEmail ?? "-"}
                     </td>
-                    <td className="px-6 py-3 text-sm text-text-secondary">
+                    <td className="px-6 py-3 text-sm th-text-2">
                       {new Date(org.createdAt).toLocaleDateString()}
                     </td>
                   </tr>

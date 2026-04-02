@@ -32,12 +32,12 @@ export default async function OrganizationsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary">{t("organizations")}</h1>
+      <h1 className="text-2xl font-bold th-text">{t("organizations")}</h1>
 
       {enrichedOrgs.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-12 text-center">
+        <div className="th-card rounded-xl border th-border p-12 text-center">
           <Building2 className="w-12 h-12 text-text-secondary/30 mx-auto mb-4" />
-          <p className="text-text-secondary">{t("noOrganizations")}</p>
+          <p className="th-text-2">{t("noOrganizations")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -45,20 +45,20 @@ export default async function OrganizationsPage() {
             <Link
               key={org.id}
               href={`/org/${org.slug}/admin`}
-              className="flex items-center justify-between bg-white rounded-xl border border-border p-5 hover:border-navy/30 transition-colors"
+              className="flex items-center justify-between th-card rounded-xl border th-border p-5 hover:border-navy/30 transition-colors"
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-navy/10 flex items-center justify-center">
                   <Building2 className="w-6 h-6 text-navy" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-text-primary">{org.name}</h3>
-                  <p className="text-sm text-text-secondary">
+                  <h3 className="font-semibold th-text">{org.name}</h3>
+                  <p className="text-sm th-text-2">
                     /{org.slug} &middot; {org.country ?? ""}{org.city ? `, ${org.city}` : ""}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-6 text-sm text-text-secondary">
+              <div className="flex items-center gap-6 text-sm th-text-2">
                 <div className="flex items-center gap-1.5">
                   <Trophy className="w-4 h-4" />
                   <span>{org.tournamentsCount}</span>

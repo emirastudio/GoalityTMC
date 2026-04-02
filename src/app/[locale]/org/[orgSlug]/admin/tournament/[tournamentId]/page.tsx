@@ -69,13 +69,13 @@ export default async function TournamentOverviewPage({ params }: Props) {
       <div className="flex items-center gap-3">
         <Link
           href={`/org/${orgSlug}/admin`}
-          className="text-text-secondary hover:text-text-primary"
+          className="th-text-2 hover:th-text"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">{tournament.name}</h1>
-          <p className="text-text-secondary text-sm">
+          <h1 className="text-2xl font-bold th-text">{tournament.name}</h1>
+          <p className="th-text-2 text-sm">
             {tournament.year} &middot;{" "}
             <span className={tournament.registrationOpen ? "text-green-600" : "text-gray-500"}>
               {tournament.registrationOpen ? t("regOpen") : t("regClosed")}
@@ -86,19 +86,19 @@ export default async function TournamentOverviewPage({ params }: Props) {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-border p-6">
-          <p className="text-2xl font-bold text-text-primary">{Number(clubCount?.value ?? 0)}</p>
-          <p className="text-sm text-text-secondary">{t("clubs")}</p>
+        <div className="th-card rounded-xl border th-border p-6">
+          <p className="text-2xl font-bold th-text">{Number(clubCount?.value ?? 0)}</p>
+          <p className="text-sm th-text-2">{t("clubs")}</p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-6">
-          <p className="text-2xl font-bold text-text-primary">{Number(teamCount?.value ?? 0)}</p>
-          <p className="text-sm text-text-secondary">{t("teams")}</p>
+        <div className="th-card rounded-xl border th-border p-6">
+          <p className="text-2xl font-bold th-text">{Number(teamCount?.value ?? 0)}</p>
+          <p className="text-sm th-text-2">{t("teams")}</p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-6">
-          <p className="text-2xl font-bold text-text-primary">
+        <div className="th-card rounded-xl border th-border p-6">
+          <p className="text-2xl font-bold th-text">
             {tournament.currency} {Number(paymentSum?.value ?? 0).toFixed(0)}
           </p>
-          <p className="text-sm text-text-secondary">{t("payments")}</p>
+          <p className="text-sm th-text-2">{t("payments")}</p>
         </div>
       </div>
 
@@ -108,10 +108,10 @@ export default async function TournamentOverviewPage({ params }: Props) {
           <Link
             key={key}
             href={href}
-            className="flex flex-col items-center gap-2 bg-white rounded-xl border border-border p-5 hover:border-navy/30 transition-colors"
+            className="flex flex-col items-center gap-2 th-card rounded-xl border th-border p-5 hover:border-navy/30 transition-colors"
           >
             <Icon className="w-6 h-6 text-navy" />
-            <span className="text-sm font-medium text-text-primary">{t(key)}</span>
+            <span className="text-sm font-medium th-text">{t(key)}</span>
           </Link>
         ))}
       </div>

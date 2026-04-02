@@ -52,32 +52,32 @@ export default async function TournamentsPage({ params }: Props) {
         <div className="flex items-center gap-3">
           <Link
             href={`/org/${orgSlug}/admin`}
-            className="text-text-secondary hover:text-text-primary"
+            className="th-text-2 hover:th-text"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-2xl font-bold text-text-primary">{t("tournaments")}</h1>
+          <h1 className="text-2xl font-bold th-text">{t("tournaments")}</h1>
         </div>
       </div>
 
       {/* Create Tournament Form */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold text-text-primary mb-4">{t("newTournament")}</h2>
+      <div className="th-card rounded-xl border th-border p-6">
+        <h2 className="text-lg font-semibold th-text mb-4">{t("newTournament")}</h2>
         <form action={createTournament} className="flex items-end gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">
+            <label className="block text-sm font-medium th-text-2 mb-1.5">
               {t("tournamentName")}
             </label>
             <input
               type="text"
               name="name"
               required
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+              className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
               placeholder={t("tournamentNamePlaceholder")}
             />
           </div>
           <div className="w-32">
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">
+            <label className="block text-sm font-medium th-text-2 mb-1.5">
               {t("year")}
             </label>
             <input
@@ -85,7 +85,7 @@ export default async function TournamentsPage({ params }: Props) {
               name="year"
               required
               defaultValue={new Date().getFullYear()}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+              className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
             />
           </div>
           <button
@@ -104,15 +104,15 @@ export default async function TournamentsPage({ params }: Props) {
           <Link
             key={tournament.id}
             href={`/org/${orgSlug}/admin/tournament/${tournament.id}`}
-            className="flex items-center justify-between bg-white rounded-xl border border-border p-5 hover:border-navy/30 transition-colors"
+            className="flex items-center justify-between th-card rounded-xl border th-border p-5 hover:border-navy/30 transition-colors"
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-navy/10 flex items-center justify-center">
                 <Trophy className="w-5 h-5 text-navy" />
               </div>
               <div>
-                <h3 className="font-semibold text-text-primary">{tournament.name}</h3>
-                <div className="flex items-center gap-3 mt-1 text-sm text-text-secondary">
+                <h3 className="font-semibold th-text">{tournament.name}</h3>
+                <div className="flex items-center gap-3 mt-1 text-sm th-text-2">
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
                     {tournament.year}
