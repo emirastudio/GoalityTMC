@@ -509,7 +509,7 @@ export function TournamentSetupPageContent() {
   const visibleProducts = products.filter((p) => !p._deleted);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full">
       <h1 className="text-2xl font-bold th-text">
         Tournament Management
       </h1>

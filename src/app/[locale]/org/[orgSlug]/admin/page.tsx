@@ -40,7 +40,7 @@ export default async function OrgDashboardPage({ params }: Props) {
   const isEmpty = tournaments.length === 0;
 
   return (
-    <div className="space-y-6 max-w-[900px]">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>

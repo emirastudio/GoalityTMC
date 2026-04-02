@@ -873,7 +873,7 @@ export function ServicesPageContent() {
   const [tab, setTab] = useState<Tab>("accommodation");
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 w-full">
       <h1 className="text-2xl font-bold th-text">Services & Pricing</h1>
 
       <div className="flex flex-wrap gap-2">

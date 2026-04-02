@@ -51,7 +51,7 @@ export default async function TournamentsPage({ params }: Props) {
   }
 
   return (
-    <div className="space-y-6 max-w-[800px]">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href={`/org/${orgSlug}/admin`}

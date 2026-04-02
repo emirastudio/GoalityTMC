@@ -182,7 +182,7 @@ export function SettingsPageContent() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 w-full">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold th-text">
           Tournament Information
