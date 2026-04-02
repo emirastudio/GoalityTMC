@@ -30,7 +30,7 @@ export function GlobalHeader({ navLinks = [], rightContent }: Props) {
               boxShadow: "0 0 0 1px rgba(255,255,255,0.10), 0 4px 14px var(--cat-accent-glow)",
             }}
           >
-            <img src="/logo.png" alt="Goality" className="w-full h-full object-contain" />
+            <img src="/playGrowWin1.png" alt="Goality" className="w-full h-full object-contain" />
           </div>
           <span className="font-bold text-[15px] tracking-tight" style={{ color: "var(--cat-text)" }}>
             Goality
