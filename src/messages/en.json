@@ -52,7 +52,8 @@
     "resetDoneHint": "You can now log in with your new password.",
     "resetError": "Invalid or expired reset link. Please request a new one.",
     "passwordTooShort": "Password must be at least 6 characters",
-    "passwordMismatch": "Passwords do not match"
+    "passwordMismatch": "Passwords do not match",
+    "noAccount": "Don't have an account?"
   },
   "nav": {
     "overview": "Overview",
@@ -696,7 +697,7 @@
     "navCatalog": "Catalog",
     "navSignIn": "Sign in",
     "navGetStarted": "Get started",
-    "heroBadge": "Tournament Management Cloud",
+    "heroBadge": "Tournament Management Core",
     "heroSubtitle": "The all-in-one platform for youth football tournaments",
     "heroDesc": "From club registration to hotel assignments, payments and schedules — Goality TMC handles everything so organizers can focus on the game, not the spreadsheets.",
     "heroCta1": "Start free — no credit card",

@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Shield } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { ArrowRight, Trophy, Users, CreditCard, CheckCircle, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
@@ -44,7 +43,6 @@ export default function LoginPage() {
           router.push("/admin/dashboard");
         }
       } else {
-        // Team pages stay at /team/ for now (tenant isolation via session)
         router.push("/team/overview");
       }
     } else {
@@ -54,79 +52,229 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center th-bg">
-      <Card className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-xl bg-mint flex items-center justify-center mx-auto mb-3">
-            <span className="text-navy font-black text-xs leading-none">P.G.W.</span>
+    <ThemeProvider defaultTheme="dark">
+      <div className="min-h-screen flex" style={{ background: "var(--cat-bg)" }}>
+
+        {/* ── Left panel ──────────────────────────── */}
+        <div className="hidden lg:flex flex-col w-[52%] relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, var(--cat-banner-from), var(--cat-banner-via), var(--cat-banner-to))" }}>
+
+          {/* Glow orbs */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-[-15%] left-[-10%] w-[500px] h-[500px] rounded-full opacity-[0.08]"
+              style={{ background: "radial-gradient(circle, var(--cat-accent), transparent 70%)" }} />
+            <div className="absolute bottom-[-20%] right-[-5%] w-[400px] h-[400px] rounded-full opacity-[0.05]"
+              style={{ background: "radial-gradient(circle, #8B5CF6, transparent 70%)" }} />
           </div>
-          <h1 className="text-xl font-bold text-navy">{t("loginTitle")}</h1>
-          <p className="th-text-2 text-sm mt-1">{t("loginSubtitle")}</p>
+
+          {/* Logo */}
+          <div className="relative z-10 p-10">
+            <Link href="/" className="flex items-center gap-3">
+              <img src="/logo.png" alt="Goality" className="w-10 h-10 rounded-xl object-contain"
+                style={{ boxShadow: "0 4px 20px var(--cat-accent-glow)" }} />
+              <div>
+                <span className="font-black text-[18px] tracking-tight" style={{ color: "var(--cat-text)" }}>Goality</span>
+                <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest"
+                  style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>TMC</span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Center content */}
+          <div className="relative z-10 flex-1 flex flex-col justify-center px-14 pb-10">
+            <div className="mb-8">
+              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-6 border"
+                style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)" }}>
+                <Trophy className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
+                <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--cat-accent)" }}>
+                  Tournament Management Core
+                </span>
+              </div>
+              <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-[1.05] mb-5"
+                style={{ color: "var(--cat-text)" }}>
+                Welcome back<br />
+                <span style={{ color: "var(--cat-accent)" }}>to the game.</span>
+              </h1>
+              <p className="text-[15px] leading-relaxed" style={{ color: "var(--cat-text-secondary)" }}>
+                Manage your tournament, track registrations and payments — all from one place.
+              </p>
+            </div>
+
+            {/* Value bullets */}
+            <ul className="space-y-3.5">
+              {[
+                { icon: Trophy, text: "Full tournament control in minutes" },
+                { icon: Users, text: "Club & team management self-service" },
+                { icon: CreditCard, text: "Real-time payment tracking" },
+              ].map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "var(--cat-badge-open-bg)" }}>
+                    <Icon className="w-4 h-4" style={{ color: "var(--cat-accent)" }} />
+                  </div>
+                  <span className="text-[13px]" style={{ color: "var(--cat-text-secondary)" }}>{text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Bottom quote */}
+          <div className="relative z-10 mx-10 mb-10 p-5 rounded-2xl border"
+            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+            <p className="text-[13px] italic mb-2" style={{ color: "var(--cat-text-secondary)" }}>
+              "Setup took 20 minutes. Clubs loved the self-service registration."
+            </p>
+            <p className="text-[11px] font-semibold" style={{ color: "var(--cat-text-muted)" }}>
+              Kings Cup organizer — Tallinn, Estonia
+            </p>
+          </div>
         </div>
 
-        {/* Mode toggle */}
-        <div className="flex mb-6 border th-border rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => { setMode("club"); setError(""); }}
-            className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer ${
-              mode === "club"
-                ? "bg-navy text-white"
-                : "th-card th-text-2 hover:th-bg"
-            }`}
-          >
-            Club
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode("admin"); setError(""); }}
-            className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer ${
-              mode === "admin"
-                ? "bg-navy text-white"
-                : "th-card th-text-2 hover:th-bg"
-            }`}
-          >
-            Admin
-          </button>
-        </div>
+        {/* ── Right panel (form) ─────────────────── */}
+        <div className="flex-1 flex flex-col">
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            label={t("email")}
-            placeholder={mode === "admin" ? "admin@goality.ee" : "club@example.com"}
-            required
-          />
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            label={t("password")}
-            required
-          />
-          {error && <p className="text-sm text-error">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "..." : t("login")}
-          </Button>
-        </form>
-
-        {mode === "club" && (
-          <div className="mt-4 text-center space-y-2">
-            <div>
-              <Link href="/forgot-password" className="text-sm th-text-2 hover:text-navy hover:underline">
-                {t("forgotPassword")}
-              </Link>
-            </div>
-            <div>
-              <Link href="/club/register" className="text-sm text-navy hover:underline font-medium">
-                {t("registerNewClub")}
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-6 py-4 lg:px-10">
+            <Link href="/" className="flex items-center gap-2 lg:hidden">
+              <img src="/logo.png" alt="Goality" className="w-8 h-8 rounded-xl object-contain" />
+              <span className="font-bold text-[15px]" style={{ color: "var(--cat-text)" }}>Goality TMC</span>
+            </Link>
+            <div className="ml-auto flex items-center gap-3">
+              <LanguageSwitcher variant="light" />
+              <Link href="/club/register"
+                className="hidden sm:inline-flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                style={{ color: "var(--cat-text-secondary)", borderColor: "var(--cat-card-border)" }}>
+                {t("registerNewClub")} <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
-        )}
-      </Card>
-    </div>
+
+          {/* Form area */}
+          <div className="flex-1 flex items-center justify-center px-6 py-8 lg:px-16">
+            <div className="w-full max-w-[400px]">
+
+              {/* Heading */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-black mb-1.5" style={{ color: "var(--cat-text)" }}>{t("loginTitle")}</h2>
+                <p className="text-[14px]" style={{ color: "var(--cat-text-secondary)" }}>{t("loginSubtitle")}</p>
+              </div>
+
+              {/* Mode toggle */}
+              <div className="flex mb-6 p-1 rounded-xl" style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)" }}>
+                {(["club", "admin"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => { setMode(m); setError(""); }}
+                    className="flex-1 py-2 text-[13px] font-semibold rounded-lg transition-all cursor-pointer"
+                    style={mode === m
+                      ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)", boxShadow: "0 2px 8px var(--cat-accent-glow)" }
+                      : { color: "var(--cat-text-secondary)" }
+                    }
+                  >
+                    {m === "club" ? "Club" : "Admin"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Email */}
+                <div>
+                  <label className="block text-[12px] font-semibold mb-1.5" style={{ color: "var(--cat-text-secondary)" }}>
+                    {t("email")}
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    placeholder={mode === "admin" ? "admin@goality.ee" : "club@example.com"}
+                    required
+                    className="w-full px-4 py-3 rounded-xl text-[14px] outline-none transition-all"
+                    style={{
+                      background: "var(--cat-input-bg)",
+                      border: "1px solid var(--cat-input-border)",
+                      color: "var(--cat-text)",
+                    }}
+                    onFocus={e => e.currentTarget.style.borderColor = "var(--cat-accent)"}
+                    onBlur={e => e.currentTarget.style.borderColor = "var(--cat-input-border)"}
+                  />
+                </div>
+
+                {/* Password */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[12px] font-semibold" style={{ color: "var(--cat-text-secondary)" }}>
+                      {t("password")}
+                    </label>
+                    {mode === "club" && (
+                      <Link href="/forgot-password" className="text-[11px] font-medium hover:opacity-80 transition-opacity"
+                        style={{ color: "var(--cat-accent)" }}>
+                        {t("forgotPassword")}
+                      </Link>
+                    )}
+                  </div>
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    className="w-full px-4 py-3 rounded-xl text-[14px] outline-none transition-all"
+                    style={{
+                      background: "var(--cat-input-bg)",
+                      border: "1px solid var(--cat-input-border)",
+                      color: "var(--cat-text)",
+                    }}
+                    onFocus={e => e.currentTarget.style.borderColor = "var(--cat-accent)"}
+                    onBlur={e => e.currentTarget.style.borderColor = "var(--cat-input-border)"}
+                  />
+                </div>
+
+                {error && (
+                  <div className="px-4 py-3 rounded-xl text-[13px]"
+                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#EF4444" }}>
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="cat-cta-glow w-full py-3.5 rounded-xl text-[14px] font-bold transition-opacity hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+                  style={{
+                    background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))",
+                    color: "var(--cat-accent-text)",
+                    boxShadow: "0 4px 20px var(--cat-accent-glow)",
+                  }}
+                >
+                  {loading ? (
+                    <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>{t("login")} <ArrowRight className="w-4 h-4" /></>
+                  )}
+                </button>
+              </form>
+
+              {/* Register link */}
+              {mode === "club" && (
+                <p className="mt-6 text-center text-[13px]" style={{ color: "var(--cat-text-muted)" }}>
+                  {t("noAccount") || "Don't have an account?"}{" "}
+                  <Link href="/club/register" className="font-semibold hover:opacity-80 transition-opacity"
+                    style={{ color: "var(--cat-accent)" }}>
+                    {t("registerNewClub")}
+                  </Link>
+                </p>
+              )}
+
+              {/* Back to home */}
+              <div className="mt-8 text-center">
+                <Link href="/" className="inline-flex items-center gap-1.5 text-[12px] hover:opacity-80 transition-opacity"
+                  style={{ color: "var(--cat-text-muted)" }}>
+                  <ArrowLeft className="w-3 h-3" /> Back to home
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ThemeProvider>
   );
 }

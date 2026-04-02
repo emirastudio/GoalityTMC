@@ -52,7 +52,8 @@
     "resetDoneHint": "Nüüd saad uue parooliga sisse logida.",
     "resetError": "Link on kehtetu või aegunud. Palun taotle uus.",
     "passwordTooShort": "Parool peab olema vähemalt 6 tähemärki",
-    "passwordMismatch": "Paroolid ei kattu"
+    "passwordMismatch": "Paroolid ei kattu",
+    "noAccount": "Pole kontot?"
   },
   "nav": {
     "overview": "Ülevaade",
@@ -652,7 +653,7 @@
     "navCatalog": "Kataloog",
     "navSignIn": "Logi sisse",
     "navGetStarted": "Alusta",
-    "heroBadge": "Turniiri halduse pilvsüsteem",
+    "heroBadge": "Turniiri halduse tuumsüsteem",
     "heroSubtitle": "Kõik-ühes platvorm noorte jalgpalliturniirside jaoks",
     "heroDesc": "Klubide registreerimisest hotellide jagamiseni, maksetest ja ajakavadeni — Goality TMC hoolitseb kõige eest, et korraldajad saaksid keskenduda mängule, mitte tabelitele.",
     "heroCta1": "Alusta tasuta — kaarti pole vaja",

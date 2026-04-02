@@ -231,22 +231,22 @@ function MobileTeamPill({
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-[12px] font-medium text-text-secondary mb-1 block">{t("teamName")}</label>
+                <label className="text-[12px] font-medium th-text-2 mb-1 block">{t("teamName")}</label>
                 <input
                   type="text"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   placeholder={`${clubName} U12`}
-                  className="w-full rounded-xl border border-border px-3 py-2.5 text-sm focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/10"
+                  className="w-full rounded-xl th-border border px-3 py-2.5 text-sm focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/10"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-text-secondary mb-1 block">{t("class")}</label>
+                <label className="text-[12px] font-medium th-text-2 mb-1 block">{t("class")}</label>
                 <select
                   value={newTeamClassId}
                   onChange={(e) => setNewTeamClassId(e.target.value)}
-                  className="w-full rounded-xl border border-border px-3 py-2.5 text-sm focus:outline-none focus:border-navy bg-white"
+                  className="w-full rounded-xl th-border border px-3 py-2.5 text-sm focus:outline-none focus:border-navy th-card"
                 >
                   <option value="">{t("selectClass")}</option>
                   {classes.map((c) => (
