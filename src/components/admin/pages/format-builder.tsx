@@ -6,7 +6,7 @@ import { useTournament } from "@/lib/tournament-context";
 import {
   Layers, Trophy, GitBranch, BarChart3,
   ChevronRight, ChevronLeft, Zap, Loader2, CheckCircle,
-  Shuffle, RotateCcw, X, Users,
+  Shuffle, RotateCcw, X, Users, Star, Wrench,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -121,6 +121,71 @@ function BracketSVG({ color }: { color: string }) {
   );
 }
 
+// ─── League Phase SVG (for CL card) ──────────────────────────────────────────
+
+function LeaguePhaseMiniSVG({ color }: { color: string }) {
+  const cx = 60, cy = 40, r = 28;
+  const n = 10;
+  const pts = Array.from({ length: n }, (_, i) => ({
+    x: cx + r * Math.cos((2 * Math.PI * i) / n - Math.PI / 2),
+    y: cy + r * Math.sin((2 * Math.PI * i) / n - Math.PI / 2),
+  }));
+  return (
+    <svg viewBox="0 0 120 80" className="w-full h-full">
+      {[[0,3],[0,6],[1,4],[2,5],[3,7],[4,8],[5,9]].map(([a,b],i) => (
+        <line key={i} x1={pts[a].x} y1={pts[a].y} x2={pts[b].x} y2={pts[b].y}
+          stroke={color} strokeWidth={0.6} strokeOpacity={0.25} />
+      ))}
+      {pts.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={i < 3 ? 6 : 4}
+          fill={i < 3 ? `${color}30` : `${color}10`}
+          stroke={color} strokeWidth={i < 3 ? 1.2 : 0.7} strokeOpacity={i < 3 ? 1 : 0.6} />
+      ))}
+      {pts.slice(0, 3).map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={2.5} fill={color} opacity={0.9} />
+      ))}
+      <text x={cx} y={cy-2} textAnchor="middle" fontSize={5.5} fill={color} fontWeight="bold">ЛИГА</text>
+      <text x={cx} y={cy+5} textAnchor="middle" fontSize={4.5} fill={color} opacity={0.6}>топ→R16</text>
+    </svg>
+  );
+}
+
+function CustomPhaseSVG({ color }: { color: string }) {
+  const phaseColors = ["#10b981", "#f59e0b", "#ec4899"];
+  return (
+    <svg viewBox="0 0 120 80" className="w-full h-full">
+      {/* Phase 1: 3 groups */}
+      {[0,1,2].map(i => (
+        <rect key={i} x={4 + i*16} y={4} width={12} height={32} rx={3}
+          fill={`${phaseColors[0]}12`} stroke={phaseColors[0]} strokeWidth={0.7} strokeOpacity={0.7} />
+      ))}
+      {/* Arrow */}
+      <text x={58} y={22} fontSize={10} fill={color} opacity={0.4} fontWeight="bold">→</text>
+      {/* Phase 2: 3 secondary groups */}
+      {phaseColors.map((c, i) => (
+        <rect key={i} x={66 + i*16} y={4} width={12} height={32} rx={3}
+          fill={`${c}15`} stroke={c} strokeWidth={0.8} strokeOpacity={0.8} />
+      ))}
+      {phaseColors.map((c, i) => (
+        <text key={i} x={72 + i*16} y={23} textAnchor="middle" fontSize={5} fill={c} fontWeight="bold">
+          {["G","S","B"][i]}
+        </text>
+      ))}
+      {/* Phase 3: 3 playoffs */}
+      <text x={14} y={55} textAnchor="middle" fontSize={4} fill={phaseColors[0]} opacity={0.7}>↓</text>
+      <text x={74} y={55} textAnchor="middle" fontSize={4} fill={phaseColors[0]} opacity={0.7}>↓</text>
+      <text x={90} y={55} textAnchor="middle" fontSize={4} fill={phaseColors[1]} opacity={0.7}>↓</text>
+      <text x={106} y={55} textAnchor="middle" fontSize={4} fill={phaseColors[2]} opacity={0.7}>↓</text>
+      {phaseColors.map((c, i) => (
+        <rect key={i} x={66 + i*16} y={60} width={12} height={14} rx={3}
+          fill={`${c}12`} stroke={c} strokeWidth={0.7} strokeOpacity={0.7} />
+      ))}
+      <text x={24} y={70} fontSize={5} fill={color} opacity={0.4} textAnchor="middle">Phase 1</text>
+      <text x={90} y={70} fontSize={5} fill={color} opacity={0.4} textAnchor="middle">→ P2 → P3</text>
+    </svg>
+  );
+}
+
 // ─── Format options ───────────────────────────────────────────────────────────
 
 const FORMAT_OPTIONS: {
@@ -215,9 +280,43 @@ function StepDots({ steps, current }: { steps: string[]; current: number }) {
   );
 }
 
+// ─── Special format cards (navigate to sub-pages) ────────────────────────────
+
+const SPECIAL_FORMATS: {
+  href: string;
+  color: string;
+  gradientFrom: string;
+  SVG: React.FC<{ color: string }>;
+  badge: string;
+  title: string;
+  desc: string;
+  tags: string[];
+}[] = [
+  {
+    href: "champions-league",
+    color: "#f59e0b",
+    gradientFrom: "rgba(245,158,11,0.15)",
+    SVG: LeaguePhaseMiniSVG,
+    badge: "⭐ UCL",
+    title: "Лига Чемпионов",
+    desc: "League Phase → Playoff Round → 1/8 финала. Формат UEFA 2024/25+",
+    tags: ["Swiss", "36 команд", "8 матчей"],
+  },
+  {
+    href: "custom",
+    color: "#ec4899",
+    gradientFrom: "rgba(236,72,153,0.15)",
+    SVG: CustomPhaseSVG,
+    badge: "✦ Новое",
+    title: "Мой формат",
+    desc: "Свои фазы, свои правила переходов. Gold/Silver/Bronze и любые другие схемы",
+    tags: ["Гибкий", "Multi-Phase", "Кастом"],
+  },
+];
+
 // ─── Step 1: Format selector ──────────────────────────────────────────────────
 
-function FormatStep({ state, onSelect }: { state: WizardState; onSelect: (f: FormatType) => void }) {
+function FormatStep({ state, onSelect, basePath }: { state: WizardState; onSelect: (f: FormatType) => void; basePath: string }) {
   return (
     <div>
       <div className="text-center mb-8">
@@ -283,6 +382,57 @@ function FormatStep({ state, onSelect }: { state: WizardState; onSelect: (f: For
             </button>
           );
         })}
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4 my-6 max-w-3xl mx-auto">
+        <div className="flex-1 h-px" style={{ background: "var(--cat-card-border)" }} />
+        <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--cat-text-muted)" }}>
+          Продвинутые форматы
+        </span>
+        <div className="flex-1 h-px" style={{ background: "var(--cat-card-border)" }} />
+      </div>
+
+      {/* Special format cards (navigate to sub-pages) */}
+      <div className="grid grid-cols-2 gap-4 max-w-3xl mx-auto">
+        {SPECIAL_FORMATS.map(({ href, color, gradientFrom, SVG, badge, title, desc, tags }) => (
+          <Link key={href} href={`${basePath}/${href}`}
+            className="relative text-left rounded-2xl border-2 p-5 overflow-hidden transition-all duration-300 group block"
+            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+            {/* Hover gradient */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{ background: `radial-gradient(ellipse at 50% 0%, ${gradientFrom}, transparent 70%)` }} />
+            {/* Badge */}
+            <div className="absolute top-4 right-4">
+              <span className="text-[10px] font-black px-2.5 py-1 rounded-full"
+                style={{ background: `${color}20`, color, border: `1px solid ${color}40` }}>
+                {badge}
+              </span>
+            </div>
+            {/* SVG preview */}
+            <div className="relative h-[88px] mb-4"><SVG color={color} /></div>
+            {/* Tags */}
+            <div className="relative flex gap-1.5 mb-3 flex-wrap">
+              {tags.map(tag => (
+                <span key={tag} className="text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wide"
+                  style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+            {/* Title + desc */}
+            <p className="relative text-base font-black mb-1 group-hover:text-current transition-colors"
+              style={{ color: "var(--cat-text)" }}>
+              {title}
+            </p>
+            <p className="relative text-xs leading-relaxed" style={{ color: "var(--cat-text-muted)" }}>{desc}</p>
+            {/* Arrow */}
+            <div className="relative flex items-center gap-1 mt-3 text-xs font-semibold"
+              style={{ color }}>
+              Открыть <ChevronRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
@@ -958,7 +1108,8 @@ export function FormatBuilderPage() {
       {/* Step content */}
       <div className="flex-1">
         {currentStepKey === "format" && (
-          <FormatStep state={state} onSelect={handleFormatSelect} />
+          <FormatStep state={state} onSelect={handleFormatSelect}
+            basePath={`/org/${orgSlug}/admin/tournament/${tournamentId}/format`} />
         )}
         {currentStepKey === "structure" && (
           <StructureStep state={state} setState={setState} teamCount={teams.length} />
