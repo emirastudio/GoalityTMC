@@ -16,7 +16,7 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-const ACCENT = "#f59e0b"; // Amber/Gold for CL
+const ACCENT = "#3b82f6"; // Blue for Elite Format
 
 interface CLState {
   teamCount: number;
@@ -63,7 +63,7 @@ function LeaguePhaseSVG({ color }: { color: string }) {
           fill={color} opacity={0.8} />
       ))}
       {/* Center label */}
-      <text x={cx} y={cy - 3} textAnchor="middle" fontSize={6} fill={color} fontWeight="bold">LEAGUE</text>
+      <text x={cx} y={cy - 3} textAnchor="middle" fontSize={6} fill={color} fontWeight="bold">ELITE</text>
       <text x={cx} y={cy + 5} textAnchor="middle" fontSize={5} fill={color} opacity={0.7}>36 teams</text>
     </svg>
   );
@@ -161,7 +161,7 @@ function CLConfigStep({ state, setState, teamCount }: {
           <LeaguePhaseSVG color={ACCENT} />
         </div>
         <div>
-          <p className="text-sm font-bold mb-1" style={{ color: "var(--cat-text)" }}>Лига-фаза</p>
+          <p className="text-sm font-bold mb-1" style={{ color: "var(--cat-text)" }}>Элит-фаза</p>
           <p className="text-xs leading-relaxed" style={{ color: "var(--cat-text-muted)" }}>
             Все команды в единой таблице. Каждая команда играет против 8 разных соперников (по 2 из каждой корзины).
             Победители не вылетают — определяется место в общей таблице.
@@ -179,7 +179,7 @@ function CLConfigStep({ state, setState, teamCount }: {
       <div className="rounded-2xl border p-5" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
-            <p className="font-bold" style={{ color: "var(--cat-text)" }}>Команд в лиге</p>
+            <p className="font-bold" style={{ color: "var(--cat-text)" }}>Команд в элите</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>Стандарт Лиги чемпионов — 36</p>
           </div>
           <NumberStepper value={state.teamCount} onChange={v => update({ teamCount: v })} min={12} max={64} step={4} />
@@ -194,7 +194,7 @@ function CLConfigStep({ state, setState, teamCount }: {
                 background: state.teamCount === n ? `${ACCENT}15` : "var(--cat-tag-bg)",
                 color: state.teamCount === n ? ACCENT : "var(--cat-text-secondary)",
               }}>
-              {n} {n === 36 && "⚽ UCL"}
+              {n} {n === 36 && "★"}
             </button>
           ))}
         </div>
@@ -257,7 +257,7 @@ function CLConfigStep({ state, setState, teamCount }: {
         <p className="font-bold mb-4" style={{ color: "var(--cat-text)" }}>Названия этапов</p>
         <div className="space-y-3">
           {([
-            { label: "Лига-фаза", key: "leagueStageName" as const },
+            { label: "Элит-фаза", key: "leagueStageName" as const },
             { label: "Плей-офф раунд", key: "playoffRoundName" as const },
             { label: "Стадия нокаута (1/8+)", key: "knockoutStageName" as const },
           ] as { label: string; key: keyof CLState }[]).map(({ label, key }) => (
@@ -282,7 +282,7 @@ function CLGenerateStep({ state, teams, generating }: { state: CLState; teams: {
   const knockoutSize = state.directSpots + Math.floor(state.playoffSpots / 2);
 
   const summaryItems = [
-    { label: "Команд в лиге", value: state.teamCount, color: ACCENT },
+    { label: "Команд в элите", value: state.teamCount, color: ACCENT },
     { label: "Прямо в 1/8", value: state.directSpots, color: "#10b981" },
     { label: "Плей-офф раунд", value: `${state.playoffSpots} команд`, color: "#8b5cf6" },
     { label: "Выбывают", value: eliminated > 0 ? eliminated : "—", color: "#dc2626" },
@@ -295,9 +295,9 @@ function CLGenerateStep({ state, teams, generating }: { state: CLState; teams: {
           style={{ background: `${ACCENT}18`, boxShadow: `0 0 32px ${ACCENT}30` }}>
           <Star className="w-8 h-8" style={{ color: ACCENT }} />
         </div>
-        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>Лига чемпионов готова</h2>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>Элитный формат готова</h2>
         <p className="text-sm max-w-xs mx-auto" style={{ color: "var(--cat-text-muted)" }}>
-          Будут созданы Лига-фаза, Плей-офф раунд и основная сетка нокаута
+          Будут созданы Элит-фаза, Плей-офф раунд и основная сетка нокаута
         </p>
       </div>
 
@@ -352,7 +352,7 @@ function DoneScreen({ orgSlug, tournamentId }: { orgSlug: string; tournamentId: 
       </div>
       <h2 className="text-3xl font-black mb-3" style={{ color: "var(--cat-text)" }}>Формат создан!</h2>
       <p className="text-sm mb-8 max-w-sm" style={{ color: "var(--cat-text-muted)" }}>
-        Лига-фаза, Плей-офф раунд и Стадия нокаута созданы. Теперь назначьте команды и сгенерируйте матчи.
+        Элит-фаза, Плей-офф раунд и Стадия нокаута созданы. Теперь назначьте команды и сгенерируйте матчи.
       </p>
       <div className="flex gap-3">
         <Link href={`/org/${orgSlug}/admin/tournament/${tournamentId}/schedule`}
@@ -409,7 +409,7 @@ export function CLFormatWizard() {
     directSpots: 8,
     playoffSpots: 16,
     knockoutSize: 16,
-    leagueStageName: "League Phase",
+    leagueStageName: "Elite Phase",
     playoffRoundName: "Playoff Round",
     knockoutStageName: "Knockouts",
     thirdPlace: false,
@@ -432,7 +432,7 @@ export function CLFormatWizard() {
       const leagueRes = await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/stages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: state.leagueStageName, nameRu: "Лига-фаза", type: "league", order: 1 }),
+        body: JSON.stringify({ name: state.leagueStageName, nameRu: "Элит-фаза", type: "league", order: 1 }),
       });
       const leagueStage = await leagueRes.json();
 
@@ -440,7 +440,7 @@ export function CLFormatWizard() {
       const groupRes = await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/stages/${leagueStage.id}/groups`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "League Table", nameEn: "League Table", order: 1 }),
+        body: JSON.stringify({ name: "Elite Table", nameEn: "Elite Table", order: 1 }),
       });
       const leagueGroup = await groupRes.json();
 
@@ -532,10 +532,10 @@ export function CLFormatWizard() {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xl">⭐</span>
-            <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>Лига Чемпионов</h1>
+            <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>Элитный формат</h1>
           </div>
           <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-            League Phase + Playoff Round + Knockout — формат UEFA UCL 2024/25+
+            Elite Phase + Playoff Round + Knockout — премиум формат для топ-турниров
           </p>
         </div>
       </div>

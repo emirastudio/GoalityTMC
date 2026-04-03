@@ -17,7 +17,7 @@ import {
 
 // ─── Design constants ─────────────────────────────────────────────────────────
 
-const ACCENT = "#2BFEBA";
+const ACCENT = "#84cc16";
 const GROUP_COLORS = ["#10b981","#f59e0b","#8b5cf6","#ec4899","#06b6d4","#f97316","#84cc16","#a855f7","#10b981","#f59e0b","#8b5cf6","#ec4899"];
 const GROUP_LETTERS = ["A","B","C","D","E","F","G","H","I","J","K","L"];
 
@@ -186,7 +186,7 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
       <div className="space-y-2">
         {phases.map((phase, idx) => {
           const isEditing = editingPhase === phase.id;
-          const phaseColor = phase.type === "groups" ? ACCENT : "#ec4899";
+          const phaseColor = phase.type === "groups" ? ACCENT : "#84cc16";
 
           return (
             <div key={phase.id}>
@@ -321,9 +321,9 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                             <button key={n} onClick={() => updatePhase(phase.id, { knockoutTeams: n })}
                               className="w-10 h-10 rounded-xl text-sm font-black border-2 transition-all"
                               style={{
-                                borderColor: (phase.knockoutTeams ?? 8) === n ? "#ec4899" : "var(--cat-card-border)",
-                                background: (phase.knockoutTeams ?? 8) === n ? "rgba(236,72,153,0.12)" : "var(--cat-tag-bg)",
-                                color: (phase.knockoutTeams ?? 8) === n ? "#ec4899" : "var(--cat-text-secondary)",
+                                borderColor: (phase.knockoutTeams ?? 8) === n ? ACCENT : "var(--cat-card-border)",
+                                background: (phase.knockoutTeams ?? 8) === n ? "rgba(132,204,22,0.12)" : "var(--cat-tag-bg)",
+                                color: (phase.knockoutTeams ?? 8) === n ? ACCENT : "var(--cat-text-secondary)",
                               }}>
                               {n}
                             </button>
@@ -333,7 +333,7 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                       <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--cat-text-secondary)" }}>
                         <input type="checkbox" checked={phase.thirdPlace ?? false}
                           onChange={e => updatePhase(phase.id, { thirdPlace: e.target.checked })}
-                          className="w-4 h-4 rounded" style={{ accentColor: "#ec4899" }} />
+                          className="w-4 h-4 rounded" style={{ accentColor: ACCENT }} />
                         Матч за 3-е место
                       </label>
                     </div>
@@ -700,8 +700,8 @@ function CustomGenerateStep({ phases, transitions, teams, generating }: {
     <div className="max-w-lg mx-auto">
       <div className="text-center mb-8">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-          style={{ background: "rgba(236,72,153,0.15)", boxShadow: "0 0 32px rgba(236,72,153,0.3)" }}>
-          <Layers className="w-8 h-8" style={{ color: "#ec4899" }} />
+          style={{ background: "rgba(132,204,22,0.15)", boxShadow: "0 0 32px rgba(132,204,22,0.3)" }}>
+          <Layers className="w-8 h-8" style={{ color: ACCENT }} />
         </div>
         <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>Ваш формат готов</h2>
         <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
@@ -741,7 +741,7 @@ function CustomGenerateStep({ phases, transitions, teams, generating }: {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: "Фаз", value: phases.length, color: "#ec4899" },
+          { label: "Фаз", value: phases.length, color: ACCENT },
           { label: "Команд", value: teams.length, color: ACCENT },
           { label: "≈ Матчей", value: totalMatches, color: "#f59e0b" },
         ].map(({ label, value, color }) => (
@@ -755,9 +755,9 @@ function CustomGenerateStep({ phases, transitions, teams, generating }: {
 
       {generating && (
         <div className="rounded-2xl border p-6 text-center"
-          style={{ background: "rgba(236,72,153,0.04)", borderColor: "rgba(236,72,153,0.3)" }}>
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#ec4899" }} />
-          <p className="text-sm font-semibold" style={{ color: "#ec4899" }}>Создаём структуру...</p>
+          style={{ background: "rgba(132,204,22,0.04)", borderColor: "rgba(132,204,22,0.3)" }}>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: ACCENT }} />
+          <p className="text-sm font-semibold" style={{ color: ACCENT }}>Создаём структуру...</p>
         </div>
       )}
     </div>
@@ -1002,8 +1002,8 @@ export function CustomFormatWizard() {
         <div>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "rgba(236,72,153,0.15)" }}>
-              <Layers className="w-4 h-4" style={{ color: "#ec4899" }} />
+              style={{ background: "rgba(132,204,22,0.15)" }}>
+              <Layers className="w-4 h-4" style={{ color: ACCENT }} />
             </div>
             <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>Мой формат</h1>
           </div>
@@ -1020,9 +1020,9 @@ export function CustomFormatWizard() {
                 style={{
                   width: s === step ? 36 : 28,
                   height: s === step ? 36 : 28,
-                  background: i < stepIndex ? "#ec4899" : s === step ? "#ec4899" : "var(--cat-tag-bg)",
-                  border: `2px solid ${i <= stepIndex ? "#ec4899" : "var(--cat-card-border)"}`,
-                  boxShadow: s === step ? "0 0 18px rgba(236,72,153,0.6)" : "none",
+                  background: i < stepIndex ? ACCENT : s === step ? ACCENT : "var(--cat-tag-bg)",
+                  border: `2px solid ${i <= stepIndex ? ACCENT : "var(--cat-card-border)"}`,
+                  boxShadow: s === step ? "0 0 18px rgba(132,204,22,0.6)" : "none",
                   opacity: i > stepIndex ? 0.4 : 1,
                 }}>
                 {i < stepIndex
@@ -1031,13 +1031,13 @@ export function CustomFormatWizard() {
                 }
               </div>
               <span className="text-[9px] font-semibold uppercase tracking-wide"
-                style={{ color: s === step ? "#ec4899" : "var(--cat-text-muted)", opacity: i > stepIndex ? 0.4 : 1 }}>
+                style={{ color: s === step ? ACCENT : "var(--cat-text-muted)", opacity: i > stepIndex ? 0.4 : 1 }}>
                 {STEP_LABELS[s]}
               </span>
             </div>
             {i < STEPS.length - 1 && (
               <div className="w-14 h-px mx-1 mb-5"
-                style={{ background: i < stepIndex ? "#ec4899" : "var(--cat-card-border)", opacity: i < stepIndex ? 0.7 : 0.3 }} />
+                style={{ background: i < stepIndex ? ACCENT : "var(--cat-card-border)", opacity: i < stepIndex ? 0.7 : 0.3 }} />
             )}
           </div>
         ))}
@@ -1063,16 +1063,16 @@ export function CustomFormatWizard() {
           <button onClick={goNext}
             disabled={step === "phases" && phases.length < 1}
             className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-            style={{ background: "#ec4899", color: "#fff", boxShadow: "0 0 18px rgba(236,72,153,0.4)" }}>
+            style={{ background: ACCENT, color: "#000", boxShadow: "0 0 18px rgba(132,204,22,0.4)" }}>
             Далее <ChevronRight className="w-4 h-4" />
           </button>
         ) : (
           <button onClick={handleGenerate} disabled={generating}
             className="flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-black transition-all disabled:opacity-60"
             style={{
-              background: generating ? "var(--cat-card-border)" : "#ec4899",
-              color: generating ? "var(--cat-text-muted)" : "#fff",
-              boxShadow: generating ? "none" : "0 0 28px rgba(236,72,153,0.5)",
+              background: generating ? "var(--cat-card-border)" : ACCENT,
+              color: generating ? "var(--cat-text-muted)" : "#000",
+              boxShadow: generating ? "none" : "0 0 28px rgba(132,204,22,0.5)",
             }}>
             {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> Создаётся...</> : <><Zap className="w-4 h-4" /> Создать формат</>}
           </button>
