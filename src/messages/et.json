@@ -102,7 +102,8 @@
     "club": "Klubi",
     "setup": "Seadistamine",
     "servicesPackages": "Teenused ja paketid",
-    "schedule": "Ajakava"
+    "schedule": "Ajakava",
+    "format": "Vormistaja"
   },
   "team": {
     "regNumber": "Registreerimisnumber",

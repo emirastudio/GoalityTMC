@@ -16,6 +16,7 @@ import {
   ClipboardList,
   Wrench,
   CalendarDays,
+  Layers,
 } from "lucide-react";
 
 type Props = {
@@ -56,6 +57,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
         { key: "teams", icon: Users, href: `${basePath}/tournament/${tournamentId}/teams` },
         { key: "servicesPackages", icon: Package, href: `${basePath}/tournament/${tournamentId}/services-packages` },
         { key: "payments", icon: Wallet, href: `${basePath}/tournament/${tournamentId}/payments` },
+        { key: "format", icon: Layers, href: `${basePath}/tournament/${tournamentId}/format` },
         { key: "schedule", icon: CalendarDays, href: `${basePath}/tournament/${tournamentId}/schedule` },
         { key: "messages", icon: Mail, href: `${basePath}/tournament/${tournamentId}/messages` },
         { key: "setup", icon: Wrench, href: `${basePath}/tournament/${tournamentId}/setup` },
