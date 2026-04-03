@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { useAdminFetch } from "@/lib/tournament-context";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -90,6 +91,7 @@ function Textarea({
 /* ────────────────────────────────────────── page */
 
 export function SettingsPageContent() {
+  const t = useTranslations("orgAdmin.tournamentSettings");
   const adminFetch = useAdminFetch();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -185,7 +187,7 @@ export function SettingsPageContent() {
     <div className="space-y-6 w-full">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold th-text">
-          Tournament Information
+          {t("title")}
         </h1>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? (
@@ -195,7 +197,7 @@ export function SettingsPageContent() {
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {saving ? "Saving..." : saved ? "Saved" : "Save All"}
+          {saving ? t("saving") : saved ? t("saved") : t("saveAll")}
         </Button>
       </div>
 
@@ -207,96 +209,96 @@ export function SettingsPageContent() {
 
       {saved && (
         <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-          Tournament information saved successfully.
+          {t("saveSuccess")}
         </div>
       )}
 
       {/* ─── Schedule ─── */}
       <Card>
-        <SectionHeader icon={Calendar} title="Schedule" />
+        <SectionHeader icon={Calendar} title={t("sectionSchedule")} />
         <div className="space-y-4">
           <Input
             id="scheduleUrl"
-            label="Schedule URL"
+            label={t("scheduleUrl")}
             value={scheduleUrl}
             onChange={(e) => setScheduleUrl(e.target.value)}
             placeholder="https://..."
           />
           <Textarea
             id="scheduleDescription"
-            label="Description"
+            label={t("description")}
             value={scheduleDescription}
             onChange={setScheduleDescription}
-            placeholder="Brief description of the tournament schedule"
+            placeholder={t("descriptionPlaceholder")}
           />
         </div>
       </Card>
 
       {/* ─── Venue ─── */}
       <Card>
-        <SectionHeader icon={MapPin} title="Venue" />
+        <SectionHeader icon={MapPin} title={t("sectionVenue")} />
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               id="venueName"
-              label="Venue name"
+              label={t("venueName")}
               value={venueName}
               onChange={(e) => setVenueName(e.target.value)}
-              placeholder="e.g. Tallinn Sports Hall"
+              placeholder={t("venueNamePlaceholder")}
             />
             <Input
               id="venueAddress"
-              label="Address"
+              label={t("address")}
               value={venueAddress}
               onChange={(e) => setVenueAddress(e.target.value)}
-              placeholder="Full address"
+              placeholder={t("addressPlaceholder")}
             />
           </div>
           <Input
             id="venueMapUrl"
-            label="Map URL"
+            label={t("mapUrl")}
             value={venueMapUrl}
             onChange={(e) => setVenueMapUrl(e.target.value)}
-            placeholder="https://maps.google.com/..."
+            placeholder={t("mapUrlPlaceholder")}
           />
         </div>
       </Card>
 
       {/* ─── Meals ─── */}
       <Card>
-        <SectionHeader icon={UtensilsCrossed} title="Meals" />
+        <SectionHeader icon={UtensilsCrossed} title={t("sectionMeals")} />
         <div className="space-y-4">
           <Input
             id="mealTimes"
-            label="Meal times"
+            label={t("mealTimes")}
             value={mealTimes}
             onChange={(e) => setMealTimes(e.target.value)}
-            placeholder="Breakfast 07:30-09:00, Lunch 12:00-13:30, Dinner 18:00-20:00"
+            placeholder={t("mealTimesPlaceholder")}
           />
           <Input
             id="mealLocation"
-            label="Meal location"
+            label={t("mealLocation")}
             value={mealLocation}
             onChange={(e) => setMealLocation(e.target.value)}
-            placeholder="e.g. Hotel restaurant, 2nd floor"
+            placeholder={t("mealLocationPlaceholder")}
           />
           <Textarea
             id="mealNotes"
-            label="Notes"
+            label={t("mealNotes")}
             value={mealNotes}
             onChange={setMealNotes}
-            placeholder="Dietary options, special arrangements"
+            placeholder={t("mealNotesPlaceholder")}
           />
         </div>
       </Card>
 
       {/* ─── Emergency ─── */}
       <Card>
-        <SectionHeader icon={Phone} title="Emergency" />
+        <SectionHeader icon={Phone} title={t("sectionEmergency")} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             id="emergencyContact"
-            label="Contact name"
+            label={t("contactName")}
             value={emergencyContact}
             onChange={(e) => setEmergencyContact(e.target.value)}
             placeholder="Full name"
@@ -334,7 +336,7 @@ export function SettingsPageContent() {
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {saving ? "Saving..." : saved ? "Saved" : "Save All"}
+          {saving ? t("saving") : saved ? t("saved") : t("saveAll")}
         </Button>
       </div>
     </div>

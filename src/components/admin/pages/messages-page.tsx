@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useAdminFetch } from "@/lib/tournament-context";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ type Question = {
 };
 
 export function MessagesPageContent() {
+  const t = useTranslations("orgAdmin.messages");
   const adminFetch = useAdminFetch();
   const [tab, setTab] = useState<"messages" | "questions">("messages");
 
@@ -137,7 +139,7 @@ export function MessagesPageContent() {
 
   return (
     <div className="space-y-6 w-full">
-      <h1 className="text-2xl font-bold th-text">Messages</h1>
+      <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b th-border">
@@ -149,7 +151,7 @@ export function MessagesPageContent() {
               : "border-transparent th-text-2 hover:th-text"
           }`}
         >
-          Sent Messages
+          {t("tabSent")}
         </button>
         <button
           onClick={() => setTab("questions")}
@@ -159,7 +161,7 @@ export function MessagesPageContent() {
               : "border-transparent th-text-2 hover:th-text"
           }`}
         >
-          Questions from Teams
+          {t("tabQuestions")}
           {questionsCount > 0 && (
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
               {questionsCount}
@@ -173,17 +175,17 @@ export function MessagesPageContent() {
         <>
           {/* Compose */}
           <Card>
-            <CardTitle>New Message</CardTitle>
+            <CardTitle>{t("newMessage")}</CardTitle>
             <form onSubmit={handleSend} className="mt-4 space-y-4">
               <Input
                 id="subject"
-                label="Subject"
+                label={t("labelSubject")}
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 required
               />
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium th-text">Message body</label>
+                <label className="block text-sm font-medium th-text">{t("labelBody")}</label>
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
@@ -194,7 +196,7 @@ export function MessagesPageContent() {
 
               {/* Recipient selector */}
               <div className="space-y-3">
-                <p className="text-sm font-medium th-text">Recipients</p>
+                <p className="text-sm font-medium th-text">{t("labelRecipients")}</p>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input
@@ -204,7 +206,7 @@ export function MessagesPageContent() {
                       onChange={() => { setSendToAll(true); setSelectedTeamIds([]); }}
                       className="accent-navy"
                     />
-                    All teams ({totalTeams})
+                    {t("allTeams")} ({totalTeams})
                   </label>
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input
@@ -214,14 +216,14 @@ export function MessagesPageContent() {
                       onChange={() => setSendToAll(false)}
                       className="accent-navy"
                     />
-                    Select teams
+                    {t("selectTeams")}
                   </label>
                 </div>
 
                 {!sendToAll && (
                   <div className="border th-border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
                     {allTeams.length === 0 ? (
-                      <p className="text-sm th-text-2">No teams</p>
+                      <p className="text-sm th-text-2">{t("noTeams")}</p>
                     ) : (
                       allTeams.map((team) => (
                         <label key={team.id} className="flex items-center gap-2 text-sm cursor-pointer hover:th-bg rounded px-1 py-0.5">
@@ -241,12 +243,12 @@ export function MessagesPageContent() {
 
               <div className="flex justify-between items-center">
                 {sendSuccess && (
-                  <span className="text-sm text-success font-medium">Message sent!</span>
+                  <span className="text-sm text-success font-medium">{t("messageSent")}</span>
                 )}
                 {!sendSuccess && <span />}
                 <Button type="submit" disabled={sending}>
                   <Send className="w-4 h-4" />
-                  {sending ? "Sending..." : "Send Message"}
+                  {sending ? t("sending") : t("send")}
                 </Button>
               </div>
             </form>
@@ -254,13 +256,13 @@ export function MessagesPageContent() {
 
           {/* Sent messages list */}
           <Card>
-            <CardTitle>Sent Messages</CardTitle>
+            <CardTitle>{t("tabSent")}</CardTitle>
             {loading ? (
-              <div className="mt-4 text-sm th-text-2">Loading...</div>
+              <div className="mt-4 text-sm th-text-2">{t("loading")}</div>
             ) : messages.length === 0 ? (
               <div className="mt-4 text-center py-8 th-text-2 text-sm">
                 <Mail className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                No messages sent yet
+                {t("noMessages")}
               </div>
             ) : (
               <div className="mt-4 divide-y divide-[var(--cat-card-border)]">
@@ -274,14 +276,14 @@ export function MessagesPageContent() {
                         </p>
                         <p className="text-xs th-text-2 mt-1">
                           {msg.sendToAll
-                            ? "All teams"
+                            ? t("recipientAll")
                             : msg.recipientTeams
-                              ? `${msg.recipientTeams.length} team${msg.recipientTeams.length !== 1 ? "s" : ""}: ${msg.recipientTeams.map((t) => t.name).join(", ")}`
-                              : "Specific teams"}
+                              ? `${msg.recipientTeams.length} team${msg.recipientTeams.length !== 1 ? "s" : ""}: ${msg.recipientTeams.map((tm) => tm.name).join(", ")}`
+                              : t("recipientSpecific")}
                         </p>
                       </div>
                       <Badge variant="info">
-                        {msg.readCount} read
+                        {msg.readCount} {t("badgeRead")}
                       </Badge>
                     </div>
                   </div>
@@ -295,9 +297,9 @@ export function MessagesPageContent() {
       {/* Questions Tab */}
       {tab === "questions" && (
         <Card>
-          <CardTitle>Questions from Teams</CardTitle>
+          <CardTitle>{t("tabQuestions")}</CardTitle>
           {questionsLoading ? (
-            <div className="mt-4 text-sm th-text-2">Loading...</div>
+            <div className="mt-4 text-sm th-text-2">{t("loading")}</div>
           ) : questions.length === 0 ? (
             <div className="mt-4 text-center py-8 th-text-2 text-sm">
               <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />

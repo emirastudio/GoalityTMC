@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useAdminFetch } from "@/lib/tournament-context";
 import { CheckCircle, XCircle, AlertCircle, RefreshCw, Monitor, Smartphone, Download } from "lucide-react";
 
@@ -81,6 +82,7 @@ function fmtDate(iso: string) {
 }
 
 export function RegistrationsPageContent() {
+  const t = useTranslations("orgAdmin.registrations");
   const adminFetch = useAdminFetch();
   const [rows, setRows] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,10 +139,10 @@ export function RegistrationsPageContent() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold th-text">Registration Log</h1>
+          <h1 className="text-xl font-bold th-text">{t("title")}</h1>
           <p className="text-sm th-text-2">
-            <span className="text-success font-semibold">{successCount}</span> successful ·{" "}
-            <span className="text-error font-semibold">{failCount}</span> failed · {rows.length} total
+            <span className="text-success font-semibold">{successCount}</span> {t("statusSuccess")} ·{" "}
+            <span className="text-error font-semibold">{failCount}</span> {t("statusFailed")} · {rows.length} {t("statusTotal")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -149,14 +151,14 @@ export function RegistrationsPageContent() {
             className="flex items-center gap-1.5 rounded-lg border th-border th-card px-3 py-2 text-sm font-medium hover:th-bg transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+            {t("refresh")}
           </button>
           <button
             onClick={exportCsv}
             className="flex items-center gap-1.5 rounded-lg border th-border th-card px-3 py-2 text-sm font-medium hover:th-bg transition-colors"
           >
             <Download className="w-4 h-4" />
-            CSV
+            {t("export")}
           </button>
         </div>
       </div>
@@ -171,17 +173,17 @@ export function RegistrationsPageContent() {
               filter === f ? "th-card th-text shadow-sm" : "th-text-2 hover:th-text"
             }`}
           >
-            {f === "all" ? `All (${rows.length})` : f === "success" ? `✓ Success (${successCount})` : `✗ Failed (${failCount})`}
+            {f === "all" ? `${t("filterAll")} (${rows.length})` : f === "success" ? `✓ ${t("filterSuccess")} (${successCount})` : `✗ ${t("filterFailed")} (${failCount})`}
           </button>
         ))}
       </div>
 
       {loading && (
-        <div className="text-center py-12 th-text-2">Loading…</div>
+        <div className="text-center py-12 th-text-2">{t("loading")}</div>
       )}
 
       {!loading && visible.length === 0 && (
-        <div className="text-center py-12 th-text-2">No records yet</div>
+        <div className="text-center py-12 th-text-2">{t("noRecords")}</div>
       )}
 
       {/* Table */}
@@ -190,14 +192,14 @@ export function RegistrationsPageContent() {
           <table className="w-full text-sm border-collapse">
             <thead className="bg-[var(--cat-accent)]">
               <tr>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">Time</th>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">Club</th>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">Email</th>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">Country</th>
-                <th className="px-3 py-2 text-center text-[11px] font-semibold text-white/70 uppercase tracking-wide">Teams</th>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">Status</th>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">Device</th>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">IP</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">{t("colTime")}</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">{t("colClub")}</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">{t("colEmail")}</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">{t("colCountry")}</th>
+                <th className="px-3 py-2 text-center text-[11px] font-semibold text-white/70 uppercase tracking-wide">{t("colTeams")}</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">{t("colStatus")}</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">{t("colDevice")}</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold text-white/70 uppercase tracking-wide">{t("colIP")}</th>
               </tr>
             </thead>
             <tbody>
@@ -246,12 +248,12 @@ export function RegistrationsPageContent() {
                       <td colSpan={8} className="px-4 py-3">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                           <div>
-                            <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">Contact</p>
+                            <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">{t("colContact")}</p>
                             <p className="font-medium">{row.contactName ?? "—"}</p>
                             <p className="th-text-2">{row.contactEmail ?? "—"}</p>
                           </div>
                           <div>
-                            <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">Location</p>
+                            <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">{t("colLocation")}</p>
                             <p>{row.country}{row.city ? `, ${row.city}` : ""}</p>
                             {row.clubId && (
                               <p className="text-success">Club ID: #{row.clubId}</p>
@@ -259,7 +261,7 @@ export function RegistrationsPageContent() {
                           </div>
                           {row.failReason && (
                             <div>
-                              <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">Fail reason</p>
+                              <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">{t("colFailReason")}</p>
                               <p className="text-error">{row.failReason}</p>
                             </div>
                           )}
@@ -277,7 +279,7 @@ export function RegistrationsPageContent() {
                             } catch { return null; }
                           })()}
                           <div className="col-span-2 md:col-span-4">
-                            <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">User Agent</p>
+                            <p className="th-text-2 font-semibold uppercase tracking-wide mb-1">{t("colUserAgent")}</p>
                             <p className="font-mono text-[10px] th-text-2 break-all">{row.userAgent ?? "—"}</p>
                           </div>
                         </div>

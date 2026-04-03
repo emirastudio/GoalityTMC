@@ -41,11 +41,7 @@ const STATUS_BADGE: Record<string, "warning" | "success" | "error"> = {
   refunded: "error",
 };
 
-const METHOD_LABELS: Record<string, string> = {
-  bank_transfer: "Bank Transfer",
-  cash: "Cash",
-  stripe: "Stripe",
-};
+// METHOD_LABELS built from translations below in component
 
 function formatEuro(val: string | number): string {
   return `\u20AC${Number(val).toFixed(2)}`;
@@ -69,7 +65,7 @@ function toDateInput(iso: string | null): string {
 }
 
 export function PaymentsPageContent() {
-  const t = useTranslations("admin");
+  const t = useTranslations("orgAdmin.payments");
   const adminFetch = useAdminFetch();
 
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -220,36 +216,42 @@ export function PaymentsPageContent() {
     return team.name.toLowerCase().includes(q) || (team.club?.name ?? "").toLowerCase().includes(q) || team.regNumber.toLowerCase().includes(q);
   });
 
+  const methodLabels: Record<string, string> = {
+    bank_transfer: t("methodBank"),
+    cash: t("methodCash"),
+    stripe: t("methodStripe"),
+  };
+
   const tabs: { key: FilterTab; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "received", label: "Received" },
-    { key: "pending", label: "Pending" },
-    { key: "refunded", label: "Refunded" },
+    { key: "all",      label: t("filterAll") },
+    { key: "received", label: t("filterReceived") },
+    { key: "pending",  label: t("filterPending") },
+    { key: "refunded", label: t("filterRefunded") },
   ];
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20 th-text-2">Loading...</div>;
+    return <div className="flex items-center justify-center py-20 th-text-2">{t("loading")}</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold th-text">Payments</h1>
-        <Button onClick={() => setShowModal(true)}>Add Payment</Button>
+        <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
+        <Button onClick={() => setShowModal(true)}>{t("addPayment")}</Button>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="border-l-4 border-l-emerald-500">
-          <p className="text-sm th-text-2">Total Received</p>
+          <p className="text-sm th-text-2">{t("totalReceived")}</p>
           <p className="text-2xl font-bold text-emerald-600">{formatEuro(summary.received)}</p>
         </Card>
         <Card className="border-l-4 border-l-amber-400">
-          <p className="text-sm th-text-2">Pending</p>
+          <p className="text-sm th-text-2">{t("pending")}</p>
           <p className="text-2xl font-bold text-amber-600">{formatEuro(summary.pending)}</p>
         </Card>
         <Card className="border-l-4 border-l-red-500">
-          <p className="text-sm th-text-2">Refunded</p>
+          <p className="text-sm th-text-2">{t("refunded")}</p>
           <p className="text-2xl font-bold text-red-600">{formatEuro(summary.refunded)}</p>
         </Card>
       </div>
@@ -279,21 +281,21 @@ export function PaymentsPageContent() {
       {/* Table */}
       <Card padding={false}>
         {filteredPayments.length === 0 ? (
-          <div className="py-12 text-center th-text-2">No payments found</div>
+          <div className="py-12 text-center th-text-2">{t("noPayments")}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b th-border th-bg/50">
-                  <th className="text-left px-4 py-3 font-medium th-text-2">Date</th>
-                  <th className="text-left px-4 py-3 font-medium th-text-2">Team</th>
-                  <th className="text-left px-4 py-3 font-medium th-text-2">Club</th>
-                  <th className="text-right px-4 py-3 font-medium th-text-2">Amount</th>
-                  <th className="text-left px-4 py-3 font-medium th-text-2">Method</th>
-                  <th className="text-left px-4 py-3 font-medium th-text-2">Status</th>
-                  <th className="text-left px-4 py-3 font-medium th-text-2">Reference</th>
-                  <th className="text-left px-4 py-3 font-medium th-text-2">Notes</th>
-                  <th className="text-left px-4 py-3 font-medium th-text-2">Actions</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">{t("colDate")}</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">{t("colTeam")}</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">{t("colClub")}</th>
+                  <th className="text-right px-4 py-3 font-medium th-text-2">{t("colAmount")}</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">{t("colMethod")}</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">{t("colStatus")}</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">{t("colRef")}</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">{t("colNotes")}</th>
+                  <th className="text-left px-4 py-3 font-medium th-text-2">{t("colActions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -311,7 +313,7 @@ export function PaymentsPageContent() {
                       {formatEuro(p.amount)}
                     </td>
                     <td className="px-4 py-3 th-text-2">
-                      {METHOD_LABELS[p.method] ?? p.method}
+                      {methodLabels[p.method] ?? p.method}
                     </td>
                     <td className="px-4 py-3">
                       <select
