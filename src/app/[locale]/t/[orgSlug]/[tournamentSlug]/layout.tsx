@@ -59,7 +59,7 @@ export default async function TournamentLayout({ children, params }: Props) {
             rightContent={<PublicHeaderActions />}
           />
 
-          <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="w-[90%] max-w-[1400px] mx-auto py-6">
             <div className="flex gap-6">
               <TournamentSidebar
                 orgSlug={orgSlug}
@@ -82,7 +82,7 @@ export default async function TournamentLayout({ children, params }: Props) {
           </div>
 
           <footer className="border-t mt-10" style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-card-bg)" }}>
-            <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-xs text-gray-500">
+            <div className="w-[90%] max-w-[1400px] mx-auto py-4 flex items-center justify-between text-xs" style={{ color: "var(--cat-text-muted)" }}>
               <span>&copy; {new Date().getFullYear()} {org.name}</span>
               <a href="/catalog" className="flex items-center gap-1.5 hover:text-gray-700">
                 <img src="/logo.png" alt="" className="w-4 h-4 rounded" /> Goality TMC
