@@ -256,15 +256,15 @@ function CLConfigStep({ state, setState, teamCount }: {
       <div className="rounded-2xl border p-5" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
         <p className="font-bold mb-4" style={{ color: "var(--cat-text)" }}>Названия этапов</p>
         <div className="space-y-3">
-          {[
-            { label: "Лига-фаза", key: "leagueStageName" },
-            { label: "Плей-офф раунд", key: "playoffRoundName" },
-            { label: "Стадия нокаута (1/8+)", key: "knockoutStageName" },
-          ].map(({ label, key }) => (
-            <div key={key}>
+          {([
+            { label: "Лига-фаза", key: "leagueStageName" as const },
+            { label: "Плей-офф раунд", key: "playoffRoundName" as const },
+            { label: "Стадия нокаута (1/8+)", key: "knockoutStageName" as const },
+          ] as { label: string; key: keyof CLState }[]).map(({ label, key }) => (
+            <div key={key as string}>
               <label className="text-xs font-semibold block mb-1.5" style={{ color: "var(--cat-text-muted)" }}>{label}</label>
-              <input value={(state as Record<string, string>)[key]}
-                onChange={e => update({ [key]: e.target.value } as Partial<CLState>)}
+              <input value={state[key] as string}
+                onChange={e => update({ [key]: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none"
                 style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }} />
             </div>
