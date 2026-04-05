@@ -4,10 +4,12 @@ import { organizations, tournaments, tournamentClasses, clubs, teams } from "@/d
 import { eq, and } from "drizzle-orm";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ orgSlug: string; tournamentSlug: string }> }
 ) {
   const { orgSlug, tournamentSlug } = await params;
+  const { searchParams } = new URL(req.url);
+  const classIdParam = searchParams.get("classId");
 
   const org = await db.query.organizations.findFirst({
     where: eq(organizations.slug, orgSlug),
@@ -32,12 +34,32 @@ export async function GET(
     orderBy: (c, { asc }) => [asc(c.name)],
   });
 
+  const teamsWhere = classIdParam
+    ? and(eq(teams.tournamentId, tournament.id), eq(teams.classId, parseInt(classIdParam)))
+    : eq(teams.tournamentId, tournament.id);
+
   const allTeams = await db.query.teams.findMany({
-    where: and(
-      eq(teams.tournamentId, tournament.id),
-    ),
+    where: teamsWhere,
     orderBy: (t, { asc }) => [asc(t.regNumber)],
   });
+
+  // If filtering by specific class, return flat list directly
+  if (classIdParam) {
+    const flat = allTeams.map((team) => {
+      const club = allClubs.find((c) => c.id === team.clubId);
+      return {
+        id: team.id,
+        regNumber: team.regNumber,
+        name: team.name,
+        status: team.status,
+        classId: team.classId,
+        club: club
+          ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
+          : null,
+      };
+    });
+    return NextResponse.json({ grouped: [], unclassified: flat });
+  }
 
   // Group by class
   const grouped = classes.map((cls) => {

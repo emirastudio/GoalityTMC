@@ -23,5 +23,5 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ name: tournament.name });
+  return NextResponse.json({ name: tournament.name, logoUrl: tournament.logoUrl ?? null });
 }

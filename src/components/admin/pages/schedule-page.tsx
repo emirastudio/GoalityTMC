@@ -2,19 +2,21 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { useTournament } from "@/lib/tournament-context";
 import {
   Layers, Users, CalendarDays, Trophy,
   Plus, Trash2, ChevronRight, RefreshCw,
   Play, CheckCircle, Clock, Zap, AlertCircle,
-  Edit2, Save, X, Loader2, Shield,
+  Edit2, Save, X, Loader2, Shield, ChevronDown, LayoutGrid,
 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 
 // ─────────────────────────────────────────────
 //  Types
 // ─────────────────────────────────────────────
 
-type StageType = "group" | "knockout";
+type StageType = "group" | "knockout" | "league";
 type StageStatus = "draft" | "active" | "finished";
 type MatchStatus = "scheduled" | "live" | "finished" | "cancelled" | "postponed";
 
@@ -232,25 +234,49 @@ export function SchedulePage() {
   const tournamentId = ctx?.tournamentId ?? 0;
   const base = `/api/org/${orgSlug}/tournament/${tournamentId}`;
 
+  const searchParams = useSearchParams();
+  const classId = searchParams ? Number(searchParams.get("classId")) || null : null;
+  const className = searchParams ? searchParams.get("className") || null : null;
+
   const [tab, setTab] = useState<"stages" | "draw" | "fixtures" | "results">("stages");
 
   const tabs = [
-    { key: "stages"   as const, icon: <Layers className="w-4 h-4" />,      label: "Этапы" },
-    { key: "draw"     as const, icon: <Users className="w-4 h-4" />,       label: "Жеребьевка" },
+    { key: "stages"   as const, icon: <Layers className="w-4 h-4" />,       label: "Этапы" },
+    { key: "draw"     as const, icon: <Users className="w-4 h-4" />,        label: "Жеребьёвка" },
     { key: "fixtures" as const, icon: <CalendarDays className="w-4 h-4" />, label: "Расписание" },
-    { key: "results"  as const, icon: <Trophy className="w-4 h-4" />,      label: "Результаты" },
+    { key: "results"  as const, icon: <Trophy className="w-4 h-4" />,       label: "Результаты" },
   ];
+
+  const plannerHref = classId
+    ? `/org/${orgSlug}/admin/tournament/${tournamentId}/planner?classId=${classId}`
+    : `/org/${orgSlug}/admin/tournament/${tournamentId}/planner`;
 
   return (
     <div className="space-y-6 w-full">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold" style={{ color: "var(--cat-text)" }}>
-          Игровое расписание
-        </h1>
-        <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-          Управление этапами, жеребьёвкой, матчами и результатами
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--cat-text)" }}>
+            {className ? `Расписание · ${className}` : "Расписание турнира"}
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+            {classId
+              ? "Этапы, жеребьёвка и матчи этого дивизиона"
+              : "Управление этапами, жеребьёвкой, матчами и результатами"}
+          </p>
+        </div>
+        <Link
+          href={plannerHref}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all hover:opacity-80"
+          style={{
+            background: "rgba(6,182,212,0.08)",
+            borderColor: "rgba(6,182,212,0.3)",
+            color: "#06b6d4",
+          }}
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          {classId ? "Ручная корректировка" : "Открыть планировщик"}
+        </Link>
       </div>
 
       {/* Tab bar */}
@@ -268,10 +294,65 @@ export function SchedulePage() {
       </div>
 
       {/* Tab content */}
-      {tab === "stages"   && <StagesTab   base={base} />}
-      {tab === "draw"     && <DrawTab     base={base} />}
-      {tab === "fixtures" && <FixturesTab base={base} />}
-      {tab === "results"  && <ResultsTab  base={base} />}
+      {tab === "stages"   && <StagesTab   base={base} classId={classId} />}
+      {tab === "draw"     && <DrawTab     base={base} classId={classId} />}
+      {tab === "fixtures" && <FixturesTab base={base} classId={classId} />}
+      {tab === "results"  && <ResultsTab  base={base} classId={classId} />}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  Stage settings type (frontend-only)
+// ─────────────────────────────────────────────
+
+interface StageSettings {
+  halves: number;
+  halfDuration: number;
+  breakBetweenMatches: number;
+}
+
+const DEFAULT_STAGE_SETTINGS: StageSettings = {
+  halves: 2,
+  halfDuration: 20,
+  breakBetweenMatches: 5,
+};
+
+// ─────────────────────────────────────────────
+//  PillGroup — pill button selector
+// ─────────────────────────────────────────────
+
+function PillGroup<T extends string | number>({
+  options, value, onChange, suffix = "",
+}: {
+  options: T[];
+  value: T;
+  onChange: (v: T) => void;
+  suffix?: string;
+}) {
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      {options.map(opt => {
+        const active = opt === value;
+        return (
+          <button
+            key={opt}
+            onClick={() => onChange(opt)}
+            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+            style={active ? {
+              background: "var(--cat-accent)",
+              color: "var(--cat-accent-text)",
+              boxShadow: "0 0 8px var(--cat-accent-glow, rgba(0,200,150,0.3))",
+            } : {
+              background: "var(--cat-tag-bg)",
+              color: "var(--cat-text-secondary)",
+              border: "1px solid var(--cat-card-border)",
+            }}
+          >
+            {opt}{suffix}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -280,28 +361,49 @@ export function SchedulePage() {
 //  Tab 1: Stages
 // ─────────────────────────────────────────────
 
-function StagesTab({ base }: { base: string }) {
+function StagesTab({ base, classId }: { base: string; classId: number | null }) {
   const [stages, setStages] = useState<Stage[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  // Per-stage match settings (frontend-only)
+  const [stageSettings, setStageSettings] = useState<Record<number, StageSettings>>({});
 
   // Create form state
   const [newName, setNewName] = useState("");
   const [newNameRu, setNewNameRu] = useState("");
   const [newType, setNewType] = useState<StageType>("group");
 
+  const stagesUrl = classId ? `${base}/stages?classId=${classId}` : `${base}/stages`;
+
   const loadStages = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch(`${base}/stages`);
+      const r = await fetch(stagesUrl);
       if (r.ok) setStages(await r.json());
     } finally {
       setLoading(false);
     }
-  }, [base]);
+  }, [stagesUrl]);
 
   useEffect(() => { loadStages(); }, [loadStages]);
+
+  function getSettings(stageId: number): StageSettings {
+    return stageSettings[stageId] ?? DEFAULT_STAGE_SETTINGS;
+  }
+
+  function patchSettings(stageId: number, patch: Partial<StageSettings>) {
+    setStageSettings(prev => ({
+      ...prev,
+      [stageId]: { ...getSettings(stageId), ...patch },
+    }));
+  }
+
+  function toggleExpand(id: number) {
+    setExpandedId(prev => prev === id ? null : id);
+  }
 
   async function createStage() {
     if (!newName.trim()) return;
@@ -310,7 +412,7 @@ function StagesTab({ base }: { base: string }) {
       const r = await fetch(`${base}/stages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, nameRu: newNameRu || null, type: newType, order: stages.length + 1 }),
+        body: JSON.stringify({ name: newName, nameRu: newNameRu || null, type: newType, order: stages.length + 1, classId }),
       });
       if (r.ok) {
         setNewName(""); setNewNameRu(""); setNewType("group");
@@ -325,6 +427,7 @@ function StagesTab({ base }: { base: string }) {
   async function deleteStage(id: number) {
     if (!confirm("Удалить этап?")) return;
     await fetch(`${base}/stages/${id}`, { method: "DELETE" });
+    if (expandedId === id) setExpandedId(null);
     await loadStages();
   }
 
@@ -337,7 +440,11 @@ function StagesTab({ base }: { base: string }) {
     await loadStages();
   }
 
-  if (loading) return <div className="flex items-center gap-2 py-8" style={{ color: "var(--cat-text-muted)" }}><Loader2 className="w-4 h-4 animate-spin" /> Загрузка...</div>;
+  if (loading) return (
+    <div className="flex items-center gap-2 py-8" style={{ color: "var(--cat-text-muted)" }}>
+      <Loader2 className="w-4 h-4 animate-spin" /> Загрузка...
+    </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -381,77 +488,335 @@ function StagesTab({ base }: { base: string }) {
       )}
 
       <div className="space-y-3">
-        {stages.map((stage, idx) => (
-          <Card key={stage.id}>
-            <div className="flex items-center gap-3">
-              {/* Order badge */}
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
-                {idx + 1}
-              </div>
+        {stages.map((stage, idx) => {
+          const isOpen = expandedId === stage.id;
+          const settings = getSettings(stage.id);
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm" style={{ color: "var(--cat-text)" }}>{stage.name}</span>
-                  {stage.nameRu && <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>/ {stage.nameRu}</span>}
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide"
-                    style={{
-                      background: stage.type === "group" ? "var(--badge-info-bg, rgba(59,130,246,0.1))" : "var(--cat-accent-glow, rgba(0,200,150,0.1))",
-                      color: stage.type === "group" ? "var(--badge-info-text, #3b82f6)" : "var(--cat-accent)",
-                    }}>
-                    {stage.type === "group" ? "Группы" : "Плей-офф"}
-                  </span>
-                  {statusChip(stage.status)}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 shrink-0">
-                {stage.status === "draft" && (
-                  <Btn size="xs" variant="outline" onClick={() => changeStatus(stage, "active")}>
-                    <Play className="w-3 h-3" /> Запустить
-                  </Btn>
-                )}
-                {stage.status === "active" && (
-                  <Btn size="xs" variant="ghost" onClick={() => changeStatus(stage, "finished")}>
-                    <CheckCircle className="w-3 h-3" /> Завершить
-                  </Btn>
-                )}
-                <button
-                  onClick={() => deleteStage(stage.id)}
-                  className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
-                  style={{ color: "var(--badge-error-text)", background: "var(--badge-error-bg)" }}
+          return (
+            <div
+              key={stage.id}
+              className="rounded-xl border overflow-hidden transition-all"
+              style={{ background: "var(--cat-card-bg)", borderColor: isOpen ? "var(--cat-accent)" : "var(--cat-card-border)" }}
+            >
+              {/* ── Collapsed header row (always visible) ── */}
+              <div
+                className="flex items-center gap-3 p-4 cursor-pointer select-none"
+                onClick={() => toggleExpand(stage.id)}
+              >
+                {/* Order badge */}
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                  style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                  {idx + 1}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-sm" style={{ color: "var(--cat-text)" }}>
+                      {stage.nameRu || stage.name}
+                    </span>
+                    {stage.nameRu && stage.name !== stage.nameRu && (
+                      <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>/ {stage.name}</span>
+                    )}
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide"
+                      style={{
+                        background: stage.type === "group"
+                          ? "var(--badge-info-bg, rgba(59,130,246,0.1))"
+                          : stage.type === "league"
+                          ? "rgba(251,191,36,0.12)"
+                          : "var(--cat-accent-glow, rgba(0,200,150,0.1))",
+                        color: stage.type === "group"
+                          ? "var(--badge-info-text, #3b82f6)"
+                          : stage.type === "league"
+                          ? "#f59e0b"
+                          : "var(--cat-accent)",
+                      }}
+                    >
+                      {stage.type === "group" ? "Группы" : stage.type === "league" ? "Лига" : "Плей-офф"}
+                    </span>
+                    {statusChip(stage.status)}
+                  </div>
+                </div>
+
+                {/* Action buttons (stop propagation so they don't toggle accordion) */}
+                <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                  {stage.status === "draft" && (
+                    <Btn size="xs" variant="outline" onClick={() => changeStatus(stage, "active")}>
+                      <Play className="w-3 h-3" /> Запустить
+                    </Btn>
+                  )}
+                  {stage.status === "active" && (
+                    <Btn size="xs" variant="ghost" onClick={() => changeStatus(stage, "finished")}>
+                      <CheckCircle className="w-3 h-3" /> Завершить
+                    </Btn>
+                  )}
+                  <button
+                    onClick={() => deleteStage(stage.id)}
+                    className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
+                    style={{ color: "var(--badge-error-text)", background: "var(--badge-error-bg)" }}
+                    title="Удалить этап"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Chevron */}
+                <ChevronDown
+                  className="w-4 h-4 shrink-0 transition-transform duration-200"
+                  style={{
+                    color: "var(--cat-text-muted)",
+                    transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  }}
+                />
               </div>
+
+              {/* ── Expanded body ── */}
+              {isOpen && (
+                <div
+                  className="border-t px-4 pb-5 pt-4 space-y-5"
+                  style={{ borderColor: "var(--cat-card-border)" }}
+                >
+                  {/* Section A — Match Settings */}
+                  <StageMatchSettings
+                    settings={settings}
+                    onChange={patch => patchSettings(stage.id, patch)}
+                  />
+
+                  {/* Divider */}
+                  <div className="h-px" style={{ background: "var(--cat-card-border)" }} />
+
+                  {/* Section B — Auto-schedule */}
+                  <StageAutoSchedule
+                    base={base}
+                    stageId={stage.id}
+                    settings={settings}
+                  />
+
+                  {/* Divider */}
+                  <div className="h-px" style={{ background: "var(--cat-card-border)" }} />
+
+                  {/* Section C/D — Groups or Rounds */}
+                  {stage.type === "group" ? (
+                    <StageGroupsSection base={base} stage={stage} />
+                  ) : (
+                    <StageRoundsSection base={base} stage={stage} />
+                  )}
+                </div>
+              )}
             </div>
-          </Card>
-        ))}
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  Section A: Match Settings (inside expanded stage)
+// ─────────────────────────────────────────────
+
+function StageMatchSettings({
+  settings,
+  onChange,
+}: {
+  settings: StageSettings;
+  onChange: (patch: Partial<StageSettings>) => void;
+}) {
+  const totalMinutes = settings.halves * settings.halfDuration;
+
+  return (
+    <div>
+      <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--cat-text-muted)" }}>
+        Настройки матчей
+      </p>
+      <div className="space-y-3">
+        {/* Halves */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs w-44 shrink-0" style={{ color: "var(--cat-text-secondary)" }}>Таймы</span>
+          <PillGroup<number>
+            options={[1, 2]}
+            value={settings.halves}
+            onChange={v => onChange({ halves: v })}
+            suffix=" тайм"
+          />
+        </div>
+
+        {/* Half duration */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs w-44 shrink-0" style={{ color: "var(--cat-text-secondary)" }}>Длительность тайма</span>
+          <PillGroup<number>
+            options={[15, 20, 25, 30, 40, 45]}
+            value={settings.halfDuration}
+            onChange={v => onChange({ halfDuration: v })}
+            suffix=" мин"
+          />
+        </div>
+
+        {/* Break between matches */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs w-44 shrink-0" style={{ color: "var(--cat-text-secondary)" }}>Перерыв между матчами</span>
+          <PillGroup<number>
+            options={[0, 5, 10, 15]}
+            value={settings.breakBetweenMatches}
+            onChange={v => onChange({ breakBetweenMatches: v })}
+            suffix=" мин"
+          />
+        </div>
+
+        {/* Summary */}
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>Итого:</span>
+          <span className="text-sm font-bold" style={{ color: "var(--cat-accent)" }}>
+            Матч: {totalMinutes} мин
+          </span>
+          {settings.breakBetweenMatches > 0 && (
+            <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
+              + {settings.breakBetweenMatches} мин перерыв = {totalMinutes + settings.breakBetweenMatches} мин/слот
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  Section B: Auto-schedule (inside expanded stage)
+// ─────────────────────────────────────────────
+
+function StageAutoSchedule({
+  base,
+  stageId,
+  settings,
+}: {
+  base: string;
+  stageId: number;
+  settings: StageSettings;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [date, setDate] = useState(today);
+  const [time, setTime] = useState("10:00");
+  const [scheduling, setScheduling] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  async function runAutoSchedule() {
+    if (!date || !time) return;
+    setScheduling(true);
+    setResult(null);
+    try {
+      const startAt = new Date(`${date}T${time}:00`).toISOString();
+      const r = await fetch(`${base}/matches/auto-schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stageId,
+          startAt,
+          fieldId: null,
+          halfDuration: settings.halfDuration,
+          halves: settings.halves,
+          breakBetweenMatches: settings.breakBetweenMatches,
+        }),
+      });
+      const data = await r.json();
+      if (r.ok) {
+        setResult({ ok: true, message: `Готово! Обновлено матчей: ${data.updated}` });
+      } else {
+        setResult({ ok: false, message: data.error ?? "Ошибка генерации расписания" });
+      }
+    } catch {
+      setResult({ ok: false, message: "Сетевая ошибка" });
+    } finally {
+      setScheduling(false);
+    }
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--cat-text-muted)" }}>
+        Авто-расписание
+      </p>
+      <div className="flex items-end gap-3 flex-wrap">
+        {/* Date */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>Дата начала</label>
+          <input
+            type="date"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            className="rounded-lg px-3 py-2 text-sm outline-none"
+            style={{
+              background: "var(--cat-input-bg, var(--cat-card-bg))",
+              border: "1px solid var(--cat-card-border)",
+              color: "var(--cat-text)",
+            }}
+          />
+        </div>
+
+        {/* Time */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>Время</label>
+          <input
+            type="time"
+            value={time}
+            onChange={e => setTime(e.target.value)}
+            className="rounded-lg px-3 py-2 text-sm outline-none"
+            style={{
+              background: "var(--cat-input-bg, var(--cat-card-bg))",
+              border: "1px solid var(--cat-card-border)",
+              color: "var(--cat-text)",
+            }}
+          />
+        </div>
+
+        {/* Field selector (placeholder — "Все поля") */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>Поле</label>
+          <select
+            className="rounded-lg px-3 py-2 text-sm outline-none"
+            style={{
+              background: "var(--cat-input-bg, var(--cat-card-bg))",
+              border: "1px solid var(--cat-card-border)",
+              color: "var(--cat-text)",
+            }}
+            defaultValue=""
+          >
+            <option value="">Все поля</option>
+          </select>
+        </div>
+
+        {/* Generate button */}
+        <Btn
+          onClick={runAutoSchedule}
+          loading={scheduling}
+          disabled={!date || !time}
+          variant="primary"
+          size="md"
+        >
+          <Zap className="w-3.5 h-3.5" />
+          Сгенерировать расписание
+        </Btn>
       </div>
 
-      {/* Group setup quick-actions */}
-      {stages.filter(s => s.type === "group").length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--cat-text-muted)" }}>
-            Настройка групповых этапов
-          </h3>
-          {stages.filter(s => s.type === "group").map(stage => (
-            <GroupSetupPanel key={stage.id} base={base} stage={stage} />
-          ))}
-        </div>
-      )}
-
-      {/* Knockout setup quick-actions */}
-      {stages.filter(s => s.type === "knockout").length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--cat-text-muted)" }}>
-            Настройка плей-офф этапов
-          </h3>
-          {stages.filter(s => s.type === "knockout").map(stage => (
-            <KnockoutSetupPanel key={stage.id} base={base} stage={stage} />
-          ))}
+      {/* Result message */}
+      {result && (
+        <div
+          className="mt-3 px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2"
+          style={result.ok ? {
+            background: "var(--badge-success-bg)",
+            color: "var(--badge-success-text)",
+          } : {
+            background: "var(--badge-error-bg)",
+            color: "var(--badge-error-text)",
+          }}
+        >
+          {result.ok
+            ? <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+            : <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          }
+          {result.message}
         </div>
       )}
     </div>
@@ -459,10 +824,10 @@ function StagesTab({ base }: { base: string }) {
 }
 
 // ─────────────────────────────────────────────
-//  Group Setup Panel (within Stages tab)
+//  Section C: Groups (inside expanded group stage)
 // ─────────────────────────────────────────────
 
-function GroupSetupPanel({ base, stage }: { base: string; stage: Stage }) {
+function StageGroupsSection({ base, stage }: { base: string; stage: Stage }) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [groupCount, setGroupCount] = useState("4");
@@ -486,8 +851,7 @@ function GroupSetupPanel({ base, stage }: { base: string; stage: Stage }) {
         body: JSON.stringify({ count: parseInt(groupCount) }),
       });
       if (r.ok) {
-        const data = await r.json();
-        setGroups(data);
+        setGroups(await r.json());
         setCreating(false);
       }
     } finally {
@@ -496,10 +860,12 @@ function GroupSetupPanel({ base, stage }: { base: string; stage: Stage }) {
   }
 
   return (
-    <Card className="mb-3">
+    <div>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{stage.name}</span>
-        {groups.length === 0 && (
+        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
+          Группы
+        </p>
+        {!loading && groups.length === 0 && (
           <Btn size="xs" onClick={() => setCreating(v => !v)} variant={creating ? "ghost" : "outline"}>
             <Plus className="w-3 h-3" /> Создать группы
           </Btn>
@@ -508,36 +874,64 @@ function GroupSetupPanel({ base, stage }: { base: string; stage: Stage }) {
 
       {creating && (
         <div className="flex items-center gap-2 mb-3">
-          <Select value={groupCount} onChange={setGroupCount} className="w-24">
-            {[2,3,4,5,6,8].map(n => (
+          <select
+            value={groupCount}
+            onChange={e => setGroupCount(e.target.value)}
+            className="rounded-lg px-3 py-2 text-xs outline-none"
+            style={{
+              background: "var(--cat-input-bg, var(--cat-card-bg))",
+              border: "1px solid var(--cat-card-border)",
+              color: "var(--cat-text)",
+            }}
+          >
+            {[2, 3, 4, 5, 6, 8].map(n => (
               <option key={n} value={n}>Групп: {n}</option>
             ))}
-          </Select>
-          <Btn size="xs" onClick={createGroups} loading={saving}><Save className="w-3 h-3" /> Создать</Btn>
+          </select>
+          <Btn size="xs" onClick={createGroups} loading={saving}>
+            <Save className="w-3 h-3" /> Создать
+          </Btn>
+          <Btn size="xs" variant="ghost" onClick={() => setCreating(false)}>Отмена</Btn>
         </div>
       )}
 
-      {loading && <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>Загрузка...</p>}
+      {loading && (
+        <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>Загрузка...</p>
+      )}
 
       {!loading && groups.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {groups.map(g => (
-            <div key={g.id} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
-              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)" }}>
+            <div
+              key={g.id}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: "var(--badge-info-bg, rgba(59,130,246,0.1))", color: "var(--badge-info-text, #3b82f6)" }}
+            >
               Группа {g.name}
+              {g.groupTeams && (
+                <span className="ml-1 font-normal" style={{ color: "var(--cat-text-muted)" }}>
+                  · {g.groupTeams.length} команд
+                </span>
+              )}
             </div>
           ))}
         </div>
       )}
-    </Card>
+
+      {!loading && groups.length === 0 && !creating && (
+        <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
+          Нет групп. Нажмите «Создать группы».
+        </p>
+      )}
+    </div>
   );
 }
 
 // ─────────────────────────────────────────────
-//  Knockout Setup Panel (within Stages tab)
+//  Section D: Rounds (inside expanded knockout stage)
 // ─────────────────────────────────────────────
 
-function KnockoutSetupPanel({ base, stage }: { base: string; stage: Stage }) {
+function StageRoundsSection({ base, stage }: { base: string; stage: Stage }) {
   const [rounds, setRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
   const [template, setTemplate] = useState("8team");
@@ -561,8 +955,7 @@ function KnockoutSetupPanel({ base, stage }: { base: string; stage: Stage }) {
         body: JSON.stringify({ template }),
       });
       if (r.ok) {
-        const data = await r.json();
-        setRounds(data);
+        setRounds(await r.json());
         setCreating(false);
       }
     } finally {
@@ -571,10 +964,12 @@ function KnockoutSetupPanel({ base, stage }: { base: string; stage: Stage }) {
   }
 
   return (
-    <Card className="mb-3">
+    <div>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{stage.name}</span>
-        {rounds.length === 0 && (
+        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
+          Раунды
+        </p>
+        {!loading && rounds.length === 0 && (
           <Btn size="xs" onClick={() => setCreating(v => !v)} variant={creating ? "ghost" : "outline"}>
             <Plus className="w-3 h-3" /> Создать раунды
           </Btn>
@@ -583,29 +978,55 @@ function KnockoutSetupPanel({ base, stage }: { base: string; stage: Stage }) {
 
       {creating && (
         <div className="flex items-center gap-2 mb-3">
-          <Select value={template} onChange={setTemplate} className="w-36">
+          <select
+            value={template}
+            onChange={e => setTemplate(e.target.value)}
+            className="rounded-lg px-3 py-2 text-xs outline-none"
+            style={{
+              background: "var(--cat-input-bg, var(--cat-card-bg))",
+              border: "1px solid var(--cat-card-border)",
+              color: "var(--cat-text)",
+            }}
+          >
             <option value="4team">4 команды</option>
             <option value="8team">8 команд</option>
             <option value="16team">16 команд</option>
             <option value="32team">32 команды</option>
-          </Select>
-          <Btn size="xs" onClick={createFromTemplate} loading={saving}><Save className="w-3 h-3" /> Создать</Btn>
+          </select>
+          <Btn size="xs" onClick={createFromTemplate} loading={saving}>
+            <Save className="w-3 h-3" /> Создать
+          </Btn>
+          <Btn size="xs" variant="ghost" onClick={() => setCreating(false)}>Отмена</Btn>
         </div>
       )}
 
-      {loading && <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>Загрузка...</p>}
+      {loading && (
+        <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>Загрузка...</p>
+      )}
 
       {!loading && rounds.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {rounds.map(r => (
-            <div key={r.id} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
-              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)" }}>
-              {r.shortName ?? r.name} <span style={{ color: "var(--cat-text-muted)" }}>({r.matchCount} матч.)</span>
+            <div
+              key={r.id}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)" }}
+            >
+              {r.shortName ?? r.name}
+              <span className="ml-1 font-normal" style={{ color: "var(--cat-text-muted)" }}>
+                ({r.matchCount} матч.)
+              </span>
             </div>
           ))}
         </div>
       )}
-    </Card>
+
+      {!loading && rounds.length === 0 && !creating && (
+        <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
+          Нет раундов. Нажмите «Создать раунды».
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -613,7 +1034,7 @@ function KnockoutSetupPanel({ base, stage }: { base: string; stage: Stage }) {
 //  Tab 2: Draw (Жеребьевка)
 // ─────────────────────────────────────────────
 
-function DrawTab({ base }: { base: string }) {
+function DrawTab({ base, classId }: { base: string; classId: number | null }) {
   const [stages, setStages] = useState<Stage[]>([]);
   const [selectedStageId, setSelectedStageId] = useState<number | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -623,17 +1044,19 @@ function DrawTab({ base }: { base: string }) {
   const [assignMap, setAssignMap] = useState<Record<number, number[]>>({}); // groupId → teamIds[]
 
   useEffect(() => {
+    const stagesUrl = classId ? `${base}/stages?classId=${classId}` : `${base}/stages`;
     Promise.all([
-      fetch(`${base}/stages`).then(r => r.ok ? r.json() : []),
+      fetch(stagesUrl).then(r => r.ok ? r.json() : []),
       fetch(`${base}/teams`).then(r => r.ok ? r.json() : []),
     ]).then(([s, t]) => {
-      const groupStages = (s as Stage[]).filter(st => st.type === "group");
+      // Include both "group" and "league" stages (league also has groups/teams)
+      const groupStages = (s as Stage[]).filter(st => st.type === "group" || st.type === "league");
       setStages(groupStages);
       setAllTeams(t);
       if (groupStages.length > 0) setSelectedStageId(groupStages[0].id);
       setLoading(false);
     });
-  }, [base]);
+  }, [base, classId]);
 
   useEffect(() => {
     if (!selectedStageId) return;
@@ -796,7 +1219,7 @@ function DrawTab({ base }: { base: string }) {
 //  Tab 3: Fixtures (Расписание)
 // ─────────────────────────────────────────────
 
-function FixturesTab({ base }: { base: string }) {
+function FixturesTab({ base, classId }: { base: string; classId: number | null }) {
   const [stages, setStages] = useState<Stage[]>([]);
   const [selectedStageId, setSelectedStageId] = useState<number | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -808,12 +1231,13 @@ function FixturesTab({ base }: { base: string }) {
   const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
-    fetch(`${base}/stages`).then(r => r.ok ? r.json() : []).then((s: Stage[]) => {
+    const url = classId ? `${base}/stages?classId=${classId}` : `${base}/stages`;
+    fetch(url).then(r => r.ok ? r.json() : []).then((s: Stage[]) => {
       setStages(s);
       if (s.length > 0) setSelectedStageId(s[0].id);
       setLoading(false);
     });
-  }, [base]);
+  }, [base, classId]);
 
   const loadMatches = useCallback(async () => {
     if (!selectedStageId) return;
@@ -882,7 +1306,7 @@ function FixturesTab({ base }: { base: string }) {
         <Card style={{ borderColor: "var(--cat-accent)", borderStyle: "solid" }}>
           <p className="text-sm font-semibold mb-1" style={{ color: "var(--cat-text)" }}>Сгенерировать матчи для этапа?</p>
           <p className="text-xs mb-3" style={{ color: "var(--cat-text-muted)" }}>
-            Для группового этапа будет применён алгоритм Бергера (round-robin). Для плей-офф — пустые слоты для жеребьёвки.
+            Для группового / лига-фазы будет применён алгоритм Бергера (round-robin). Для плей-офф — пустые слоты для жеребьёвки.
           </p>
           <div className="flex gap-2">
             <Btn onClick={generate} loading={generating}><Zap className="w-3.5 h-3.5" /> Сгенерировать</Btn>
@@ -988,7 +1412,7 @@ function FixturesTab({ base }: { base: string }) {
 //  Tab 4: Results (Результаты)
 // ─────────────────────────────────────────────
 
-function ResultsTab({ base }: { base: string }) {
+function ResultsTab({ base, classId }: { base: string; classId: number | null }) {
   const [stages, setStages] = useState<Stage[]>([]);
   const [selectedStageId, setSelectedStageId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "live" | "finished">("all");
@@ -998,12 +1422,13 @@ function ResultsTab({ base }: { base: string }) {
   const [saving, setSaving] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`${base}/stages`).then(r => r.ok ? r.json() : []).then((s: Stage[]) => {
+    const url = classId ? `${base}/stages?classId=${classId}` : `${base}/stages`;
+    fetch(url).then(r => r.ok ? r.json() : []).then((s: Stage[]) => {
       setStages(s);
       if (s.length > 0) setSelectedStageId(s[0].id);
       setLoading(false);
     });
-  }, [base]);
+  }, [base, classId]);
 
   const loadMatches = useCallback(async () => {
     if (!selectedStageId) return;

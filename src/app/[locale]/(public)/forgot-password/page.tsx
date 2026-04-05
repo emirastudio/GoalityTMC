@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
                   style={{ background: "var(--cat-badge-open-bg)", boxShadow: "0 4px 20px var(--cat-accent-glow)" }}>
                   <CheckCircle className="w-8 h-8" style={{ color: "var(--cat-accent)" }} />
                 </div>
-                <h2 className="text-xl font-black mb-3" style={{ color: "var(--cat-text)" }}>Check your inbox</h2>
+                <h2 className="text-xl font-black mb-3" style={{ color: "var(--cat-text)" }}>{t("forgotSent")}</h2>
                 <p className="text-[14px] mb-2" style={{ color: "var(--cat-text-secondary)" }}>{t("forgotSent")}</p>
                 <p className="text-[12px] mb-6" style={{ color: "var(--cat-text-muted)" }}>{t("forgotSentHint")}</p>
                 <Link href="/login"

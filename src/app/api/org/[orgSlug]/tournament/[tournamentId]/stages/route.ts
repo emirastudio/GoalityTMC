@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { tournamentStages, stageGroups, groupTeams, standings } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, isNull } from "drizzle-orm"; // isNull kept for POST
 
 type Params = { orgSlug: string; tournamentId: string };
 
@@ -15,8 +15,16 @@ export async function GET(
   const ctx = await requireGameAdmin(req, await params);
   if (isError(ctx)) return ctx;
 
+  const classIdParam = req.nextUrl.searchParams.get("classId");
+  const classId = classIdParam ? parseInt(classIdParam) : null;
+
+  // If classId provided → filter by it. Otherwise → return all stages for this tournament.
+  const whereClause = classId
+    ? and(eq(tournamentStages.tournamentId, ctx.tournament.id), eq(tournamentStages.classId, classId))
+    : eq(tournamentStages.tournamentId, ctx.tournament.id);
+
   const stages = await db.query.tournamentStages.findMany({
-    where: eq(tournamentStages.tournamentId, ctx.tournament.id),
+    where: whereClause,
     orderBy: [asc(tournamentStages.order)],
     with: {
       groups: {
@@ -44,7 +52,7 @@ export async function POST(
   if (isError(ctx)) return ctx;
 
   const body = await req.json();
-  const { name, nameRu, nameEt, type, settings, tiebreakers } = body;
+  const { name, nameRu, nameEt, type, settings, tiebreakers, classId } = body;
 
   if (!name || !type) {
     return NextResponse.json(
@@ -53,9 +61,11 @@ export async function POST(
     );
   }
 
-  // Получаем следующий порядковый номер
+  // Получаем следующий порядковый номер в рамках этого класса/дивизиона
   const existing = await db.query.tournamentStages.findMany({
-    where: eq(tournamentStages.tournamentId, ctx.tournament.id),
+    where: classId
+      ? and(eq(tournamentStages.tournamentId, ctx.tournament.id), eq(tournamentStages.classId, classId))
+      : and(eq(tournamentStages.tournamentId, ctx.tournament.id), isNull(tournamentStages.classId)),
   });
   const nextOrder = existing.length + 1;
 
@@ -64,6 +74,7 @@ export async function POST(
     .values({
       tournamentId: ctx.tournament.id,
       organizationId: ctx.organizationId,
+      classId: classId ?? null,
       name,
       nameRu: nameRu || null,
       nameEt: nameEt || null,

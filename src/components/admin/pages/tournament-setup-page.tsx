@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useAdminFetch } from "@/lib/tournament-context";
+import { useAdminFetch, useTournament } from "@/lib/tournament-context";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
 import {
   Trophy,
   GraduationCap,
@@ -15,6 +16,7 @@ import {
   Loader2,
   Check,
   Info,
+  ImageIcon,
 } from "lucide-react";
 
 /* ────────────────────────────────────────────────── types */
@@ -49,11 +51,13 @@ interface TournamentData {
   registrationDeadline: string | null;
   registrationOpen: boolean;
   currency: string;
+  logoUrl: string | null;
+  coverUrl: string | null;
   classes: TournamentClass[];
   products: TournamentProduct[];
 }
 
-type Tab = "general" | "classes" | "products" | "fields" | "hotels" | "info";
+type Tab = "general" | "classes" | "products" | "fields" | "hotels" | "info" | "media";
 
 const FORMATS = ["5x5", "6x6", "7x7", "8x8", "9x9", "11x11"];
 
@@ -168,6 +172,7 @@ function SaveButton({
 
 export function TournamentSetupPageContent() {
   const adminFetch = useAdminFetch();
+  const ctx = useTournament();
   const [data, setData] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -558,6 +563,12 @@ export function TournamentSetupPageContent() {
           icon={Info}
           label="Info"
         />
+        <SectionTab
+          active={tab === "media"}
+          onClick={() => setTab("media")}
+          icon={ImageIcon}
+          label="Media"
+        />
       </div>
 
       {/* ─── General Settings ─── */}
@@ -654,14 +665,17 @@ export function TournamentSetupPageContent() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b th-border text-left">
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase w-24">
+                      Пол
+                    </th>
                     <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Name
+                      Класс (авто)
                     </th>
                     <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Format
                     </th>
                     <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Min Birth Year
+                      Год рождения
                     </th>
                     <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                       Max Players
@@ -681,15 +695,46 @@ export function TournamentSetupPageContent() {
                         key={cls.id ?? `new-${idx}`}
                         className="border-b th-border last:border-0 hover:th-bg"
                       >
+                        {/* Gender toggle */}
+                        <td className="px-4 py-2">
+                          {(() => {
+                            const g = cls.name.startsWith("B") ? "B" : cls.name.startsWith("G") ? "G" : "";
+                            return (
+                              <div className="flex gap-1">
+                                {(["B","G"] as const).map(gdr => (
+                                  <button
+                                    key={gdr}
+                                    type="button"
+                                    onClick={() => {
+                                      const year = cls.minBirthYear ?? "";
+                                      updateClass(idx, "name", year ? `${gdr}${year}` : gdr);
+                                    }}
+                                    className="px-2.5 py-1.5 rounded-lg text-xs font-black border transition-all"
+                                    style={g === gdr ? {
+                                      background: gdr === "B" ? "rgba(59,130,246,0.15)" : "rgba(236,72,153,0.15)",
+                                      borderColor: gdr === "B" ? "#3B82F6" : "#EC4899",
+                                      color: gdr === "B" ? "#3B82F6" : "#EC4899",
+                                    } : {
+                                      background: "var(--cat-tag-bg)",
+                                      borderColor: "var(--cat-card-border)",
+                                      color: "var(--cat-text-muted)",
+                                    }}
+                                  >
+                                    {gdr === "B" ? "♂ B" : "♀ G"}
+                                  </button>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </td>
+                        {/* Name (auto) */}
                         <td className="px-4 py-2">
                           <input
                             type="text"
                             value={cls.name}
-                            onChange={(e) =>
-                              updateClass(idx, "name", e.target.value)
-                            }
-                            placeholder="e.g. U12"
-                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
+                            onChange={(e) => updateClass(idx, "name", e.target.value)}
+                            placeholder="B2014 / G2011"
+                            className="w-24 rounded-lg border th-border px-3 py-2 text-sm font-bold focus:outline-none focus:border-[var(--cat-accent)]"
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -708,15 +753,17 @@ export function TournamentSetupPageContent() {
                           <input
                             type="number"
                             value={cls.minBirthYear ?? ""}
-                            onChange={(e) =>
-                              updateClass(
-                                idx,
-                                "minBirthYear",
-                                e.target.value ? Number(e.target.value) : null
-                              )
-                            }
+                            onChange={(e) => {
+                              const yr = e.target.value ? Number(e.target.value) : null;
+                              updateClass(idx, "minBirthYear", yr);
+                              // auto-update name if starts with B or G
+                              if (yr && (cls.name.startsWith("B") || cls.name.startsWith("G"))) {
+                                const prefix = cls.name[0];
+                                updateClass(idx, "name", `${prefix}${yr}`);
+                              }
+                            }}
                             placeholder="2014"
-                            className="w-28 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
+                            className="w-24 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -1204,6 +1251,29 @@ export function TournamentSetupPageContent() {
             <div className="mt-6 flex justify-end">
               <SaveButton saving={infoSaving} saved={infoSaved} onClick={saveInfo} />
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ─── Media ─── */}
+      {tab === "media" && (
+        <div className="space-y-6">
+          <Card>
+            <CardTitle>Tournament Media</CardTitle>
+            <p className="text-sm mt-1 mb-5" style={{ color: "var(--cat-text-muted)" }}>
+              Загрузите обложку (показывается на странице турнира) и логотип (аватар в сайдбаре).
+              Рекомендуемые размеры: обложка 1920×480, логотип квадрат 512×512.
+            </p>
+            {ctx ? (
+              <TournamentMediaUpload
+                orgSlug={ctx.orgSlug}
+                tournamentId={ctx.tournamentId}
+                initialCoverUrl={data?.coverUrl ?? null}
+                initialLogoUrl={data?.logoUrl ?? null}
+              />
+            ) : (
+              <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>Контекст турнира не доступен.</p>
+            )}
           </Card>
         </div>
       )}

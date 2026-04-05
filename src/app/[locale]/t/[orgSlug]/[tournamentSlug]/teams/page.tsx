@@ -1,5 +1,6 @@
 "use client";
 import { useTournamentPublic } from "@/lib/tournament-public-context";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 type TeamEntry = {
@@ -25,26 +26,26 @@ function getFlag(country: string | null | undefined): string {
 }
 
 export default function TeamsPage() {
-  const { org, tournament: t, classes } = useTournamentPublic();
-  const brand = org.brandColor;
+  const { org, tournament: tourney, classes } = useTournamentPublic();
+  const t = useTranslations("tournament");
   const [grouped, setGrouped] = useState<GroupedClass[] | null>(null);
   const [activeTab, setActiveTab] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`/api/public/t/${org.slug}/${t.slug}/teams`)
+    fetch(`/api/public/t/${org.slug}/${tourney.slug}/teams`)
       .then(r => r.json())
       .then(d => {
         const g: GroupedClass[] = d.grouped ?? [];
         setGrouped(g);
         if (g.length > 0) setActiveTab(g[0].id);
       });
-  }, [org.slug, t.slug]);
+  }, [org.slug, tourney.slug]);
 
   if (!grouped) return (
     <div className="rounded-xl border p-12 flex justify-center"
       style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
       <div className="w-6 h-6 border-2 rounded-full animate-spin"
-        style={{ borderColor: "var(--cat-card-border)", borderTopColor: brand }} />
+        style={{ borderColor: "var(--cat-card-border)", borderTopColor: "var(--cat-accent)" }} />
     </div>
   );
 
@@ -64,16 +65,16 @@ export default function TeamsPage() {
     <div className="rounded-xl border overflow-hidden"
       style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
 
-      {/* Шапка */}
+      {/* Header */}
       <div className="px-5 pt-5 pb-3 border-b"
         style={{ borderColor: "var(--cat-card-border)" }}>
         <p className="text-xs font-semibold uppercase tracking-wide"
           style={{ color: "var(--cat-text-muted)" }}>
-          Команды · {totalTeams} зарегистрировано
+          {t("teamsRegistered", { count: totalTeams })}
         </p>
       </div>
 
-      {/* Табы по классам */}
+      {/* Class tabs */}
       <div className="flex overflow-x-auto border-b" style={{ borderColor: "var(--cat-card-border)" }}>
         {grouped.filter(g => g.teams.length > 0).map(g => (
           <button
@@ -81,8 +82,8 @@ export default function TeamsPage() {
             onClick={() => setActiveTab(g.id)}
             className="shrink-0 px-4 py-3 text-xs font-medium border-b-2 transition-colors"
             style={{
-              color: activeTab === g.id ? brand : "var(--cat-text-secondary)",
-              borderBottomColor: activeTab === g.id ? brand : "transparent",
+              color: activeTab === g.id ? "var(--cat-accent)" : "var(--cat-text-secondary)",
+              borderBottomColor: activeTab === g.id ? "var(--cat-accent)" : "transparent",
             }}
           >
             {g.name}
@@ -91,11 +92,11 @@ export default function TeamsPage() {
         ))}
       </div>
 
-      {/* Список команд */}
+      {/* Team list */}
       <div className="p-4">
         {!activeGroup || activeGroup.teams.length === 0 ? (
           <p className="text-center py-8 text-sm" style={{ color: "var(--cat-text-muted)" }}>
-            Команды ещё не зарегистрированы
+            {t("noTeamsRegistered")}
           </p>
         ) : (
           <div className="space-y-1">
@@ -110,7 +111,7 @@ export default function TeamsPage() {
                     style={{ borderColor: "var(--cat-card-border)" }} />
                 ) : (
                   <div className="w-8 h-8 rounded shrink-0 flex items-center justify-center text-[10px] font-bold"
-                    style={{ background: `${brand}15`, color: brand }}>
+                    style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
                     {team.club?.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() ?? "?"}
                   </div>
                 )}

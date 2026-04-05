@@ -94,6 +94,7 @@ export const tournaments = pgTable("tournaments", {
   year: integer("year").notNull(),
   description: text("description"),
   logoUrl: text("logo_url"),
+  coverUrl: text("cover_url"),
   registrationOpen: boolean("registration_open").default(false).notNull(),
   registrationDeadline: timestamp("registration_deadline"),
   startDate: timestamp("start_date"),
@@ -751,7 +752,10 @@ export const tournamentStages = pgTable("tournament_stages", {
     pointsDraw?: number;
     pointsLoss?: number;
     matchDurationMinutes?: number;
-    extraTimeMinutes?: number;
+    // Ничья в плей-офф: как определяется победитель
+    drawResolution?: "extra_time" | "penalties" | "extra_time_then_penalties";
+    extraTimeMinutes?: number;   // длительность одного тайма доп. времени
+    extraTimeHalves?: number;    // кол-во таймов (обычно 2)
     hasPenalties?: boolean;
     hasExtraTime?: boolean;
     teamsCount?: number;
@@ -766,11 +770,13 @@ export const tournamentStages = pgTable("tournament_stages", {
     "goals_scored",
     "fair_play",
   ]),
+  classId: integer("class_id").references(() => tournamentClasses.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_stages_tournament").on(table.tournamentId),
   index("idx_stages_organization").on(table.organizationId),
+  index("idx_stages_class").on(table.classId),
 ]);
 
 // ─── Группы внутри этапа ───────────────────────────────────

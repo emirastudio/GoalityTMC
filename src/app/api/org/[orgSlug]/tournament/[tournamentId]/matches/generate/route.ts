@@ -71,8 +71,8 @@ export async function POST(
 
   let globalMatchNumber = 1;
 
-  if (stage.type === "group") {
-    // ── Групповой этап: round-robin для каждой группы ──────────
+  if (stage.type === "group" || stage.type === "league") {
+    // ── Групповой / лига-фаза: round-robin для каждой группы ───
     const groups = await db.query.stageGroups.findMany({
       where: eq(stageGroups.stageId, stageId),
       with: { groupTeams: true },

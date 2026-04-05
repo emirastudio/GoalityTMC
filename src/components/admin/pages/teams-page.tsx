@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminFetch, useTournament } from "@/lib/tournament-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,10 @@ export function TeamsPageContent() {
   const adminFetch = useAdminFetch();
   const tournament = useTournament();
 
+  const searchParams = useSearchParams();
+  const classId = searchParams.get("classId");
+  const className = searchParams.get("className");
+
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -96,12 +100,18 @@ export function TeamsPageContent() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const filtered = teams.filter(
-    (team) =>
-      team.name?.toLowerCase().includes(search.toLowerCase()) ||
-      team.club?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      team.regNumber?.toString().includes(search)
-  );
+  const filtered = teams.filter((team) => {
+    if (classId && team.class?.id !== parseInt(classId)) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        team.name?.toLowerCase().includes(q) ||
+        team.club?.name?.toLowerCase().includes(q) ||
+        team.regNumber?.toString().includes(q)
+      );
+    }
+    return true;
+  });
 
   async function handleStatusChange(
     teamId: number,
@@ -210,7 +220,16 @@ export function TeamsPageContent() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
+        <div>
+          <h1 className="text-2xl font-bold th-text">
+            {className ? className : t("title")}
+          </h1>
+          {className && (
+            <p className="text-sm th-text-2 mt-0.5">
+              {filtered.length} {t("teams").toLowerCase()}
+            </p>
+          )}
+        </div>
         <div className="flex gap-3">
           <Button variant="secondary" onClick={exportCSV}>
             <Download className="w-4 h-4" />
@@ -248,9 +267,11 @@ export function TeamsPageContent() {
                   <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     {tTeam("teamName")}
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                    {tTeam("class")}
-                  </th>
+                  {!classId && (
+                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
+                      {tTeam("class")}
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
                     {t("players")}
                   </th>
@@ -312,9 +333,11 @@ export function TeamsPageContent() {
                       </td>
 
                       {/* Class */}
-                      <td className="px-4 py-3 text-sm th-text-2">
-                        {team.class?.name || "-"}
-                      </td>
+                      {!classId && (
+                        <td className="px-4 py-3 text-sm th-text-2">
+                          {team.class?.name || "-"}
+                        </td>
+                      )}
 
                       {/* Players */}
                       <td className="px-4 py-3 text-sm th-text-2">

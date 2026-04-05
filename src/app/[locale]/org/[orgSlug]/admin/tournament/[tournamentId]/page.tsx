@@ -9,8 +9,10 @@ import { eq, count, sum } from "drizzle-orm";
 import {
   Users, Wallet, Trophy, ArrowLeft, Settings,
   Package, Mail, ClipboardList, Wrench,
-  ExternalLink,
+  ExternalLink, Link2, Share2, QrCode, Megaphone,
+  Copy, MessageSquare, Send, LayoutGrid,
 } from "lucide-react";
+import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
 
 type Props = {
   params: Promise<{ locale: string; orgSlug: string; tournamentId: string }>;
@@ -40,29 +42,55 @@ export default async function TournamentOverviewPage({ params }: Props) {
 
   const basePath = `/org/${orgSlug}/admin/tournament/${tournamentId}`;
 
+  /* Public registration URL */
+  const registerUrl = `https://goality.ee/${locale}/t/${organization.slug}/${tournament.slug}/register`;
+  const publicUrl   = `https://goality.ee/${locale}/t/${organization.slug}/${tournament.slug}`;
+
   const quickLinks = [
-    { key: "registrations", icon: ClipboardList, href: `${basePath}/registrations` },
-    { key: "teams", icon: Users, href: `${basePath}/teams` },
-    { key: "servicesPackages", icon: Package, href: `${basePath}/services-packages` },
-    { key: "payments", icon: Wallet, href: `${basePath}/payments` },
-    { key: "messages", icon: Mail, href: `${basePath}/messages` },
-    { key: "setup", icon: Wrench, href: `${basePath}/setup` },
-    { key: "settings", icon: Settings, href: `${basePath}/settings` },
+    { key: "registrations", icon: ClipboardList, href: `${basePath}/registrations`, color: "#10B981" },
+    { key: "teams",         icon: Users,         href: `${basePath}/teams`,         color: "#3B82F6" },
+    { key: "servicesPackages", icon: Package,    href: `${basePath}/services-packages`, color: "#F59E0B" },
+    { key: "payments",      icon: Wallet,        href: `${basePath}/payments`,       color: "#8B5CF6" },
+    { key: "messages",      icon: Mail,          href: `${basePath}/messages`,       color: "#EC4899" },
+    { key: "setup",         icon: Wrench,        href: `${basePath}/setup`,          color: "#06B6D4" },
+    { key: "settings",      icon: Settings,      href: `${basePath}/settings`,       color: "#84CC16" },
+    { key: "planner",       icon: LayoutGrid,    href: `${basePath}/planner`,        color: "#06B6D4" },
   ];
 
   const stats = [
-    { label: t("clubs"), value: Number(clubCount?.value ?? 0), icon: Users },
-    { label: t("teams"), value: Number(teamCount?.value ?? 0), icon: Users },
+    { label: t("clubs"),    value: Number(clubCount?.value ?? 0),  icon: Users,   color: "#3B82F6" },
+    { label: t("teams"),    value: Number(teamCount?.value ?? 0),   icon: Trophy,  color: "#10B981" },
+    { label: t("payments"), value: `${tournament.currency ?? "EUR"} ${Number(paymentSum?.value ?? 0).toFixed(0)}`, icon: Wallet, color: "#F59E0B" },
+  ];
+
+  /* Invite channels */
+  const inviteChannels = [
     {
-      label: t("payments"),
-      value: `${tournament.currency ?? ""} ${Number(paymentSum?.value ?? 0).toFixed(0)}`,
-      icon: Wallet,
+      icon: MessageSquare,
+      label: "WhatsApp",
+      desc: "Отправить ссылку в WhatsApp группу",
+      color: "#25D366",
+      href: `https://wa.me/?text=${encodeURIComponent(`🏆 Регистрация команды на ${tournament.name}\n\n${registerUrl}`)}`,
+    },
+    {
+      icon: Send,
+      label: "Telegram",
+      desc: "Поделиться в Telegram",
+      color: "#0088CC",
+      href: `https://t.me/share/url?url=${encodeURIComponent(registerUrl)}&text=${encodeURIComponent(`Регистрация команды на ${tournament.name}`)}`,
+    },
+    {
+      icon: Mail,
+      label: "Email",
+      desc: "Отправить приглашение по email",
+      color: "#6366F1",
+      href: `mailto:?subject=${encodeURIComponent(`Приглашение: ${tournament.name}`)}&body=${encodeURIComponent(`Здравствуйте!\n\nПриглашаем вашу команду принять участие в турнире ${tournament.name}.\n\nЗарегистрируйтесь здесь: ${registerUrl}`)}`,
     },
   ];
 
   return (
     <div className="space-y-6 w-full">
-      {/* Заголовок турнира */}
+      {/* Header */}
       <div className="flex items-start gap-4">
         <Link href={`/org/${orgSlug}/admin`}
           className="w-8 h-8 rounded-lg flex items-center justify-center mt-1 th-card th-border border th-text-2 hover:th-bg shrink-0">
@@ -71,36 +99,44 @@ export default async function TournamentOverviewPage({ params }: Props) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-bold th-text">{tournament.name}</h1>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${
+            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
               tournament.registrationOpen
-                ? "bg-emerald-50 text-emerald-600"
+                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400"
                 : "th-tag"
             }`}>
               {tournament.registrationOpen ? t("regOpen") : t("regClosed")}
             </span>
           </div>
-          <p className="text-sm th-text-2 mt-0.5">
-            {organization.name} · {tournament.year}
-          </p>
+          <p className="text-sm th-text-2 mt-0.5">{organization.name} · {tournament.year}</p>
         </div>
-        <Link
-          href={`/t/${organization.slug}/${tournament.slug}`}
+        <Link href={publicUrl} target="_blank"
           className="inline-flex items-center gap-1.5 text-xs font-medium shrink-0"
-          style={{ color: "var(--cat-accent)" }}
-          target="_blank">
-          <ExternalLink className="w-3.5 h-3.5" />
-          {t("tournamentPage")}
+          style={{ color: "var(--cat-accent)" }}>
+          <ExternalLink className="w-3.5 h-3.5" /> {t("tournamentPage")}
         </Link>
       </div>
 
-      {/* Статистика */}
+      {/* ── Media: cover + logo ── */}
+      <TournamentMediaUpload
+        orgSlug={orgSlug}
+        tournamentId={tournament.id}
+        initialCoverUrl={(tournament as any).coverUrl ?? null}
+        initialLogoUrl={tournament.logoUrl ?? null}
+      />
+
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        {stats.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="th-card border th-border rounded-lg p-4">
+        {stats.map(({ label, value, icon: Icon, color }) => (
+          <div key={label} className="th-card border th-border rounded-2xl p-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 rounded-bl-[40px] opacity-10"
+              style={{ background: color }} />
             <div className="flex items-center gap-3">
-              <Icon className="w-5 h-5 th-text-2" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: `${color}18` }}>
+                <Icon className="w-4.5 h-4.5" style={{ color }} />
+              </div>
               <div>
-                <p className="text-2xl font-bold th-text">{value}</p>
+                <p className="text-2xl font-black th-text">{value}</p>
                 <p className="text-xs th-text-2">{label}</p>
               </div>
             </div>
@@ -108,22 +144,105 @@ export default async function TournamentOverviewPage({ params }: Props) {
         ))}
       </div>
 
-      {/* Быстрая навигация */}
+      {/* ── INVITE & REFERRAL ── */}
+      <div className="rounded-2xl border overflow-hidden" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+        {/* Header */}
+        <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: "var(--cat-badge-open-bg)" }}>
+            <Megaphone className="w-4.5 h-4.5" style={{ color: "var(--cat-accent)" }} />
+          </div>
+          <div>
+            <h2 className="text-sm font-black th-text">Пригласить команды</h2>
+            <p className="text-[11px] th-text-2">Поделитесь ссылкой — тренеры зарегистрируются сами</p>
+          </div>
+          {tournament.registrationOpen && (
+            <span className="ml-auto flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
+              style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", border: "1px solid var(--cat-badge-open-border)" }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" /> ОТКРЫТА
+            </span>
+          )}
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Registration link */}
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest mb-2 th-text-2">
+              Ссылка на регистрацию
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-mono truncate"
+                style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text-secondary)" }}>
+                <Link2 className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                <span className="truncate text-[12px]">{registerUrl}</span>
+              </div>
+              {/* Copy button (client-side, use a tag for now) */}
+              <a href={registerUrl} target="_blank"
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[12px] font-bold border transition-all hover:opacity-80"
+                style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)", color: "var(--cat-accent)" }}>
+                <ExternalLink className="w-3.5 h-3.5" /> Открыть
+              </a>
+            </div>
+          </div>
+
+          {/* Share channels */}
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest mb-2 th-text-2">
+              Поделиться
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {inviteChannels.map(ch => (
+                <a key={ch.label} href={ch.href} target="_blank" rel="noopener noreferrer"
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl border text-center transition-all hover:scale-[1.02] hover:opacity-80"
+                  style={{ background: `${ch.color}12`, borderColor: `${ch.color}30` }}>
+                  <ch.icon className="w-5 h-5" style={{ color: ch.color }} />
+                  <span className="text-[11px] font-bold" style={{ color: ch.color }}>{ch.label}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* QR hint */}
+          <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "var(--cat-tag-bg)" }}>
+            <QrCode className="w-8 h-8 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
+            <div>
+              <p className="text-[12px] font-bold th-text">QR-код для распечатки</p>
+              <p className="text-[10px] th-text-2">Скоро: генерация QR-кода для флаеров и стендов турнира</p>
+            </div>
+          </div>
+
+          {/* Referral stats summary */}
+          <div className="grid grid-cols-3 gap-3 pt-1" style={{ borderTop: "1px solid var(--cat-divider)" }}>
+            <div className="text-center">
+              <p className="text-xl font-black th-text">{Number(clubCount?.value ?? 0)}</p>
+              <p className="text-[10px] th-text-2">клубов</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-black" style={{ color: "var(--cat-accent)" }}>{Number(teamCount?.value ?? 0)}</p>
+              <p className="text-[10px] th-text-2">команд</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-black th-text">{Number(paymentSum?.value ?? 0) > 0 ? `${Number(paymentSum?.value ?? 0).toFixed(0)}€` : "—"}</p>
+              <p className="text-[10px] th-text-2">сборов</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick navigation */}
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-wide th-text-m mb-3">
           {t("management")}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {quickLinks.map(({ key, icon: Icon, href }) => (
-            <Link
-              key={key}
-              href={href}
-              className="flex flex-col items-center gap-2 th-card border th-border rounded-lg p-4 text-center hover:th-bg transition-colors"
-            >
-              <Icon className="w-5 h-5 th-text-2" />
-              <span className="text-xs font-medium th-text-2">
-                {tNav(key)}
-              </span>
+          {quickLinks.map(({ key, icon: Icon, href, color }) => (
+            <Link key={key} href={href}
+              className="flex flex-col items-center gap-2 th-card border th-border rounded-2xl p-4 text-center hover:th-bg transition-colors group">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+                style={{ background: `${color}18` }}>
+                <Icon className="w-4.5 h-4.5" style={{ color }} />
+              </div>
+              <span className="text-xs font-medium th-text-2">{tNav(key)}</span>
             </Link>
           ))}
         </div>

@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organizations, tournaments, tournamentStages, matchRounds, matches } from "@/db/schema";
-import { eq, and, isNull, asc, desc } from "drizzle-orm";
+import { organizations, tournaments, tournamentStages, matchRounds, matches, teams } from "@/db/schema";
+import { eq, and, isNull, asc, desc, inArray, or } from "drizzle-orm";
 
 // GET /api/public/t/[orgSlug]/[tournamentSlug]/bracket
 // Публичная сетка плей-офф — все раунды + матчи
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ orgSlug: string; tournamentSlug: string }> }
 ) {
   const { orgSlug, tournamentSlug } = await params;
+  const { searchParams } = new URL(req.url);
+  const classId = searchParams.get("classId");
 
   const org = await db.query.organizations.findFirst({
     where: eq(organizations.slug, orgSlug),
@@ -24,11 +26,25 @@ export async function GET(
   });
   if (!tournament) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Resolve team IDs for classId filter (via teams, not stages — stages may not have classId set)
+  let classTeamIds: number[] | null = null;
+  if (classId) {
+    const teamsForClass = await db.query.teams.findMany({
+      where: and(
+        eq(teams.tournamentId, tournament.id),
+        eq(teams.classId, parseInt(classId))
+      ),
+      columns: { id: true },
+    });
+    if (teamsForClass.length === 0) return NextResponse.json([]);
+    classTeamIds = teamsForClass.map(t => t.id);
+  }
+
   // Knockout этапы
   const knockoutStages = await db.query.tournamentStages.findMany({
     where: and(
       eq(tournamentStages.tournamentId, tournament.id),
-      eq(tournamentStages.type, "knockout")
+      eq(tournamentStages.type, "knockout"),
     ),
     orderBy: [asc(tournamentStages.order)],
   });
@@ -42,12 +58,18 @@ export async function GET(
       orderBy: [desc(matchRounds.order)], // R32 → R16 → QF → SF → F
     });
 
+    const matchConditions = [
+      eq(matches.stageId, stage.id),
+      eq(matches.isPublic, true),
+      isNull(matches.deletedAt),
+      ...(classTeamIds ? [or(
+        inArray(matches.homeTeamId, classTeamIds),
+        inArray(matches.awayTeamId, classTeamIds),
+      )!] : []),
+    ];
+
     const stageMatches = await db.query.matches.findMany({
-      where: and(
-        eq(matches.stageId, stage.id),
-        eq(matches.isPublic, true),
-        isNull(matches.deletedAt)
-      ),
+      where: and(...matchConditions),
       orderBy: [asc(matches.matchNumber)],
       with: {
         homeTeam: { with: { club: true } },

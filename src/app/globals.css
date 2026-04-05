@@ -40,8 +40,12 @@
   --color-header-text: rgba(255,255,255,0.9);
 }
 
+html {
+  font-size: 17px;
+}
+
 body {
-  background: var(--color-surface);
+  background: #0A0E14;
   color: var(--color-text-primary);
   font-family: var(--font-sans), system-ui, sans-serif;
 }

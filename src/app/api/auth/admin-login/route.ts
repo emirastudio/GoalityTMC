@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  const isSuper = admin.role === "super_admin" && !admin.organizationId;
+  const isSuper = admin.role === "super_admin";
 
   // Resolve organization slug for org admins
   let organizationSlug: string | undefined;

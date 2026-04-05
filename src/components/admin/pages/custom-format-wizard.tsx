@@ -37,9 +37,12 @@ export interface CustomPhase {
   groupCount: number;
   teamsPerGroup: number;
   groups: CustomGroup[];
-  // For bracket type - which size
+  // For bracket type
   knockoutTeams?: number;
   thirdPlace?: boolean;
+  // Draw resolution for knockout
+  drawResolution?: "penalties" | "extra_time_then_penalties";
+  extraTimeMinutes?: number;
 }
 
 export interface TransitionRule {
@@ -312,30 +315,64 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                   )}
 
                   {phase.type === "bracket" && (
-                    <div className="pt-3 flex items-center gap-6">
+                    <div className="pt-3 space-y-4">
+                      <div className="flex items-center gap-6">
+                        <div>
+                          <label className="text-[10px] font-semibold uppercase tracking-wide block mb-1.5"
+                            style={{ color: "var(--cat-text-muted)" }}>Размер сетки</label>
+                          <div className="flex gap-1">
+                            {[4, 8, 16].map(n => (
+                              <button key={n} onClick={() => updatePhase(phase.id, { knockoutTeams: n })}
+                                className="w-10 h-10 rounded-xl text-sm font-black border-2 transition-all"
+                                style={{
+                                  borderColor: (phase.knockoutTeams ?? 8) === n ? ACCENT : "var(--cat-card-border)",
+                                  background: (phase.knockoutTeams ?? 8) === n ? "rgba(132,204,22,0.12)" : "var(--cat-tag-bg)",
+                                  color: (phase.knockoutTeams ?? 8) === n ? ACCENT : "var(--cat-text-secondary)",
+                                }}>
+                                {n}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--cat-text-secondary)" }}>
+                          <input type="checkbox" checked={phase.thirdPlace ?? false}
+                            onChange={e => updatePhase(phase.id, { thirdPlace: e.target.checked })}
+                            className="w-4 h-4 rounded" style={{ accentColor: ACCENT }} />
+                          Матч за 3-е место
+                        </label>
+                      </div>
+
+                      {/* Draw resolution config */}
                       <div>
                         <label className="text-[10px] font-semibold uppercase tracking-wide block mb-1.5"
-                          style={{ color: "var(--cat-text-muted)" }}>Размер сетки</label>
-                        <div className="flex gap-1">
-                          {[4, 8, 16].map(n => (
-                            <button key={n} onClick={() => updatePhase(phase.id, { knockoutTeams: n })}
-                              className="w-10 h-10 rounded-xl text-sm font-black border-2 transition-all"
+                          style={{ color: "var(--cat-text-muted)" }}>При ничьей в плей-офф</label>
+                        <div className="flex gap-2 flex-wrap">
+                          {[
+                            { value: "penalties", label: "Сразу пенальти" },
+                            { value: "extra_time_then_penalties", label: "Доп. время → Пенальти" },
+                          ].map(opt => (
+                            <button key={opt.value}
+                              onClick={() => updatePhase(phase.id, { drawResolution: opt.value as CustomPhase["drawResolution"] })}
+                              className="px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all"
                               style={{
-                                borderColor: (phase.knockoutTeams ?? 8) === n ? ACCENT : "var(--cat-card-border)",
-                                background: (phase.knockoutTeams ?? 8) === n ? "rgba(132,204,22,0.12)" : "var(--cat-tag-bg)",
-                                color: (phase.knockoutTeams ?? 8) === n ? ACCENT : "var(--cat-text-secondary)",
+                                borderColor: (phase.drawResolution ?? "penalties") === opt.value ? "#84cc16" : "var(--cat-card-border)",
+                                background: (phase.drawResolution ?? "penalties") === opt.value ? "rgba(132,204,22,0.12)" : "var(--cat-tag-bg)",
+                                color: (phase.drawResolution ?? "penalties") === opt.value ? "#84cc16" : "var(--cat-text-secondary)",
                               }}>
-                              {n}
+                              {opt.label}
                             </button>
                           ))}
                         </div>
+                        {(phase.drawResolution === "extra_time_then_penalties") && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <label className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Минут доп. времени:</label>
+                            <input type="number" min={1} max={60} value={phase.extraTimeMinutes ?? 10}
+                              onChange={e => updatePhase(phase.id, { extraTimeMinutes: parseInt(e.target.value) || 10 })}
+                              className="w-16 text-center rounded-lg px-2 py-1 text-xs font-bold outline-none"
+                              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)", border: "1px solid var(--cat-card-border)" }} />
+                          </div>
+                        )}
                       </div>
-                      <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--cat-text-secondary)" }}>
-                        <input type="checkbox" checked={phase.thirdPlace ?? false}
-                          onChange={e => updatePhase(phase.id, { thirdPlace: e.target.checked })}
-                          className="w-4 h-4 rounded" style={{ accentColor: ACCENT }} />
-                        Матч за 3-е место
-                      </label>
                     </div>
                   )}
                 </div>
@@ -931,7 +968,13 @@ export function CustomFormatWizard() {
           const stageRes = await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/stages`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: phase.name, nameRu: phase.name, type: "knockout", order: phaseIdx + 1 }),
+            body: JSON.stringify({
+              name: phase.name, nameRu: phase.name, type: "knockout", order: phaseIdx + 1,
+              settings: {
+                drawResolution: phase.drawResolution ?? "penalties",
+                extraTimeMinutes: phase.extraTimeMinutes ?? 10,
+              },
+            }),
           });
           const stage = await stageRes.json();
           createdStages[phase.id] = stage.id;

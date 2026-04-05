@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Link } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import {
   LayoutGrid,
@@ -19,7 +19,8 @@ import {
   Trophy,
   LogOut,
   ChevronDown,
-  ChevronRight,
+  ClipboardList,
+  Radio,
 } from "lucide-react";
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -51,6 +52,7 @@ type TournamentClass = {
 type Props = {
   orgSlug: string;
   orgName: string;
+  orgLogo?: string | null;
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -134,7 +136,7 @@ function SectionLabel({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
+export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
   const t = useTranslations("nav");
   const tAdmin = useTranslations("orgAdmin");
   const pathname = usePathname();
@@ -145,6 +147,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
 
   // Data
   const [tournamentName, setTournamentName] = useState<string | null>(null);
+  const [tournamentLogo, setTournamentLogo] = useState<string | null>(null);
   const [classes, setClasses] = useState<TournamentClass[]>([]);
 
   // Accordion state
@@ -161,7 +164,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
 
     fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/name`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => d?.name ? setTournamentName(d.name) : null)
+      .then(d => { if (d?.name) { setTournamentName(d.name); setTournamentLogo(d.logoUrl ?? null); } })
       .catch(() => null);
 
     fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/classes`)
@@ -196,8 +199,9 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
     return pathname.startsWith(`${base}/${section}`) && activeClassId === classId;
   }
 
-  function classHref(section: string, classId: number) {
-    return `${base}/${section}?classId=${classId}`;
+  function classHref(section: string, cls: TournamentClass) {
+    const params = new URLSearchParams({ classId: String(cls.id), className: cls.name });
+    return `${base}/${section}?${params.toString()}`;
   }
 
   function toggleClass(id: number) {
@@ -223,14 +227,18 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
       {/* ── Org header ── */}
       <div className="px-4 py-4 border-b flex items-center gap-3 shrink-0" style={{ borderColor: "var(--cat-card-border)" }}>
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-black"
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-black overflow-hidden"
           style={{
-            background: "linear-gradient(135deg, var(--cat-accent), var(--cat-accent)cc)",
+            background: orgLogo ? "var(--cat-tag-bg)" : "linear-gradient(135deg, var(--cat-accent), var(--cat-accent)cc)",
             color: "#000",
             boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            border: orgLogo ? "1.5px solid var(--cat-card-border)" : "none",
           }}
         >
-          {orgName.charAt(0).toUpperCase()}
+          {orgLogo
+            ? <img src={orgLogo} alt={orgName} className="w-full h-full object-cover" />
+            : orgName.charAt(0).toUpperCase()
+          }
         </div>
         <div className="min-w-0">
           <p className="text-sm font-bold truncate leading-tight" style={{ color: "var(--cat-text)" }}>
@@ -277,24 +285,48 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
             opacity: 0.4,
           }} />
 
-          {/* Tournament name */}
-          <div className="px-3 mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--cat-text-muted)", opacity: 0.5 }}>
-              {t("tournaments")}
-            </p>
-            <p className="text-sm font-bold truncate" style={{ color: "var(--cat-accent)" }}>
-              {tournamentName ?? "..."}
-            </p>
+          {/* Tournament name + logo */}
+          <div className="px-3 mb-2 flex items-center gap-2.5">
+            {tournamentLogo && (
+              <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0 border"
+                style={{ borderColor: "var(--cat-card-border)" }}>
+                <img src={tournamentLogo} alt="" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--cat-text-muted)", opacity: 0.5 }}>
+                {t("tournaments")}
+              </p>
+              <p className="text-sm font-bold truncate" style={{ color: "var(--cat-accent)" }}>
+                {tournamentName ?? "..."}
+              </p>
+            </div>
           </div>
 
-          {/* Overview */}
-          <nav className="px-2 mb-1">
+          {/* Overview + Hub */}
+          <nav className="px-2 mb-1 space-y-0.5">
             <NavLink
               href={base}
               icon={LayoutGrid}
               label={t("overview")}
               isActive={pathname === base}
               color="var(--cat-accent)"
+            />
+            <NavLink
+              href={`${base}/hub`}
+              icon={Radio}
+              label={tAdmin("matchHub")}
+              isActive={pathname.startsWith(`${base}/hub`)}
+              color="#ef4444"
+              bg="rgba(239,68,68,0.10)"
+            />
+            <NavLink
+              href={`${base}/planner`}
+              icon={CalendarDays}
+              label={tAdmin("planner")}
+              isActive={pathname.startsWith(`${base}/planner`)}
+              color="#06b6d4"
+              bg="rgba(6,182,212,0.10)"
             />
           </nav>
 
@@ -362,7 +394,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
                         <div className="ml-3 pl-3 border-l mb-1 mt-0.5 space-y-0.5"
                           style={{ borderColor: `${COLOR.sport}30` }}>
                           <NavLink
-                            href={classHref("format", cls.id)}
+                            href={classHref("format", cls)}
                             icon={GitBranch}
                             label={t("format")}
                             isActive={isClassNavActive("format", cls.id)}
@@ -370,7 +402,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
                             bg={BG.sport}
                           />
                           <NavLink
-                            href={classHref("schedule", cls.id)}
+                            href={classHref("schedule", cls)}
                             icon={CalendarDays}
                             label={t("schedule")}
                             isActive={isClassNavActive("schedule", cls.id)}
@@ -378,7 +410,23 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
                             bg={BG.sport}
                           />
                           <NavLink
-                            href={classHref("teams", cls.id)}
+                            href={classHref("results", cls)}
+                            icon={Trophy}
+                            label={tAdmin("results")}
+                            isActive={isClassNavActive("results", cls.id)}
+                            color={COLOR.sport}
+                            bg={BG.sport}
+                          />
+                          <NavLink
+                            href={classHref("protocols", cls)}
+                            icon={ClipboardList}
+                            label={tAdmin("protocols")}
+                            isActive={isClassNavActive("protocols", cls.id)}
+                            color={COLOR.sport}
+                            bg={BG.sport}
+                          />
+                          <NavLink
+                            href={classHref("teams", cls)}
                             icon={Users}
                             label={t("teams")}
                             isActive={isClassNavActive("teams", cls.id)}
@@ -399,9 +447,9 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
             <div className="px-2 mb-1">
               <SectionLabel color={COLOR.sport} label={tAdmin("groupSport")} collapsible={false} />
               <nav className="space-y-0.5 px-0">
-                <NavLink href={`${base}/format`}   icon={GitBranch}        label={t("format")}   isActive={isActive(`${base}/format`)}   color={COLOR.sport} bg={BG.sport} />
-                <NavLink href={`${base}/schedule`} icon={CalendarDays}     label={t("schedule")} isActive={isActive(`${base}/schedule`)} color={COLOR.sport} bg={BG.sport} />
-                <NavLink href={`${base}/setup`}    icon={SlidersHorizontal} label={t("setup")}   isActive={isActive(`${base}/setup`)}   color={COLOR.sport} bg={BG.sport} />
+                <NavLink href={`${base}/format`}   icon={GitBranch}         label={t("format")}   isActive={isActive(`${base}/format`)}   color={COLOR.sport} bg={BG.sport} />
+                <NavLink href={`${base}/schedule`} icon={CalendarDays}      label={t("schedule")} isActive={isActive(`${base}/schedule`)} color={COLOR.sport} bg={BG.sport} />
+                <NavLink href={`${base}/setup`}    icon={SlidersHorizontal} label={t("setup")}    isActive={isActive(`${base}/setup`)}   color={COLOR.sport} bg={BG.sport} />
               </nav>
             </div>
           )}
@@ -445,7 +493,7 @@ export function OrgAdminSidebar({ orgSlug, orgName }: Props) {
             />
             {openOther && (
               <nav className="space-y-0.5">
-                <NavLink href={`${base}/messages`} icon={MessageSquare}   label={t("messages")} isActive={isActive(`${base}/messages`)} color={COLOR.other} bg={BG.other} />
+                <NavLink href={`${base}/messages`} icon={MessageSquare}   label={t("messagesLabel")} isActive={isActive(`${base}/messages`)} color={COLOR.other} bg={BG.other} />
                 <NavLink href={`${base}/setup`}    icon={SlidersHorizontal} label={t("setup")} isActive={isActive(`${base}/setup`)}   color={COLOR.other} bg={BG.other} />
                 <NavLink href={`${base}/settings`} icon={Settings}        label={t("settings")} isActive={isActive(`${base}/settings`) && pathname.endsWith("/settings")} color={COLOR.other} bg={BG.other} />
               </nav>

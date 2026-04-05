@@ -303,7 +303,7 @@ export function MessagesPageContent() {
           ) : questions.length === 0 ? (
             <div className="mt-4 text-center py-8 th-text-2 text-sm">
               <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              No questions yet
+              {t("noQuestions")}
             </div>
           ) : (
             <div className="mt-4 divide-y divide-[var(--cat-card-border)]">
@@ -326,10 +326,10 @@ export function MessagesPageContent() {
                       </p>
                     </div>
                     {!q.replyBody && (
-                      <Badge variant="warning">Unanswered</Badge>
+                      <Badge variant="warning">{t("badgeUnanswered")}</Badge>
                     )}
                     {q.replyBody && (
-                      <Badge variant="success">Answered</Badge>
+                      <Badge variant="success">{t("badgeAnswered")}</Badge>
                     )}
                     {expandedQuestion === q.id ? (
                       <ChevronDown className="w-4 h-4 th-text-2 shrink-0" />
@@ -342,7 +342,7 @@ export function MessagesPageContent() {
                     <div className="px-4 pb-4 space-y-4">
                       {/* Question body */}
                       <div className="th-bg rounded-lg p-4">
-                        <p className="text-xs font-semibold th-text-2 uppercase mb-2">Question</p>
+                        <p className="text-xs font-semibold th-text-2 uppercase mb-2">{t("questionLabel")}</p>
                         <p className="text-sm th-text whitespace-pre-wrap">{q.body}</p>
                       </div>
 
@@ -350,7 +350,7 @@ export function MessagesPageContent() {
                       {q.replyBody && (
                         <div className="border rounded-lg p-4" style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-card-border)" }}>
                           <p className="text-xs font-semibold uppercase mb-2" style={{ color: "var(--cat-accent)" }}>
-                            Reply · {q.repliedAt ? new Date(q.repliedAt).toLocaleString() : ""}
+                            {t("replyLabel")} · {q.repliedAt ? new Date(q.repliedAt).toLocaleString() : ""}
                           </p>
                           <p className="text-sm th-text whitespace-pre-wrap">{q.replyBody}</p>
                         </div>
@@ -359,14 +359,14 @@ export function MessagesPageContent() {
                       {/* Reply form */}
                       {!q.replyBody && (
                         <div className="space-y-2">
-                          <label className="text-sm font-medium th-text">Reply</label>
+                          <label className="text-sm font-medium th-text">{t("replyLabel")}</label>
                           <textarea
                             value={replyDrafts[q.id] ?? ""}
                             onChange={(e) =>
                               setReplyDrafts((prev) => ({ ...prev, [q.id]: e.target.value }))
                             }
                             className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-navy/20"
-                            placeholder="Type your reply..."
+                            placeholder={t("replyPlaceholder")}
                           />
                           <div className="flex justify-end">
                             <Button
@@ -374,7 +374,7 @@ export function MessagesPageContent() {
                               disabled={replyingSending === q.id || !replyDrafts[q.id]?.trim()}
                             >
                               <Send className="w-4 h-4" />
-                              {replyingSending === q.id ? "Sending..." : "Send Reply"}
+                              {replyingSending === q.id ? t("sendingReply") : t("sendReply")}
                             </Button>
                           </div>
                         </div>

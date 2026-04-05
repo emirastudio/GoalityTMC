@@ -21,9 +21,20 @@ export async function GET(
   const groupId = searchParams.get("groupId");
 
   if (groupId) {
-    // Таблица конкретной группы
+    // Таблица конкретной группы — проверяем что группа принадлежит турниру
+    const group = await db.query.stageGroups.findFirst({
+      where: and(
+        eq(stageGroups.id, parseInt(groupId)),
+        eq(stageGroups.tournamentId, ctx.tournament.id)
+      ),
+    });
+    if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
+
     const rows = await db.query.standings.findMany({
-      where: eq(standings.groupId, parseInt(groupId)),
+      where: and(
+        eq(standings.groupId, parseInt(groupId)),
+        eq(standings.tournamentId, ctx.tournament.id)
+      ),
       orderBy: [asc(standings.position)],
       with: { team: { with: { club: true } } },
     });
