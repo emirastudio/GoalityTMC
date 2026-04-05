@@ -10,7 +10,7 @@ import {
   Star, Sparkles, Play, Building2, UserCheck, Package, MessageSquare,
   TrendingUp, Lock, Layers, Database,
 } from "lucide-react";
-import { GlobalHeader, PublicHeaderActions } from "@/components/ui/global-header";
+import { PublicNavHeader } from "@/components/ui/public-nav-header";
 
 /* ── Animated counter ── */
 function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
@@ -84,15 +84,7 @@ export default function HomePage() {
       <div className="min-h-screen overflow-x-hidden" style={{ background: "var(--cat-bg)" }}>
 
         {/* ══════════ NAVBAR ══════════ */}
-        <GlobalHeader
-          navLinks={[
-            { label: t("navProduct"), href: "#product", anchor: true },
-            { label: t("navFeatures"), href: "#features", anchor: true },
-            { label: t("navForWho"), href: "#for-who", anchor: true },
-            { label: t("navCatalog"), href: "/catalog" },
-          ]}
-          rightContent={<PublicHeaderActions signInLabel={t("navSignIn")} getStartedLabel={t("navGetStarted")} />}
-        />
+        <PublicNavHeader />
 
         {/* ══════════ HERO ══════════ */}
         <section className="cat-banner cat-hero-decor relative overflow-hidden" style={{ background: "linear-gradient(135deg, var(--cat-banner-from), var(--cat-banner-via), var(--cat-banner-to))" }}>
@@ -397,6 +389,8 @@ export default function HomePage() {
                 { label: t("footerCatalog"), href: "/catalog" },
                 { label: t("footerSignIn"), href: "/login" },
                 { label: t("footerOrganizers"), href: "/onboarding" },
+                { label: t("footerPrivacy"), href: "/privacy" },
+                { label: t("footerDeletion"), href: "/data-deletion" },
               ].map(({ label, href }) => (
                 <Link key={label} href={href} className="text-[12px] transition-opacity hover:opacity-80" style={{ color: "var(--cat-text-secondary)" }}>{label}</Link>
               ))}
