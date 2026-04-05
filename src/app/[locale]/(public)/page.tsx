@@ -389,6 +389,7 @@ export default function HomePage() {
                 { label: t("footerCatalog"), href: "/catalog" },
                 { label: t("footerSignIn"), href: "/login" },
                 { label: t("footerOrganizers"), href: "/onboarding" },
+                { label: t("footerTerms"), href: "/terms" },
                 { label: t("footerPrivacy"), href: "/privacy" },
                 { label: t("footerDeletion"), href: "/data-deletion" },
               ].map(({ label, href }) => (
