@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { teams, tournamentClasses } from "@/db/schema";
+import { teams, tournamentClasses, tournamentRegistrations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(
@@ -19,9 +19,14 @@ export async function GET(
   const result = await Promise.all(
     clubTeams.map(async (team) => {
       let className = "";
-      if (team.classId) {
+      // classId is now on tournamentRegistrations, not teams
+      const reg = await db.query.tournamentRegistrations.findFirst({
+        where: eq(tournamentRegistrations.teamId, team.id),
+        orderBy: (r, { desc }) => [desc(r.id)],
+      });
+      if (reg?.classId) {
         const cls = await db.query.tournamentClasses.findFirst({
-          where: eq(tournamentClasses.id, team.classId),
+          where: eq(tournamentClasses.id, reg.classId),
         });
         className = cls?.name ?? "";
       }

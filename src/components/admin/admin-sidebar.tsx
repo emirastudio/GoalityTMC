@@ -9,17 +9,31 @@ import {
   Building2,
   Settings,
   LogOut,
-  Shield,
+  Users,
+  ClipboardList,
+  BookOpen,
+  Trophy,
+  UserCheck,
+  Activity,
+  CreditCard,
 } from "lucide-react";
 
 const navItems = [
-  { key: "dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
-  { label: "Organizations", icon: Building2, href: "/admin/organizations" },
-  { key: "settings", icon: Settings, href: "/admin/settings" },
+  { key: "dashboard",      icon: LayoutDashboard, href: "/admin/dashboard" },
+  { key: "organizations",  icon: Building2,       href: "/admin/organizations" },
+  { key: "clubs",          icon: UserCheck,       href: "/admin/clubs" },
+  { key: "tournaments",    icon: Trophy,          href: "/admin/tournaments" },
+  { key: "users",          icon: Users,           href: "/admin/users" },
+  { key: "planOverrides",  icon: ClipboardList,   href: "/admin/plan-overrides" },
+  { key: "planSales",      icon: CreditCard,      href: "/admin/plan-sales" },
+  { key: "blog",           icon: BookOpen,        href: "/admin/blog" },
+  { key: "health",         icon: Activity,        href: "/admin/health" },
+  { key: "settings",       icon: Settings,        href: "/admin/settings" },
 ] as const;
 
 export function AdminSidebar() {
   const t = useTranslations("nav");
+  const tAuth = useTranslations("auth");
   const pathname = usePathname();
 
   return (
@@ -31,7 +45,7 @@ export function AdminSidebar() {
       <nav className="flex-1 px-3 space-y-0.5">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
-          const label = "key" in item ? t(item.key) : item.label;
+          const label = t(item.key);
           const Icon = item.icon;
           return (
             <Link
@@ -57,7 +71,7 @@ export function AdminSidebar() {
             style={{ color: "var(--cat-text-muted)" }}
           >
             <LogOut className="w-4.5 h-4.5" />
-            {t("dashboard") === "Dashboard" ? "Log out" : "Выйти"}
+            {tAuth("logout")}
           </button>
         </form>
       </div>

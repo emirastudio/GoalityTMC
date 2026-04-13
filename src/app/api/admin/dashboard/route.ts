@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import {
   tournaments,
@@ -7,17 +7,26 @@ import {
   tournamentClasses,
   teamBookings,
   payments,
+  tournamentRegistrations,
 } from "@/db/schema";
 import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq, and, count, sum, sql, desc } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await requireAdmin();
   if (isError(session)) return session;
 
-  const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
-  });
+  const urlTournamentId = req.nextUrl.searchParams.get("tournamentId");
+  let tournament;
+  if (urlTournamentId) {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, parseInt(urlTournamentId)),
+    });
+  } else {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.registrationOpen, true),
+    });
+  }
   if (!tournament) {
     return NextResponse.json(
       { error: "No active tournament" },
@@ -25,72 +34,73 @@ export async function GET() {
     );
   }
 
-  // Total teams
+  // Total teams (via registrations)
   const [totalTeamsRow] = await db
     .select({ value: count() })
-    .from(teams)
-    .where(eq(teams.tournamentId, tournament.id));
+    .from(tournamentRegistrations)
+    .where(eq(tournamentRegistrations.tournamentId, tournament.id));
 
-  // Confirmed teams
+  // Confirmed teams (via registrations)
   const [confirmedTeamsRow] = await db
     .select({ value: count() })
-    .from(teams)
+    .from(tournamentRegistrations)
     .where(
       and(
-        eq(teams.tournamentId, tournament.id),
-        eq(teams.status, "confirmed")
+        eq(tournamentRegistrations.tournamentId, tournament.id),
+        eq(tournamentRegistrations.status, "confirmed")
       )
     );
 
-  // Pending payments: teams where sum(team_bookings.total) > sum(received payments)
+  // Pending payments: registrations where sum(team_bookings.total) > sum(received payments)
   const pendingPaymentsResult = await db.execute<{ value: string }>(sql`
     SELECT COUNT(*) AS value FROM (
-      SELECT t.id
-      FROM teams t
+      SELECT r.id
+      FROM tournament_registrations r
       LEFT JOIN (
-        SELECT team_id, COALESCE(SUM(total::numeric), 0) AS order_total
-        FROM team_bookings GROUP BY team_id
-      ) o ON o.team_id = t.id
+        SELECT registration_id, COALESCE(SUM(total::numeric), 0) AS order_total
+        FROM team_bookings GROUP BY registration_id
+      ) o ON o.registration_id = r.id
       LEFT JOIN (
-        SELECT team_id, COALESCE(SUM(amount::numeric), 0) AS paid_total
-        FROM payments WHERE status = 'received' GROUP BY team_id
-      ) p ON p.team_id = t.id
-      WHERE t.tournament_id = ${tournament.id}
+        SELECT registration_id, COALESCE(SUM(amount::numeric), 0) AS paid_total
+        FROM payments WHERE status = 'received' GROUP BY registration_id
+      ) p ON p.registration_id = r.id
+      WHERE r.tournament_id = ${tournament.id}
         AND COALESCE(o.order_total, 0) > COALESCE(p.paid_total, 0)
     ) sub
   `);
   const pendingPayments = Number(pendingPaymentsResult[0]?.value ?? 0);
 
-  // Total revenue
+  // Total revenue (via registrations)
   const [revenueRow] = await db
     .select({
       value: sql<string>`COALESCE(SUM(${payments.amount}::numeric), 0)`,
     })
     .from(payments)
-    .innerJoin(teams, eq(payments.teamId, teams.id))
+    .innerJoin(tournamentRegistrations, eq(payments.registrationId, tournamentRegistrations.id))
     .where(
       and(
-        eq(teams.tournamentId, tournament.id),
+        eq(tournamentRegistrations.tournamentId, tournament.id),
         eq(payments.status, "received")
       )
     );
 
-  // Recent teams
+  // Recent teams (via registrations)
   const recentTeams = await db
     .select({
       id: teams.id,
       name: teams.name,
-      regNumber: teams.regNumber,
-      status: teams.status,
-      createdAt: teams.createdAt,
+      regNumber: tournamentRegistrations.regNumber,
+      status: tournamentRegistrations.status,
+      createdAt: tournamentRegistrations.createdAt,
       clubName: clubs.name,
       className: tournamentClasses.name,
     })
-    .from(teams)
+    .from(tournamentRegistrations)
+    .innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
     .leftJoin(clubs, eq(teams.clubId, clubs.id))
-    .leftJoin(tournamentClasses, eq(teams.classId, tournamentClasses.id))
-    .where(eq(teams.tournamentId, tournament.id))
-    .orderBy(desc(teams.createdAt))
+    .leftJoin(tournamentClasses, eq(tournamentRegistrations.classId, tournamentClasses.id))
+    .where(eq(tournamentRegistrations.tournamentId, tournament.id))
+    .orderBy(desc(tournamentRegistrations.createdAt))
     .limit(5);
 
   return NextResponse.json({

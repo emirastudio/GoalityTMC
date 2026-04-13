@@ -82,7 +82,7 @@ function fmtDate(iso: string) {
 }
 
 export function RegistrationsPageContent() {
-  const t = useTranslations("orgAdmin.registrations");
+  const t = useTranslations("landing.registrations");
   const adminFetch = useAdminFetch();
   const [rows, setRows] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);

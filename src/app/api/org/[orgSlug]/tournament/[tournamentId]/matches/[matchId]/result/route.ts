@@ -229,6 +229,21 @@ export async function PATCH(
     await progressPlayoffWinner(updated);
   }
 
+  // Broadcast live update to SSE clients (Pro/Elite live standings)
+  const { emitMatchUpdate } = await import("@/lib/match-events");
+  if (updated.groupId && (updated.status === "live" || updated.status === "finished")) {
+    emitMatchUpdate({
+      tournamentId: updated.tournamentId,
+      matchId:      updated.id,
+      groupId:      updated.groupId,
+      homeTeamId:   updated.homeTeamId,
+      awayTeamId:   updated.awayTeamId,
+      homeScore:    updated.homeScore,
+      awayScore:    updated.awayScore,
+      status:       updated.status,
+    });
+  }
+
   // Пересчитываем таблицу группы если матч групповой и завершён
   if (updated.groupId && updated.status === "finished") {
     const stage = updated.stageId

@@ -3,7 +3,7 @@ import { db } from "@/db";
 import {
   orders, payments, teams, tournamentProducts, teamBookings,
   teamServiceOverrides, accommodationOptions, extraMealOptions,
-  transferOptions, registrationFees,
+  transferOptions, registrationFees, tournamentRegistrations,
 } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
@@ -27,6 +27,19 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
+  const tournamentId = registration.tournamentId;
+
   // Legacy orders (old model)
   const teamOrders = await db
     .select({
@@ -40,16 +53,16 @@ export async function GET(
     })
     .from(orders)
     .innerJoin(tournamentProducts, eq(orders.productId, tournamentProducts.id))
-    .where(eq(orders.teamId, tid));
+    .where(eq(orders.registrationId, registration.id));
 
   // New model: fetch raw bookings + live service prices + per-team overrides
   const [rawBookings, overrides, accommodations, meals, transfers, regFees] = await Promise.all([
-    db.query.teamBookings.findMany({ where: eq(teamBookings.teamId, tid) }),
-    db.query.teamServiceOverrides.findMany({ where: eq(teamServiceOverrides.teamId, tid) }),
-    db.query.accommodationOptions.findMany({ where: eq(accommodationOptions.tournamentId, team.tournamentId) }),
-    db.query.extraMealOptions.findMany({ where: eq(extraMealOptions.tournamentId, team.tournamentId) }),
-    db.query.transferOptions.findMany({ where: eq(transferOptions.tournamentId, team.tournamentId) }),
-    db.query.registrationFees.findMany({ where: eq(registrationFees.tournamentId, team.tournamentId) }),
+    db.query.teamBookings.findMany({ where: eq(teamBookings.registrationId, registration.id) }),
+    db.query.teamServiceOverrides.findMany({ where: eq(teamServiceOverrides.registrationId, registration.id) }),
+    db.query.accommodationOptions.findMany({ where: eq(accommodationOptions.tournamentId, tournamentId) }),
+    db.query.extraMealOptions.findMany({ where: eq(extraMealOptions.tournamentId, tournamentId) }),
+    db.query.transferOptions.findMany({ where: eq(transferOptions.tournamentId, tournamentId) }),
+    db.query.registrationFees.findMany({ where: eq(registrationFees.tournamentId, tournamentId) }),
   ]);
 
   const services = {
@@ -101,7 +114,7 @@ export async function GET(
   const [orderTotalRow] = await db
     .select({ total: sql<string>`COALESCE(SUM(${orders.total}::numeric), 0)` })
     .from(orders)
-    .where(eq(orders.teamId, tid));
+    .where(eq(orders.registrationId, registration.id));
   const legacyTotal = parseFloat(orderTotalRow?.total ?? "0");
 
   const totalToPay = legacyTotal + bookingTotal;
@@ -109,11 +122,11 @@ export async function GET(
   // Payments
   const [teamPayments, receivedPayments] = await Promise.all([
     db.query.payments.findMany({
-      where: eq(payments.teamId, tid),
+      where: eq(payments.registrationId, registration.id),
       orderBy: (p, { desc }) => [desc(p.createdAt)],
     }),
     db.query.payments.findMany({
-      where: and(eq(payments.teamId, tid), eq(payments.status, "received")),
+      where: and(eq(payments.registrationId, registration.id), eq(payments.status, "received")),
     }),
   ]);
   const totalPaid = receivedPayments.reduce((s, p) => s + parseFloat(p.amount), 0);

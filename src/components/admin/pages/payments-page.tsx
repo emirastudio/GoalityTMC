@@ -12,7 +12,8 @@ import { Pencil, Trash2, X } from "lucide-react";
 
 type Payment = {
   id: number;
-  teamId: number;
+  registrationId: number;
+  teamId: number | null;
   amount: string;
   currency: string;
   method: string;
@@ -28,6 +29,7 @@ type Payment = {
 
 type Team = {
   id: number;
+  registrationId: number;
   name: string;
   regNumber: string;
   club: { name: string | null };
@@ -151,7 +153,7 @@ export function PaymentsPageContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          teamId: Number(formTeamId), amount: Number(formAmount),
+          registrationId: Number(formTeamId), amount: Number(formAmount),
           method: formMethod, status: formStatus,
           reference: formReference || null, notes: formNotes || null,
           receivedAt: formDate || null,
@@ -163,7 +165,7 @@ export function PaymentsPageContent() {
 
   function openEdit(p: Payment) {
     setEditingPayment(p);
-    setEditTeamId(String(p.teamId));
+    setEditTeamId(String(p.registrationId));
     setEditAmount(p.amount);
     setEditMethod(p.method);
     setEditStatus(p.status);
@@ -183,7 +185,7 @@ export function PaymentsPageContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: editingPayment.id,
-          teamId: Number(editTeamId), amount: Number(editAmount),
+          registrationId: Number(editTeamId), amount: Number(editAmount),
           method: editMethod, status: editStatus,
           reference: editReference || null, notes: editNotes || null,
           receivedAt: editDate || null,
@@ -321,9 +323,9 @@ export function PaymentsPageContent() {
                         onChange={(e) => handleStatusChange(p.id, e.target.value)}
                         className="text-xs border th-border rounded-md px-2 py-1 th-card cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--cat-accent)]/15"
                       >
-                        <option value="pending">Pending</option>
-                        <option value="received">Received</option>
-                        <option value="refunded">Refunded</option>
+                        <option value="pending">{t("statusPending")}</option>
+                        <option value="received">{t("statusReceived")}</option>
+                        <option value="refunded">{t("statusRefunded")}</option>
                       </select>
                     </td>
                     <td className="px-4 py-3 th-text-2 text-xs max-w-[120px] truncate">
@@ -335,19 +337,19 @@ export function PaymentsPageContent() {
                     <td className="px-4 py-3">
                       {confirmDeleteId === p.id ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-error font-medium">Delete?</span>
+                          <span className="text-xs text-error font-medium">{t("deleteConfirm")}</span>
                           <button
                             onClick={() => handleDelete(p.id)}
                             disabled={deleting}
                             className="text-xs bg-error text-white rounded px-2 py-0.5 hover:bg-error/90 disabled:opacity-50"
                           >
-                            {deleting ? "..." : "Yes"}
+                            {deleting ? "..." : t("yes")}
                           </button>
                           <button
                             onClick={() => setConfirmDeleteId(null)}
                             className="text-xs th-text-2 hover:th-text"
                           >
-                            No
+                            {t("no")}
                           </button>
                         </div>
                       ) : (
@@ -382,19 +384,19 @@ export function PaymentsPageContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setEditingPayment(null)}>
           <Card className="popup-bg w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <CardTitle>Edit Payment</CardTitle>
+              <CardTitle>{t("editPayment")}</CardTitle>
               <button onClick={() => setEditingPayment(null)} className="p-1 hover:th-bg rounded-lg">
                 <X className="w-4 h-4 th-text-2" />
               </button>
             </div>
             <form onSubmit={handleEdit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium th-text">Team</label>
+                <label className="block text-sm font-medium th-text">{t("teamLabel")}</label>
                 <input
                   type="text"
                   value={editTeamSearch}
                   onChange={(e) => setEditTeamSearch(e.target.value)}
-                  placeholder="Search teams..."
+                  placeholder={t("searchTeams")}
                   className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)]"
                 />
                 <select
@@ -404,17 +406,17 @@ export function PaymentsPageContent() {
                   className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] appearance-none cursor-pointer"
                   size={Math.min(filteredTeams(editTeamSearch).length + 1, 6)}
                 >
-                  <option value="" disabled>Select a team</option>
+                  <option value="" disabled>{t("selectTeam")}</option>
                   {filteredTeams(editTeamSearch).map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name} - {team.club?.name ?? "No club"} ({team.regNumber})
+                    <option key={team.id} value={team.registrationId}>
+                      {team.name} - {team.club?.name ?? t("noClub")} ({team.regNumber})
                     </option>
                   ))}
                 </select>
               </div>
 
               <Input
-                label="Amount (EUR)"
+                label={t("amountLabel")}
                 type="number" step="0.01" min="0"
                 value={editAmount}
                 onChange={(e) => setEditAmount(e.target.value)}
@@ -422,46 +424,46 @@ export function PaymentsPageContent() {
               />
 
               <Select
-                label="Method"
+                label={t("methodLabel")}
                 value={editMethod}
                 onChange={(e) => setEditMethod(e.target.value)}
                 options={[
-                  { value: "bank_transfer", label: "Bank Transfer" },
-                  { value: "cash", label: "Cash" },
-                  { value: "stripe", label: "Stripe" },
+                  { value: "bank_transfer", label: t("methodBank") },
+                  { value: "cash", label: t("methodCash") },
+                  { value: "stripe", label: t("methodStripe") },
                 ]}
               />
 
               <Select
-                label="Status"
+                label={t("statusLabel")}
                 value={editStatus}
                 onChange={(e) => setEditStatus(e.target.value)}
                 options={[
-                  { value: "pending", label: "Pending" },
-                  { value: "received", label: "Received" },
-                  { value: "refunded", label: "Refunded" },
+                  { value: "pending", label: t("statusPending") },
+                  { value: "received", label: t("statusReceived") },
+                  { value: "refunded", label: t("statusRefunded") },
                 ]}
               />
 
               <Input
-                label="Reference (optional)"
+                label={t("referenceLabel")}
                 value={editReference}
                 onChange={(e) => setEditReference(e.target.value)}
                 placeholder="e.g. invoice number"
               />
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium th-text">Notes (optional)</label>
+                <label className="block text-sm font-medium th-text">{t("notesLabel")}</label>
                 <textarea
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
                   className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-y"
-                  rows={3} placeholder="Additional notes..."
+                  rows={3} placeholder={t("additionalNotes")}
                 />
               </div>
 
               <Input
-                label="Date"
+                label={t("dateLabel")}
                 type="date"
                 value={editDate}
                 onChange={(e) => setEditDate(e.target.value)}
@@ -469,10 +471,10 @@ export function PaymentsPageContent() {
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="secondary" type="button" onClick={() => setEditingPayment(null)}>
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button type="submit" disabled={editSubmitting}>
-                  {editSubmitting ? "Saving..." : "Save Changes"}
+                  {editSubmitting ? t("saving") : t("saveChanges")}
                 </Button>
               </div>
             </form>
@@ -485,19 +487,19 @@ export function PaymentsPageContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setShowModal(false); resetForm(); }}>
           <Card className="popup-bg w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <CardTitle>Add Payment</CardTitle>
+              <CardTitle>{t("addPayment")}</CardTitle>
               <button onClick={() => { setShowModal(false); resetForm(); }} className="p-1 hover:th-bg rounded-lg">
                 <X className="w-4 h-4 th-text-2" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium th-text">Team</label>
+                <label className="block text-sm font-medium th-text">{t("teamLabel")}</label>
                 <input
                   type="text"
                   value={teamSearch}
                   onChange={(e) => setTeamSearch(e.target.value)}
-                  placeholder="Search teams..."
+                  placeholder={t("searchTeams")}
                   className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)]"
                 />
                 <select
@@ -507,17 +509,17 @@ export function PaymentsPageContent() {
                   className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] appearance-none cursor-pointer"
                   size={Math.min(filteredTeams(teamSearch).length + 1, 6)}
                 >
-                  <option value="" disabled>Select a team</option>
+                  <option value="" disabled>{t("selectTeam")}</option>
                   {filteredTeams(teamSearch).map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name} - {team.club?.name ?? "No club"} ({team.regNumber})
+                    <option key={team.id} value={team.registrationId}>
+                      {team.name} - {team.club?.name ?? t("noClub")} ({team.regNumber})
                     </option>
                   ))}
                 </select>
               </div>
 
               <Input
-                label="Amount (EUR)"
+                label={t("amountLabel")}
                 type="number" step="0.01" min="0"
                 value={formAmount}
                 onChange={(e) => setFormAmount(e.target.value)}
@@ -525,45 +527,45 @@ export function PaymentsPageContent() {
               />
 
               <Select
-                label="Method"
+                label={t("methodLabel")}
                 value={formMethod}
                 onChange={(e) => setFormMethod(e.target.value)}
                 options={[
-                  { value: "bank_transfer", label: "Bank Transfer" },
-                  { value: "cash", label: "Cash" },
-                  { value: "stripe", label: "Stripe" },
+                  { value: "bank_transfer", label: t("methodBank") },
+                  { value: "cash", label: t("methodCash") },
+                  { value: "stripe", label: t("methodStripe") },
                 ]}
               />
 
               <Select
-                label="Status"
+                label={t("statusLabel")}
                 value={formStatus}
                 onChange={(e) => setFormStatus(e.target.value)}
                 options={[
-                  { value: "pending", label: "Pending" },
-                  { value: "received", label: "Received" },
+                  { value: "pending", label: t("statusPending") },
+                  { value: "received", label: t("statusReceived") },
                 ]}
               />
 
               <Input
-                label="Reference (optional)"
+                label={t("referenceLabel")}
                 value={formReference}
                 onChange={(e) => setFormReference(e.target.value)}
                 placeholder="e.g. invoice number"
               />
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium th-text">Notes (optional)</label>
+                <label className="block text-sm font-medium th-text">{t("notesLabel")}</label>
                 <textarea
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
                   className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-y"
-                  rows={3} placeholder="Additional notes..."
+                  rows={3} placeholder={t("additionalNotes")}
                 />
               </div>
 
               <Input
-                label="Date"
+                label={t("dateLabel")}
                 type="date"
                 value={formDate}
                 onChange={(e) => setFormDate(e.target.value)}
@@ -571,10 +573,10 @@ export function PaymentsPageContent() {
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="secondary" type="button" onClick={() => { setShowModal(false); resetForm(); }}>
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button type="submit" disabled={submitting}>
-                  {submitting ? "Adding..." : "Add Payment"}
+                  {submitting ? t("adding") : t("addPayment")}
                 </Button>
               </div>
             </form>

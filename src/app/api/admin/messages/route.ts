@@ -8,27 +8,36 @@ import {
   teamMessageReads,
   messageRecipients,
   teamQuestions,
+  tournamentRegistrations,
 } from "@/db/schema";
 import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq, sql, desc, inArray, count } from "drizzle-orm";
 import { sendMessageNotification } from "@/lib/email";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await requireAdmin();
   if (isError(session)) return session;
 
-  const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
-  });
+  const urlTournamentId = req.nextUrl.searchParams.get("tournamentId");
+  let tournament;
+  if (urlTournamentId) {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, parseInt(urlTournamentId)),
+    });
+  } else {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.registrationOpen, true),
+    });
+  }
   if (!tournament) {
     return NextResponse.json({ error: "No active tournament" }, { status: 404 });
   }
 
-  // Count total teams for this tournament
+  // Count total teams for this tournament (via registrations)
   const [totalTeamsRow] = await db
     .select({ value: sql<number>`COUNT(*)` })
-    .from(teams)
-    .where(eq(teams.tournamentId, tournament.id));
+    .from(tournamentRegistrations)
+    .where(eq(tournamentRegistrations.tournamentId, tournament.id));
   const totalTeams = Number(totalTeamsRow.value);
 
   // Get unread questions count
@@ -48,7 +57,7 @@ export async function GET() {
       sentBy: inboxMessages.sentBy,
       sendToAll: inboxMessages.sendToAll,
       readCount: sql<number>`(
-        SELECT COUNT(DISTINCT ${teamMessageReads.teamId})
+        SELECT COUNT(DISTINCT ${teamMessageReads.registrationId})
         FROM ${teamMessageReads}
         WHERE ${teamMessageReads.messageId} = ${inboxMessages.id}
       )`.as("read_count"),
@@ -64,9 +73,10 @@ export async function GET() {
         return { ...msg, readCount: Number(msg.readCount), recipientTeams: null };
       }
       const recipients = await db
-        .select({ teamId: messageRecipients.teamId, teamName: teams.name })
+        .select({ registrationId: messageRecipients.registrationId, teamId: tournamentRegistrations.teamId, teamName: teams.name })
         .from(messageRecipients)
-        .leftJoin(teams, eq(teams.id, messageRecipients.teamId))
+        .leftJoin(tournamentRegistrations, eq(tournamentRegistrations.id, messageRecipients.registrationId))
+        .leftJoin(teams, eq(teams.id, tournamentRegistrations.teamId))
         .where(eq(messageRecipients.messageId, msg.id));
       return {
         ...msg,
@@ -76,15 +86,16 @@ export async function GET() {
     })
   );
 
-  // Get all teams for the compose form
+  // Get all teams for the compose form (via registrations)
   const allTeams = await db
     .select({
       id: teams.id,
       name: teams.name,
-      classId: teams.classId,
+      classId: tournamentRegistrations.classId,
     })
-    .from(teams)
-    .where(eq(teams.tournamentId, tournament.id))
+    .from(tournamentRegistrations)
+    .innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
+    .where(eq(tournamentRegistrations.tournamentId, tournament.id))
     .orderBy(teams.name);
 
   return NextResponse.json({
@@ -99,9 +110,17 @@ export async function POST(req: NextRequest) {
   const session = await requireAdmin();
   if (isError(session)) return session;
 
-  const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
-  });
+  const urlTournamentId = req.nextUrl.searchParams.get("tournamentId");
+  let tournament;
+  if (urlTournamentId) {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, parseInt(urlTournamentId)),
+    });
+  } else {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.registrationOpen, true),
+    });
+  }
   if (!tournament) {
     return NextResponse.json({ error: "No active tournament" }, { status: 404 });
   }
@@ -125,20 +144,28 @@ export async function POST(req: NextRequest) {
     })
     .returning();
 
-  // If targeting specific teams, create recipient records
+  // If targeting specific teams, create recipient records (teamIds → registrationIds)
   if (!isSendToAll && Array.isArray(teamIds) && teamIds.length > 0) {
-    await db.insert(messageRecipients).values(
-      teamIds.map((tid: number) => ({ messageId: created.id, teamId: tid }))
-    );
+    const regsForTeams = await db
+      .select({ id: tournamentRegistrations.id, teamId: tournamentRegistrations.teamId })
+      .from(tournamentRegistrations)
+      .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+    const teamToRegMap = new Map(regsForTeams.map((r) => [r.teamId, r.id]));
+    const recipientValues = (teamIds as number[])
+      .map((tid) => ({ messageId: created.id, registrationId: teamToRegMap.get(tid) }))
+      .filter((v): v is { messageId: number; registrationId: number } => v.registrationId !== undefined);
+    if (recipientValues.length > 0) {
+      await db.insert(messageRecipients).values(recipientValues);
+    }
   }
 
   // Send email notifications — fetch teams with their club's contact email
   const targetTeamIds = isSendToAll
     ? (
         await db
-          .select({ id: teams.id })
-          .from(teams)
-          .where(eq(teams.tournamentId, tournament.id))
+          .select({ id: tournamentRegistrations.teamId })
+          .from(tournamentRegistrations)
+          .where(eq(tournamentRegistrations.tournamentId, tournament.id))
       ).map((t) => t.id)
     : (Array.isArray(teamIds) ? teamIds : []);
 

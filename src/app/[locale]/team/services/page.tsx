@@ -116,6 +116,8 @@ export default function ServicesPage() {
 
   useEffect(() => {
     if (!teamId) return;
+    setData(null);
+    setLoading(true);
     fetch(`/api/teams/${teamId}/package-summary`)
       .then((r) => r.json())
       .then(setData)

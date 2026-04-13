@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
-import { organizations, tournaments, teams } from "@/db/schema";
+import { organizations, tournaments, tournamentRegistrations } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import { Link } from "@/i18n/navigation";
 import { Building2, Trophy, Users } from "lucide-react";
@@ -19,7 +19,7 @@ export default async function OrganizationsPage() {
       const tournamentIds = await db.select({ id: tournaments.id }).from(tournaments).where(eq(tournaments.organizationId, org.id));
       let teamCount = 0;
       for (const t of tournamentIds) {
-        const [tc] = await db.select({ value: count() }).from(teams).where(eq(teams.tournamentId, t.id));
+        const [tc] = await db.select({ value: count() }).from(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, t.id));
         teamCount += Number(tc?.value ?? 0);
       }
       return {
@@ -68,8 +68,9 @@ export default async function OrganizationsPage() {
                   <span>{org.teamsCount}</span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  org.plan === "premium" ? "bg-gold/20 text-gold" :
-                  org.plan === "basic" ? "bg-navy/10 text-navy" :
+                  org.plan === "elite"   ? "bg-gold/20 text-gold" :
+                  org.plan === "pro"     ? "bg-navy/10 text-navy" :
+                  org.plan === "starter" ? "bg-blue-100 text-blue-700" :
                   "bg-gray-100 text-gray-600"
                 }`}>
                   {org.plan}

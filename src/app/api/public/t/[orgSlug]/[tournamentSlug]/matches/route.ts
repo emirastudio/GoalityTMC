@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organizations, tournaments, teams, matches } from "@/db/schema";
+import { organizations, tournaments, matches, tournamentRegistrations } from "@/db/schema";
 import { eq, and, isNull, asc, inArray, or } from "drizzle-orm";
 
 // GET /api/public/t/[orgSlug]/[tournamentSlug]/matches
@@ -40,16 +40,16 @@ export async function GET(
   if (groupId) conditions.push(eq(matches.groupId, parseInt(groupId)));
   if (status) conditions.push(eq(matches.status, status as "scheduled" | "live" | "finished" | "postponed" | "cancelled" | "walkover"));
 
-  // Filter by classId: find teams in this class, then filter matches by those teams
+  // Filter by classId: find teams in this class via tournamentRegistrations, then filter matches
   if (classId) {
-    const teamsForClass = await db.query.teams.findMany({
-      where: and(
-        eq(teams.tournamentId, tournament.id),
-        eq(teams.classId, parseInt(classId))
-      ),
-      columns: { id: true },
-    });
-    const teamIds = teamsForClass.map(t => t.id);
+    const regsForClass = await db
+      .select({ teamId: tournamentRegistrations.teamId })
+      .from(tournamentRegistrations)
+      .where(and(
+        eq(tournamentRegistrations.tournamentId, tournament.id),
+        eq(tournamentRegistrations.classId, parseInt(classId))
+      ));
+    const teamIds = regsForClass.map(r => r.teamId);
     if (teamIds.length === 0) return NextResponse.json([]);
     conditions.push(or(
       inArray(matches.homeTeamId, teamIds),
@@ -63,7 +63,7 @@ export async function GET(
     with: {
       homeTeam: { with: { club: true } },
       awayTeam: { with: { club: true } },
-      field: true,
+      field: { with: { stadium: true } },
       stage: true,
       group: true,
       round: true,

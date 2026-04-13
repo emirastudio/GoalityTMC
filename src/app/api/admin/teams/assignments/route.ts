@@ -10,7 +10,7 @@ export async function GET() {
 
   const rows = await db
     .select({
-      teamId: packageAssignments.teamId,
+      registrationId: packageAssignments.registrationId,
       packageId: packageAssignments.packageId,
       packageName: servicePackages.name,
       assignedAt: packageAssignments.assignedAt,

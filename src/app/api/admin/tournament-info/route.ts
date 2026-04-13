@@ -4,13 +4,22 @@ import { tournaments, tournamentInfo } from "@/db/schema";
 import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq } from "drizzle-orm";
 
-export async function GET() {
+async function resolveTournament(req: NextRequest, organizationId?: number | null) {
+  const url = new URL(req.url);
+  const tid = url.searchParams.get("tournamentId");
+  if (tid) {
+    const t = await db.query.tournaments.findFirst({ where: eq(tournaments.id, parseInt(tid)) });
+    if (t && organizationId && t.organizationId !== organizationId) return null;
+    return t ?? null;
+  }
+  return db.query.tournaments.findFirst({ where: eq(tournaments.registrationOpen, true) });
+}
+
+export async function GET(req: NextRequest) {
   const session = await requireAdmin();
   if (isError(session)) return session;
 
-  const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
-  });
+  const tournament = await resolveTournament(req, session.organizationId);
   if (!tournament) {
     return NextResponse.json(
       { error: "No active tournament" },
@@ -29,9 +38,7 @@ export async function PUT(req: NextRequest) {
   const session = await requireAdmin();
   if (isError(session)) return session;
 
-  const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
-  });
+  const tournament = await resolveTournament(req, session.organizationId);
   if (!tournament) {
     return NextResponse.json(
       { error: "No active tournament" },

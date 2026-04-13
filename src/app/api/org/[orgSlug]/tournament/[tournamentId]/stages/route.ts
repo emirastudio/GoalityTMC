@@ -18,10 +18,18 @@ export async function GET(
   const classIdParam = req.nextUrl.searchParams.get("classId");
   const classId = classIdParam ? parseInt(classIdParam) : null;
 
-  // If classId provided → filter by it. Otherwise → return all stages for this tournament.
-  const whereClause = classId
-    ? and(eq(tournamentStages.tournamentId, ctx.tournament.id), eq(tournamentStages.classId, classId))
-    : eq(tournamentStages.tournamentId, ctx.tournament.id);
+  // HARD RULE: classId is mandatory — never return stages across all divisions.
+  if (!classId) {
+    return NextResponse.json(
+      { error: "classId is required — every query must be scoped to a division" },
+      { status: 400 }
+    );
+  }
+
+  const whereClause = and(
+    eq(tournamentStages.tournamentId, ctx.tournament.id),
+    eq(tournamentStages.classId, classId)
+  );
 
   const stages = await db.query.tournamentStages.findMany({
     where: whereClause,
@@ -57,6 +65,15 @@ export async function POST(
   if (!name || !type) {
     return NextResponse.json(
       { error: "name and type are required" },
+      { status: 400 }
+    );
+  }
+
+  // HARD RULE: every stage must belong to a division (classId).
+  // Stages without classId mix data across divisions — strictly forbidden.
+  if (!classId) {
+    return NextResponse.json(
+      { error: "classId is required — every stage must belong to a division" },
       { status: 400 }
     );
   }

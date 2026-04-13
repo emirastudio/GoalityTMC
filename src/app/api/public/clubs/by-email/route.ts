@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clubUsers, clubs, teams, tournamentClasses } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { clubUsers, clubs, teams, tournamentClasses, tournamentRegistrations } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get("email")?.toLowerCase().trim() ?? "";
@@ -25,9 +25,14 @@ export async function GET(req: NextRequest) {
       where: eq(teams.id, user.teamId),
     });
     teamName = team?.name ?? null;
-    if (team?.classId) {
+    // classId is now on tournamentRegistrations, not teams
+    const reg = await db.query.tournamentRegistrations.findFirst({
+      where: eq(tournamentRegistrations.teamId, user.teamId),
+      orderBy: (r, { desc }) => [desc(r.id)],
+    });
+    if (reg?.classId) {
       const cls = await db.query.tournamentClasses.findFirst({
-        where: eq(tournamentClasses.id, team.classId),
+        where: eq(tournamentClasses.id, reg.classId),
       });
       className = cls?.name ?? null;
     }

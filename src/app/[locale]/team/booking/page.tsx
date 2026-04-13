@@ -273,6 +273,8 @@ export default function BookingPage() {
   // Load data
   useEffect(() => {
     if (!teamId) return;
+    setData(null);
+    setLoading(true);
     fetch(`/api/teams/${teamId}/bookings`)
       .then((r) => (r.ok ? r.json() : null))
       .then((json: BookingData | null) => {

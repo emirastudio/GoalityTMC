@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { teams, clubs, teamQuestions } from "@/db/schema";
+import { teams, clubs, teamQuestions, tournamentRegistrations } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { sendQuestionConfirmation, sendNewQuestionNotification } from "@/lib/email";
 
 export async function GET(
@@ -23,10 +23,21 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
   const questions = await db
     .select()
     .from(teamQuestions)
-    .where(eq(teamQuestions.teamId, tid))
+    .where(eq(teamQuestions.registrationId, registration.id))
     .orderBy(desc(teamQuestions.sentAt));
 
   return NextResponse.json(questions);
@@ -50,6 +61,17 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
   const { subject, body } = await req.json();
   if (!subject || !body) {
     return NextResponse.json({ error: "subject and body are required" }, { status: 400 });
@@ -58,8 +80,8 @@ export async function POST(
   const [created] = await db
     .insert(teamQuestions)
     .values({
-      teamId: tid,
-      tournamentId: team.tournamentId,
+      registrationId: registration.id,
+      tournamentId: registration.tournamentId,
       subject,
       body,
     })

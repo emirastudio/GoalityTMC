@@ -19,6 +19,7 @@ export type TournamentEntry = {
     startDate: string | null; endDate: string | null;
     logoUrl: string | null;
     coverUrl: string | null;
+    cardImageUrl: string | null;
   };
   org: {
     name: string; slug: string; logo: string | null;
@@ -27,6 +28,8 @@ export type TournamentEntry = {
   classes: { id: number; name: string; format: string | null }[];
   teamCount: number;
   clubCount: number;
+  /** For listing-type entries the public URL differs */
+  entryType?: "listing";
 };
 
 /* ─── Helpers ─── */
@@ -74,17 +77,8 @@ function getAgeColor(name: string) {
   return AGE_COLORS[key] ?? { bg: "var(--cat-tag-bg)", text: "var(--cat-tag-text)", border: "var(--cat-tag-border)" };
 }
 
-/* ─── Tournament card images ─── */
-const IMAGES = [
-  "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=700&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=700&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1508098682722-e99c643e7f0b?w=700&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=700&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?w=700&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=700&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=700&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=700&h=400&fit=crop",
-];
+/* ─── Default tournament card image ─── */
+const DEFAULT_CARD_IMAGE = "/defaults/tournament-card-default.jpg";
 
 /* ─── Tournament card ─── */
 function TournamentCard({ entry, idx, t, locale }: {
@@ -93,11 +87,15 @@ function TournamentCard({ entry, idx, t, locale }: {
   t: ReturnType<typeof useTranslations<"catalog">>;
   locale: string;
 }) {
-  const { tournament: tourney, org, classes, teamCount, clubCount } = entry;
+  const { tournament: tourney, org, classes, teamCount, clubCount, entryType } = entry;
   const brand = org?.brandColor ?? "#2BFEBA";
-  const href = org?.slug ? `/t/${org.slug}/${tourney.slug}` : `/catalog`;
-  // Cover photo for banner; logoUrl as small avatar; fallback to stock photos
-  const coverImg = tourney.coverUrl ?? IMAGES[idx % IMAGES.length];
+  const href = org?.slug
+    ? entryType === "listing"
+      ? `/t/${org.slug}/listing/${tourney.slug}`
+      : `/t/${org.slug}/${tourney.slug}`
+    : `/catalog`;
+  // Card image: custom card image > cover > default
+  const coverImg = tourney.cardImageUrl ?? tourney.coverUrl ?? DEFAULT_CARD_IMAGE;
   const avatarImg = tourney.logoUrl ?? org?.logo ?? null;
   const days = daysUntil(tourney.startDate);
   const isHot = teamCount > 40;
@@ -143,9 +141,15 @@ function TournamentCard({ entry, idx, t, locale }: {
           </div>
         )}
 
-        {/* Registration status */}
+        {/* Registration status / listing badge */}
         <div className="absolute top-3 right-3">
-          {tourney.registrationOpen ? (
+          {entryType === "listing" ? (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold backdrop-blur-sm"
+              style={{ background: "rgba(250,204,21,0.2)", border: "1px solid rgba(250,204,21,0.4)", color: "#FACC15" }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              Listing
+            </div>
+          ) : tourney.registrationOpen ? (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold backdrop-blur-sm"
               style={{ background: "rgba(43,254,186,0.2)", border: "1px solid rgba(43,254,186,0.4)", color: "#2BFEBA" }}>
               <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
@@ -298,7 +302,7 @@ export function CatalogClient({ entries, stats }: {
 
   /* Filtering */
   const filtered = useMemo(() => {
-    return entries.filter(({ tournament: tourney, org, classes }) => {
+    return entries.filter(({ tournament: tourney, org, classes, entryType }) => {
       if (search) {
         const q = search.toLowerCase();
         const match = tourney.name.toLowerCase().includes(q)
@@ -307,8 +311,11 @@ export function CatalogClient({ entries, stats }: {
           || (org?.name ?? "").toLowerCase().includes(q);
         if (!match) return false;
       }
-      if (statusFilter === "open" && !tourney.registrationOpen) return false;
-      if (statusFilter === "closed" && tourney.registrationOpen) return false;
+      // Listing entries are neither open nor closed — skip status filter for them
+      if (entryType !== "listing") {
+        if (statusFilter === "open" && !tourney.registrationOpen) return false;
+        if (statusFilter === "closed" && tourney.registrationOpen) return false;
+      }
       if (countryFilter !== "all" && org?.country !== countryFilter) return false;
       if (ageFilter !== "all") {
         const hasAge = classes.some(c => c.name.replace(/[^U0-9]/gi, "").toUpperCase() === ageFilter);

@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { db } from "@/db";
-import { teams, clubs, payments } from "@/db/schema";
-import { eq, count, sum } from "drizzle-orm";
+import { teams, payments, tournamentClasses, tournamentFields, tournamentStages, tournamentRegistrations } from "@/db/schema";
+import { eq, count, sum, sql } from "drizzle-orm";
 import {
   Users, Wallet, Trophy, ArrowLeft, Settings,
   Package, Mail, ClipboardList, Wrench,
@@ -13,6 +13,7 @@ import {
   Copy, MessageSquare, Send, LayoutGrid,
 } from "lucide-react";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
+import { TournamentSetupChecklist, type ChecklistStep } from "@/components/admin/tournament-setup-checklist";
 
 type Props = {
   params: Promise<{ locale: string; orgSlug: string; tournamentId: string }>;
@@ -32,15 +33,29 @@ export default async function TournamentOverviewPage({ params }: Props) {
   const t = await getTranslations("orgAdmin");
   const tNav = await getTranslations("nav");
 
-  const [teamCount] = await db.select({ value: count() }).from(teams).where(eq(teams.tournamentId, tournament.id));
-  const [clubCount] = await db.select({ value: count() }).from(clubs).where(eq(clubs.tournamentId, tournament.id));
+  const [teamCount] = await db.select({ value: count() }).from(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, tournament.id));
+  const [clubCount] = await db.select({ value: sql<number>`COUNT(DISTINCT ${teams.clubId})` }).from(tournamentRegistrations).innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id)).where(eq(tournamentRegistrations.tournamentId, tournament.id));
   const [paymentSum] = await db
     .select({ value: sum(payments.amount) })
     .from(payments)
-    .innerJoin(teams, eq(payments.teamId, teams.id))
-    .where(eq(teams.tournamentId, tournament.id));
+    .innerJoin(tournamentRegistrations, eq(payments.registrationId, tournamentRegistrations.id))
+    .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+
+  /* Checklist data */
+  const [classCount] = await db.select({ value: count() }).from(tournamentClasses).where(eq(tournamentClasses.tournamentId, tournament.id));
+  const [fieldCount] = await db.select({ value: count() }).from(tournamentFields).where(eq(tournamentFields.tournamentId, tournament.id));
+  const [stageCount] = await db.select({ value: count() }).from(tournamentStages).where(eq(tournamentStages.tournamentId, tournament.id));
 
   const basePath = `/org/${orgSlug}/admin/tournament/${tournamentId}`;
+
+  /* Setup checklist steps */
+  const checklistSteps: ChecklistStep[] = [
+    { id: "tournament", done: true, href: `${basePath}/settings` },
+    { id: "division",   done: Number(classCount?.value ?? 0) > 0, href: `${basePath}/setup` },
+    { id: "fields",     done: Number(fieldCount?.value ?? 0) > 0,  href: `${basePath}/setup` },
+    { id: "registration", done: !!tournament.registrationOpen,     href: `${basePath}/settings` },
+    { id: "format",     done: Number(stageCount?.value ?? 0) > 0,  href: `${basePath}/setup` },
+  ];
 
   /* Public registration URL */
   const registerUrl = `https://goality.ee/${locale}/t/${organization.slug}/${tournament.slug}/register`;
@@ -67,24 +82,24 @@ export default async function TournamentOverviewPage({ params }: Props) {
   const inviteChannels = [
     {
       icon: MessageSquare,
-      label: "WhatsApp",
-      desc: "Отправить ссылку в WhatsApp группу",
+      label: t("channelWhatsApp"),
+      desc: t("shareViaWhatsapp"),
       color: "#25D366",
-      href: `https://wa.me/?text=${encodeURIComponent(`🏆 Регистрация команды на ${tournament.name}\n\n${registerUrl}`)}`,
+      href: `https://wa.me/?text=${encodeURIComponent(t("whatsappText", { name: tournament.name }) + `\n\n${registerUrl}`)}`,
     },
     {
       icon: Send,
-      label: "Telegram",
-      desc: "Поделиться в Telegram",
+      label: t("channelTelegram"),
+      desc: t("shareViaTelegram"),
       color: "#0088CC",
-      href: `https://t.me/share/url?url=${encodeURIComponent(registerUrl)}&text=${encodeURIComponent(`Регистрация команды на ${tournament.name}`)}`,
+      href: `https://t.me/share/url?url=${encodeURIComponent(registerUrl)}&text=${encodeURIComponent(t("telegramText", { name: tournament.name }))}`,
     },
     {
       icon: Mail,
-      label: "Email",
-      desc: "Отправить приглашение по email",
+      label: t("channelEmail"),
+      desc: t("shareViaEmail"),
       color: "#6366F1",
-      href: `mailto:?subject=${encodeURIComponent(`Приглашение: ${tournament.name}`)}&body=${encodeURIComponent(`Здравствуйте!\n\nПриглашаем вашу команду принять участие в турнире ${tournament.name}.\n\nЗарегистрируйтесь здесь: ${registerUrl}`)}`,
+      href: `mailto:?subject=${encodeURIComponent(t("emailSubject", { name: tournament.name }))}&body=${encodeURIComponent(t("emailBody", { name: tournament.name, url: registerUrl }))}`,
     },
   ];
 
@@ -115,6 +130,9 @@ export default async function TournamentOverviewPage({ params }: Props) {
           <ExternalLink className="w-3.5 h-3.5" /> {t("tournamentPage")}
         </Link>
       </div>
+
+      {/* ── Setup checklist (hidden when all done) ── */}
+      <TournamentSetupChecklist steps={checklistSteps} basePath={basePath} />
 
       {/* ── Media: cover + logo ── */}
       <TournamentMediaUpload
@@ -153,13 +171,13 @@ export default async function TournamentOverviewPage({ params }: Props) {
             <Megaphone className="w-4.5 h-4.5" style={{ color: "var(--cat-accent)" }} />
           </div>
           <div>
-            <h2 className="text-sm font-black th-text">Пригласить команды</h2>
-            <p className="text-[11px] th-text-2">Поделитесь ссылкой — тренеры зарегистрируются сами</p>
+            <h2 className="text-sm font-black th-text">{t("inviteTeams")}</h2>
+            <p className="text-[11px] th-text-2">{t("inviteTeamsDesc")}</p>
           </div>
           {tournament.registrationOpen && (
             <span className="ml-auto flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
               style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)", border: "1px solid var(--cat-badge-open-border)" }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" /> ОТКРЫТА
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" /> {t("registrationOpen")}
             </span>
           )}
         </div>
@@ -168,7 +186,7 @@ export default async function TournamentOverviewPage({ params }: Props) {
           {/* Registration link */}
           <div>
             <p className="text-[11px] font-black uppercase tracking-widest mb-2 th-text-2">
-              Ссылка на регистрацию
+              {t("registrationLinkLabel")}
             </p>
             <div className="flex items-center gap-2">
               <div className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-mono truncate"
@@ -180,7 +198,7 @@ export default async function TournamentOverviewPage({ params }: Props) {
               <a href={registerUrl} target="_blank"
                 className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[12px] font-bold border transition-all hover:opacity-80"
                 style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)", color: "var(--cat-accent)" }}>
-                <ExternalLink className="w-3.5 h-3.5" /> Открыть
+                <ExternalLink className="w-3.5 h-3.5" /> {t("open")}
               </a>
             </div>
           </div>
@@ -188,7 +206,7 @@ export default async function TournamentOverviewPage({ params }: Props) {
           {/* Share channels */}
           <div>
             <p className="text-[11px] font-black uppercase tracking-widest mb-2 th-text-2">
-              Поделиться
+              {t("shareLabel")}
             </p>
             <div className="grid grid-cols-3 gap-2">
               {inviteChannels.map(ch => (
@@ -206,8 +224,8 @@ export default async function TournamentOverviewPage({ params }: Props) {
           <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "var(--cat-tag-bg)" }}>
             <QrCode className="w-8 h-8 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
             <div>
-              <p className="text-[12px] font-bold th-text">QR-код для распечатки</p>
-              <p className="text-[10px] th-text-2">Скоро: генерация QR-кода для флаеров и стендов турнира</p>
+              <p className="text-[12px] font-bold th-text">{t("qrCode")}</p>
+              <p className="text-[10px] th-text-2">{t("qrCodeSoon")}</p>
             </div>
           </div>
 
@@ -215,15 +233,15 @@ export default async function TournamentOverviewPage({ params }: Props) {
           <div className="grid grid-cols-3 gap-3 pt-1" style={{ borderTop: "1px solid var(--cat-divider)" }}>
             <div className="text-center">
               <p className="text-xl font-black th-text">{Number(clubCount?.value ?? 0)}</p>
-              <p className="text-[10px] th-text-2">клубов</p>
+              <p className="text-[10px] th-text-2">{t("clubsLabel")}</p>
             </div>
             <div className="text-center">
               <p className="text-xl font-black" style={{ color: "var(--cat-accent)" }}>{Number(teamCount?.value ?? 0)}</p>
-              <p className="text-[10px] th-text-2">команд</p>
+              <p className="text-[10px] th-text-2">{t("teamsLabel")}</p>
             </div>
             <div className="text-center">
               <p className="text-xl font-black th-text">{Number(paymentSum?.value ?? 0) > 0 ? `${Number(paymentSum?.value ?? 0).toFixed(0)}€` : "—"}</p>
-              <p className="text-[10px] th-text-2">сборов</p>
+              <p className="text-[10px] th-text-2">{t("collectedLabel")}</p>
             </div>
           </div>
         </div>

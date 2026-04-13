@@ -4,7 +4,7 @@ import { useTournamentPublic } from "@/lib/tournament-public-context";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
-import { Clock, MapPin, Zap, CheckCircle, CalendarDays, Loader2 } from "lucide-react";
+import { Clock, MapPin, Zap, CheckCircle, CalendarDays, Loader2, ExternalLink, Navigation } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────
 
@@ -19,7 +19,15 @@ interface PublicMatch {
   awayScore?: number | null;
   homeTeam?: { name: string; club?: { badgeUrl?: string | null } | null } | null;
   awayTeam?: { name: string; club?: { badgeUrl?: string | null } | null } | null;
-  field?: { name: string } | null;
+  field?: {
+    name: string;
+    stadiumId?: number | null;
+    stadium?: {
+      name: string;
+      mapsUrl?: string | null;
+      wazeUrl?: string | null;
+    } | null;
+  } | null;
   stage?: { name: string; nameRu?: string | null } | null;
   group?: { name: string } | null;
   round?: { name: string; shortName?: string | null } | null;
@@ -112,16 +120,37 @@ function MatchCard({ match, locale, tFinished, tGroup }: {
             <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>#{match.matchNumber}</span>
           )}
         </div>
-        <div className="flex items-center gap-3 text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+        <div className="flex items-center gap-2 text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
           {match.scheduledAt && !isLive && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 shrink-0">
               <Clock className="w-3 h-3" />{fmtTime(match.scheduledAt, locale)}
             </span>
           )}
           {match.field && (
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3 h-3" />{match.field.name}
+            <span className="flex items-center gap-1 shrink-0">
+              <MapPin className="w-3 h-3" />
+              {match.field.stadium
+                ? `${match.field.stadium.name} — ${match.field.name}`
+                : match.field.name}
             </span>
+          )}
+          {match.field?.stadium?.mapsUrl && (
+            <a href={match.field.stadium.mapsUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg font-bold shrink-0 transition-all hover:opacity-80"
+              style={{ background: "rgba(66,133,244,0.15)", color: "#4285f4", border: "1px solid rgba(66,133,244,0.25)" }}
+              onClick={e => e.stopPropagation()}>
+              <ExternalLink className="w-2.5 h-2.5" />
+              <span className="text-[10px]">Maps</span>
+            </a>
+          )}
+          {match.field?.stadium?.wazeUrl && (
+            <a href={match.field.stadium.wazeUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg font-bold shrink-0 transition-all hover:opacity-80"
+              style={{ background: "rgba(0,211,136,0.12)", color: "#00d388", border: "1px solid rgba(0,211,136,0.2)" }}
+              onClick={e => e.stopPropagation()}>
+              <Navigation className="w-2.5 h-2.5" />
+              <span className="text-[10px]">Waze</span>
+            </a>
           )}
         </div>
       </div>

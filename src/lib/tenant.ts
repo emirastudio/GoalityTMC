@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { organizations, tournaments } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { type TokenPayload } from "./auth";
 
 /**
@@ -66,7 +66,10 @@ export async function getOrgTournament(tournamentId: number, organizationId: num
  */
 export async function getOrgTournaments(organizationId: number) {
   return db.query.tournaments.findMany({
-    where: eq(tournaments.organizationId, organizationId),
+    where: and(
+      eq(tournaments.organizationId, organizationId),
+      isNull(tournaments.deletedAt),
+    ),
     orderBy: (t, { desc }) => [desc(t.createdAt)],
   });
 }

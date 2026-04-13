@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import {
   teams,
+  tournamentRegistrations,
   packageAssignments,
   servicePackages,
   accommodationOptions,
@@ -11,7 +12,7 @@ import {
   teamServiceOverrides,
   teamBookings,
 } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 
 async function authorizeTeam(teamId: number, clubId: number) {
@@ -42,9 +43,22 @@ export async function GET(
     return NextResponse.json({ error: "Team not found" }, { status: 404 });
   }
 
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
+  const tournamentId = registration.tournamentId;
+
   // Check if package has been assigned AND published
   const assignment = await db.query.packageAssignments.findFirst({
-    where: eq(packageAssignments.teamId, tid),
+    where: eq(packageAssignments.registrationId, registration.id),
   });
 
   if (!assignment || !assignment.isPublished) {
@@ -55,8 +69,6 @@ export async function GET(
   const pkg = await db.query.servicePackages.findFirst({
     where: eq(servicePackages.id, assignment.packageId),
   });
-
-  const tournamentId = team.tournamentId;
 
   // All service types are always included (old per-package flags were removed)
   const includeAccommodation = true;
@@ -71,7 +83,7 @@ export async function GET(
   });
 
   // Load service options — filtered by package flags
-  const [meals, transfers, registration] = await Promise.all([
+  const [meals, transfers, registrationFee] = await Promise.all([
     includeMeals
       ? db.query.extraMealOptions.findMany({
           where: eq(extraMealOptions.tournamentId, tournamentId),
@@ -93,12 +105,12 @@ export async function GET(
 
   // Load team-level overrides (custom prices or disabled options)
   const overrides = await db.query.teamServiceOverrides.findMany({
-    where: eq(teamServiceOverrides.teamId, tid),
+    where: eq(teamServiceOverrides.registrationId, registration.id),
   });
 
-  // Load existing bookings for this team
+  // Load existing bookings for this registration
   const bookings = await db.query.teamBookings.findMany({
-    where: eq(teamBookings.teamId, tid),
+    where: eq(teamBookings.registrationId, registration.id),
   });
 
   return NextResponse.json({
@@ -106,7 +118,7 @@ export async function GET(
     accommodation,
     meals,
     transfers,
-    registration: registration ?? null,
+    registration: registrationFee ?? null,
     bookings,
     overrides,
     freeSlots: {
@@ -117,12 +129,12 @@ export async function GET(
     },
     // Данные из квеста проживания (для автозаполнения)
     questData: {
-      players: team.accomPlayers ?? 0,
-      staff: team.accomStaff ?? 0,
-      accompanying: team.accomAccompanying ?? 0,
-      checkIn: team.accomCheckIn ?? null,
-      checkOut: team.accomCheckOut ?? null,
-      confirmed: team.accomConfirmed ?? false,
+      players: registration.accomPlayers ?? 0,
+      staff: registration.accomStaff ?? 0,
+      accompanying: registration.accomAccompanying ?? 0,
+      checkIn: registration.accomCheckIn ?? null,
+      checkOut: registration.accomCheckOut ?? null,
+      confirmed: registration.accomConfirmed ?? false,
     },
   });
 }
@@ -146,6 +158,17 @@ export async function POST(
     return NextResponse.json({ error: "Team not found" }, { status: 404 });
   }
 
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
   const body: {
     bookings: {
       bookingType: "accommodation" | "meal" | "transfer" | "registration" | "custom";
@@ -162,11 +185,11 @@ export async function POST(
 
   // Delete existing bookings and insert new ones atomically
   await db.transaction(async (tx) => {
-    await tx.delete(teamBookings).where(eq(teamBookings.teamId, tid));
+    await tx.delete(teamBookings).where(eq(teamBookings.registrationId, registration.id));
 
     if (body.bookings.length > 0) {
       const rows = body.bookings.map((b) => ({
-        teamId: tid,
+        registrationId: registration.id,
         bookingType: b.bookingType,
         serviceId: b.serviceId,
         quantity: b.quantity,
@@ -180,7 +203,7 @@ export async function POST(
   });
 
   const saved = await db.query.teamBookings.findMany({
-    where: eq(teamBookings.teamId, tid),
+    where: eq(teamBookings.registrationId, registration.id),
   });
 
   return NextResponse.json({ ok: true, bookings: saved });

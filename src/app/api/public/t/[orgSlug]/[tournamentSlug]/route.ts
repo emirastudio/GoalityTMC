@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organizations, tournaments, tournamentClasses, clubs, teams } from "@/db/schema";
-import { eq, and, count } from "drizzle-orm";
+import { organizations, tournaments, tournamentClasses, teams, tournamentRegistrations } from "@/db/schema";
+import { eq, and, count, sql } from "drizzle-orm";
 
 export async function GET(
   _req: NextRequest,
@@ -27,24 +27,25 @@ export async function GET(
     orderBy: (c, { asc }) => [asc(c.minBirthYear)],
   });
 
-  // Count registered clubs and teams
+  // Count registered clubs and teams via tournamentRegistrations
   const [clubCount] = await db
-    .select({ count: count() })
-    .from(clubs)
-    .where(eq(clubs.tournamentId, tournament.id));
+    .select({ count: sql<number>`COUNT(DISTINCT ${teams.clubId})` })
+    .from(tournamentRegistrations)
+    .innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
+    .where(eq(tournamentRegistrations.tournamentId, tournament.id));
 
   const [teamCount] = await db
     .select({ count: count() })
-    .from(teams)
-    .where(and(eq(teams.tournamentId, tournament.id)));
+    .from(tournamentRegistrations)
+    .where(eq(tournamentRegistrations.tournamentId, tournament.id));
 
   // Per-class team counts
   const classesWithCounts = await Promise.all(
     classes.map(async (cls) => {
       const [tc] = await db
         .select({ count: count() })
-        .from(teams)
-        .where(and(eq(teams.tournamentId, tournament.id), eq(teams.classId, cls.id)));
+        .from(tournamentRegistrations)
+        .where(and(eq(tournamentRegistrations.tournamentId, tournament.id), eq(tournamentRegistrations.classId, cls.id)));
       return {
         id: cls.id,
         name: cls.name,

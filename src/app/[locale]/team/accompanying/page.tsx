@@ -14,6 +14,8 @@ export default function AccompanyingPage() {
 
   const fetchPersons = useCallback(async () => {
     if (!teamId) return;
+    setPersons([]);
+    setLoading(true);
     const res = await fetch(`/api/teams/${teamId}/people?type=accompanying`);
     if (res.ok) setPersons(await res.json());
     setLoading(false);

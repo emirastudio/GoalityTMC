@@ -41,7 +41,7 @@
 }
 
 html {
-  font-size: 17px;
+  font-size: 18px;
 }
 
 body {
@@ -105,7 +105,25 @@ body {
     radial-gradient(ellipse at 90% 100%, rgba(99,102,241,0.025) 0%, transparent 50%),
     var(--cat-bg);
 }
-/* Премиум карточка с тонким свечением акцента сверху */
+/* ── Safe-area / PWA utilities ─────────────────────────────────────────────── */
+.safe-area-pb  { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-area-pt  { padding-top:    env(safe-area-inset-top,    0px); }
+.safe-area-pl  { padding-left:   env(safe-area-inset-left,   0px); }
+.safe-area-pr  { padding-right:  env(safe-area-inset-right,  0px); }
+
+/* Bottom nav height + safe area: 64px nav + notch */
+.mobile-nav-offset { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+
+/* Smooth momentum scrolling on iOS */
+.scroll-smooth-ios { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+
+/* Touch-friendly min tap targets */
+.touch-target { min-height: 44px; min-width: 44px; }
+
+/* Prevent pull-to-refresh interfering with swipe drawers */
+.overscroll-none { overscroll-behavior: none; }
+
+/* ── Премиум карточка с тонким свечением акцента сверху ─────────────────── */
 .premium-card {
   position: relative;
   overflow: hidden;

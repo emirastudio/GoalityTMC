@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, type ChangeEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useAdminFetch } from "@/lib/tournament-context";
 import { LangTabs, type Lang } from "@/components/admin/lang-tabs";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -118,12 +119,12 @@ function SectionTab({
   );
 }
 
-function SavedBadge({ visible }: { visible: boolean }) {
+function SavedBadge({ visible, label }: { visible: boolean; label: string }) {
   if (!visible) return null;
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
       <Check className="w-3.5 h-3.5" />
-      Saved!
+      {label}
     </span>
   );
 }
@@ -131,9 +132,11 @@ function SavedBadge({ visible }: { visible: boolean }) {
 function DeleteConfirm({
   onConfirm,
   onCancel,
+  label,
 }: {
   onConfirm: () => void;
   onCancel: () => void;
+  label: string;
 }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -142,7 +145,7 @@ function DeleteConfirm({
         onClick={onConfirm}
         className="text-xs text-error font-medium cursor-pointer hover:underline"
       >
-        Are you sure?
+        {label}
       </button>
       <button
         type="button"
@@ -158,6 +161,7 @@ function DeleteConfirm({
 /* ═══════════════════════════════════════════ ACCOMMODATION TAB */
 
 function AccommodationTab() {
+  const t = useTranslations("orgAdmin.svc");
   const adminFetch = useAdminFetch();
   const [items, setItems] = useState<AccommodationOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -269,12 +273,12 @@ function AccommodationTab() {
     <Card padding={false}>
       <div className="p-6 border-b th-border flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <CardTitle>Accommodation</CardTitle>
-          <SavedBadge visible={saved} />
+          <CardTitle>{t("accommodation")}</CardTitle>
+          <SavedBadge visible={saved} label={t("saved")} />
         </div>
         {editId === null && (
           <Button size="sm" onClick={openNew}>
-            <Plus className="w-4 h-4" /> Add option
+            <Plus className="w-4 h-4" /> {t("addOption")}
           </Button>
         )}
       </div>
@@ -289,33 +293,33 @@ function AccommodationTab() {
         <div className="p-6 border-b th-border th-bg/40">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-semibold th-text">
-              {editId === "new" ? "Add option" : "Edit option"}
+              {editId === "new" ? t("addOption") : t("editOption")}
             </p>
             <LangTabs lang={lang} onChange={setLang} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {lang === "en" ? (
-              <Input id="acc-name" label="Name" value={form.name}
+              <Input id="acc-name" label={t("name")} value={form.name}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setField("name", e.target.value)} />
             ) : (
-              <Input id="acc-nameRu" label="Name" value={form.nameRu}
-                placeholder="Leave empty to use English"
+              <Input id="acc-nameRu" label={t("name")} value={form.nameRu}
+                placeholder={t("leaveEmpty")}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setField("nameRu", e.target.value)} />
             )}
-            <Input id="acc-checkIn" label="Check-in" type="date" value={form.checkIn}
+            <Input id="acc-checkIn" label={t("checkIn")} type="date" value={form.checkIn}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setField("checkIn", e.target.value)} />
-            <Input id="acc-checkOut" label="Check-out" type="date" value={form.checkOut}
+            <Input id="acc-checkOut" label={t("checkOut")} type="date" value={form.checkOut}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setField("checkOut", e.target.value)} />
-            <Input id="acc-pricePlayer" label="Price/Player" type="number" step="0.01"
+            <Input id="acc-pricePlayer" label={t("pricePlayer")} type="number" step="0.01"
               value={form.pricePerPlayer} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("pricePerPlayer", e.target.value)} />
-            <Input id="acc-priceStaff" label="Price/Staff" type="number" step="0.01"
+            <Input id="acc-priceStaff" label={t("priceStaff")} type="number" step="0.01"
               value={form.pricePerStaff} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("pricePerStaff", e.target.value)} />
-            <Input id="acc-priceAccomp" label="Price/Accompanying" type="number" step="0.01"
+            <Input id="acc-priceAccomp" label={t("priceAccompanying")} type="number" step="0.01"
               value={form.pricePerAccompanying}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setField("pricePerAccompanying", e.target.value)} />
             <div className="space-y-1.5">
               <label className="block text-sm font-medium th-text">
-                Meals included in package
+                {t("mealsIncluded")}
               </label>
               <input
                 type="number"
@@ -326,18 +330,18 @@ function AccommodationTab() {
               />
             </div>
             {lang === "en" ? (
-              <Input id="acc-mealNote" label="Meal note" value={form.mealNote}
+              <Input id="acc-mealNote" label={t("mealNote")} value={form.mealNote}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setField("mealNote", e.target.value)} />
             ) : (
-              <Input id="acc-mealNoteRu" label="Meal note" value={form.mealNoteRu}
-                placeholder="Leave empty to use English"
+              <Input id="acc-mealNoteRu" label={t("mealNote")} value={form.mealNoteRu}
+                placeholder={t("leaveEmpty")}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setField("mealNoteRu", e.target.value)} />
             )}
           </div>
           <div className="mt-4 flex items-center gap-2">
             <Button onClick={saveForm} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Save
+              {t("save")}
             </Button>
             <Button variant="secondary" onClick={cancelEdit} disabled={saving}>
               <X className="w-4 h-4" />
@@ -351,7 +355,7 @@ function AccommodationTab() {
           <table className="w-full">
             <thead>
               <tr className="border-b th-border text-left">
-                {["Name", "Name (RU)", "Check-in", "Check-out", "€/Player", "€/Staff", "€/Accompanying", "Meals", ""].map((h, i) => (
+                {[t("name"), t("nameRu"), t("checkIn"), t("checkOut"), t("pricePlayer"), t("priceStaff"), t("priceAccompanying"), t("mealsCol"), ""].map((h, i) => (
                   <th key={i} className="px-4 py-3 text-xs font-medium th-text-2 uppercase whitespace-nowrap">
                     {h}
                   </th>
@@ -372,7 +376,7 @@ function AccommodationTab() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">
                       {deleteId === item.id ? (
-                        <DeleteConfirm onConfirm={() => doDelete(item.id)} onCancel={() => setDeleteId(null)} />
+                        <DeleteConfirm onConfirm={() => doDelete(item.id)} onCancel={() => setDeleteId(null)} label={t("deleteConfirm")} />
                       ) : (
                         <>
                           <button type="button" onClick={() => openEdit(item)}
@@ -396,7 +400,7 @@ function AccommodationTab() {
         !editId && (
           <div className="text-center py-12 th-text-2 text-sm">
             <Hotel className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            No options yet
+            {t("noOptionsYet")}
           </div>
         )
       )}
@@ -407,6 +411,7 @@ function AccommodationTab() {
 /* ═══════════════════════════════════════════ MEALS TAB */
 
 function MealsTab() {
+  const t = useTranslations("orgAdmin.svc");
   const adminFetch = useAdminFetch();
   const [items, setItems] = useState<MealOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -490,11 +495,11 @@ function MealsTab() {
     <Card padding={false}>
       <div className="p-6 border-b th-border flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <CardTitle>Extra Meals</CardTitle>
-          <SavedBadge visible={saved} />
+          <CardTitle>{t("meals")}</CardTitle>
+          <SavedBadge visible={saved} label={t("saved")} />
         </div>
         {editId === null && (
-          <Button size="sm" onClick={openNew}><Plus className="w-4 h-4" /> Add option</Button>
+          <Button size="sm" onClick={openNew}><Plus className="w-4 h-4" /> {t("addOption")}</Button>
         )}
       </div>
 
@@ -506,36 +511,36 @@ function MealsTab() {
         <div className="p-6 border-b th-border th-bg/40">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-semibold th-text">
-              {editId === "new" ? "Add option" : "Edit option"}
+              {editId === "new" ? t("addOption") : t("editOption")}
             </p>
             <LangTabs lang={lang} onChange={setLang} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {lang === "en" ? (
-              <Input id="meal-name" label="Name" value={form.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("name", e.target.value)} />
+              <Input id="meal-name" label={t("name")} value={form.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("name", e.target.value)} />
             ) : (
-              <Input id="meal-nameRu" label="Name" value={form.nameRu} placeholder="Leave empty to use English" onChange={(e: ChangeEvent<HTMLInputElement>) => setField("nameRu", e.target.value)} />
+              <Input id="meal-nameRu" label={t("name")} value={form.nameRu} placeholder={t("leaveEmpty")} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("nameRu", e.target.value)} />
             )}
             {lang === "en" ? (
-              <Input id="meal-desc" label="Description" value={form.description} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("description", e.target.value)} />
+              <Input id="meal-desc" label={t("description")} value={form.description} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("description", e.target.value)} />
             ) : (
-              <Input id="meal-descRu" label="Description" value={form.descriptionRu} placeholder="Leave empty to use English" onChange={(e: ChangeEvent<HTMLInputElement>) => setField("descriptionRu", e.target.value)} />
+              <Input id="meal-descRu" label={t("description")} value={form.descriptionRu} placeholder={t("leaveEmpty")} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("descriptionRu", e.target.value)} />
             )}
-            <Input id="meal-price" label="Price/Person" type="number" step="0.01"
+            <Input id="meal-price" label={t("pricePerPerson")} type="number" step="0.01"
               value={form.pricePerPerson} onChange={(e) => setField("pricePerPerson", e.target.value)} />
             <div className="flex items-center gap-3 pt-6">
               <input type="checkbox" id="meal-perDay" checked={form.perDay}
                 onChange={(e) => setField("perDay", e.target.checked)}
                 className="accent-navy w-4 h-4" />
               <label htmlFor="meal-perDay" className="text-sm font-medium th-text cursor-pointer">
-                Per day
+                {t("perDay")}
               </label>
             </div>
           </div>
           <div className="mt-4 flex items-center gap-2">
             <Button onClick={saveForm} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Save
+              {t("save")}
             </Button>
             <Button variant="secondary" onClick={cancelEdit} disabled={saving}><X className="w-4 h-4" /></Button>
           </div>
@@ -547,7 +552,7 @@ function MealsTab() {
           <table className="w-full">
             <thead>
               <tr className="border-b th-border text-left">
-                {["Name", "Name (RU)", "Price/Person", "Per day", ""].map((h, i) => (
+                {[t("name"), t("nameRu"), t("pricePerPerson"), t("perDay"), ""].map((h, i) => (
                   <th key={i} className="px-4 py-3 text-xs font-medium th-text-2 uppercase whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -564,7 +569,7 @@ function MealsTab() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">
                       {deleteId === item.id ? (
-                        <DeleteConfirm onConfirm={() => doDelete(item.id)} onCancel={() => setDeleteId(null)} />
+                        <DeleteConfirm onConfirm={() => doDelete(item.id)} onCancel={() => setDeleteId(null)} label={t("deleteConfirm")} />
                       ) : (
                         <>
                           <button type="button" onClick={() => openEdit(item)}
@@ -588,7 +593,7 @@ function MealsTab() {
         !editId && (
           <div className="text-center py-12 th-text-2 text-sm">
             <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            No options yet
+            {t("noOptionsYet")}
           </div>
         )
       )}
@@ -599,6 +604,7 @@ function MealsTab() {
 /* ═══════════════════════════════════════════ TRANSFERS TAB */
 
 function TransfersTab() {
+  const t = useTranslations("orgAdmin.svc");
   const adminFetch = useAdminFetch();
   const [items, setItems] = useState<TransferOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -682,11 +688,11 @@ function TransfersTab() {
     <Card padding={false}>
       <div className="p-6 border-b th-border flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <CardTitle>Transfers</CardTitle>
-          <SavedBadge visible={saved} />
+          <CardTitle>{t("transfers")}</CardTitle>
+          <SavedBadge visible={saved} label={t("saved")} />
         </div>
         {editId === null && (
-          <Button size="sm" onClick={openNew}><Plus className="w-4 h-4" /> Add option</Button>
+          <Button size="sm" onClick={openNew}><Plus className="w-4 h-4" /> {t("addOption")}</Button>
         )}
       </div>
 
@@ -698,28 +704,28 @@ function TransfersTab() {
         <div className="p-6 border-b th-border th-bg/40">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-semibold th-text">
-              {editId === "new" ? "Add option" : "Edit option"}
+              {editId === "new" ? t("addOption") : t("editOption")}
             </p>
             <LangTabs lang={lang} onChange={setLang} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {lang === "en" ? (
-              <Input id="tr-name" label="Name" value={form.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("name", e.target.value)} />
+              <Input id="tr-name" label={t("name")} value={form.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("name", e.target.value)} />
             ) : (
-              <Input id="tr-nameRu" label="Name" value={form.nameRu} placeholder="Leave empty to use English" onChange={(e: ChangeEvent<HTMLInputElement>) => setField("nameRu", e.target.value)} />
+              <Input id="tr-nameRu" label={t("name")} value={form.nameRu} placeholder={t("leaveEmpty")} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("nameRu", e.target.value)} />
             )}
             {lang === "en" ? (
-              <Input id="tr-desc" label="Description" value={form.description} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("description", e.target.value)} />
+              <Input id="tr-desc" label={t("description")} value={form.description} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("description", e.target.value)} />
             ) : (
-              <Input id="tr-descRu" label="Description" value={form.descriptionRu} placeholder="Leave empty to use English" onChange={(e: ChangeEvent<HTMLInputElement>) => setField("descriptionRu", e.target.value)} />
+              <Input id="tr-descRu" label={t("description")} value={form.descriptionRu} placeholder={t("leaveEmpty")} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("descriptionRu", e.target.value)} />
             )}
-            <Input id="tr-price" label="Price/Team" type="number" step="0.01"
+            <Input id="tr-price" label={t("pricePerTeam")} type="number" step="0.01"
               value={form.pricePerPerson} onChange={(e) => setField("pricePerPerson", e.target.value)} />
           </div>
           <div className="mt-4 flex items-center gap-2">
             <Button onClick={saveForm} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Save
+              {t("save")}
             </Button>
             <Button variant="secondary" onClick={cancelEdit} disabled={saving}><X className="w-4 h-4" /></Button>
           </div>
@@ -731,7 +737,7 @@ function TransfersTab() {
           <table className="w-full">
             <thead>
               <tr className="border-b th-border text-left">
-                {["Name", "Name (RU)", "Description", "Price/Team", ""].map((h, i) => (
+                {[t("name"), t("nameRu"), t("description"), t("pricePerTeam"), ""].map((h, i) => (
                   <th key={i} className="px-4 py-3 text-xs font-medium th-text-2 uppercase whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -746,7 +752,7 @@ function TransfersTab() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">
                       {deleteId === item.id ? (
-                        <DeleteConfirm onConfirm={() => doDelete(item.id)} onCancel={() => setDeleteId(null)} />
+                        <DeleteConfirm onConfirm={() => doDelete(item.id)} onCancel={() => setDeleteId(null)} label={t("deleteConfirm")} />
                       ) : (
                         <>
                           <button type="button" onClick={() => openEdit(item)}
@@ -770,7 +776,7 @@ function TransfersTab() {
         !editId && (
           <div className="text-center py-12 th-text-2 text-sm">
             <Car className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            No options yet
+            {t("noOptionsYet")}
           </div>
         )
       )}
@@ -781,6 +787,7 @@ function TransfersTab() {
 /* ═══════════════════════════════════════════ REGISTRATION FEE TAB */
 
 function RegistrationTab() {
+  const t = useTranslations("orgAdmin.svc");
   const adminFetch = useAdminFetch();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -834,8 +841,8 @@ function RegistrationTab() {
   return (
     <Card>
       <div className="flex items-center gap-3 mb-6">
-        <CardTitle>Registration Fee</CardTitle>
-        <SavedBadge visible={saved} />
+        <CardTitle>{t("registrationFee")}</CardTitle>
+        <SavedBadge visible={saved} label={t("saved")} />
       </div>
 
       {error && (
@@ -843,16 +850,16 @@ function RegistrationTab() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-xl">
-        <Input id="reg-name" label="Name" value={form.name} onChange={(e) => setField("name", e.target.value)} />
-        <Input id="reg-nameRu" label="Name (RU)" value={form.nameRu} onChange={(e) => setField("nameRu", e.target.value)} />
-        <Input id="reg-price" label="Price (€)" type="number" step="0.01"
+        <Input id="reg-name" label={t("name")} value={form.name} onChange={(e) => setField("name", e.target.value)} />
+        <Input id="reg-nameRu" label={t("nameRu")} value={form.nameRu} onChange={(e) => setField("nameRu", e.target.value)} />
+        <Input id="reg-price" label={t("price")} type="number" step="0.01"
           value={form.price} onChange={(e) => setField("price", e.target.value)} />
         <div className="flex items-center gap-3 pt-6">
           <input type="checkbox" id="reg-required" checked={form.isRequired}
             onChange={(e) => setField("isRequired", e.target.checked)}
             className="accent-navy w-4 h-4" />
           <label htmlFor="reg-required" className="text-sm font-medium th-text cursor-pointer">
-            Required
+            {t("required")}
           </label>
         </div>
       </div>
@@ -860,7 +867,7 @@ function RegistrationTab() {
       <div className="mt-6">
         <Button onClick={saveForm} disabled={saving}>
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          Save
+          {t("save")}
         </Button>
       </div>
     </Card>
@@ -870,17 +877,18 @@ function RegistrationTab() {
 /* ═══════════════════════════════════════════ PAGE */
 
 export function ServicesPageContent() {
+  const t = useTranslations("orgAdmin.svc");
   const [tab, setTab] = useState<Tab>("accommodation");
 
   return (
     <div className="space-y-6 w-full">
-      <h1 className="text-2xl font-bold th-text">Services & Pricing</h1>
+      <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
 
       <div className="flex flex-wrap gap-2">
-        <SectionTab active={tab === "accommodation"} onClick={() => setTab("accommodation")} icon={Hotel} label="Accommodation" />
-        <SectionTab active={tab === "meals"} onClick={() => setTab("meals")} icon={UtensilsCrossed} label="Extra Meals" />
-        <SectionTab active={tab === "transfers"} onClick={() => setTab("transfers")} icon={Car} label="Transfers" />
-        <SectionTab active={tab === "registration"} onClick={() => setTab("registration")} icon={BadgeDollarSign} label="Registration Fee" />
+        <SectionTab active={tab === "accommodation"} onClick={() => setTab("accommodation")} icon={Hotel} label={t("accommodation")} />
+        <SectionTab active={tab === "meals"} onClick={() => setTab("meals")} icon={UtensilsCrossed} label={t("meals")} />
+        <SectionTab active={tab === "transfers"} onClick={() => setTab("transfers")} icon={Car} label={t("transfers")} />
+        <SectionTab active={tab === "registration"} onClick={() => setTab("registration")} icon={BadgeDollarSign} label={t("registrationFee")} />
       </div>
 
       {tab === "accommodation" && <AccommodationTab />}

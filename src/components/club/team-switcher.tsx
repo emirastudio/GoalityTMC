@@ -11,11 +11,26 @@ type TeamSummary = {
   id: number;
   regNumber: number;
   name: string;
+  displayName: string | null;
+  birthYear: number | null;
+  gender: "male" | "female" | "mixed";
+  squadAlias: string;
   className: string;
   status: "draft" | "open" | "confirmed" | "cancelled";
   playersCount: number;
   staffCount: number;
 };
+
+const GENDER_ICON: Record<string, string> = { male: "♂", female: "♀", mixed: "⚥" };
+const GENDER_COLOR: Record<string, string> = { male: "#3B82F6", female: "#EC4899", mixed: "#8B5CF6" };
+
+function teamLabel(team: TeamSummary, clubName: string): string {
+  if (team.displayName) return team.displayName;
+  const parts = [clubName];
+  if (team.birthYear) parts.push(String(team.birthYear));
+  if (team.squadAlias) parts.push(team.squadAlias);
+  return parts.join(" ");
+}
 
 type ClassOption = {
   id: number;
@@ -138,11 +153,17 @@ export function TeamSwitcher({ clubName, clubBadgeUrl, clubId, teams, classes, d
             <div className="flex items-center gap-2">
               <span className={cn("w-2 h-2 rounded-full shrink-0", statusDot[activeTeam.status])} />
               <p className={cn("text-[13px] font-semibold flex-1 truncate", !dark && "th-text")} style={dark ? { color: "var(--cat-text)" } : undefined}>
-                {activeTeam.name || "—"}
+                {teamLabel(activeTeam, clubName)}
               </p>
               <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 transition-transform", !dark && "th-text-2", open && "rotate-180")} style={dark ? { color: "var(--cat-text-muted)" } : undefined} />
             </div>
-            <div className="flex items-center gap-3 mt-1 ml-4">
+            <div className="flex items-center gap-2 mt-1 ml-4 flex-wrap">
+              {activeTeam.birthYear && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                  style={{ background: `${GENDER_COLOR[activeTeam.gender]}18`, color: GENDER_COLOR[activeTeam.gender] }}>
+                  {activeTeam.birthYear} {GENDER_ICON[activeTeam.gender]}
+                </span>
+              )}
               <span className={cn("text-[11px] font-medium", !dark && "th-text-2")} style={dark ? { color: "var(--cat-text-muted)" } : undefined}>{activeTeam.className}</span>
               <span className={cn("text-[11px] flex items-center gap-0.5", !dark && "th-text-2")} style={dark ? { color: "var(--cat-text-muted)" } : undefined}>
                 <Users className="w-3 h-3" />&nbsp;{activeTeam.playersCount}
@@ -169,8 +190,20 @@ export function TeamSwitcher({ clubName, clubBadgeUrl, clubId, teams, classes, d
                 >
                   <span className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", statusDot[team.status])} />
                   <div className="flex-1 min-w-0">
-                    <p className={cn("text-[13px] font-medium truncate", !dark && "th-text")} style={dark ? { color: "var(--cat-text)" } : undefined}>{team.name}</p>
-                    <p className={cn("text-[11px]", !dark && "th-text-2")} style={dark ? { color: "var(--cat-text-muted)" } : undefined}>{team.className} · {t(team.status)}</p>
+                    <p className={cn("text-[13px] font-medium truncate", !dark && "th-text")} style={dark ? { color: "var(--cat-text)" } : undefined}>
+                      {teamLabel(team, clubName)}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      {team.birthYear && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                          style={{ background: `${GENDER_COLOR[team.gender]}18`, color: GENDER_COLOR[team.gender] }}>
+                          {team.birthYear} {GENDER_ICON[team.gender]}
+                        </span>
+                      )}
+                      <span className={cn("text-[11px]", !dark && "th-text-2")} style={dark ? { color: "var(--cat-text-muted)" } : undefined}>
+                        {team.className} · {t(team.status)}
+                      </span>
+                    </div>
                   </div>
                   {team.id === activeTeam?.id && (
                     <Check className={cn("w-3.5 h-3.5 shrink-0 mt-0.5", dark ? "text-mint" : "")} style={!dark ? { color: "var(--cat-accent)" } : undefined} />

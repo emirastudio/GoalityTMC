@@ -3,8 +3,8 @@
 import { Link } from "@/i18n/navigation";
 import { ThemeToggle } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
-import { ArrowRight } from "lucide-react";
 import { DevNavWidget } from "@/components/ui/dev-nav-widget";
+import { UserAvatarMenu } from "@/components/ui/user-avatar-menu";
 
 export type NavLink = { label: string; href: string; anchor?: boolean };
 
@@ -20,7 +20,7 @@ export function GlobalHeader({ navLinks = [], rightContent }: Props) {
       style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)" }}
     >
       {/* Centered inner container — 90% width, max 1400px */}
-      <div className="h-14 w-[90%] max-w-[1400px] mx-auto grid grid-cols-[auto_1fr_auto] items-center gap-6">
+      <div className="h-14 w-full px-4 md:w-[90%] md:px-0 max-w-[1400px] mx-auto grid grid-cols-[auto_1fr_auto] items-center gap-4 md:gap-6">
 
         {/* ── Left: Logo ── */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
@@ -96,25 +96,7 @@ export function PublicHeaderActions({
   getStartedLabel?: string;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <Link
-        href="/login"
-        className="hidden sm:block px-3 py-1.5 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70"
-        style={{ color: "var(--cat-text-secondary)" }}
-      >
-        {signInLabel}
-      </Link>
-      <Link
-        href="/onboarding"
-        className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90"
-        style={{
-          background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))",
-          color: "var(--cat-accent-text)",
-        }}
-      >
-        {getStartedLabel} <ArrowRight className="w-3.5 h-3.5" />
-      </Link>
-    </div>
+    <UserAvatarMenu signInLabel={signInLabel} getStartedLabel={getStartedLabel} />
   );
 }
 

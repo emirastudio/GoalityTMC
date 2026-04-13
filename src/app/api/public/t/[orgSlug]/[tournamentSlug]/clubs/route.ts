@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organizations, tournaments, clubs, teams } from "@/db/schema";
-import { eq, and, ilike, or, count } from "drizzle-orm";
+import { organizations, tournaments, clubs, teams, tournamentRegistrations } from "@/db/schema";
+import { eq, and, ilike, or, count, inArray } from "drizzle-orm";
 
 type Params = { params: Promise<{ orgSlug: string; tournamentSlug: string }> };
 
@@ -20,10 +20,30 @@ export async function GET(req: NextRequest, { params }: Params) {
     });
     if (!tournament) return NextResponse.json([]);
 
-    /* Search clubs by name or contact email in THIS tournament */
+    // Находим клубы, у которых есть регистрация в этом турнире
+    // Шаг 1: команды с регистрацией в турнире
+    const regs = await db
+      .select({ teamId: tournamentRegistrations.teamId })
+      .from(tournamentRegistrations)
+      .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+
+    if (regs.length === 0) return NextResponse.json([]);
+
+    const teamIds = regs.map((r) => r.teamId);
+
+    // Шаг 2: clubId из этих команд
+    const teamsInTournament = await db
+      .select({ clubId: teams.clubId })
+      .from(teams)
+      .where(inArray(teams.id, teamIds));
+
+    const clubIds = [...new Set(teamsInTournament.map((t) => t.clubId))];
+    if (clubIds.length === 0) return NextResponse.json([]);
+
+    // Шаг 3: поиск клубов по query
     const results = await db.query.clubs.findMany({
       where: and(
-        eq(clubs.tournamentId, tournament.id),
+        inArray(clubs.id, clubIds),
         or(
           ilike(clubs.name, `%${q}%`),
           ilike(clubs.contactEmail, `%${q}%`),
@@ -33,10 +53,22 @@ export async function GET(req: NextRequest, { params }: Params) {
       limit: 8,
     });
 
-    /* Enrich with team count */
+    // Шаг 4: обогащаем количеством команд в этом турнире
     const enriched = await Promise.all(results.map(async (club) => {
-      const [tc] = await db.select({ count: count() }).from(teams)
-        .where(and(eq(teams.tournamentId, tournament.id), eq(teams.clubId, club.id)));
+      const clubTeams = await db.select({ id: teams.id }).from(teams)
+        .where(eq(teams.clubId, club.id));
+      const clubTeamIds = clubTeams.map((t) => t.id);
+
+      let teamCount = 0;
+      if (clubTeamIds.length > 0) {
+        const [tc] = await db.select({ count: count() }).from(tournamentRegistrations)
+          .where(and(
+            eq(tournamentRegistrations.tournamentId, tournament.id),
+            inArray(tournamentRegistrations.teamId, clubTeamIds)
+          ));
+        teamCount = Number(tc?.count ?? 0);
+      }
+
       return {
         id: club.id,
         name: club.name,
@@ -44,7 +76,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         country: club.country,
         badgeUrl: club.badgeUrl,
         contactName: club.contactName,
-        teamCount: Number(tc?.count ?? 0),
+        isVerified: club.isVerified,
+        teamCount,
       };
     }));
 

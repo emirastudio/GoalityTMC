@@ -37,7 +37,7 @@ async function seed() {
       timezone: "Europe/Tallinn",
       defaultLocale: "en",
       currency: "EUR",
-      plan: "premium",
+      plan: "elite",
       contactEmail: "support@kingscup.ee",
       website: "https://kingscup.ee",
     })
@@ -166,7 +166,6 @@ async function seed() {
   const [club] = await db
     .insert(schema.clubs)
     .values({
-      tournamentId: tournament.id,
       name: "FC Infonet",
       country: "Estonia",
       city: "Tallinn",
@@ -184,20 +183,24 @@ async function seed() {
     accessLevel: "write",
   });
 
-  await db.insert(schema.teams).values([
+  const insertedTeams = await db.insert(schema.teams).values([
+    { clubId: club.id, name: "FC Infonet U12" },
+    { clubId: club.id, name: "FC Infonet U11" },
+  ]).returning();
+
+  // Register teams in the tournament
+  await db.insert(schema.tournamentRegistrations).values([
     {
+      teamId: insertedTeams[0]!.id,
       tournamentId: tournament.id,
-      clubId: club.id,
       classId: classes[0]!.id,
-      name: "FC Infonet U12",
       status: "open",
       regNumber: 10001,
     },
     {
+      teamId: insertedTeams[1]!.id,
       tournamentId: tournament.id,
-      clubId: club.id,
       classId: classes[1]!.id,
-      name: "FC Infonet U11",
       status: "draft",
       regNumber: 10002,
     },
@@ -216,7 +219,7 @@ async function seed() {
       timezone: "Europe/Riga",
       defaultLocale: "en",
       currency: "EUR",
-      plan: "basic",
+      plan: "starter",
       contactEmail: "info@balticleague.lv",
     })
     .returning();

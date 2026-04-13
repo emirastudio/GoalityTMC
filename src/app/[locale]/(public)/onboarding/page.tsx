@@ -7,8 +7,10 @@ import { signIn } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
-import { ArrowRight, Trophy, Users, CreditCard, ArrowLeft } from "lucide-react";
+import { ArrowRight, Trophy, Users, CreditCard, ArrowLeft, Tag, CheckCircle } from "lucide-react";
 import { PasswordStrengthInput, isPasswordValid } from "@/components/ui/password-strength-input";
+import { CountrySelect } from "@/components/ui/country-select";
+import { CityInput } from "@/components/ui/city-input";
 
 function GoogleIcon() {
   return (
@@ -38,6 +40,9 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordValid, setPasswordValid] = useState(false);
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+  const [orgType, setOrgType] = useState<"managed" | "listing" | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,8 +61,9 @@ export default function OnboardingPage() {
       name: form.get("name") as string,
       email: form.get("email") as string,
       password,
-      country: form.get("country") as string,
-      city: form.get("city") as string,
+      country,
+      city,
+      orgType: orgType ?? "managed",
     };
 
     // Client validation
@@ -80,8 +86,12 @@ export default function OnboardingPage() {
         return;
       }
 
-      // Redirect to org admin dashboard
-      router.push(`/org/${result.orgSlug}/admin`);
+      // Redirect based on org type
+      if (orgType === "listing") {
+        router.push(`/org/${result.orgSlug}/admin/listing`);
+      } else {
+        router.push(`/org/${result.orgSlug}/admin`);
+      }
     } catch {
       setError(t("somethingWentWrong"));
       setLoading(false);
@@ -193,13 +203,62 @@ export default function OnboardingPage() {
             <div className="w-full max-w-[440px]">
 
               {/* Heading */}
-              <div className="mb-8">
+              <div className="mb-6">
                 <h2 className="text-2xl font-black mb-1.5" style={{ color: "var(--cat-text)" }}>{t("title")}</h2>
                 <p className="text-[14px]" style={{ color: "var(--cat-text-secondary)" }}>{t("subtitle")}</p>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Type selector */}
+              <div className="mb-6">
+                <p className="text-[12px] font-semibold mb-3" style={{ color: "var(--cat-text-secondary)" }}>
+                  I want to:
+                </p>
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    {
+                      type: "managed" as const,
+                      icon: Trophy,
+                      title: "Manage tournament with Goality TMC",
+                      desc: "Registration, hotels, payments, schedules — full platform",
+                      color: "#2BFEBA",
+                    },
+                    {
+                      type: "listing" as const,
+                      icon: Tag,
+                      title: "List my tournament in the catalog",
+                      desc: "Simple listing page, SEO visibility — €4.99/month",
+                      color: "#8B5CF6",
+                    },
+                  ].map(option => {
+                    const selected = orgType === option.type;
+                    return (
+                      <button
+                        key={option.type}
+                        type="button"
+                        onClick={() => setOrgType(option.type)}
+                        className="flex items-start gap-3 px-4 py-3.5 rounded-xl border text-left transition-all"
+                        style={{
+                          background: selected ? option.color + "10" : "var(--cat-input-bg)",
+                          borderColor: selected ? option.color : "var(--cat-input-border)",
+                        }}
+                      >
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                          style={{ background: option.color + "20" }}>
+                          <option.icon className="w-4 h-4" style={{ color: option.color }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-bold" style={{ color: "var(--cat-text)" }}>{option.title}</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: "var(--cat-text-secondary)" }}>{option.desc}</p>
+                        </div>
+                        {selected && <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: option.color }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Form — only show after type selected */}
+              <form onSubmit={handleSubmit} className={`space-y-4 transition-all ${orgType ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
 
                 {/* Organization name */}
                 <div>
@@ -220,34 +279,21 @@ export default function OnboardingPage() {
 
                 {/* Country + City */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[12px] font-semibold mb-1.5" style={{ color: "var(--cat-text-secondary)" }}>
-                      {t("country")}
-                    </label>
-                    <input
-                      name="country"
-                      type="text"
-                      placeholder={t("countryPlaceholder")}
-                      className="w-full px-4 py-3 rounded-xl text-[14px] outline-none transition-all"
-                      style={{ background: "var(--cat-input-bg)", border: "1px solid var(--cat-input-border)", color: "var(--cat-text)" }}
-                      onFocus={e => e.currentTarget.style.borderColor = "var(--cat-accent)"}
-                      onBlur={e => e.currentTarget.style.borderColor = "var(--cat-input-border)"}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-semibold mb-1.5" style={{ color: "var(--cat-text-secondary)" }}>
-                      {t("city")}
-                    </label>
-                    <input
-                      name="city"
-                      type="text"
-                      placeholder={t("cityPlaceholder")}
-                      className="w-full px-4 py-3 rounded-xl text-[14px] outline-none transition-all"
-                      style={{ background: "var(--cat-input-bg)", border: "1px solid var(--cat-input-border)", color: "var(--cat-text)" }}
-                      onFocus={e => e.currentTarget.style.borderColor = "var(--cat-accent)"}
-                      onBlur={e => e.currentTarget.style.borderColor = "var(--cat-input-border)"}
-                    />
-                  </div>
+                  <CountrySelect
+                    value={country}
+                    onChange={setCountry}
+                    label={t("country")}
+                    placeholder={t("countryPlaceholder")}
+                    variant="onboarding"
+                  />
+                  <CityInput
+                    value={city}
+                    onChange={setCity}
+                    country={country}
+                    label={t("city")}
+                    placeholder={t("cityPlaceholder")}
+                    variant="onboarding"
+                  />
                 </div>
 
                 {/* Divider */}

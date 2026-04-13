@@ -6,7 +6,7 @@ import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
 import { slugify, isSlugAvailable } from "@/lib/tenant";
 
 export async function POST(req: NextRequest) {
-  const { orgName, name, email, password, country, city } = await req.json();
+  const { orgName, name, email, password, country, city, orgType } = await req.json();
 
   // Validation
   if (!orgName || !name || !email || !password) {
@@ -48,7 +48,8 @@ export async function POST(req: NextRequest) {
       country: country || null,
       city: city || null,
       contactEmail: email.toLowerCase(),
-    })
+      type: orgType === "listing" ? "listing" : "managed",
+    } as any)
     .returning();
 
   const [admin] = await db

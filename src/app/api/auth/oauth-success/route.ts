@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { clubUsers, clubs, tournaments, organizations, adminUsers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { clubUsers, clubs, tournaments, organizations, adminUsers, teams, tournamentRegistrations } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { createToken } from "@/lib/auth";
+import { sendWelcomeEmail } from "@/lib/email";
 
 function getLocale(req: NextRequest): string {
   const acceptLang = req.headers.get("accept-language") ?? "";
@@ -90,36 +91,53 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Club OAuth ───────────────────────────────────────────
-  const rows = await db
-    .select({
-      id: clubUsers.id,
-      clubId: clubUsers.clubId,
-      teamId: clubUsers.teamId,
-      organizationId: organizations.id,
-      organizationSlug: organizations.slug,
-    })
-    .from(clubUsers)
-    .innerJoin(clubs, eq(clubs.id, clubUsers.clubId))
-    .innerJoin(tournaments, eq(tournaments.id, clubs.tournamentId))
-    .innerJoin(organizations, eq(organizations.id, tournaments.organizationId))
-    .where(eq(clubUsers.email, email))
-    .limit(1);
+  const clubUserRow = await db.query.clubUsers.findFirst({
+    where: eq(clubUsers.email, email),
+  });
 
-  const clubUser = rows[0] ?? null;
+  const clubUser = clubUserRow ?? null;
 
   if (clubUser) {
+    // Find latest registration for any team belonging to this club
+    const latestReg = await db
+      .select({ tournamentId: tournamentRegistrations.tournamentId })
+      .from(tournamentRegistrations)
+      .innerJoin(teams, eq(teams.id, tournamentRegistrations.teamId))
+      .where(eq(teams.clubId, clubUser.clubId))
+      .orderBy(desc(tournamentRegistrations.id))
+      .limit(1);
+    const tournamentId = latestReg[0]?.tournamentId ?? undefined;
+
+    // Resolve organization from tournament
+    let organizationId: number | undefined;
+    let organizationSlug: string | undefined;
+    if (tournamentId) {
+      const tournament = await db.query.tournaments.findFirst({
+        where: eq(tournaments.id, tournamentId),
+      });
+      if (tournament?.organizationId) {
+        organizationId = tournament.organizationId;
+        const org = await db.query.organizations.findFirst({
+          where: eq(organizations.id, tournament.organizationId),
+        });
+        organizationSlug = org?.slug;
+      }
+    }
+
     const token = createToken({
       userId: clubUser.id,
       role: "club",
       clubId: clubUser.clubId,
       teamId: clubUser.teamId ?? undefined,
-      organizationId: clubUser.organizationId,
-      organizationSlug: clubUser.organizationSlug,
+      tournamentId,
+      organizationId,
+      organizationSlug,
     });
 
-    const response = NextResponse.redirect(
-      `${base}/${locale}/team/overview`
-    );
+    const destination = tournamentId
+      ? `/${locale}/team/overview`
+      : `/${locale}/club/dashboard`;
+    const response = NextResponse.redirect(`${base}${destination}`);
     response.cookies.set("goality_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -130,9 +148,50 @@ export async function GET(req: NextRequest) {
     return response;
   }
 
-  // New club user — redirect to registration
-  const params = new URLSearchParams({ oauth: "1", email, name });
-  return NextResponse.redirect(
-    `${base}/${locale}/club/register?${params}`
+  // ── Auto-register new club via OAuth ────────────────────
+  // One-click: Google/Facebook → account created → dashboard
+  const clubSlug = `club-${Date.now()}`;
+  const [newClub] = await db
+    .insert(clubs)
+    .values({
+      name: name || "My Club",
+      slug: clubSlug,
+      contactName: name || null,
+      contactEmail: email,
+    })
+    .returning();
+
+  const [newUser] = await db
+    .insert(clubUsers)
+    .values({
+      clubId: newClub.id,
+      email,
+      name: name || null,
+      passwordHash: "",  // OAuth user — no password
+      accessLevel: "write",
+    })
+    .returning();
+
+  // Welcome email (fire & forget)
+  sendWelcomeEmail({ to: email, clubName: newClub.name, contactName: name || null }).catch(
+    (e) => console.error("[EMAIL] OAuth welcome send failed:", e),
   );
+
+  const newToken = createToken({
+    userId: newUser.id,
+    role: "club",
+    clubId: newClub.id,
+  });
+
+  const regResponse = NextResponse.redirect(
+    `${base}/${locale}/club/dashboard`
+  );
+  regResponse.cookies.set("goality_token", newToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 604800,
+    path: "/",
+  });
+  return regResponse;
 }

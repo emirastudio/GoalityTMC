@@ -7,21 +7,16 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const tournamentId = searchParams.get("tournamentId");
 
-  let tournament;
-  if (tournamentId) {
-    // Specific tournament requested (from catalog link)
-    tournament = await db.query.tournaments.findFirst({
-      where: and(
-        eq(tournaments.id, parseInt(tournamentId)),
-        eq(tournaments.registrationOpen, true)
-      ),
-    });
-  } else {
-    // Legacy fallback: any open tournament
-    tournament = await db.query.tournaments.findFirst({
-      where: eq(tournaments.registrationOpen, true),
-    });
+  if (!tournamentId) {
+    return NextResponse.json({ error: "tournamentId parameter is required" }, { status: 400 });
   }
+
+  const tournament = await db.query.tournaments.findFirst({
+    where: and(
+      eq(tournaments.id, parseInt(tournamentId)),
+      eq(tournaments.registrationOpen, true)
+    ),
+  });
 
   if (!tournament) {
     return NextResponse.json({ error: "No tournament open" }, { status: 404 });

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clubs, clubUsers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { clubs, clubUsers, teams, tournamentRegistrations } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { createToken, ADMIN_BACKUP_COOKIE } from "@/lib/auth";
 import { requireAdmin, isError } from "@/lib/api-auth";
 import { cookies } from "next/headers";
@@ -25,9 +25,8 @@ export async function POST(req: NextRequest) {
   const clubUser = await db.query.clubUsers.findFirst({
     where: eq(clubUsers.clubId, clubId),
   });
-  if (!clubUser) {
-    return NextResponse.json({ error: "No user for this club" }, { status: 404 });
-  }
+  // Allow impersonation even if no clubUser exists yet (club registered manually)
+  const userId = clubUser?.id ?? 0;
 
   const cookieStore = await cookies();
   const currentToken = cookieStore.get("kingscup_token")?.value;
@@ -43,12 +42,22 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Find latest registration for any team belonging to this club
+  const latestReg = await db
+    .select({ tournamentId: tournamentRegistrations.tournamentId })
+    .from(tournamentRegistrations)
+    .innerJoin(teams, eq(teams.id, tournamentRegistrations.teamId))
+    .where(eq(teams.clubId, club.id))
+    .orderBy(desc(tournamentRegistrations.id))
+    .limit(1);
+  const tournamentId = latestReg[0]?.tournamentId ?? undefined;
+
   // Create club token with impersonating flag
   const clubToken = createToken({
-    userId: clubUser.id,
+    userId,
     role: "club",
     clubId: club.id,
-    tournamentId: club.tournamentId,
+    tournamentId,
     impersonating: true,
   });
 

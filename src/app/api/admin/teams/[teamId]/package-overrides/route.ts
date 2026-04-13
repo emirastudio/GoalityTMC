@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { teamPackageItemOverrides, packageItems, services } from "@/db/schema";
+import { teamPackageItemOverrides, packageItems, services, tournamentRegistrations } from "@/db/schema";
 import { requireTournamentAdmin, isError } from "@/lib/api-auth";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export async function GET(
   req: NextRequest,
@@ -12,11 +12,27 @@ export async function GET(
   if (isError(ctx)) return ctx;
 
   const { teamId } = await params;
+  const urlTournamentId = req.nextUrl.searchParams.get("tournamentId");
+  const teamIdNum = Number(teamId);
+
+  // Resolve registrationId from teamId
+  const reg = urlTournamentId
+    ? await db.query.tournamentRegistrations.findFirst({
+        where: and(
+          eq(tournamentRegistrations.teamId, teamIdNum),
+          eq(tournamentRegistrations.tournamentId, Number(urlTournamentId))
+        ),
+      })
+    : await db.query.tournamentRegistrations.findFirst({
+        where: eq(tournamentRegistrations.teamId, teamIdNum),
+      });
+
+  if (!reg) return NextResponse.json([]);
 
   const overrides = await db
     .select({
       id: teamPackageItemOverrides.id,
-      teamId: teamPackageItemOverrides.teamId,
+      registrationId: teamPackageItemOverrides.registrationId,
       packageItemId: teamPackageItemOverrides.packageItemId,
       customPrice: teamPackageItemOverrides.customPrice,
       customQuantity: teamPackageItemOverrides.customQuantity,
@@ -32,7 +48,7 @@ export async function GET(
     .from(teamPackageItemOverrides)
     .leftJoin(packageItems, eq(packageItems.id, teamPackageItemOverrides.packageItemId))
     .leftJoin(services, eq(services.id, packageItems.serviceId))
-    .where(eq(teamPackageItemOverrides.teamId, Number(teamId)));
+    .where(eq(teamPackageItemOverrides.registrationId, reg.id));
 
   return NextResponse.json(overrides);
 }
@@ -45,16 +61,32 @@ export async function POST(
   if (isError(ctx)) return ctx;
 
   const { teamId } = await params;
+  const teamIdNum = Number(teamId);
   const body = await req.json();
 
   if (body.customPrice !== undefined && body.customPrice !== null) {
     body.customPrice = String(body.customPrice);
   }
 
+  // Resolve registrationId
+  const urlTournamentId = req.nextUrl.searchParams.get("tournamentId") ?? body.tournamentId;
+  const reg = urlTournamentId
+    ? await db.query.tournamentRegistrations.findFirst({
+        where: and(
+          eq(tournamentRegistrations.teamId, teamIdNum),
+          eq(tournamentRegistrations.tournamentId, Number(urlTournamentId))
+        ),
+      })
+    : await db.query.tournamentRegistrations.findFirst({
+        where: eq(tournamentRegistrations.teamId, teamIdNum),
+      });
+
+  if (!reg) return NextResponse.json({ error: "Registration not found" }, { status: 404 });
+
   const [created] = await db
     .insert(teamPackageItemOverrides)
     .values({
-      teamId: Number(teamId),
+      registrationId: reg.id,
       packageItemId: body.packageItemId,
       customPrice: body.customPrice ?? null,
       customQuantity: body.customQuantity ?? null,

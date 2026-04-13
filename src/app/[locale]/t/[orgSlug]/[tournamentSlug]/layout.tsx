@@ -1,11 +1,12 @@
 import { db } from "@/db";
-import { organizations, tournaments, tournamentClasses, clubs, teams } from "@/db/schema";
-import { eq, and, count } from "drizzle-orm";
+import { organizations, tournaments, tournamentClasses, teams, tournamentRegistrations } from "@/db/schema";
+import { eq, and, count, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { TournamentPublicProvider } from "@/lib/tournament-public-context";
 import { PublicNavHeader } from "@/components/ui/public-nav-header";
 import { TournamentSidebar } from "@/components/tournament/tournament-sidebar";
+import { TournamentMobileTabs } from "@/components/tournament/tournament-mobile-tabs";
 
 type Props = {
   children: React.ReactNode;
@@ -28,12 +29,12 @@ export default async function TournamentLayout({ children, params }: Props) {
     orderBy: (c, { asc }) => [asc(c.minBirthYear)],
   });
 
-  const [clubCount] = await db.select({ count: count() }).from(clubs).where(eq(clubs.tournamentId, tournament.id));
-  const [teamCount] = await db.select({ count: count() }).from(teams).where(eq(teams.tournamentId, tournament.id));
+  const [clubCount] = await db.select({ count: sql<number>`COUNT(DISTINCT ${teams.clubId})` }).from(tournamentRegistrations).innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id)).where(eq(tournamentRegistrations.tournamentId, tournament.id));
+  const [teamCount] = await db.select({ count: count() }).from(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, tournament.id));
 
   const classesWithCounts = await Promise.all(classes.map(async (cls) => {
-    const [tc] = await db.select({ count: count() }).from(teams)
-      .where(and(eq(teams.tournamentId, tournament.id), eq(teams.classId, cls.id)));
+    const [tc] = await db.select({ count: count() }).from(tournamentRegistrations)
+      .where(and(eq(tournamentRegistrations.tournamentId, tournament.id), eq(tournamentRegistrations.classId, cls.id)));
     return {
       id: cls.id,
       name: cls.name,
@@ -50,6 +51,7 @@ export default async function TournamentLayout({ children, params }: Props) {
     : null;
 
   const brand = org.brandColor ?? "#272D2D";
+  const effectiveCover = tournament.coverUrl ?? "/defaults/tournament-cover-default.jpg";
 
   const data = {
     org: { name: org.name, slug: org.slug, logo: org.logo, brandColor: brand, city: org.city, country: org.country, contactEmail: org.contactEmail, website: org.website },
@@ -63,61 +65,38 @@ export default async function TournamentLayout({ children, params }: Props) {
       <TournamentPublicProvider data={data}>
         <div className="min-h-screen" style={{ background: "var(--cat-bg)" }}>
           <PublicNavHeader />
+          <TournamentMobileTabs orgSlug={orgSlug} tournamentSlug={tournamentSlug} brandColor={brand} />
 
           {/* ── Full-width cover (image + gradients only, no title) ── */}
           <div
             className="relative w-full overflow-hidden"
-            style={{
-              height: "280px",
-              background: tournament.coverUrl
-                ? undefined
-                : "linear-gradient(135deg, #0B1320 0%, #0D1F12 50%, #0B1320 100%)",
-            }}
+            style={{ height: "280px" }}
           >
-            {/* Cover photo */}
-            {tournament.coverUrl && (
-              <img
-                src={tournament.coverUrl}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-              />
-            )}
+            {/* Cover photo — always shown (default if none uploaded) */}
+            <img
+              src={effectiveCover}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            />
 
-            {/* Fallback: blurred logo when no cover */}
-            {!tournament.coverUrl && tournament.logoUrl && (
-              <img
-                src={tournament.logoUrl}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                style={{ opacity: 0.08, filter: "blur(60px)", transform: "scale(1.3)" }}
-              />
-            )}
-
-            {/* Bottom gradient — strong so cards sit cleanly on top */}
+            {/* Bottom gradient */}
             <div
               className="absolute inset-x-0 bottom-0 pointer-events-none"
               style={{
                 height: "85%",
-                background: tournament.coverUrl
-                  ? "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.75) 35%, rgba(0,0,0,0.3) 65%, transparent 100%)"
-                  : "linear-gradient(to bottom, transparent 0%, #0A0E14 85%)",
+                background: "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.75) 35%, rgba(0,0,0,0.3) 65%, transparent 100%)",
               }}
             />
 
-            {/* Decorative glow (only without cover) */}
-            {!tournament.coverUrl && (
-              <>
-                <div className="absolute inset-x-0 top-0 h-48 pointer-events-none"
-                  style={{ background: `radial-gradient(ellipse 80% 120% at 50% -10%, ${brand}35 0%, transparent 70%)` }} />
-                <div className="absolute inset-0 pointer-events-none opacity-[0.025]"
-                  style={{ backgroundImage: `linear-gradient(${brand}80 1px, transparent 1px), linear-gradient(90deg, ${brand}80 1px, transparent 1px)`, backgroundSize: "40px 40px" }} />
-              </>
-            )}
+            {/* Brand glow overlay */}
+            <div className="absolute inset-x-0 top-0 h-32 pointer-events-none"
+              style={{ background: `radial-gradient(ellipse 80% 120% at 50% -10%, ${brand}25 0%, transparent 70%)` }} />
           </div>
 
           {/* ── Content: sidebar OVERLAPS cover ── */}
-          <div className="w-[90%] max-w-[1400px] mx-auto relative z-10" style={{ marginTop: "-116px" }}>
-            <div className="flex gap-8 items-start">
+          <div className="w-full md:w-[90%] md:max-w-[1400px] mx-auto relative z-10 px-4 md:px-0" style={{ marginTop: "-116px" }}>
+            {/* Desktop: sidebar + content side by side */}
+            <div className="hidden md:flex gap-8 items-start">
               <TournamentSidebar
                 orgSlug={orgSlug}
                 tournamentSlug={tournamentSlug}
@@ -134,9 +113,51 @@ export default async function TournamentLayout({ children, params }: Props) {
                 clubCount={Number(clubCount?.count ?? 0)}
                 teamCount={Number(teamCount?.count ?? 0)}
               />
-
-              {/* Main content — cards overlap cover by ~half a card */}
               <main className="flex-1 min-w-0" style={{ paddingTop: "52px" }}>
+                {children}
+              </main>
+            </div>
+
+            {/* Mobile: full-width stacked layout */}
+            <div className="md:hidden" style={{ paddingTop: "52px" }}>
+              {/* Compact tournament card on mobile */}
+              <div className="rounded-2xl border mb-4 overflow-hidden" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(16px)", borderColor: `${brand}40` }}>
+                <div className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    {tournament.logoUrl && (
+                      <img src={tournament.logoUrl} alt="" className="w-12 h-12 rounded-xl object-cover border" style={{ borderColor: `${brand}40` }} />
+                    )}
+                    <div className="min-w-0">
+                      <h1 className="text-base font-black truncate" style={{ color: "#fff" }}>{tournament.name}</h1>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{org.name}</p>
+                    </div>
+                    {tournament.registrationOpen && (
+                      <span className="ml-auto shrink-0 text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: `${brand}22`, color: brand, border: `1px solid ${brand}44` }}>
+                        Open
+                      </span>
+                    )}
+                  </div>
+                  {/* Quick stats row */}
+                  <div className="flex gap-4 text-center">
+                    <div>
+                      <p className="text-lg font-black" style={{ color: brand }}>{Number(clubCount?.count ?? 0)}</p>
+                      <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>Clubs</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-black text-white">{Number(teamCount?.count ?? 0)}</p>
+                      <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>Teams</p>
+                    </div>
+                    {classes.length > 0 && (
+                      <div>
+                        <p className="text-lg font-black text-white">{classes.length}</p>
+                        <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>Divisions</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* Page content full-width */}
+              <main className="w-full">
                 {children}
               </main>
             </div>

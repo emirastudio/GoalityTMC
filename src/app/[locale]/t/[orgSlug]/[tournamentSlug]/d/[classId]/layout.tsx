@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { tournamentClasses, teams } from "@/db/schema";
-import { eq, and, count } from "drizzle-orm";
+import { tournamentClasses, tournamentRegistrations } from "@/db/schema";
+import { eq, count } from "drizzle-orm";
 import { Shield } from "lucide-react";
 import { DivisionTabNav } from "@/components/tournament/division-tab-nav";
 import { getTranslations } from "next-intl/server";
@@ -22,8 +22,8 @@ export default async function DivisionLayout({ children, params }: Props) {
 
   const [teamCountRow] = await db
     .select({ count: count() })
-    .from(teams)
-    .where(and(eq(teams.classId, parseInt(classId))));
+    .from(tournamentRegistrations)
+    .where(eq(tournamentRegistrations.classId, parseInt(classId)));
 
   const teamCount = Number(teamCountRow?.count ?? 0);
   const color = ACCENT_COLOR;

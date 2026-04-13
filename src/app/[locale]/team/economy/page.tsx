@@ -45,6 +45,7 @@ export default function EconomyPage() {
 
   useEffect(() => {
     if (!teamId) return;
+    setData(null);
     fetch(`/api/teams/${teamId}/economy`).then(async (res) => {
       if (res.ok) setData(await res.json());
     });

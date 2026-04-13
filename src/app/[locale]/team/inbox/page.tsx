@@ -53,6 +53,11 @@ export default function InboxPage() {
 
   useEffect(() => {
     if (!teamId) return;
+    setMessages([]);
+    setMessagesLoading(true);
+    setOpenId(null);
+    setQuestions([]);
+    setQuestionsLoaded(false);
     fetch(`/api/teams/${teamId}/inbox`).then(async (res) => {
       if (res.ok) {
         const data = await res.json();

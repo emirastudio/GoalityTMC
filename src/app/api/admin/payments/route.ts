@@ -1,16 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { tournaments, teams, clubs, payments } from "@/db/schema";
+import { tournaments, teams, clubs, payments, tournamentRegistrations } from "@/db/schema";
 import { requireAdmin, isError } from "@/lib/api-auth";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await requireAdmin();
   if (isError(session)) return session;
 
-  const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
-  });
+  const urlTournamentId = req.nextUrl.searchParams.get("tournamentId");
+  let tournament;
+  if (urlTournamentId) {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, parseInt(urlTournamentId)),
+    });
+  } else {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.registrationOpen, true),
+    });
+  }
   if (!tournament) {
     return NextResponse.json(
       { error: "No active tournament" },
@@ -18,10 +26,24 @@ export async function GET() {
     );
   }
 
-  const result = await db
+  // Get all registrationIds for this tournament
+  const registrations = await db
+    .select({ id: tournamentRegistrations.id, teamId: tournamentRegistrations.teamId, regNumber: tournamentRegistrations.regNumber })
+    .from(tournamentRegistrations)
+    .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+  const registrationIds = registrations.map((r) => r.id);
+
+  if (registrationIds.length === 0) {
+    return NextResponse.json([]);
+  }
+
+  // Build a map from registrationId → { teamId, regNumber }
+  const regMap = new Map(registrations.map((r) => [r.id, r]));
+
+  const rawPayments = await db
     .select({
       id: payments.id,
-      teamId: payments.teamId,
+      registrationId: payments.registrationId,
       amount: payments.amount,
       currency: payments.currency,
       method: payments.method,
@@ -30,15 +52,33 @@ export async function GET() {
       notes: payments.notes,
       receivedAt: payments.receivedAt,
       createdAt: payments.createdAt,
-      teamName: teams.name,
-      teamRegNumber: teams.regNumber,
-      clubName: clubs.name,
     })
     .from(payments)
-    .innerJoin(teams, eq(payments.teamId, teams.id))
-    .leftJoin(clubs, eq(teams.clubId, clubs.id))
-    .where(eq(teams.tournamentId, tournament.id))
+    .where(inArray(payments.registrationId, registrationIds))
     .orderBy(payments.createdAt);
+
+  // Enrich with team/club info
+  const teamIds = [...new Set(registrations.map((r) => r.teamId))];
+  const teamsWithClubs = teamIds.length > 0
+    ? await db
+        .select({ id: teams.id, name: teams.name, clubName: clubs.name })
+        .from(teams)
+        .leftJoin(clubs, eq(teams.clubId, clubs.id))
+        .where(inArray(teams.id, teamIds))
+    : [];
+  const teamMap = new Map(teamsWithClubs.map((t) => [t.id, t]));
+
+  const result = rawPayments.map((p) => {
+    const reg = regMap.get(p.registrationId);
+    const team = reg ? teamMap.get(reg.teamId) : undefined;
+    return {
+      ...p,
+      teamId: reg?.teamId ?? null,
+      teamName: team?.name ?? null,
+      teamRegNumber: reg?.regNumber ?? null,
+      clubName: team?.clubName ?? null,
+    };
+  });
 
   return NextResponse.json(result);
 }
@@ -48,11 +88,11 @@ export async function POST(req: NextRequest) {
   if (isError(session)) return session;
 
   const body = await req.json();
-  const { teamId, amount, method, status, reference, notes, receivedAt } = body;
+  const { registrationId, amount, method, status, reference, notes, receivedAt } = body;
 
-  if (!teamId || !amount) {
+  if (!registrationId || !amount) {
     return NextResponse.json(
-      { error: "teamId and amount are required" },
+      { error: "registrationId and amount are required" },
       { status: 400 }
     );
   }
@@ -60,7 +100,7 @@ export async function POST(req: NextRequest) {
   const [created] = await db
     .insert(payments)
     .values({
-      teamId,
+      registrationId,
       amount: String(amount),
       method: method ?? "bank_transfer",
       status: status ?? "pending",
@@ -113,7 +153,7 @@ export async function PUT(req: NextRequest) {
   if (isError(session)) return session;
 
   const body = await req.json();
-  const { id, teamId, amount, method, status, reference, notes, receivedAt } = body;
+  const { id, registrationId, amount, method, status, reference, notes, receivedAt } = body;
 
   if (!id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
@@ -122,7 +162,7 @@ export async function PUT(req: NextRequest) {
   const [updated] = await db
     .update(payments)
     .set({
-      teamId: teamId ? Number(teamId) : undefined,
+      registrationId: registrationId ? Number(registrationId) : undefined,
       amount: amount !== undefined ? String(amount) : undefined,
       method: method ?? undefined,
       status: status ?? undefined,

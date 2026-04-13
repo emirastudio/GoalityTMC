@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organizations, tournaments, tournamentClasses, clubs, teams } from "@/db/schema";
+import { organizations, tournaments, tournamentClasses, clubs, teams, tournamentRegistrations } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function GET(
@@ -29,30 +29,41 @@ export async function GET(
     orderBy: (c, { asc }) => [asc(c.minBirthYear)],
   });
 
-  const allClubs = await db.query.clubs.findMany({
-    where: eq(clubs.tournamentId, tournament.id),
-    orderBy: (c, { asc }) => [asc(c.name)],
+  // Load registrations for this tournament (with team and club data via joins)
+  const regsWhere = classIdParam
+    ? and(
+        eq(tournamentRegistrations.tournamentId, tournament.id),
+        eq(tournamentRegistrations.classId, parseInt(classIdParam))
+      )
+    : eq(tournamentRegistrations.tournamentId, tournament.id);
+
+  const allRegs = await db.query.tournamentRegistrations.findMany({
+    where: regsWhere,
+    orderBy: (r, { asc }) => [asc(r.regNumber)],
+    with: {
+      team: true,
+    },
   });
 
-  const teamsWhere = classIdParam
-    ? and(eq(teams.tournamentId, tournament.id), eq(teams.classId, parseInt(classIdParam)))
-    : eq(teams.tournamentId, tournament.id);
-
-  const allTeams = await db.query.teams.findMany({
-    where: teamsWhere,
-    orderBy: (t, { asc }) => [asc(t.regNumber)],
-  });
+  // Collect unique clubIds and load clubs
+  const clubIds = [...new Set(allRegs.map((r) => r.team?.clubId).filter(Boolean) as number[])];
+  const allClubs = clubIds.length > 0
+    ? await db.query.clubs.findMany({
+        where: (c, { inArray }) => inArray(c.id, clubIds),
+        orderBy: (c, { asc }) => [asc(c.name)],
+      })
+    : [];
 
   // If filtering by specific class, return flat list directly
   if (classIdParam) {
-    const flat = allTeams.map((team) => {
-      const club = allClubs.find((c) => c.id === team.clubId);
+    const flat = allRegs.map((reg) => {
+      const club = allClubs.find((c) => c.id === reg.team?.clubId);
       return {
-        id: team.id,
-        regNumber: team.regNumber,
-        name: team.name,
-        status: team.status,
-        classId: team.classId,
+        id: reg.team?.id ?? reg.teamId,
+        regNumber: reg.regNumber,
+        name: reg.team?.name ?? "",
+        status: reg.status,
+        classId: reg.classId,
         club: club
           ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
           : null,
@@ -63,15 +74,15 @@ export async function GET(
 
   // Group by class
   const grouped = classes.map((cls) => {
-    const classTeams = allTeams
-      .filter((t) => t.classId === cls.id)
-      .map((team) => {
-        const club = allClubs.find((c) => c.id === team.clubId);
+    const classTeams = allRegs
+      .filter((r) => r.classId === cls.id)
+      .map((reg) => {
+        const club = allClubs.find((c) => c.id === reg.team?.clubId);
         return {
-          id: team.id,
-          regNumber: team.regNumber,
-          name: team.name,
-          status: team.status,
+          id: reg.team?.id ?? reg.teamId,
+          regNumber: reg.regNumber,
+          name: reg.team?.name ?? "",
+          status: reg.status,
           club: club
             ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
             : null,
@@ -86,16 +97,16 @@ export async function GET(
     };
   });
 
-  // Teams without a class
-  const unclassified = allTeams
-    .filter((t) => !t.classId)
-    .map((team) => {
-      const club = allClubs.find((c) => c.id === team.clubId);
+  // Registrations without a class
+  const unclassified = allRegs
+    .filter((r) => !r.classId)
+    .map((reg) => {
+      const club = allClubs.find((c) => c.id === reg.team?.clubId);
       return {
-        id: team.id,
-        regNumber: team.regNumber,
-        name: team.name,
-        status: team.status,
+        id: reg.team?.id ?? reg.teamId,
+        regNumber: reg.regNumber,
+        name: reg.team?.name ?? "",
+        status: reg.status,
         club: club
           ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
           : null,

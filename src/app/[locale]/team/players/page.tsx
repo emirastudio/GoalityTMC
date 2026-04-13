@@ -17,6 +17,8 @@ export default function PlayersPage() {
 
   const fetchPlayers = useCallback(async () => {
     if (!teamId) return;
+    setPlayers([]);
+    setLoading(true);
     const [playersRes, overviewRes] = await Promise.all([
       fetch(`/api/teams/${teamId}/people?type=player`),
       fetch(`/api/teams/${teamId}/overview`),

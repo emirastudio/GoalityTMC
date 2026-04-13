@@ -16,6 +16,8 @@ export default function StaffPage() {
 
   const fetchStaff = useCallback(async () => {
     if (!teamId) return;
+    setStaff([]);
+    setLoading(true);
     const res = await fetch(`/api/teams/${teamId}/people?type=staff`);
     if (res.ok) setStaff(await res.json());
     setLoading(false);

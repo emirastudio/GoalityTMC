@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
   const fields = await db.query.tournamentFields.findMany({
     where: eq(tournamentFields.tournamentId, tournament.id),
     orderBy: [asc(tournamentFields.sortOrder), asc(tournamentFields.id)],
+    with: { stadium: { columns: { id: true, name: true } } },
   });
 
   return NextResponse.json(fields);

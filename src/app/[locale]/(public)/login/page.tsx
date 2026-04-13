@@ -84,7 +84,7 @@ export default function LoginPage() {
         else if (data.isSuper) router.push("/admin/dashboard");
         else router.push("/admin/dashboard");
       } else {
-        router.push("/team/overview");
+        router.push(data.hasTournament ? "/team/overview" : "/club/dashboard");
       }
     } else {
       setError(t("invalidCredentials"));
@@ -336,7 +336,7 @@ export default function LoginPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
-                      onClick={() => signIn("google", { callbackUrl: "/api/auth/oauth-success" })}
+                      onClick={() => signIn("google", { callbackUrl: "/api/auth/oauth-success", redirect: true })}
                       className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-[13px] font-medium border transition-all hover:opacity-80 cursor-pointer"
                       style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
                     >
@@ -344,7 +344,7 @@ export default function LoginPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => signIn("facebook", { callbackUrl: "/api/auth/oauth-success" })}
+                      onClick={() => signIn("facebook", { callbackUrl: "/api/auth/oauth-success", redirect: true })}
                       className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-[13px] font-medium border transition-all hover:opacity-80 cursor-pointer"
                       style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
                     >
@@ -377,7 +377,7 @@ export default function LoginPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
-                      onClick={() => signIn("google", { callbackUrl: "/api/auth/oauth-success?mode=organizer" })}
+                      onClick={() => signIn("google", { callbackUrl: "/api/auth/oauth-success?mode=organizer", redirect: true })}
                       className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-[13px] font-medium border transition-all hover:opacity-80 cursor-pointer"
                       style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
                     >
@@ -385,7 +385,7 @@ export default function LoginPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => signIn("facebook", { callbackUrl: "/api/auth/oauth-success?mode=organizer" })}
+                      onClick={() => signIn("facebook", { callbackUrl: "/api/auth/oauth-success?mode=organizer", redirect: true })}
                       className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-[13px] font-medium border transition-all hover:opacity-80 cursor-pointer"
                       style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
                     >

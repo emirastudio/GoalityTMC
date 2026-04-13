@@ -11,6 +11,8 @@ export function PublicNavHeader() {
     { label: t("navHome"),     href: "/" },
     { label: t("navFeatures"), href: "/features" },
     { label: t("navCatalog"),  href: "/catalog" },
+    { label: t("navBlog"),     href: "/blog" },
+    { label: t("navListing"),  href: "/listing" },
     { label: t("navPricing"),  href: "/pricing" },
   ];
 

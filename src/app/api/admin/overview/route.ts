@@ -1,39 +1,60 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import {
   teams, clubs, people, teamTravel, packageAssignments,
   servicePackages, teamBookings, teamServiceOverrides, payments,
   tournaments, tournamentClasses,
   accommodationOptions, extraMealOptions, transferOptions, registrationFees,
+  tournamentRegistrations,
 } from "@/db/schema";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAdmin, isError } from "@/lib/api-auth";
 import { recalculateAll, type ServiceData, type OverrideData } from "@/lib/booking-calculator";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await requireAdmin();
   if (isError(session)) return session;
 
-  const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
-  });
+  const urlTournamentId = req.nextUrl.searchParams.get("tournamentId");
+  let tournament;
+  if (urlTournamentId) {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, parseInt(urlTournamentId)),
+    });
+  } else {
+    tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.registrationOpen, true),
+    });
+  }
   if (!tournament) return NextResponse.json([], { status: 200 });
 
-  const allTeams = await db
+  // Load registrations for this tournament, joined with teams
+  const allRegs = await db
     .select({
-      id: teams.id, name: teams.name, regNumber: teams.regNumber,
-      status: teams.status, classId: teams.classId, clubId: teams.clubId,
-      accomPlayers: teams.accomPlayers, accomStaff: teams.accomStaff,
-      accomAccompanying: teams.accomAccompanying,
-      accomCheckIn: teams.accomCheckIn, accomCheckOut: teams.accomCheckOut,
-      accomConfirmed: teams.accomConfirmed, accomDeclined: teams.accomDeclined,
+      regId: tournamentRegistrations.id,
+      id: teams.id, name: teams.name, clubId: teams.clubId,
+      regNumber: tournamentRegistrations.regNumber,
+      status: tournamentRegistrations.status,
+      classId: tournamentRegistrations.classId,
+      accomPlayers: tournamentRegistrations.accomPlayers,
+      accomStaff: tournamentRegistrations.accomStaff,
+      accomAccompanying: tournamentRegistrations.accomAccompanying,
+      accomCheckIn: tournamentRegistrations.accomCheckIn,
+      accomCheckOut: tournamentRegistrations.accomCheckOut,
+      accomConfirmed: tournamentRegistrations.accomConfirmed,
+      accomDeclined: tournamentRegistrations.accomDeclined,
     })
-    .from(teams)
-    .where(eq(teams.tournamentId, tournament.id));
+    .from(tournamentRegistrations)
+    .innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
+    .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+
+  // Alias for backward compat in existing logic below
+  const allTeams = allRegs;
 
   if (allTeams.length === 0) return NextResponse.json([], { status: 200 });
 
   const teamIds = allTeams.map((t) => t.id);
+  const regIds = allTeams.map((t) => t.regId);
 
   // ─── Batch load all data ──────────────────────────────────────────────────
   const [
@@ -54,41 +75,41 @@ export async function GET() {
     db.select({ teamId: people.teamId, personType: people.personType, count: sql<number>`COUNT(*)` })
       .from(people).where(inArray(people.teamId, teamIds))
       .groupBy(people.teamId, people.personType),
-    // Travel
-    db.select().from(teamTravel).where(inArray(teamTravel.teamId, teamIds)),
-    // Package assignments
+    // Travel (now uses registrationId)
+    db.select().from(teamTravel).where(inArray(teamTravel.registrationId, regIds)),
+    // Package assignments (now uses registrationId)
     db.select({
-      teamId: packageAssignments.teamId, packageId: packageAssignments.packageId,
+      registrationId: packageAssignments.registrationId, packageId: packageAssignments.packageId,
       isPublished: packageAssignments.isPublished,
       freePlayersCount: packageAssignments.freePlayersCount,
       freeStaffCount: packageAssignments.freeStaffCount,
       freeAccompanyingCount: packageAssignments.freeAccompanyingCount,
-    }).from(packageAssignments).where(inArray(packageAssignments.teamId, teamIds)),
+    }).from(packageAssignments).where(inArray(packageAssignments.registrationId, regIds)),
     // Packages (fetched after assignRows - we'll join below)
     db.select().from(servicePackages).where(eq(servicePackages.tournamentId, tournament.id)),
-    // All teamBookings (individual rows — needed for live recalc)
-    db.select().from(teamBookings).where(inArray(teamBookings.teamId, teamIds)),
-    // All per-team overrides
-    db.select().from(teamServiceOverrides).where(inArray(teamServiceOverrides.teamId, teamIds)),
+    // All teamBookings (now uses registrationId)
+    db.select().from(teamBookings).where(inArray(teamBookings.registrationId, regIds)),
+    // All per-registration overrides
+    db.select().from(teamServiceOverrides).where(inArray(teamServiceOverrides.registrationId, regIds)),
     // Current service prices
     db.select().from(accommodationOptions).where(eq(accommodationOptions.tournamentId, tournament.id)),
     db.select().from(extraMealOptions).where(eq(extraMealOptions.tournamentId, tournament.id)),
     db.select().from(transferOptions).where(eq(transferOptions.tournamentId, tournament.id)),
     db.select().from(registrationFees).where(eq(registrationFees.tournamentId, tournament.id)),
-    // Payments
+    // Payments (now uses registrationId)
     db.select({
-      teamId: payments.teamId,
+      registrationId: payments.registrationId,
       totalPaid: sql<number>`SUM(CASE WHEN status = 'received' THEN amount ELSE 0 END)`,
-    }).from(payments).where(inArray(payments.teamId, teamIds)).groupBy(payments.teamId),
+    }).from(payments).where(inArray(payments.registrationId, regIds)).groupBy(payments.registrationId),
   ]);
 
   // ─── Build maps ───────────────────────────────────────────────────────────
   const clubMap = new Map(clubsData.map((c) => [c.id, c]));
   const classMap = new Map(classes.map((c) => [c.id, c]));
   const pkgMap = new Map(pkgsData.map((p) => [p.id, p]));
-  const assignMap = new Map(assignRows.map((a) => [a.teamId, a]));
-  const travelMap = new Map(travelRows.map((t) => [t.teamId, t]));
-  const paymentMap = new Map(paymentRows.map((p) => [p.teamId, Number(p.totalPaid ?? 0)]));
+  const assignMap = new Map(assignRows.map((a) => [a.registrationId, a]));
+  const travelMap = new Map(travelRows.map((t) => [t.registrationId, t]));
+  const paymentMap = new Map(paymentRows.map((p) => [p.registrationId, Number(p.totalPaid ?? 0)]));
 
   // People counts map
   type Counts = { players: number; staff: number; accompanying: number };
@@ -101,18 +122,18 @@ export async function GET() {
     if (row.personType === "accompanying") c.accompanying = Number(row.count);
   }
 
-  // Bookings per team (raw rows grouped by teamId)
-  const bookingsByTeam = new Map<number, typeof allBookings>();
+  // Bookings per registration (raw rows grouped by registrationId)
+  const bookingsByReg = new Map<number, typeof allBookings>();
   for (const b of allBookings) {
-    if (!bookingsByTeam.has(b.teamId)) bookingsByTeam.set(b.teamId, []);
-    bookingsByTeam.get(b.teamId)!.push(b);
+    if (!bookingsByReg.has(b.registrationId)) bookingsByReg.set(b.registrationId, []);
+    bookingsByReg.get(b.registrationId)!.push(b);
   }
 
-  // Overrides per team
-  const overridesByTeam = new Map<number, OverrideData[]>();
+  // Overrides per registration
+  const overridesByReg = new Map<number, OverrideData[]>();
   for (const o of allOverrides) {
-    if (!overridesByTeam.has(o.teamId)) overridesByTeam.set(o.teamId, []);
-    overridesByTeam.get(o.teamId)!.push({
+    if (!overridesByReg.has(o.registrationId)) overridesByReg.set(o.registrationId, []);
+    overridesByReg.get(o.registrationId)!.push({
       serviceType: o.serviceType, serviceId: o.serviceId, customPrice: o.customPrice,
     });
   }
@@ -128,9 +149,9 @@ export async function GET() {
     registration: regFeeRows.map((r) => ({ id: r.id, price: r.price })),
   };
 
-  // Transfer teams (has any transfer booking)
-  const transferTeams = new Set(
-    allBookings.filter((b) => b.bookingType === "transfer").map((b) => b.teamId)
+  // Transfer registrations (has any transfer booking)
+  const transferRegs = new Set(
+    allBookings.filter((b) => b.bookingType === "transfer").map((b) => b.registrationId)
   );
 
   // ─── Assemble rows with LIVE price recalculation ──────────────────────────
@@ -138,16 +159,16 @@ export async function GET() {
     const club = team.clubId ? clubMap.get(team.clubId) : null;
     const cls = team.classId ? classMap.get(team.classId) : null;
     const counts = countsMap.get(team.id) ?? { players: 0, staff: 0, accompanying: 0 };
-    const travel = travelMap.get(team.id) ?? null;
-    const assign = assignMap.get(team.id) ?? null;
+    const travel = travelMap.get(team.regId) ?? null;
+    const assign = assignMap.get(team.regId) ?? null;
     const pkg = assign ? pkgMap.get(assign.packageId) : null;
-    const paid = paymentMap.get(team.id) ?? 0;
+    const paid = paymentMap.get(team.regId) ?? 0;
 
-    // Recalculate this team's bookings from current prices
-    const rawBookings = bookingsByTeam.get(team.id) ?? [];
-    const teamOverrides = overridesByTeam.get(team.id) ?? [];
+    // Recalculate this registration's bookings from current prices
+    const rawBookings = bookingsByReg.get(team.regId) ?? [];
+    const regOverrides = overridesByReg.get(team.regId) ?? [];
     const { bookings: recalc, total: totalOrdered } = recalculateAll(
-      rawBookings, sharedServices, teamOverrides
+      rawBookings, sharedServices, regOverrides
     );
 
     // Break down by type
@@ -174,7 +195,7 @@ export async function GET() {
       accomPlayers: team.accomPlayers, accomStaff: team.accomStaff,
       accomAccompanying: team.accomAccompanying,
       accomCheckIn: team.accomCheckIn, accomCheckOut: team.accomCheckOut,
-      hasTransfer: transferTeams.has(team.id),
+      hasTransfer: transferRegs.has(team.regId),
       packageName: pkg?.name ?? null, packagePublished: assign?.isPublished ?? false,
       totalOrdered,
       accommodationTotal: byType.accommodation,

@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import {
-  Crown, ChevronRight, ChevronLeft, Check, Plus, Trash2,
+  Crown, ChevronRight, ChevronLeft, Check, Plus,
   ImageIcon, ChevronDown, Search, ArrowLeft, AlertTriangle,
   Building2, MapPin, Users, LogIn, X,
 } from "lucide-react";
@@ -17,164 +17,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-
-const COUNTRIES = [
-  { name: "Estonia", flag: "🇪🇪" },
-  { name: "Latvia", flag: "🇱🇻" },
-  { name: "Lithuania", flag: "🇱🇹" },
-  { name: "Finland", flag: "🇫🇮" },
-  { name: "Russia", flag: "🇷🇺" },
-  { name: "Ukraine", flag: "🇺🇦" },
-  { name: "Belarus", flag: "🇧🇾" },
-  { name: "Germany", flag: "🇩🇪" },
-  { name: "Poland", flag: "🇵🇱" },
-  { name: "Sweden", flag: "🇸🇪" },
-  { name: "Norway", flag: "🇳🇴" },
-  { name: "Denmark", flag: "🇩🇰" },
-  { name: "Netherlands", flag: "🇳🇱" },
-  { name: "Belgium", flag: "🇧🇪" },
-  { name: "France", flag: "🇫🇷" },
-  { name: "England", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
-  { name: "Spain", flag: "🇪🇸" },
-  { name: "Italy", flag: "🇮🇹" },
-  { name: "Portugal", flag: "🇵🇹" },
-  { name: "Czech Republic", flag: "🇨🇿" },
-  { name: "Slovakia", flag: "🇸🇰" },
-  { name: "Hungary", flag: "🇭🇺" },
-  { name: "Romania", flag: "🇷🇴" },
-  { name: "Bulgaria", flag: "🇧🇬" },
-  { name: "Croatia", flag: "🇭🇷" },
-  { name: "Serbia", flag: "🇷🇸" },
-  { name: "Slovenia", flag: "🇸🇮" },
-  { name: "Austria", flag: "🇦🇹" },
-  { name: "Switzerland", flag: "🇨🇭" },
-  { name: "Greece", flag: "🇬🇷" },
-  { name: "Turkey", flag: "🇹🇷" },
-  { name: "Israel", flag: "🇮🇱" },
-  { name: "Georgia", flag: "🇬🇪" },
-  { name: "Armenia", flag: "🇦🇲" },
-  { name: "Azerbaijan", flag: "🇦🇿" },
-  { name: "Kazakhstan", flag: "🇰🇿" },
-  { name: "Iceland", flag: "🇮🇸" },
-  { name: "Ireland", flag: "🇮🇪" },
-  { name: "Scotland", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
-  { name: "Wales", flag: "🏴󠁧󠁢󠁷󠁬󠁳󠁿" },
-  { name: "Moldova", flag: "🇲🇩" },
-  { name: "Albania", flag: "🇦🇱" },
-  { name: "North Macedonia", flag: "🇲🇰" },
-  { name: "Bosnia and Herzegovina", flag: "🇧🇦" },
-  { name: "Montenegro", flag: "🇲🇪" },
-  { name: "Kosovo", flag: "🇽🇰" },
-  { name: "Cyprus", flag: "🇨🇾" },
-  { name: "Malta", flag: "🇲🇹" },
-  { name: "Luxembourg", flag: "🇱🇺" },
-  { name: "Other", flag: "🌍" },
-];
-
-function CountrySelect({
-  value,
-  onChange,
-  label,
-  required,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-  label: string;
-  required?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  const selected = COUNTRIES.find((c) => c.name === value);
-  const filtered = COUNTRIES.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  useEffect(() => {
-    function handleOutside(e: MouseEvent | TouchEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-        setSearch("");
-      }
-    }
-    document.addEventListener("pointerdown", handleOutside as EventListener);
-    return () => {
-      document.removeEventListener("pointerdown", handleOutside as EventListener);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (open && searchRef.current) searchRef.current.focus();
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative z-10">
-      <label className="block text-sm font-medium th-text mb-1.5">
-        {label}{required && <span className="text-error ml-0.5">*</span>}
-      </label>
-      <button
-        type="button"
-        onClick={() => { setOpen((o) => !o); setSearch(""); }}
-        className={cn(
-          "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border th-card text-sm transition-colors",
-          open ? "border-navy ring-2 ring-navy/20" : "th-border hover:border-navy/40",
-          !value && "th-text-2"
-        )}
-      >
-        {selected ? (
-          <>
-            <span className="text-xl leading-none">{selected.flag}</span>
-            <span className="flex-1 text-left th-text">{selected.name}</span>
-          </>
-        ) : (
-          <span className="flex-1 text-left">Select country...</span>
-        )}
-        <ChevronDown className={cn("w-4 h-4 th-text-2 transition-transform", open && "rotate-180")} />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 w-full mt-1 popup-bg th-border border rounded-xl shadow-lg overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b th-border">
-            <Search className="w-3.5 h-3.5 th-text-2 shrink-0" />
-            <input
-              ref={searchRef}
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search..."
-              className="flex-1 text-sm outline-none bg-transparent"
-              style={{ color: "var(--cat-text)" }}
-            />
-          </div>
-          <div className="max-h-52 overflow-y-auto">
-            {filtered.length === 0 ? (
-              <p className="text-sm th-text-2 text-center py-3">No results</p>
-            ) : (
-              filtered.map((c) => (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() => { onChange(c.name); setOpen(false); setSearch(""); }}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors hover:th-bg th-text",
-                    value === c.name && "bg-navy/5 font-medium"
-                  )}
-                  style={{ color: value === c.name ? "var(--cat-accent)" : "var(--cat-text)" }}
-                >
-                  <span className="text-xl leading-none">{c.flag}</span>
-                  <span>{c.name}</span>
-                  {value === c.name && <Check className="w-3.5 h-3.5 ml-auto" style={{ color: "var(--cat-accent)" }} />}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+import { CountrySelect } from "@/components/ui/country-select";
 
 // ─── Club search types ───────────────────────────────────────────────────────
 
@@ -547,10 +390,7 @@ function ClubFoundPanel({
 
 // ─── Main types ───────────────────────────────────────────────────────────────
 
-type TournamentClass = { id: number; name: string; minBirthYear: number | null };
-type TeamEntry = { name: string; classId: string };
-
-const FORM_STEPS = ["club", "teams", "contact", "review"] as const;
+const FORM_STEPS = ["club", "contact", "review"] as const;
 type FormStep = (typeof FORM_STEPS)[number];
 type Phase = "search" | "found" | "create";
 
@@ -563,9 +403,6 @@ export default function RegisterPage() {
   const router = useRouter();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-  const tournamentIdParam = searchParams?.get("tournamentId") ?? null;
-
   // Phase: search → found OR create
   const [phase, setPhase] = useState<Phase>("search");
   const [foundClub, setFoundClub] = useState<ClubResult | null>(null);
@@ -574,7 +411,6 @@ export default function RegisterPage() {
   const [step, setStep] = useState<FormStep>("club");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [classes, setClasses] = useState<TournamentClass[]>([]);
 
   // Club info
   const [clubName, setClubName] = useState("");
@@ -583,9 +419,6 @@ export default function RegisterPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
-  // Teams
-  const [teamsList, setTeamsList] = useState<TeamEntry[]>([{ name: "", classId: "" }]);
-
   // Contact
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -593,18 +426,6 @@ export default function RegisterPage() {
   const [contactRole, setContactRole] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-
-  useEffect(() => {
-    const url = tournamentIdParam
-      ? `/api/tournaments/active?tournamentId=${tournamentIdParam}`
-      : "/api/tournaments/active";
-    fetch(url).then(async (res) => {
-      if (res.ok) {
-        const data = await res.json();
-        setClasses(data.classes ?? []);
-      }
-    });
-  }, [tournamentIdParam]);
 
   const stepIndex = FORM_STEPS.indexOf(step);
   const isFirst = stepIndex === 0;
@@ -618,18 +439,12 @@ export default function RegisterPage() {
     { value: "other", label: t("contact.roles.other") },
   ];
 
-  const stepLabels = [tcr("step1"), tcr("step2"), tcr("step3"), tcr("step4")];
+  const stepLabels = [tcr("step1"), tcr("step3"), tcr("step4")];
 
   function next() {
     setError("");
     if (step === "club" && !clubName.trim()) { setError(t("errors.clubNameRequired")); return; }
     if (step === "club" && !country.trim()) { setError(t("errors.countryRequired")); return; }
-    if (step === "teams") {
-      for (const tm of teamsList) {
-        if (!tm.name.trim()) { setError(t("errors.teamNameRequired")); return; }
-        if (!tm.classId) { setError(t("errors.ageClassRequired")); return; }
-      }
-    }
     if (step === "contact") {
       if (!contactName.trim()) { setError(t("errors.contactNameRequired")); return; }
       if (!contactEmail.trim()) { setError(t("errors.emailRequired")); return; }
@@ -656,16 +471,6 @@ export default function RegisterPage() {
     setLogoPreview(URL.createObjectURL(f));
   }
 
-  function addTeam() { setTeamsList([...teamsList, { name: "", classId: "" }]); }
-  function removeTeam(i: number) { setTeamsList(teamsList.filter((_, idx) => idx !== i)); }
-  function updateTeam(i: number, field: keyof TeamEntry, value: string) {
-    setTeamsList(teamsList.map((tm, idx) => idx === i ? { ...tm, [field]: value } : tm));
-  }
-  function getClassName(classId: string) {
-    const cls = classes.find((c) => String(c.id) === classId);
-    return cls ? cls.name : classId;
-  }
-
   async function handleSubmit() {
     setError("");
     setSubmitting(true);
@@ -679,13 +484,11 @@ export default function RegisterPage() {
       fd.append("contactPhone", contactPhone);
       fd.append("contactRole", contactRole);
       fd.append("password", password);
-      fd.append("teams", JSON.stringify(teamsList));
       if (logoFile) fd.append("logo", logoFile);
-      if (tournamentIdParam) fd.append("tournamentId", tournamentIdParam);
 
       const res = await fetch("/api/clubs/register", { method: "POST", body: fd });
       if (res.ok) {
-        router.push("/team/overview");
+        router.push("/club/dashboard");
       } else {
         if (res.status === 409) setError(t("errors.emailAlreadyExists"));
         else setError(t("errors.registrationFailed"));
@@ -695,17 +498,12 @@ export default function RegisterPage() {
     }
   }
 
-  const classOptions = classes.map((c) => ({
-    value: String(c.id),
-    label: c.minBirthYear ? `${c.name} (born ${c.minBirthYear}+)` : c.name,
-  }));
-
   // ── Left panel content based on phase ─────────────────────────────────────
 
   function leftPanelBadgeLabel() {
-    if (phase === "search") return "Club Search";
-    if (phase === "found") return "Club Found";
-    return "Club Registration";
+    if (phase === "search") return tcr("findTitle");
+    if (phase === "found") return tcr("foundTitle");
+    return tcr("heroTitle");
   }
 
   function leftPanelTitle() {
@@ -959,53 +757,7 @@ export default function RegisterPage() {
                   </div>
                 )}
 
-                {/* ── STEP 2: Teams ── */}
-                {step === "teams" && (
-                  <div className="space-y-5">
-                    <div>
-                      <h2 className="text-xl font-bold th-text">{t("teams.title")}</h2>
-                      <p className="text-sm th-text-2 mt-1">{t("teams.description")}</p>
-                    </div>
-
-                    <div className="space-y-4">
-                      {teamsList.map((team, i) => (
-                        <div key={i} className="rounded-xl border th-border p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-semibold text-navy">{t("teams.teamLabel", { n: i + 1 })}</p>
-                            {teamsList.length > 1 && (
-                              <button onClick={() => removeTeam(i)} className="th-text-2 hover:text-error cursor-pointer">
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                          <Input
-                            id={`teamName-${i}`}
-                            label={t("teams.teamName")}
-                            value={team.name}
-                            onChange={(e) => updateTeam(i, "name", e.target.value)}
-                            placeholder={t("teams.teamNamePlaceholder", { club: clubName || "FC Club" })}
-                            required
-                          />
-                          <Select
-                            id={`classId-${i}`}
-                            label={t("teams.ageClass")}
-                            value={team.classId}
-                            onChange={(e) => updateTeam(i, "classId", e.target.value)}
-                            options={classOptions}
-                            placeholder={t("teams.selectAgeClass")}
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    <Button variant="ghost" onClick={addTeam} className="w-full border border-dashed th-border">
-                      <Plus className="w-4 h-4" />
-                      {t("teams.addAnother")}
-                    </Button>
-                  </div>
-                )}
-
-                {/* ── STEP 3: Contact ── */}
+                {/* ── STEP 2: Contact ── */}
                 {step === "contact" && (
                   <div className="space-y-5">
                     <div>
@@ -1042,7 +794,7 @@ export default function RegisterPage() {
                   </div>
                 )}
 
-                {/* ── STEP 4: Review ── */}
+                {/* ── STEP 3: Review ── */}
                 {step === "review" && (
                   <div className="space-y-5">
                     <div>
@@ -1062,18 +814,6 @@ export default function RegisterPage() {
                             <p className="text-sm th-text-2">{city}{city && country ? ", " : ""}{country}</p>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="rounded-xl th-bg p-4 space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-wider th-text-2">
-                          {t("review.teams")} ({teamsList.length})
-                        </p>
-                        {teamsList.map((tm, i) => (
-                          <div key={i} className="flex items-center justify-between py-1.5 border-b th-border last:border-0">
-                            <p className="text-sm font-medium">{tm.name}</p>
-                            <p className="text-sm th-text-2">{getClassName(tm.classId)}</p>
-                          </div>
-                        ))}
                       </div>
 
                       <div className="rounded-xl th-bg p-4 space-y-1">

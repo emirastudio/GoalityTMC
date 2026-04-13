@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useAdminFetch } from "@/lib/tournament-context";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ type TeamStatus = "draft" | "open" | "confirmed" | "cancelled";
 
 interface TeamReport {
   team: {
-    id: number; name: string; regNumber: number; status: TeamStatus; notes: string | null; hotelId: number | null;
+    id: number; name: string; registrationId: number; regNumber: number; status: TeamStatus; notes: string | null; hotelId: number | null;
     accomPlayers: number; accomStaff: number; accomAccompanying: number;
     accomCheckIn: string | null; accomCheckOut: string | null; accomNotes: string | null;
     accomDeclined: boolean; accomConfirmed: boolean;
@@ -296,6 +296,7 @@ function PackageItemOverridesCard({
   teamId: string;
   packageId: number;
 }) {
+  const t = useTranslations("orgAdmin.teamDetail");
   const adminFetch = useAdminFetch();
   const [items, setItems] = useState<PkgItem[]>([]);
   const [overrides, setOverrides] = useState<PkgItemOverride[]>([]);
@@ -380,9 +381,9 @@ function PackageItemOverridesCard({
   if (loading) {
     return (
       <Card>
-        <CardHeader><CardTitle>Package Item Overrides</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t("packageItemOverrides")}</CardTitle></CardHeader>
         <div className="flex items-center gap-2 py-4 th-text-2">
-          <Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">Loading...</span>
+          <Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">{t("loadingText")}</span>
         </div>
       </Card>
     );
@@ -393,9 +394,9 @@ function PackageItemOverridesCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Package Item Overrides</CardTitle>
+        <CardTitle>{t("packageItemOverrides")}</CardTitle>
         <p className="text-xs th-text-2 mt-0.5">
-          Override pricing or disable specific services for this team only
+          {t("overrideDesc")}
         </p>
       </CardHeader>
 
@@ -434,7 +435,7 @@ function PackageItemOverridesCard({
                       {ov?.isDisabled && (
                         <span className="text-xs font-semibold rounded px-1.5 py-0.5 border"
                           style={{ background: "var(--badge-error-bg)", color: "var(--badge-error-color)", borderColor: "var(--badge-error-border)" }}>
-                          Disabled for this team
+                          {t("disabledForTeam")}
                         </span>
                       )}
                     </div>
@@ -470,7 +471,7 @@ function PackageItemOverridesCard({
                     onClick={() => isEditing ? setEditingId(null) : startEdit(item)}
                     className="text-xs font-medium text-[var(--cat-accent)] hover:opacity-80 transition-colors cursor-pointer"
                   >
-                    {isEditing ? "Cancel" : ov ? "Edit" : "Override"}
+                    {isEditing ? t("cancel") : ov ? t("editBtn") : t("overrideBtn")}
                   </button>
                 </div>
               </div>
@@ -480,7 +481,7 @@ function PackageItemOverridesCard({
                 <div className="mt-3 pt-3 border-t th-border space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-xs th-text-2 mb-1 block">Custom price (€)</label>
+                      <label className="text-xs th-text-2 mb-1 block">{t("customPrice")}</label>
                       <input
                         type="number"
                         value={editPrice}
@@ -490,12 +491,12 @@ function PackageItemOverridesCard({
                       />
                     </div>
                     <div>
-                      <label className="text-xs th-text-2 mb-1 block">Reason (optional)</label>
+                      <label className="text-xs th-text-2 mb-1 block">{t("reasonOptional")}</label>
                       <input
                         type="text"
                         value={editReason}
                         onChange={(e) => setEditReason(e.target.value)}
-                        placeholder="e.g. Early bird, VIP, Sponsor"
+                        placeholder={t("reasonPlaceholder")}
                         className="w-full rounded-md border th-border th-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15"
                       />
                     </div>
@@ -508,16 +509,16 @@ function PackageItemOverridesCard({
                       onChange={(e) => setEditDisabled(e.target.checked)}
                       className="rounded th-border w-4 h-4"
                     />
-                    <span className="text-sm text-red-600 font-medium">Disable this service for team</span>
+                    <span className="text-sm text-red-600 font-medium">{t("disableService")}</span>
                   </label>
 
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => saveOverride(item)} disabled={saving}>
                       {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                      Save
+                      {t("saveBtn")}
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => setEditingId(null)}>
-                      Cancel
+                      {t("cancel")}
                     </Button>
                   </div>
                 </div>
@@ -555,6 +556,7 @@ function PackagePricingCard({
   selectedPackageId, assigningPackage, togglingPublish,
   teamId, onAssign, onRemove, onTogglePublish, onSelectPackage, onRefresh,
 }: PackagePricingCardProps) {
+  const t = useTranslations("orgAdmin.teamDetail");
   const adminFetch = useAdminFetch();
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -760,7 +762,7 @@ function PackagePricingCard({
       {/* Header */}
       <CardHeader>
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <CardTitle>Package & Pricing</CardTitle>
+          <CardTitle>{t("packagePricing")}</CardTitle>
           {pkg && (
             <div className="flex items-center gap-2">
               <button
@@ -773,10 +775,10 @@ function PackagePricingCard({
                 }
               >
                 {pkg.isPublished
-                  ? <><Eye className="w-3.5 h-3.5" />Published</>
-                  : <><EyeOff className="w-3.5 h-3.5" />Hidden</>}
+                  ? <><Eye className="w-3.5 h-3.5" />{t("publishedBadge")}</>
+                  : <><EyeOff className="w-3.5 h-3.5" />{t("hiddenBadge")}</>}
               </button>
-              <Button variant="danger" size="sm" onClick={onRemove} disabled={assigningPackage}>Remove</Button>
+              <Button variant="danger" size="sm" onClick={onRemove} disabled={assigningPackage}>{t("remove")}</Button>
             </div>
           )}
         </div>
@@ -789,19 +791,19 @@ function PackagePricingCard({
           onChange={(e) => onSelectPackage(e.target.value)}
           className="flex-1 rounded-lg border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] appearance-none cursor-pointer"
         >
-          <option value="">{pkg ? "Change package..." : "Assign package..."}</option>
+          <option value="">{pkg ? t("changePackage") : t("assignPackage")}</option>
           {packages.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}{p.isDefault ? " (default)" : ""}</option>
+            <option key={p.id} value={p.id}>{p.name}{p.isDefault ? ` ${t("defaultSuffix")}` : ""}</option>
           ))}
         </select>
         <Button onClick={onAssign} disabled={!selectedPackageId || assigningPackage} size="sm">
-          {assigningPackage ? "..." : pkg ? "Change" : "Assign"}
+          {assigningPackage ? "..." : pkg ? t("change") : t("assign")}
         </Button>
       </div>
 
       {!pkg ? (
         <div className="rounded-lg border border-dashed th-border p-4 text-center">
-          <p className="text-sm th-text-2">No package assigned — team cannot open booking page</p>
+          <p className="text-sm th-text-2">{t("noPackage")}</p>
         </div>
       ) : (
         <>
@@ -809,9 +811,9 @@ function PackagePricingCard({
           <table className="w-full">
             <thead>
               <tr className="border-b th-border">
-                <th className="text-left pb-2 text-xs font-medium th-text-2 uppercase tracking-wide">Service</th>
-                <th className="text-left pb-2 text-xs font-medium th-text-2 uppercase tracking-wide">Conditions</th>
-                <th className="text-right pb-2 text-xs font-medium th-text-2 uppercase tracking-wide pr-1">Price</th>
+                <th className="text-left pb-2 text-xs font-medium th-text-2 uppercase tracking-wide">{t("serviceCol")}</th>
+                <th className="text-left pb-2 text-xs font-medium th-text-2 uppercase tracking-wide">{t("conditionsCol")}</th>
+                <th className="text-right pb-2 text-xs font-medium th-text-2 uppercase tracking-wide pr-1">{t("priceCol")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--cat-card-border)]">
@@ -825,10 +827,10 @@ function PackagePricingCard({
                       <div className="flex items-center gap-2">
                         <FileText className="w-3.5 h-3.5 th-text-2 shrink-0" />
                         <span className="text-sm font-medium th-text">{r.name}</span>
-                        {r.isRequired && <span className="text-xs th-text-2 th-bg border th-border rounded px-1.5">req.</span>}
+                        {r.isRequired && <span className="text-xs th-text-2 th-bg border th-border rounded px-1.5">{t("required")}</span>}
                       </div>
                     </td>
-                    <td className="py-2.5 pr-3 text-xs th-text-2">1 × per team</td>
+                    <td className="py-2.5 pr-3 text-xs th-text-2">{t("perTeam")}</td>
                     <td className="py-2.5 text-right">
                       {PriceCell({ rowKey: `registration-${r.id}`, serviceType: "registration", serviceId: r.id, basePrice: parseFloat(r.price) })}
                     </td>
@@ -850,7 +852,7 @@ function PackagePricingCard({
                         <span className="text-sm font-medium th-text">{a.name}</span>
                         {a.includedMeals > 0 && (
                           <span className="text-xs rounded px-1.5 border"
-                            style={{ background: "var(--badge-success-bg)", color: "var(--badge-success-color)", borderColor: "var(--badge-success-border)" }}>{a.includedMeals} meals</span>
+                            style={{ background: "var(--badge-success-bg)", color: "var(--badge-success-color)", borderColor: "var(--badge-success-border)" }}>{t("mealsCount", { count: a.includedMeals })}</span>
                         )}
                       </div>
                     </td>
@@ -858,16 +860,16 @@ function PackagePricingCard({
                       <div className="text-xs th-text-2 space-y-0.5">
                         {dateRange && <div>{dateRange}</div>}
                         <div>
-                          Players {fmtEuro(parseFloat(a.pricePerPlayer))}
-                          {" · "}Staff {fmtEuro(parseFloat(a.pricePerStaff))}
-                          {parseFloat(a.pricePerAccompanying) > 0 && ` · Accomp. ${fmtEuro(parseFloat(a.pricePerAccompanying))}`}
+                          {t("players")} {fmtEuro(parseFloat(a.pricePerPlayer))}
+                          {" · "}{t("staffCoaches")} {fmtEuro(parseFloat(a.pricePerStaff))}
+                          {parseFloat(a.pricePerAccompanying) > 0 && ` · ${t("accompanying")} ${fmtEuro(parseFloat(a.pricePerAccompanying))}`}
                         </div>
                       </div>
                     </td>
                     <td className="py-2.5 text-right">
-                      {PriceCell({ rowKey: `accommodation-${a.id}`, serviceType: "accommodation", serviceId: a.id, basePrice: parseFloat(a.pricePerPlayer), unitLabel: "per person" })}
+                      {PriceCell({ rowKey: `accommodation-${a.id}`, serviceType: "accommodation", serviceId: a.id, basePrice: parseFloat(a.pricePerPlayer), unitLabel: t("perPerson") })}
                       {ov?.customPrice && (
-                        <div className="text-xs th-text-2 text-right mt-0.5">all types</div>
+                        <div className="text-xs th-text-2 text-right mt-0.5">{t("allTypes")}</div>
                       )}
                     </td>
                   </tr>
@@ -875,26 +877,26 @@ function PackagePricingCard({
               })}
 
               {/* Transfers */}
-              {pkg.includeTransfer && services.transfers.map((t) => {
-                const ov = getOverride("transfer", t.id);
+              {pkg.includeTransfer && services.transfers.map((tr) => {
+                const ov = getOverride("transfer", tr.id);
                 return (
-                  <tr key={`tr-${t.id}`} className={`${ov?.isDisabled ? "opacity-40" : ""}`}>
+                  <tr key={`tr-${tr.id}`} className={`${ov?.isDisabled ? "opacity-40" : ""}`}>
                     <td className="py-2.5 pr-3">
                       <div className="flex items-center gap-2">
                         <Car className="w-3.5 h-3.5 th-text-2 shrink-0" />
-                        <span className="text-sm font-medium th-text">{t.name}</span>
+                        <span className="text-sm font-medium th-text">{tr.name}</span>
                       </div>
-                      {t.description && <div className="text-xs th-text-2 mt-0.5 ml-5">{t.description}</div>}
+                      {tr.description && <div className="text-xs th-text-2 mt-0.5 ml-5">{tr.description}</div>}
                     </td>
-                    <td className="py-2.5 pr-3 text-xs th-text-2">Per team</td>
+                    <td className="py-2.5 pr-3 text-xs th-text-2">{t("perTeamLabel")}</td>
                     <td className="py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {PriceCell({ rowKey: `transfer-${t.id}`, serviceType: "transfer", serviceId: t.id, basePrice: parseFloat(t.pricePerPerson) })}
+                        {PriceCell({ rowKey: `transfer-${tr.id}`, serviceType: "transfer", serviceId: tr.id, basePrice: parseFloat(tr.pricePerPerson) })}
                         <button
-                          onClick={() => giftTransfer(t.id)}
-                          title={effectivePrice("transfer", t.id, parseFloat(t.pricePerPerson)) === 0 ? "Remove gift — restore price" : "Gift this transfer (set to free)"}
+                          onClick={() => giftTransfer(tr.id)}
+                          title={effectivePrice("transfer", tr.id, parseFloat(tr.pricePerPerson)) === 0 ? t("removeGiftTitle") : t("giftTransferTitle")}
                           className="text-xs px-2 py-1 rounded-lg border transition-colors cursor-pointer shrink-0 hover:opacity-80"
-                          style={effectivePrice("transfer", t.id, parseFloat(t.pricePerPerson)) === 0
+                          style={effectivePrice("transfer", tr.id, parseFloat(tr.pricePerPerson)) === 0
                             ? { background: "var(--badge-success-bg)", borderColor: "var(--badge-success-border)", color: "var(--badge-success-color)" }
                             : { background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)" }
                           }
@@ -919,7 +921,7 @@ function PackagePricingCard({
                       </div>
                     </td>
                     <td className="py-2.5 pr-3 text-xs th-text-2">
-                      {m.perDay ? "Per person / day" : "Per person"}
+                      {m.perDay ? t("perPersonDay") : t("perPerson")}
                     </td>
                     <td className="py-2.5 text-right">
                       {PriceCell({ rowKey: `meal-${m.id}`, serviceType: "meal", serviceId: m.id, basePrice: parseFloat(m.pricePerPerson) })}
@@ -932,30 +934,30 @@ function PackagePricingCard({
           </table>
 
           <p className="text-xs th-text-2 mt-3 italic">
-            Click any price to edit. Press Enter to save, Esc to cancel. Base price restores on clear.
+            {t("priceEditHint")}
           </p>
 
           {/* ── Free Slots ── */}
           <div className="mt-5 pt-5 border-t th-border">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-sm font-semibold th-text">Free slots</p>
-                <p className="text-xs th-text-2">Complimentary places (visible to the team)</p>
+                <p className="text-sm font-semibold th-text">{t("freeSlots")}</p>
+                <p className="text-xs th-text-2">{t("freeSlotsDesc")}</p>
               </div>
               <button
                 onClick={saveFreeSlots}
                 disabled={savingFree}
                 className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--cat-accent)] text-[var(--cat-accent-text)] hover:opacity-80 disabled:opacity-50 transition-colors cursor-pointer"
               >
-                {savingFree ? "Saving…" : savedFree ? "✓ Saved" : "Save"}
+                {savingFree ? t("savingPayment") : savedFree ? `✓ ${t("saved")}` : t("saveBtn")}
               </button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "Players", value: freePlayers, set: setFreePlayers, placeholder: undefined, isText: false },
-                { label: "Staff / Coaches", value: freeStaff, set: setFreeStaff, placeholder: undefined, isText: false },
-                { label: "Accompanying", value: freeAccom, set: setFreeAccom, placeholder: undefined, isText: false },
-                { label: "Meals in package", value: mealsOverride, set: setMealsOverride, placeholder: "default", isText: true },
+                { label: t("players"), value: freePlayers, set: setFreePlayers, placeholder: undefined, isText: false },
+                { label: t("staffCoaches"), value: freeStaff, set: setFreeStaff, placeholder: undefined, isText: false },
+                { label: t("accompanying"), value: freeAccom, set: setFreeAccom, placeholder: undefined, isText: false },
+                { label: t("mealsInPackage"), value: mealsOverride, set: setMealsOverride, placeholder: "default", isText: true },
               ].map(({ label, value, set, placeholder, isText }) => (
                 <div key={label}>
                   <label className="block text-xs th-text-2 mb-1">{label}</label>
@@ -975,19 +977,19 @@ function PackagePricingCard({
                       }}
                       className="w-16 rounded-lg border th-border px-2 py-1.5 text-sm font-semibold text-center focus:outline-none focus:border-[var(--cat-accent)]"
                     />
-                    {!isText && <span className="text-xs th-text-2">free</span>}
+                    {!isText && <span className="text-xs th-text-2">{t("free")}</span>}
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-xs th-text-2 mt-1">Leave meals empty to use default (from accommodation option)</p>
+            <p className="text-xs th-text-2 mt-1">{t("mealsDefaultHint")}</p>
             {(parseInt(freePlayers) > 0 || parseInt(freeStaff) > 0 || parseInt(freeAccom) > 0) && (
               <div className="mt-3 rounded-lg border px-3 py-2 text-xs"
                 style={{ background: "var(--badge-success-bg)", borderColor: "var(--badge-success-border)", color: "var(--badge-success-color)" }}>
-                The team will see: {[
-                  parseInt(freePlayers) > 0 ? `${freePlayers} free player${parseInt(freePlayers) > 1 ? "s" : ""}` : null,
-                  parseInt(freeStaff) > 0 ? `${freeStaff} free staff` : null,
-                  parseInt(freeAccom) > 0 ? `${freeAccom} free accompanying` : null,
+                {t("teamWillSee")} {[
+                  parseInt(freePlayers) > 0 ? t("freePlayersMsg", { count: parseInt(freePlayers) }) : null,
+                  parseInt(freeStaff) > 0 ? t("freeStaffMsg", { count: parseInt(freeStaff) }) : null,
+                  parseInt(freeAccom) > 0 ? t("freeAccompMsg", { count: parseInt(freeAccom) }) : null,
                 ].filter(Boolean).join(", ")}
               </div>
             )}
@@ -1003,6 +1005,7 @@ function PackagePricingCard({
 export function TeamDetailPageContent({ teamId }: { teamId: string }) {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("orgAdmin.teamDetail");
   const adminFetch = useAdminFetch();
 
   const [report, setReport] = useState<TeamReport | null>(null);
@@ -1045,17 +1048,37 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // People CRUD
+  type PersonForm = {
+    personType: "player" | "staff" | "accompanying";
+    firstName: string; lastName: string; dateOfBirth: string;
+    shirtNumber: string; position: string; role: string;
+    needsHotel: boolean; needsTransfer: boolean;
+    allergies: string; dietaryRequirements: string; medicalNotes: string;
+  };
+  const emptyPersonForm = (type: "player" | "staff" | "accompanying"): PersonForm => ({
+    personType: type, firstName: "", lastName: "", dateOfBirth: "",
+    shirtNumber: "", position: "", role: "",
+    needsHotel: false, needsTransfer: false,
+    allergies: "", dietaryRequirements: "", medicalNotes: "",
+  });
+  const [personModal, setPersonModal] = useState<{ open: boolean; editId: number | null; form: PersonForm }>({
+    open: false, editId: null, form: emptyPersonForm("player"),
+  });
+  const [savingPerson, setSavingPerson] = useState(false);
+  const [deletingPersonId, setDeletingPersonId] = useState<number | null>(null);
+
   // ─── Fetch ───────────────────────────────────────────────────────────────
 
   const fetchReport = useCallback(async () => {
     try {
       const res = await adminFetch(`/api/admin/teams/${teamId}/report`);
-      if (!res.ok) { setError("Team not found"); return; }
+      if (!res.ok) { setError(t("teamNotFound")); return; }
       const data: TeamReport = await res.json();
       setReport(data);
       setNotes(data.team.notes ?? "");
     } catch {
-      setError("Failed to load team data");
+      setError(t("failedToLoad"));
     } finally {
       setLoading(false);
     }
@@ -1133,13 +1156,13 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
 
   async function handleAddPayment(e: React.FormEvent) {
     e.preventDefault();
-    if (!paymentAmount) return;
+    if (!paymentAmount || !report) return;
     setSubmittingPayment(true);
     try {
       const res = await adminFetch("/api/admin/payments", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          teamId: Number(teamId), amount: Number(paymentAmount),
+          registrationId: report.team.registrationId, amount: Number(paymentAmount),
           method: paymentMethod, status: paymentStatus,
           reference: paymentReference || null, notes: paymentNotes || null,
           receivedAt: paymentDate || null,
@@ -1181,7 +1204,12 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
       });
       if (res.ok) {
         router.push(`/${locale}/team/overview`);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(`Ошибка: ${data.error ?? res.status}`);
       }
+    } catch (e) {
+      alert(`Ошибка: ${e}`);
     } finally {
       setLoggingIn(false);
     }
@@ -1197,6 +1225,79 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
     } catch { /* silent */ } finally {
       setDeleting(false);
     }
+  }
+
+  // ─── People CRUD ──────────────────────────────────────────────────────────
+
+  function openAddPerson(type: "player" | "staff" | "accompanying") {
+    setPersonModal({ open: true, editId: null, form: emptyPersonForm(type) });
+  }
+
+  function openEditPerson(p: Person) {
+    setPersonModal({
+      open: true,
+      editId: p.id,
+      form: {
+        personType: p.personType,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        dateOfBirth: p.dateOfBirth ? p.dateOfBirth.split("T")[0] : "",
+        shirtNumber: p.shirtNumber != null ? String(p.shirtNumber) : "",
+        position: p.position ?? "",
+        role: p.role ?? "",
+        needsHotel: p.needsHotel,
+        needsTransfer: p.needsTransfer,
+        allergies: p.allergies ?? "",
+        dietaryRequirements: p.dietaryRequirements ?? "",
+        medicalNotes: p.medicalNotes ?? "",
+      },
+    });
+  }
+
+  async function handleSavePerson(e: React.FormEvent) {
+    e.preventDefault();
+    const { editId, form } = personModal;
+    setSavingPerson(true);
+    try {
+      let res: Response;
+      if (editId) {
+        res = await adminFetch(`/api/admin/people/${editId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...form,
+            shirtNumber: form.shirtNumber !== "" ? Number(form.shirtNumber) : null,
+            dateOfBirth: form.dateOfBirth || null,
+          }),
+        });
+      } else {
+        res = await adminFetch(`/api/admin/teams/${teamId}/people`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...form,
+            shirtNumber: form.shirtNumber !== "" ? Number(form.shirtNumber) : null,
+            dateOfBirth: form.dateOfBirth || null,
+          }),
+        });
+      }
+      if (res.ok) {
+        setPersonModal({ open: false, editId: null, form: emptyPersonForm("player") });
+        await fetchReport();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error ?? "Error saving person");
+      }
+    } finally { setSavingPerson(false); }
+  }
+
+  async function handleDeletePerson(personId: number) {
+    if (!confirm("Delete this person?")) return;
+    setDeletingPersonId(personId);
+    try {
+      const res = await adminFetch(`/api/admin/people/${personId}`, { method: "DELETE" });
+      if (res.ok) await fetchReport();
+    } finally { setDeletingPersonId(null); }
   }
 
   // ─── Loading / Error ─────────────────────────────────────────────────────
@@ -1222,9 +1323,9 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
       <div className="space-y-4">
         <button onClick={() => router.push(`/${locale}/admin/teams`)}
           className="flex items-center gap-2 text-sm th-text-2 hover:opacity-80 cursor-pointer">
-          <ArrowLeft className="w-4 h-4" /> Back to Teams
+          <ArrowLeft className="w-4 h-4" /> {t("backToTeamsError")}
         </button>
-        <Alert variant="error">{error ?? "Team not found"}</Alert>
+        <Alert variant="error">{error ?? t("teamNotFound")}</Alert>
       </div>
     );
   }
@@ -1266,7 +1367,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
       {/* ── Back nav ── */}
       <button onClick={() => router.push(`/${locale}/admin/teams`)}
         className="flex items-center gap-2 text-sm th-text-2 hover:opacity-80 transition-colors cursor-pointer">
-        <ArrowLeft className="w-4 h-4" /> All Teams
+        <ArrowLeft className="w-4 h-4" /> {t("backToTeams")}
       </button>
 
       {/* ══════════════════════════════════════════════════════════════════
@@ -1301,7 +1402,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               )}
               {teamClass && (
                 <p className="text-xs th-text-2 mt-0.5">
-                  Class: <span className="font-semibold th-text">{teamClass.name}</span>
+                  {t("classLabel")} <span className="font-semibold th-text">{teamClass.name}</span>
                   {(teamClass.minBirthYear || teamClass.maxBirthYear) &&
                     ` (${teamClass.minBirthYear ?? ""}–${teamClass.maxBirthYear ?? ""})`}
                 </p>
@@ -1322,8 +1423,8 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
 
             {/* Copy login link */}
             <Button variant="secondary" size="sm" onClick={handleCopyInvite} disabled={!club}>
-              {copied ? <><Check className="w-4 h-4 text-success" /><span className="text-success">Copied!</span></>
-                : <><Copy className="w-4 h-4" />Login link</>}
+              {copied ? <><Check className="w-4 h-4 text-success" /><span className="text-success">{t("copied")}</span></>
+                : <><Copy className="w-4 h-4" />{t("loginLink")}</>}
             </Button>
 
             {/* Login as club */}
@@ -1335,19 +1436,19 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)" }}
             >
               <LogIn className="w-4 h-4" />
-              {loggingIn ? "..." : "Login as"}
+              {loggingIn ? "..." : t("loginAs")}
             </Button>
 
             {/* Send message */}
             <Button variant="secondary" size="sm" onClick={() => router.push(`/${locale}/admin/messages`)}>
-              <MessageSquare className="w-4 h-4" /> Message
+              <MessageSquare className="w-4 h-4" /> {t("message")}
             </Button>
 
             {/* Schedule link */}
             {tInfo?.scheduleUrl && (
               <a href={tInfo.scheduleUrl} target="_blank" rel="noopener noreferrer">
                 <Button variant="secondary" size="sm">
-                  <Calendar className="w-4 h-4" /> Schedule
+                  <Calendar className="w-4 h-4" /> {t("schedule")}
                 </Button>
               </a>
             )}
@@ -1355,19 +1456,19 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             {/* Delete team */}
             {confirmDelete ? (
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-error font-medium">Delete team?</span>
+                <span className="text-xs text-error font-medium">{t("deleteTeamConfirm")}</span>
                 <button
                   onClick={handleDeleteTeam}
                   disabled={deleting}
                   className="text-xs font-semibold text-error border border-error/40 bg-red-50 hover:bg-red-100 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {deleting ? "Deleting..." : "Yes, delete"}
+                  {deleting ? t("deleting") : t("yesDelete")}
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
                   className="text-xs th-text-2 hover:th-text cursor-pointer px-1.5 py-1.5"
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
               </div>
             ) : (
@@ -1375,7 +1476,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 onClick={() => setConfirmDelete(true)}
                 className="flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-error border th-border hover:border-error/40 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Delete
+                <Trash2 className="w-3.5 h-3.5" /> {t("deleteTeam")}
               </button>
             )}
           </div>
@@ -1412,50 +1513,50 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           STATS ROW
       ══════════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatTile label="Players" value={people.counts.players} sub={`+ ${people.counts.staff} staff`} />
+        <StatTile label={t("players")} value={people.counts.players} sub={t("staffSub", { count: people.counts.staff })} />
         <StatTile
-          label="Accommodation"
+          label={t("accommodationLabel")}
           value={(() => {
-            const t = team;
-            if (t.accomDeclined) return "No hotel";
-            if (t.accomConfirmed) {
-              const total = (t.accomPlayers ?? 0) + (t.accomStaff ?? 0) + (t.accomAccompanying ?? 0);
-              return `${total} place${total !== 1 ? "s" : ""}`;
+            const tm = team;
+            if (tm.accomDeclined) return t("noHotel");
+            if (tm.accomConfirmed) {
+              const total = (tm.accomPlayers ?? 0) + (tm.accomStaff ?? 0) + (tm.accomAccompanying ?? 0);
+              return t("places", { count: total });
             }
             return "—";
           })()}
           sub={(() => {
-            const t = team;
-            if (t.accomDeclined) return "declined";
-            if (t.accomConfirmed) {
+            const tm = team;
+            if (tm.accomDeclined) return t("declined");
+            if (tm.accomConfirmed) {
               const parts = [];
-              if (t.accomCheckIn) parts.push(t.accomCheckIn);
-              if (t.accomCheckOut) parts.push(t.accomCheckOut);
-              return parts.length ? parts.join(" → ") : "confirmed";
+              if (tm.accomCheckIn) parts.push(tm.accomCheckIn);
+              if (tm.accomCheckOut) parts.push(tm.accomCheckOut);
+              return parts.length ? parts.join(" → ") : t("confirmed");
             }
-            return "not answered";
+            return t("notAnswered");
           })()}
           detail={(() => {
-            const t = team;
-            if (!t.accomConfirmed) return undefined;
+            const tm = team;
+            if (!tm.accomConfirmed) return undefined;
             const parts: string[] = [];
-            if (t.accomPlayers) parts.push(`${t.accomPlayers} players`);
-            if (t.accomStaff) parts.push(`${t.accomStaff} staff`);
-            if (t.accomAccompanying) parts.push(`${t.accomAccompanying} accompanying`);
+            if (tm.accomPlayers) parts.push(t("playersCount", { count: tm.accomPlayers }));
+            if (tm.accomStaff) parts.push(t("staffCount", { count: tm.accomStaff }));
+            if (tm.accomAccompanying) parts.push(t("accompanyingCount", { count: tm.accomAccompanying }));
             return parts.length ? parts.join(" + ") : undefined;
           })()}
           color={team.accomConfirmed ? "green" : team.accomDeclined ? "default" : "default"}
         />
         <StatTile
-          label="Package"
+          label={t("packageLabel")}
           value={report.package ? report.package.name : "—"}
-          sub={report.package?.isPublished ? "✓ Published" : report.package ? "⚠ Not published" : "Not assigned"}
+          sub={report.package?.isPublished ? `✓ ${t("published")}` : report.package ? `⚠ ${t("notPublished")}` : t("notAssigned")}
           color={report.package?.isPublished ? "green" : report.package ? "amber" : "default"}
         />
         <StatTile
-          label="Balance"
+          label={t("balanceLabel")}
           value={fmtEuro(Math.abs(finance.balance))}
-          sub={finance.balance <= 0 ? "Paid in full" : `${fmtEuro(finance.balance)} outstanding`}
+          sub={finance.balance <= 0 ? t("paidInFull") : t("outstanding", { amount: fmtEuro(finance.balance) })}
           color={balanceColor}
         />
       </div>
@@ -1467,9 +1568,9 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
 
         {/* Booking Summary */}
         <Card>
-          <CardHeader><CardTitle>Booking Summary</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t("bookingSummary")}</CardTitle></CardHeader>
           {report.bookings.length === 0 ? (
-            <p className="text-sm th-text-2 italic">No bookings saved yet.</p>
+            <p className="text-sm th-text-2 italic">{t("noBookings")}</p>
           ) : (
             <div className="space-y-2">
               {(() => {
@@ -1494,7 +1595,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                         <div className="px-3 py-2 space-y-1">
                           {accRows.map((b) => (
                             <div key={b.id} className="flex justify-between text-xs th-text-2">
-                              <span className="capitalize">{b.notes ?? "persons"} × {fmtEuro(b.unitPrice)}</span>
+                              <span className="capitalize">{b.notes ?? t("persons")} × {fmtEuro(b.unitPrice)}</span>
                               <span>{b.quantity} ppl → {fmtEuro(b.total)}</span>
                             </div>
                           ))}
@@ -1527,7 +1628,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                     })}
 
                     <div className="flex justify-between items-center pt-2 border-t th-border">
-                      <span className="text-sm font-semibold th-text">Grand Total</span>
+                      <span className="text-sm font-semibold th-text">{t("grandTotal")}</span>
                       <span className="text-lg font-bold text-[var(--cat-accent)]">{fmtEuro(finance.totalFromBookings)}</span>
                     </div>
                   </>
@@ -1541,20 +1642,20 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Finance</CardTitle>
+              <CardTitle>{t("finance")}</CardTitle>
               <Button size="sm" onClick={() => setShowPaymentModal(true)}>
-                <Plus className="w-4 h-4" /> Add Payment
+                <Plus className="w-4 h-4" /> {t("addPayment")}
               </Button>
             </div>
           </CardHeader>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="rounded-lg border th-border th-bg/50 p-3 text-center">
-              <p className="text-xs th-text-2">Ordered</p>
+              <p className="text-xs th-text-2">{t("ordered")}</p>
               <p className="text-lg font-bold th-text">{fmtEuro(finance.totalFromBookings)}</p>
             </div>
             <div className="rounded-lg border p-3 text-center"
               style={{ borderColor: "var(--badge-success-border)", background: "var(--badge-success-bg)" }}>
-              <p className="text-xs th-text-2">Paid</p>
+              <p className="text-xs th-text-2">{t("paid")}</p>
               <p className="text-lg font-bold" style={{ color: "var(--badge-success-color)" }}>{fmtEuro(finance.totalPaid)}</p>
             </div>
             <div className="rounded-lg border p-3 text-center"
@@ -1562,7 +1663,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 ? { borderColor: "var(--badge-success-border)", background: "var(--badge-success-bg)" }
                 : { borderColor: "var(--badge-error-border)", background: "var(--badge-error-bg)" }
               }>
-              <p className="text-xs th-text-2">Balance</p>
+              <p className="text-xs th-text-2">{t("balanceLabel")}</p>
               <p className="text-lg font-bold"
                 style={{ color: finance.balance <= 0 ? "var(--badge-success-color)" : "var(--badge-error-color)" }}>
                 {finance.balance > 0 ? "-" : ""}{fmtEuro(Math.abs(finance.balance))}
@@ -1576,7 +1677,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               <button onClick={() => setShowPayments(!showPayments)}
                 className="flex items-center gap-1 text-xs font-medium th-text-2 hover:opacity-80 cursor-pointer mb-2">
                 {showPayments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                Payment history ({payments.length})
+                {t("paymentHistory", { count: payments.length })}
               </button>
               {showPayments && (
                 <div className="space-y-1.5">
@@ -1587,7 +1688,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                           {p.status}
                         </Badge>
                         <span className="th-text-2 text-xs">{fmtDate(p.receivedAt ?? p.createdAt)}</span>
-                        <span className="th-text-2 text-xs">{METHOD_LABELS[p.method] ?? p.method}</span>
+                        <span className="th-text-2 text-xs">{({ bank_transfer: t("methodBankTransfer"), cash: t("methodCash"), stripe: t("methodStripe") } as Record<string, string>)[p.method] ?? p.method}</span>
                       </div>
                       <span className="font-semibold tabular-nums th-text">{fmtEuro(p.amount)}</span>
                     </div>
@@ -1597,7 +1698,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             </div>
           )}
           {payments.length === 0 && (
-            <p className="text-xs th-text-2 italic">No payments recorded yet.</p>
+            <p className="text-xs th-text-2 italic">{t("noPayments")}</p>
           )}
         </Card>
       </div>
@@ -1608,20 +1709,20 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-3">
-            <CardTitle>🏨 Accommodation Pre-Booking</CardTitle>
+            <CardTitle>{t("accomPreBooking")}</CardTitle>
             {team.accomConfirmed ? (
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border"
                 style={{ background: "var(--badge-success-bg)", color: "var(--badge-success-color)", borderColor: "var(--badge-success-border)" }}>
-                ✅ Confirmed
+                {t("accomConfirmed")}
               </span>
             ) : team.accomDeclined ? (
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border th-bg th-text-2 th-border">
-                Declined
+                {t("accomDeclined")}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border"
                 style={{ background: "var(--badge-warning-bg)", color: "var(--badge-warning-color)", borderColor: "var(--badge-warning-border)" }}>
-                ⏳ Pending
+                {t("accomPending")}
               </span>
             )}
           </div>
@@ -1629,38 +1730,38 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         {team.accomConfirmed ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="rounded-lg border th-border th-bg/50 p-3">
-              <p className="text-xs th-text-2">Players</p>
+              <p className="text-xs th-text-2">{t("accomPlayersLabel")}</p>
               <p className="text-xl font-bold th-text">{team.accomPlayers}</p>
             </div>
             <div className="rounded-lg border th-border th-bg/50 p-3">
-              <p className="text-xs th-text-2">Staff</p>
+              <p className="text-xs th-text-2">{t("accomStaffLabel")}</p>
               <p className="text-xl font-bold th-text">{team.accomStaff}</p>
             </div>
             <div className="rounded-lg border th-border th-bg/50 p-3">
-              <p className="text-xs th-text-2">Accompanying</p>
+              <p className="text-xs th-text-2">{t("accomAccompanyingLabel")}</p>
               <p className="text-xl font-bold th-text">{team.accomAccompanying}</p>
             </div>
             <div className="rounded-lg border th-border th-bg/50 p-3">
-              <p className="text-xs th-text-2">Total beds</p>
+              <p className="text-xs th-text-2">{t("totalBeds")}</p>
               <p className="text-xl font-bold text-[var(--cat-accent)]">{team.accomPlayers + team.accomStaff + team.accomAccompanying}</p>
             </div>
           </div>
         ) : team.accomDeclined ? (
-          <p className="text-sm th-text-2 italic">Команда отказалась от проживания в отеле.</p>
+          <p className="text-sm th-text-2 italic">{t("accomDeclinedMsg")}</p>
         ) : (
-          <p className="text-sm th-text-2 italic">Команда ещё не ответила на вопрос о проживании.</p>
+          <p className="text-sm th-text-2 italic">{t("accomPendingMsg")}</p>
         )}
         {team.accomConfirmed && (team.accomCheckIn || team.accomCheckOut) && (
           <div className="mt-3 flex gap-6 text-sm">
             {team.accomCheckIn && (
               <div>
-                <span className="text-xs th-text-2 block">Check-in</span>
+                <span className="text-xs th-text-2 block">{t("accomCheckIn")}</span>
                 <span className="font-semibold th-text">{team.accomCheckIn}</span>
               </div>
             )}
             {team.accomCheckOut && (
               <div>
-                <span className="text-xs th-text-2 block">Check-out</span>
+                <span className="text-xs th-text-2 block">{t("accomCheckOut")}</span>
                 <span className="font-semibold th-text">{team.accomCheckOut}</span>
               </div>
             )}
@@ -1668,7 +1769,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         )}
         {team.accomConfirmed && team.accomNotes && (
           <div className="mt-3 rounded-lg th-bg border th-border p-3 text-sm th-text-2">
-            <span className="text-xs font-semibold th-text-2 block mb-1">Special requests</span>
+            <span className="text-xs font-semibold th-text-2 block mb-1">{t("specialRequests")}</span>
             {team.accomNotes}
           </div>
         )}
@@ -1708,11 +1809,11 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Hotel & Logistics</CardTitle>
+              <CardTitle>{t("hotelLogistics")}</CardTitle>
               {tInfo?.scheduleUrl && (
                 <a href={tInfo.scheduleUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="secondary" size="sm">
-                    <ExternalLink className="w-3.5 h-3.5" /> Match Schedule
+                    <ExternalLink className="w-3.5 h-3.5" /> {t("matchSchedule")}
                   </Button>
                 </a>
               )}
@@ -1723,13 +1824,13 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               {/* Hotel assignment */}
               <div>
                 <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3 flex items-center gap-1.5">
-                  <Hotel className="w-3.5 h-3.5" /> Отель команды
+                  <Hotel className="w-3.5 h-3.5" /> {t("teamHotel")}
                 </h4>
                 {availableHotels.length === 0 ? (
                   <p className="text-sm th-text-2 italic">
-                    Отели не добавлены.{" "}
+                    {t("noHotels")}{" "}
                     <button onClick={() => router.push(`/${locale}/admin/tournaments`)}
-                      className="text-[var(--cat-accent)] hover:underline cursor-pointer">Добавить в турнире</button>
+                      className="text-[var(--cat-accent)] hover:underline cursor-pointer">{t("addInTournament")}</button>
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -1746,7 +1847,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                         fetchReport();
                       }}
                     >
-                      <option value="">— Не назначен —</option>
+                      <option value="">{t("notAssignedHotel")}</option>
                       {availableHotels.map((h) => (
                         <option key={h.id} value={h.id}>{h.name}{h.address ? ` · ${h.address}` : ""}</option>
                       ))}
@@ -1755,7 +1856,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                       <div className="rounded-lg bg-[var(--cat-accent)]/5 border border-[var(--cat-accent)]/20 p-3 space-y-1.5">
                         <p className="text-sm font-semibold text-[var(--cat-accent)]">{assignedHotel.name}</p>
                         {assignedHotel.address && <p className="text-xs th-text-2">{assignedHotel.address}</p>}
-                        {assignedHotel.contactName && <p className="text-xs th-text-2">Контакт: {assignedHotel.contactName}</p>}
+                        {assignedHotel.contactName && <p className="text-xs th-text-2">{t("hotelContact")} {assignedHotel.contactName}</p>}
                         {assignedHotel.contactPhone && <a href={`tel:${assignedHotel.contactPhone}`} className="text-xs text-[var(--cat-accent)] hover:underline block">{assignedHotel.contactPhone}</a>}
                         {assignedHotel.contactEmail && <p className="text-xs th-text-2">{assignedHotel.contactEmail}</p>}
                         {assignedHotel.notes && <p className="text-xs th-text-2 italic">{assignedHotel.notes}</p>}
@@ -1771,11 +1872,11 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               {(tInfo.mealTimes || tInfo.mealLocation || tInfo.mealNotes) && (
                 <div>
                   <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3 flex items-center gap-1.5">
-                    <Utensils className="w-3.5 h-3.5" /> Meals
+                    <Utensils className="w-3.5 h-3.5" /> {t("mealsSection")}
                   </h4>
                   <div className="space-y-2">
-                    <InfoRow icon={<Clock className="w-4 h-4" />} label="Meal times" value={tInfo.mealTimes} />
-                    <InfoRow icon={<MapPin className="w-4 h-4" />} label="Location" value={tInfo.mealLocation} />
+                    <InfoRow icon={<Clock className="w-4 h-4" />} label={t("mealTimesLabel")} value={tInfo.mealTimes} />
+                    <InfoRow icon={<MapPin className="w-4 h-4" />} label={t("locationLabel")} value={tInfo.mealLocation} />
                     {tInfo.mealNotes && (
                       <div className="rounded-lg th-bg border th-border p-2.5 text-xs th-text-2">
                         {tInfo.mealNotes}
@@ -1789,11 +1890,11 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               {(tInfo.venueName || tInfo.venueAddress) && (
                 <div>
                   <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5" /> Venue
+                    <MapPin className="w-3.5 h-3.5" /> {t("venueSection")}
                   </h4>
                   <div className="space-y-2">
-                    <InfoRow icon={<MapPin className="w-4 h-4" />} label="Venue" value={tInfo.venueName} />
-                    <InfoRow icon={<MapPin className="w-4 h-4" />} label="Address" value={tInfo.venueAddress}
+                    <InfoRow icon={<MapPin className="w-4 h-4" />} label={t("venueLabel")} value={tInfo.venueName} />
+                    <InfoRow icon={<MapPin className="w-4 h-4" />} label={t("addressLabel")} value={tInfo.venueAddress}
                       href={tInfo.venueMapUrl ?? undefined} />
                   </div>
                 </div>
@@ -1803,11 +1904,11 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
               {(tInfo.emergencyContact || tInfo.emergencyPhone) && (
                 <div>
                   <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5" /> Emergency Contact
+                    <Phone className="w-3.5 h-3.5" /> {t("emergencyContact")}
                   </h4>
                   <div className="space-y-2">
-                    <InfoRow icon={<UserCheck className="w-4 h-4" />} label="Name" value={tInfo.emergencyContact} />
-                    <InfoRow icon={<Phone className="w-4 h-4" />} label="Phone" value={tInfo.emergencyPhone}
+                    <InfoRow icon={<UserCheck className="w-4 h-4" />} label={t("nameLabel")} value={tInfo.emergencyContact} />
+                    <InfoRow icon={<Phone className="w-4 h-4" />} label={t("phoneLabel")} value={tInfo.emergencyPhone}
                       href={tInfo.emergencyPhone ? `tel:${tInfo.emergencyPhone}` : undefined} />
                   </div>
                 </div>
@@ -1823,20 +1924,20 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
       ══════════════════════════════════════════════════════════════════ */}
       {travel && (travel.arrivalType || travel.departureType) && (
         <Card>
-          <CardHeader><CardTitle>Travel</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t("travel")}</CardTitle></CardHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Arrival */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3">Arrival</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3">{t("arrival")}</h4>
               {travel.arrivalType ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-semibold th-text">
                     {TRANSPORT_ICONS[travel.arrivalType] ?? <Plane className="w-4 h-4" />}
-                    <span>{TRANSPORT_LABELS[travel.arrivalType] ?? travel.arrivalType}</span>
+                    <span>{({ airport: t("transportAirport"), port: t("transportPort"), railway: t("transportRailway"), bus_station: t("transportBusStation"), own_bus: t("transportOwnBus") } as Record<string, string>)[travel.arrivalType] ?? travel.arrivalType}</span>
                   </div>
                   {travel.arrivalDate && (
                     <p className="text-sm th-text-2">
-                      {fmtDate(travel.arrivalDate)}{travel.arrivalTime && ` at ${travel.arrivalTime}`}
+                      {fmtDate(travel.arrivalDate)}{travel.arrivalTime && ` ${travel.arrivalTime}`}
                     </p>
                   )}
                   {travel.arrivalDetails && (
@@ -1844,22 +1945,22 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                   )}
                 </div>
               ) : (
-                <p className="text-sm th-text-2 italic">Not specified</p>
+                <p className="text-sm th-text-2 italic">{t("notSpecified")}</p>
               )}
             </div>
 
             {/* Departure */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3">Departure</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wide th-text-2 mb-3">{t("departure")}</h4>
               {travel.departureType ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-semibold th-text">
                     {TRANSPORT_ICONS[travel.departureType] ?? <Plane className="w-4 h-4" />}
-                    <span>{TRANSPORT_LABELS[travel.departureType] ?? travel.departureType}</span>
+                    <span>{({ airport: t("transportAirport"), port: t("transportPort"), railway: t("transportRailway"), bus_station: t("transportBusStation"), own_bus: t("transportOwnBus") } as Record<string, string>)[travel.departureType] ?? travel.departureType}</span>
                   </div>
                   {travel.departureDate && (
                     <p className="text-sm th-text-2">
-                      {fmtDate(travel.departureDate)}{travel.departureTime && ` at ${travel.departureTime}`}
+                      {fmtDate(travel.departureDate)}{travel.departureTime && ` ${travel.departureTime}`}
                     </p>
                   )}
                   {travel.departureDetails && (
@@ -1867,7 +1968,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                   )}
                 </div>
               ) : (
-                <p className="text-sm th-text-2 italic">Not specified</p>
+                <p className="text-sm th-text-2 italic">{t("notSpecified")}</p>
               )}
             </div>
           </div>
@@ -1880,14 +1981,30 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <CardTitle>People</CardTitle>
-            <div className="flex items-center gap-3 text-sm th-text-2">
-              <span>{people.counts.players} players</span>
-              <span>·</span>
-              <span>{people.counts.staff} staff</span>
-              {people.counts.accompanying > 0 && (
-                <><span>·</span><span>{people.counts.accompanying} accompanying</span></>
-              )}
+            <div>
+              <CardTitle>{t("people")}</CardTitle>
+              <div className="flex items-center gap-3 text-sm th-text-2 mt-1">
+                <span>{t("playersSection", { count: people.counts.players })}</span>
+                <span>·</span>
+                <span>{t("staffSection", { count: people.counts.staff })}</span>
+                {people.counts.accompanying > 0 && (
+                  <><span>·</span><span>{t("accompanyingSection", { count: people.counts.accompanying })}</span></>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => openAddPerson("player")}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border th-border th-card hover:opacity-80 cursor-pointer th-text"
+              >
+                <Plus className="w-3.5 h-3.5" /> {t("addPlayer")}
+              </button>
+              <button
+                onClick={() => openAddPerson("staff")}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border th-border th-card hover:opacity-80 cursor-pointer th-text"
+              >
+                <Plus className="w-3.5 h-3.5" /> {t("addStaff")}
+              </button>
             </div>
           </div>
         </CardHeader>
@@ -1898,7 +2015,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
             style={{ borderColor: "var(--badge-warning-border)", background: "var(--badge-warning-bg)" }}>
             <p className="text-sm font-semibold flex items-center gap-2 mb-2"
               style={{ color: "var(--badge-warning-color)" }}>
-              <AlertTriangle className="w-4 h-4" /> Medical / Dietary ({medicalPeople.length} persons)
+              <AlertTriangle className="w-4 h-4" /> {t("medicalDietary", { count: medicalPeople.length })}
             </p>
             <div className="space-y-1">
               {medicalPeople.map((p) => (
@@ -1920,20 +2037,20 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           {/* Players */}
           {players.length > 0 && (
             <div>
-              <SectionHeader label="Players" count={players.length} open={showPlayers} onToggle={() => setShowPlayers(!showPlayers)} />
+              <SectionHeader label={t("players")} count={players.length} open={showPlayers} onToggle={() => setShowPlayers(!showPlayers)} />
               {showPlayers && (
                 <div className="mt-2 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b th-border">
-                        {["#", "Name", "DOB / Age", "Pos", "Hotel", "Transfer"].map((h, i) => (
+                        {[t("colNumber"), t("colName"), t("colDobAge"), t("colPos"), t("colHotel"), t("colTransfer"), ""].map((h, i) => (
                           <th key={i} className="text-left pb-2 pr-3 text-xs font-medium th-text-2 whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {players.map((p, i) => (
-                        <tr key={p.id} className="border-b th-border last:border-0"
+                        <tr key={p.id} className="border-b th-border last:border-0 group"
                           style={(p.allergies || p.dietaryRequirements) ? { background: "var(--badge-warning-bg)" } : {}}>
                           <td className="py-2.5 pr-3 th-text-2 tabular-nums">{p.shirtNumber ?? i + 1}</td>
                           <td className="py-2.5 pr-3 font-medium th-text whitespace-nowrap">
@@ -1954,6 +2071,16 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                           <td className="py-2.5 text-xs">
                             {p.needsTransfer ? <span className="font-medium" style={{ color: "var(--cat-accent)" }}>✓</span> : <span className="th-text-2">—</span>}
                           </td>
+                          <td className="py-2.5 text-xs">
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => openEditPerson(p)} className="th-text-2 hover:text-[var(--cat-accent)] cursor-pointer" title="Edit">
+                                <FileText className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => handleDeletePerson(p.id)} disabled={deletingPersonId === p.id} className="th-text-2 hover:text-red-500 cursor-pointer" title="Delete">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1966,23 +2093,23 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           {/* Staff */}
           {staff.length > 0 && (
             <div>
-              <SectionHeader label="Staff" count={staff.length} open={showStaff} onToggle={() => setShowStaff(!showStaff)} />
+              <SectionHeader label={t("staffCoaches")} count={staff.length} open={showStaff} onToggle={() => setShowStaff(!showStaff)} />
               {showStaff && (
                 <div className="mt-2 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b th-border">
-                        {["Name", "Role", "Hotel", "Transfer"].map((h, i) => (
+                        {[t("colName"), t("colRole"), t("colHotel"), t("colTransfer"), ""].map((h, i) => (
                           <th key={i} className="text-left pb-2 pr-3 text-xs font-medium th-text-2">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {staff.map((p) => (
-                        <tr key={p.id} className="border-b th-border last:border-0">
+                        <tr key={p.id} className="border-b th-border last:border-0 group">
                           <td className="py-2.5 pr-3 font-medium th-text whitespace-nowrap">
                             {p.firstName} {p.lastName}
-                            {p.isResponsible && <Badge variant="info" className="ml-2">Responsible</Badge>}
+                            {p.isResponsible && <Badge variant="info" className="ml-2">{t("responsible")}</Badge>}
                           </td>
                           <td className="py-2.5 pr-3 th-text-2 text-xs">{p.role ?? p.position ?? "—"}</td>
                           <td className="py-2.5 pr-3 text-xs">
@@ -1990,6 +2117,16 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                           </td>
                           <td className="py-2.5 text-xs">
                             {p.needsTransfer ? <span className="font-medium" style={{ color: "var(--cat-accent)" }}>✓</span> : <span className="th-text-2">—</span>}
+                          </td>
+                          <td className="py-2.5 text-xs">
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => openEditPerson(p)} className="th-text-2 hover:text-[var(--cat-accent)] cursor-pointer" title="Edit">
+                                <FileText className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => handleDeletePerson(p.id)} disabled={deletingPersonId === p.id} className="th-text-2 hover:text-red-500 cursor-pointer" title="Delete">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -2003,13 +2140,13 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           {/* Accompanying */}
           {accompanying.length > 0 && (
             <div>
-              <SectionHeader label="Accompanying" count={accompanying.length} open={showAccompanying} onToggle={() => setShowAccompanying(!showAccompanying)} />
+              <SectionHeader label={t("accompanying")} count={accompanying.length} open={showAccompanying} onToggle={() => setShowAccompanying(!showAccompanying)} />
               {showAccompanying && (
                 <div className="mt-2 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b th-border">
-                        {["Name", "Hotel", "Transfer"].map((h, i) => (
+                        {[t("colName"), t("colHotel"), t("colTransfer")].map((h, i) => (
                           <th key={i} className="text-left pb-2 pr-3 text-xs font-medium th-text-2">{h}</th>
                         ))}
                       </tr>
@@ -2034,7 +2171,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           )}
 
           {people.counts.total === 0 && (
-            <p className="text-sm th-text-2 italic">No people registered yet.</p>
+            <p className="text-sm th-text-2 italic">{t("noPeople")}</p>
           )}
         </div>
       </Card>
@@ -2045,8 +2182,8 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Admin Notes</CardTitle>
-            {savingNotes && <span className="text-xs th-text-2">Saving...</span>}
+            <CardTitle>{t("adminNotes")}</CardTitle>
+            {savingNotes && <span className="text-xs th-text-2">{t("savingNotes")}</span>}
           </div>
         </CardHeader>
         <textarea
@@ -2054,7 +2191,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           onChange={(e) => setNotes(e.target.value)}
           onBlur={handleNotesBlur}
           rows={3}
-          placeholder="Internal notes visible only to admins..."
+          placeholder={t("notesPlaceholder")}
           className="w-full rounded-lg border th-border th-card px-3 py-2.5 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-y"
         />
       </Card>
@@ -2067,44 +2204,188 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           <Card className="popup-bg w-full max-w-md">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle><CreditCard className="w-5 h-5 inline mr-2" />Add Payment</CardTitle>
+                <CardTitle><CreditCard className="w-5 h-5 inline mr-2" />{t("addPaymentTitle")}</CardTitle>
                 <button onClick={() => { setShowPaymentModal(false); resetPaymentForm(); }}
                   className="th-text-2 hover:th-text transition-colors cursor-pointer text-xl leading-none">×</button>
               </div>
             </CardHeader>
             <form onSubmit={handleAddPayment} className="space-y-4">
-              <Input label="Amount (EUR)" type="number" step="0.01" min="0.01"
+              <Input label={t("amountLabel")} type="number" step="0.01" min="0.01"
                 value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} required placeholder="0.00" />
-              <Select label="Method" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
+              <Select label={t("methodLabel")} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
                 options={[
-                  { value: "bank_transfer", label: "Bank Transfer" },
-                  { value: "cash", label: "Cash" },
-                  { value: "stripe", label: "Stripe" },
+                  { value: "bank_transfer", label: t("methodBankTransfer") },
+                  { value: "cash", label: t("methodCash") },
+                  { value: "stripe", label: t("methodStripe") },
                 ]} />
-              <Select label="Status" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}
+              <Select label={t("statusLabel")} value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}
                 options={[
-                  { value: "received", label: "Received" },
-                  { value: "pending", label: "Pending" },
+                  { value: "received", label: t("statusReceived") },
+                  { value: "pending", label: t("statusPending") },
                 ]} />
-              <Input label="Date" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
-              <Input label="Reference (optional)" value={paymentReference}
-                onChange={(e) => setPaymentReference(e.target.value)} placeholder="Invoice number, etc." />
+              <Input label={t("dateLabel")} type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+              <Input label={t("referenceLabel")} value={paymentReference}
+                onChange={(e) => setPaymentReference(e.target.value)} placeholder={t("referencePlaceholder")} />
               <div>
-                <label className="block text-sm font-medium th-text mb-1.5">Notes (optional)</label>
+                <label className="block text-sm font-medium th-text mb-1.5">{t("notesLabel")}</label>
                 <textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows={2}
-                  placeholder="Additional notes..."
+                  placeholder={t("additionalNotesPlaceholder")}
                   className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 resize-none" />
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <Button variant="secondary" type="button" onClick={() => { setShowPaymentModal(false); resetPaymentForm(); }}>
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button type="submit" disabled={submittingPayment}>
-                  {submittingPayment ? "Saving..." : "Save Payment"}
+                  {submittingPayment ? t("savingPayment") : t("savePayment")}
                 </Button>
               </div>
             </form>
           </Card>
+        </div>
+      )}
+
+      {/* ── Person Modal (Add / Edit) ──────────────────────────────────────── */}
+      {personModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="th-card rounded-xl shadow-2xl border th-border w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b th-border sticky top-0 th-card z-10">
+              <h2 className="text-lg font-semibold th-text">
+                {personModal.editId
+                  ? t("editPerson")
+                  : personModal.form.personType === "player" ? t("addPlayer") : t("addStaff")}
+              </h2>
+              <button onClick={() => setPersonModal({ open: false, editId: null, form: emptyPersonForm("player") })}
+                className="th-text-2 hover:opacity-70 cursor-pointer">
+                <Trash2 className="w-5 h-5 hidden" />
+                <span className="text-xl leading-none">×</span>
+              </button>
+            </div>
+            <form onSubmit={handleSavePerson} className="p-5 space-y-4">
+              {/* Type selector (only when adding) */}
+              {!personModal.editId && (
+                <div className="flex gap-2">
+                  {(["player", "staff", "accompanying"] as const).map((type) => (
+                    <button key={type} type="button"
+                      onClick={() => setPersonModal((m) => ({ ...m, form: { ...m.form, personType: type } }))}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition-colors ${
+                        personModal.form.personType === type
+                          ? "border-[var(--cat-accent)] bg-[var(--cat-accent)]/10 text-[var(--cat-accent)]"
+                          : "th-border th-card th-text-2"
+                      }`}>
+                      {type === "player" ? t("typePlayer") : type === "staff" ? t("typeStaff") : t("typeAccompanying")}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Name */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium th-text-2 mb-1">{t("firstName")} *</label>
+                  <input required type="text" value={personModal.form.firstName}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, firstName: e.target.value } }))}
+                    className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium th-text-2 mb-1">{t("lastName")} *</label>
+                  <input required type="text" value={personModal.form.lastName}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, lastName: e.target.value } }))}
+                    className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
+                </div>
+              </div>
+
+              {/* DOB + Shirt# */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium th-text-2 mb-1">{t("dateOfBirth")}</label>
+                  <input type="date" value={personModal.form.dateOfBirth}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, dateOfBirth: e.target.value } }))}
+                    className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
+                </div>
+                {personModal.form.personType === "player" && (
+                  <div>
+                    <label className="block text-xs font-medium th-text-2 mb-1">{t("shirtNumber")}</label>
+                    <input type="number" min={1} max={99} value={personModal.form.shirtNumber}
+                      onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, shirtNumber: e.target.value } }))}
+                      className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
+                  </div>
+                )}
+              </div>
+
+              {/* Position / Role */}
+              {personModal.form.personType === "player" && (
+                <div>
+                  <label className="block text-xs font-medium th-text-2 mb-1">{t("position")}</label>
+                  <input type="text" value={personModal.form.position}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, position: e.target.value } }))}
+                    placeholder="GK, DEF, MID, FWD..."
+                    className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
+                </div>
+              )}
+              {personModal.form.personType === "staff" && (
+                <div>
+                  <label className="block text-xs font-medium th-text-2 mb-1">{t("role")}</label>
+                  <input type="text" value={personModal.form.role}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, role: e.target.value } }))}
+                    placeholder="Coach, Manager, Doctor..."
+                    className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
+                </div>
+              )}
+
+              {/* Services */}
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2 text-sm th-text cursor-pointer">
+                  <input type="checkbox" checked={personModal.form.needsHotel}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, needsHotel: e.target.checked } }))}
+                    className="rounded" />
+                  {t("needsHotel")}
+                </label>
+                <label className="flex items-center gap-2 text-sm th-text cursor-pointer">
+                  <input type="checkbox" checked={personModal.form.needsTransfer}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, needsTransfer: e.target.checked } }))}
+                    className="rounded" />
+                  {t("needsTransfer")}
+                </label>
+              </div>
+
+              {/* Medical */}
+              <div className="space-y-2 pt-1 border-t th-border">
+                <p className="text-xs font-medium th-text-2 pt-1">{t("medicalInfo")} ({t("optional")})</p>
+                <div>
+                  <label className="block text-xs th-text-2 mb-1">{t("allergies")}</label>
+                  <input type="text" value={personModal.form.allergies}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, allergies: e.target.value } }))}
+                    className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
+                </div>
+                <div>
+                  <label className="block text-xs th-text-2 mb-1">{t("dietary")}</label>
+                  <input type="text" value={personModal.form.dietaryRequirements}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, dietaryRequirements: e.target.value } }))}
+                    className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
+                </div>
+                <div>
+                  <label className="block text-xs th-text-2 mb-1">{t("medicalNotes")}</label>
+                  <input type="text" value={personModal.form.medicalNotes}
+                    onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, medicalNotes: e.target.value } }))}
+                    className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button type="button"
+                  onClick={() => setPersonModal({ open: false, editId: null, form: emptyPersonForm("player") })}
+                  className="flex-1 py-2 rounded-lg border th-border th-card text-sm th-text hover:opacity-80 cursor-pointer">
+                  {t("cancel")}
+                </button>
+                <button type="submit" disabled={savingPerson}
+                  className="flex-1 py-2 rounded-lg text-sm font-medium cursor-pointer"
+                  style={{ background: "var(--cat-accent)", color: "#fff", opacity: savingPerson ? 0.7 : 1 }}>
+                  {savingPerson ? t("savingPerson") : t("savePerson")}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

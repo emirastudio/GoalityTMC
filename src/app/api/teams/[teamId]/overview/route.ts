@@ -4,9 +4,9 @@ import {
   teams, people, teamBookings, orders, teamTravel, payments,
   tournamentClasses, tournamentInfo, tournaments, tournamentHotels,
   teamServiceOverrides, accommodationOptions, extraMealOptions,
-  transferOptions, registrationFees,
+  transferOptions, registrationFees, tournamentRegistrations,
 } from "@/db/schema";
-import { eq, and, count, sql } from "drizzle-orm";
+import { eq, and, count, sql, desc } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 import { recalculateAll } from "@/lib/booking-calculator";
 
@@ -28,8 +28,32 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const teamClass = team.classId
-    ? await db.query.tournamentClasses.findFirst({ where: eq(tournamentClasses.id, team.classId) })
+  // Find the registration for this team. If session has a tournamentId, use it;
+  // otherwise fall back to the latest registration.
+  let registration = null;
+  if (session.tournamentId) {
+    registration = await db.query.tournamentRegistrations.findFirst({
+      where: and(
+        eq(tournamentRegistrations.teamId, tid),
+        eq(tournamentRegistrations.tournamentId, session.tournamentId)
+      ),
+    });
+  }
+  if (!registration) {
+    registration = await db.query.tournamentRegistrations.findFirst({
+      where: eq(tournamentRegistrations.teamId, tid),
+      orderBy: [desc(tournamentRegistrations.createdAt)],
+    });
+  }
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found for this team" }, { status: 404 });
+  }
+
+  const tournamentId = registration.tournamentId;
+  const regId = registration.id;
+
+  const teamClass = registration.classId
+    ? await db.query.tournamentClasses.findFirst({ where: eq(tournamentClasses.id, registration.classId) })
     : null;
 
   // Counts
@@ -45,31 +69,31 @@ export async function GET(
     where: and(eq(people.teamId, tid), eq(people.personType, "staff"), eq(people.isResponsibleOnSite, true)),
   });
 
-  // Travel
-  const travel = await db.query.teamTravel.findFirst({ where: eq(teamTravel.teamId, tid) });
+  // Travel — now keyed by registrationId
+  const travel = await db.query.teamTravel.findFirst({ where: eq(teamTravel.registrationId, regId) });
 
-  // Hotel & transfer — check if team has booked via teamBookings
+  // Hotel & transfer — check via teamBookings.registrationId
   const [accomBookingRow] = await db.select({ count: count() }).from(teamBookings)
-    .where(and(eq(teamBookings.teamId, tid), eq(teamBookings.bookingType, "accommodation")));
+    .where(and(eq(teamBookings.registrationId, regId), eq(teamBookings.bookingType, "accommodation")));
   const [transferBookingRow] = await db.select({ count: count() }).from(teamBookings)
-    .where(and(eq(teamBookings.teamId, tid), eq(teamBookings.bookingType, "transfer")));
+    .where(and(eq(teamBookings.registrationId, regId), eq(teamBookings.bookingType, "transfer")));
   const hotelCount = { count: Number(accomBookingRow?.count ?? 0) > 0 ? 1 : 0 };
   const transferCount = { count: Number(transferBookingRow?.count ?? 0) > 0 ? 1 : 0 };
 
-  // Legacy orders total
+  // Legacy orders total — now keyed by registrationId
   const [legacyOrderTotal] = await db
     .select({ total: sql<string>`COALESCE(SUM(${orders.total}::numeric), 0)` })
     .from(orders)
-    .where(eq(orders.teamId, tid));
+    .where(eq(orders.registrationId, regId));
 
   // New bookings: recalculate from CURRENT prices + overrides
   const [rawBookings, overrides, accommodations, meals, transfers, regFees] = await Promise.all([
-    db.query.teamBookings.findMany({ where: eq(teamBookings.teamId, tid) }),
-    db.query.teamServiceOverrides.findMany({ where: eq(teamServiceOverrides.teamId, tid) }),
-    db.query.accommodationOptions.findMany({ where: eq(accommodationOptions.tournamentId, team.tournamentId) }),
-    db.query.extraMealOptions.findMany({ where: eq(extraMealOptions.tournamentId, team.tournamentId) }),
-    db.query.transferOptions.findMany({ where: eq(transferOptions.tournamentId, team.tournamentId) }),
-    db.query.registrationFees.findMany({ where: eq(registrationFees.tournamentId, team.tournamentId) }),
+    db.query.teamBookings.findMany({ where: eq(teamBookings.registrationId, regId) }),
+    db.query.teamServiceOverrides.findMany({ where: eq(teamServiceOverrides.registrationId, regId) }),
+    db.query.accommodationOptions.findMany({ where: eq(accommodationOptions.tournamentId, tournamentId) }),
+    db.query.extraMealOptions.findMany({ where: eq(extraMealOptions.tournamentId, tournamentId) }),
+    db.query.transferOptions.findMany({ where: eq(transferOptions.tournamentId, tournamentId) }),
+    db.query.registrationFees.findMany({ where: eq(registrationFees.tournamentId, tournamentId) }),
   ]);
 
   const { total: liveBookingTotal } = recalculateAll(rawBookings, {
@@ -86,22 +110,22 @@ export async function GET(
     total: (parseFloat(legacyOrderTotal?.total ?? "0") + liveBookingTotal).toFixed(2),
   };
 
-  // Payments total
+  // Payments total — now keyed by registrationId
   const [paymentTotal] = await db
     .select({ total: sql<string>`COALESCE(SUM(${payments.amount}::numeric), 0)` })
     .from(payments)
-    .where(and(eq(payments.teamId, tid), eq(payments.status, "received")));
+    .where(and(eq(payments.registrationId, regId), eq(payments.status, "received")));
 
   // Tournament info
   const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.registrationOpen, true),
+    where: eq(tournaments.id, tournamentId),
   });
   const [tInfo, assignedHotel] = await Promise.all([
     tournament
       ? db.query.tournamentInfo.findFirst({ where: eq(tournamentInfo.tournamentId, tournament.id) })
       : Promise.resolve(null),
-    team.hotelId
-      ? db.query.tournamentHotels.findFirst({ where: eq(tournamentHotels.id, team.hotelId) })
+    registration.hotelId
+      ? db.query.tournamentHotels.findFirst({ where: eq(tournamentHotels.id, registration.hotelId) })
       : Promise.resolve(null),
   ]);
 
@@ -120,7 +144,7 @@ export async function GET(
     hasStaff: Number(staffCount?.count ?? 0) > 0,
     hasResponsible: !!responsibleStaff,
     hasTravel: !!(travel?.arrivalDate),
-    hasOrders: team.accomConfirmed || team.accomDeclined || parseFloat(orderTotal?.total ?? "0") > 0,
+    hasOrders: registration.accomConfirmed || registration.accomDeclined || parseFloat(orderTotal?.total ?? "0") > 0,
   };
   const completedSteps = Object.values(checks).filter(Boolean).length;
   const totalSteps = Object.keys(checks).length;
@@ -128,14 +152,15 @@ export async function GET(
 
   return NextResponse.json({
     team,
-    accomPlayers: team.accomPlayers ?? 0,
-    accomStaff: team.accomStaff ?? 0,
-    accomAccompanying: team.accomAccompanying ?? 0,
-    accomCheckIn: team.accomCheckIn ?? null,
-    accomCheckOut: team.accomCheckOut ?? null,
-    accomNotes: team.accomNotes ?? null,
-    accomDeclined: team.accomDeclined,
-    accomConfirmed: team.accomConfirmed,
+    registration,
+    accomPlayers: registration.accomPlayers ?? 0,
+    accomStaff: registration.accomStaff ?? 0,
+    accomAccompanying: registration.accomAccompanying ?? 0,
+    accomCheckIn: registration.accomCheckIn ?? null,
+    accomCheckOut: registration.accomCheckOut ?? null,
+    accomNotes: registration.accomNotes ?? null,
+    accomDeclined: registration.accomDeclined,
+    accomConfirmed: registration.accomConfirmed,
     minBirthYear: teamClass?.minBirthYear ?? null,
     counts: {
       players: Number(playerCount?.count ?? 0),

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clubUsers, clubs, tournaments, organizations, adminUsers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { clubUsers, clubs, tournaments, organizations, adminUsers, teams, tournamentRegistrations } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { verifyPassword, createToken, setSessionCookie } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -24,12 +24,22 @@ export async function POST(req: NextRequest) {
     where: eq(clubs.id, user.clubId),
   });
 
+  // Find latest registration for any team belonging to this club
+  const latestReg = await db
+    .select({ tournamentId: tournamentRegistrations.tournamentId })
+    .from(tournamentRegistrations)
+    .innerJoin(teams, eq(teams.id, tournamentRegistrations.teamId))
+    .where(eq(teams.clubId, user.clubId))
+    .orderBy(desc(tournamentRegistrations.id))
+    .limit(1);
+  const tournamentId = latestReg[0]?.tournamentId ?? undefined;
+
   // Resolve organization from tournament
   let organizationId: number | undefined;
   let organizationSlug: string | undefined;
-  if (club?.tournamentId) {
+  if (tournamentId) {
     const tournament = await db.query.tournaments.findFirst({
-      where: eq(tournaments.id, club.tournamentId),
+      where: eq(tournaments.id, tournamentId),
     });
     if (tournament?.organizationId) {
       organizationId = tournament.organizationId;
@@ -50,7 +60,7 @@ export async function POST(req: NextRequest) {
     userId: user.id,
     role: "club",
     clubId: user.clubId,
-    tournamentId: club?.tournamentId,
+    tournamentId,
     organizationId,
     organizationSlug,
     ...(user.teamId ? { teamId: user.teamId } : {}),
@@ -64,5 +74,6 @@ export async function POST(req: NextRequest) {
     clubId: user.clubId,
     teamId: user.teamId ?? null,
     organizationSlug,
+    hasTournament: !!tournamentId,
   });
 }

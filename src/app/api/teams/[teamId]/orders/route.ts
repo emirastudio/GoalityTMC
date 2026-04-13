@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { orders, tournamentProducts, teams, teamPriceOverrides } from "@/db/schema";
+import { orders, tournamentProducts, teams, teamPriceOverrides, tournamentRegistrations } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 
@@ -27,21 +27,32 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
   // Get all products for the tournament
   const products = await db.query.tournamentProducts.findMany({
-    where: eq(tournamentProducts.tournamentId, team.tournamentId),
+    where: eq(tournamentProducts.tournamentId, registration.tournamentId),
     orderBy: (p, { asc }) => [asc(p.sortOrder)],
   });
 
-  // Get custom price overrides for this team
+  // Get custom price overrides for this registration
   const overrides = await db.query.teamPriceOverrides.findMany({
-    where: eq(teamPriceOverrides.teamId, tid),
+    where: eq(teamPriceOverrides.registrationId, registration.id),
   });
   const overrideMap = new Map(overrides.map((o) => [o.productId, o.customPrice]));
 
   // Get existing orders
   const existingOrders = await db.query.orders.findMany({
-    where: eq(orders.teamId, tid),
+    where: eq(orders.registrationId, registration.id),
   });
   const orderMap = new Map(existingOrders.map((o) => [o.productId, o]));
 
@@ -91,13 +102,24 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
   const body: { productId: number; quantity: number; unitPrice: string }[] = await req.json();
 
   for (const item of body) {
     const total = (parseFloat(item.unitPrice) * item.quantity).toFixed(2);
 
     const existing = await db.query.orders.findFirst({
-      where: and(eq(orders.teamId, tid), eq(orders.productId, item.productId)),
+      where: and(eq(orders.registrationId, registration.id), eq(orders.productId, item.productId)),
     });
 
     if (existing) {
@@ -107,7 +129,7 @@ export async function POST(
         .where(eq(orders.id, existing.id));
     } else {
       await db.insert(orders).values({
-        teamId: tid,
+        registrationId: registration.id,
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,

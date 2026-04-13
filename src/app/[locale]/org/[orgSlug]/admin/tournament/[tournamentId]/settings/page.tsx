@@ -1,5 +1,5 @@
-"use client";
 import { SettingsPageContent } from "@/components/admin/pages/settings-page";
-export default function OrgSettingsPage() {
+
+export default function TournamentSettingsPage() {
   return <SettingsPageContent />;
 }

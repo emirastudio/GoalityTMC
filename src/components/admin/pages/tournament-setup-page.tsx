@@ -1,33 +1,36 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAdminFetch, useTournament } from "@/lib/tournament-context";
-import { Card, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
+import { StadiumsPageContent } from "@/components/admin/pages/stadiums-page";
+import { Link } from "@/i18n/navigation";
 import {
-  Trophy,
-  GraduationCap,
-  ShoppingBag,
-  Plus,
-  Trash2,
-  Save,
-  Loader2,
-  Check,
-  Info,
-  ImageIcon,
+  Trophy, GraduationCap, ShoppingBag, Plus, Trash2,
+  Save, Loader2, Check, Info, ImageIcon, Sparkles,
+  MapPin, Hotel, Megaphone, Phone, ChevronDown,
+  GitBranch, Rocket, AlertCircle, ExternalLink,
+  Globe, Calendar, Users, DollarSign, LayoutGrid,
+  CheckCircle2, Circle, ArrowRight, X, Zap, Crown, Gift,
 } from "lucide-react";
 
-/* ────────────────────────────────────────────────── types */
+// ─────────────────────────────────────────────────────────────
+//  Типы данных
+// ─────────────────────────────────────────────────────────────
 
 interface TournamentClass {
   id?: number;
   name: string;
   format: string | null;
   minBirthYear: number | null;
+  maxBirthYear: number | null;
+  maxTeams: number | null;
   maxPlayers: number | null;
   maxStaff: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
   _deleted?: boolean;
 }
 
@@ -57,10 +60,6 @@ interface TournamentData {
   products: TournamentProduct[];
 }
 
-type Tab = "general" | "classes" | "products" | "fields" | "hotels" | "info" | "media";
-
-const FORMATS = ["5x5", "6x6", "7x7", "8x8", "9x9", "11x11"];
-
 interface TournamentField {
   id?: number;
   name: string;
@@ -85,143 +84,1567 @@ interface TournamentHotel {
 }
 
 interface TournamentInfoData {
+  // Contact
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  website?: string;
+  // Social media
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  youtube?: string;
+  // Legacy (kept for backward compat, not shown in setup)
   hotelName?: string;
   hotelAddress?: string;
   hotelCheckIn?: string;
   hotelCheckOut?: string;
-  hotelNotes?: string;
   venueName?: string;
   venueAddress?: string;
   venueMapUrl?: string;
-  mealTimes?: string;
-  mealLocation?: string;
-  mealNotes?: string;
   emergencyContact?: string;
   emergencyPhone?: string;
-  scheduleUrl?: string;
-  scheduleDescription?: string;
-  additionalNotes?: string;
 }
 
-const CATEGORIES = [
-  "registration",
-  "accommodation",
-  "transfer",
-  "meals",
-  "extra",
-];
+// Шаги мастера настройки
+type StepKey = "basics" | "media" | "divisions" | "format" | "venue" | "products" | "info" | "publish";
 
-/* ────────────────────────────────────────── helpers */
+const FORMATS = ["5x5", "6x6", "7x7", "8x8", "9x9", "11x11"];
+const CATEGORIES = ["registration", "accommodation", "transfer", "meals", "extra"];
 
 function toDateInput(val: string | null): string {
   if (!val) return "";
   return val.slice(0, 10);
 }
 
-function SectionTab({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
+// ─────────────────────────────────────────────────────────────
+//  Анимация сохранения
+// ─────────────────────────────────────────────────────────────
+
+function SaveSuccessOverlay({ visible }: { visible: boolean }) {
+  const t = useTranslations("orgAdmin");
+  if (!visible) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+      style={{ animation: "fadeInOut 1.6s ease forwards" }}>
+      <style>{`
+        @keyframes fadeInOut {
+          0%   { opacity: 0; transform: scale(0.85); }
+          20%  { opacity: 1; transform: scale(1.05); }
+          35%  { opacity: 1; transform: scale(1); }
+          75%  { opacity: 1; }
+          100% { opacity: 0; transform: scale(0.95); }
+        }
+        @keyframes spinOnce {
+          from { transform: rotate(0deg) scale(1); }
+          50%  { transform: rotate(180deg) scale(1.3); }
+          to   { transform: rotate(360deg) scale(1); }
+        }
+        @keyframes pop {
+          0%   { transform: scale(0); opacity: 0; }
+          60%  { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .save-icon { animation: spinOnce 0.6s ease forwards; }
+        .save-check { animation: pop 0.4s ease 0.3s forwards; opacity: 0; }
+      `}</style>
+      <div className="flex flex-col items-center gap-4 px-10 py-8 rounded-3xl shadow-2xl"
+        style={{ background: "linear-gradient(135deg, #0d9488, #0891b2)", color: "#fff", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.25)" }}>
+        <div className="relative">
+          <div className="save-icon"><Sparkles className="w-14 h-14 opacity-90" /></div>
+          <div className="save-check absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "#fff" }}>
+            <Check className="w-4 h-4" style={{ color: "#0d9488" }} />
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-black tracking-tight">{t("savedTitle")}</p>
+          <p className="text-sm opacity-75 mt-1">{t("savedRefreshing")}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Определение шагов мастера
+// ─────────────────────────────────────────────────────────────
+
+interface StepDef {
+  key: StepKey;
   icon: React.ElementType;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
-        active
-          ? "bg-[var(--cat-accent)] text-[var(--cat-accent-text)]"
-          : "th-card th-text-2 hover:th-bg border th-border"
-      }`}
-    >
-      <Icon className="w-4 h-4" />
-      {label}
-    </button>
-  );
+  labelKey: string;
+  hintKey: string;
+  required: boolean;
 }
 
-function SaveButton({
-  saving,
-  saved,
-  onClick,
-}: {
-  saving: boolean;
-  saved: boolean;
-  onClick: () => void;
+const STEPS: StepDef[] = [
+  { key: "basics",    icon: Trophy,         labelKey: "stepBasics",    hintKey: "stepBasicsHint",    required: true },
+  { key: "media",     icon: ImageIcon,      labelKey: "stepMedia",     hintKey: "stepMediaHint",     required: false },
+  { key: "divisions", icon: GraduationCap,  labelKey: "stepDivisions", hintKey: "stepDivisionsHint", required: true },
+  { key: "format",    icon: GitBranch,      labelKey: "stepFormat",    hintKey: "stepFormatHint",    required: true },
+  { key: "venue",     icon: MapPin,         labelKey: "stepVenue",     hintKey: "stepVenueHint",     required: false },
+  { key: "products",  icon: ShoppingBag,    labelKey: "stepProducts",  hintKey: "stepProductsHint",  required: false },
+  { key: "info",      icon: Info,           labelKey: "stepInfo",      hintKey: "stepInfoHint",      required: false },
+  { key: "publish",   icon: Rocket,         labelKey: "stepPublish",   hintKey: "stepPublishHint",   required: true },
+];
+
+// ─────────────────────────────────────────────────────────────
+//  Plan status widget (horizontal bar at top of hub)
+// ─────────────────────────────────────────────────────────────
+
+function computePlanViolations(
+  plan: string,
+  maxDivisions: number,
+  activeClasses: number,
+  startDate: string,
+  endDate: string,
+) {
+  const maxDays = plan === "free" ? 1 : plan === "starter" ? 2 : Infinity;
+  const maxDiv = maxDivisions >= 9999 ? Infinity : maxDivisions;
+
+  const days = startDate && endDate
+    ? Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)
+    : null;
+
+  const divOk = maxDiv === Infinity || activeClasses === 0 || activeClasses <= maxDiv;
+  const daysOk = !days || maxDays === Infinity || days <= maxDays;
+
+  return { divOk, daysOk, days, maxDays, maxDiv, allOk: divOk && daysOk };
+}
+
+function PlanWidget({ planInfo, activeClasses, startDate, endDate, orgSlug, tournamentId }: {
+  planInfo: { effectivePlan: string; maxDivisions: number; maxTeams: number; extraTeamPrice: number } | null;
+  activeClasses: number;
+  startDate: string;
+  endDate: string;
+  orgSlug: string;
+  tournamentId: number;
 }) {
+  const t = useTranslations("orgAdmin");
+  if (!planInfo) return null;
+  const plan = planInfo.effectivePlan;
+
+  const planColor: Record<string, string> = { free: "#6b7280", starter: "#2563EB", pro: "#059669", elite: "#EA580C" };
+  const pc = planColor[plan] ?? "#6b7280";
+
+  const { divOk, daysOk, days, maxDays, maxDiv, allOk } = computePlanViolations(
+    plan, planInfo.maxDivisions, activeClasses, startDate, endDate
+  );
+
+  const billingUrl = `/org/${orgSlug}/admin/tournament/${tournamentId}/billing`;
+
+  if (allOk && plan === "free") {
+    // All good on free — show calm green status
+    return (
+      <div className="rounded-2xl border px-4 py-3 flex items-center gap-3"
+        style={{ background: "rgba(5,150,105,0.05)", borderColor: "rgba(5,150,105,0.2)" }}>
+        <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "#059669" }} />
+        <div className="flex-1 min-w-0">
+          <span className="text-xs font-bold" style={{ color: "#059669" }}>{t("freeTournamentOk")}</span>
+          <span className="text-xs ml-2" style={{ color: "var(--cat-text-muted)" }}>
+            {t("limitDivisions")}: {activeClasses}/{maxDiv === Infinity ? "∞" : maxDiv} ·{" "}
+            {t("limitDays")}: {days ?? "—"}/{maxDays === Infinity ? "∞" : maxDays} ·{" "}
+            {t("limitTeams")}: {planInfo.maxTeams}
+          </span>
+        </div>
+        <span className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0"
+          style={{ background: `${pc}18`, color: pc }}>
+          {plan}
+        </span>
+      </div>
+    );
+  }
+
+  // Paid plan or violations — show full widget
+  const violations: string[] = [];
+  if (!divOk) violations.push(`${t("limitDivisions")}: ${activeClasses}/${maxDiv === Infinity ? "∞" : maxDiv}`);
+  if (!daysOk) violations.push(`${t("limitDays")}: ${days}/${maxDays}`);
+
   return (
-    <Button onClick={onClick} disabled={saving}>
-      {saving ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : saved ? (
-        <Check className="w-4 h-4" />
-      ) : (
-        <Save className="w-4 h-4" />
+    <div className="rounded-2xl border px-4 py-3 flex items-center gap-3 flex-wrap"
+      style={{
+        background: allOk ? `${pc}08` : "rgba(220,38,38,0.06)",
+        borderColor: allOk ? `${pc}30` : "rgba(220,38,38,0.3)",
+      }}>
+      <span className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0"
+        style={{ background: `${pc}18`, color: pc }}>
+        {plan}
+      </span>
+      <div className="flex items-center gap-3 flex-1 flex-wrap text-xs" style={{ color: "var(--cat-text-muted)" }}>
+        <span style={{ color: divOk ? "var(--cat-text-muted)" : "#DC2626" }}>
+          {divOk ? "✓" : "✗"} {t("limitDivisions")}: <strong>{activeClasses}/{maxDiv === Infinity ? "∞" : maxDiv}</strong>
+        </span>
+        {days !== null && (
+          <span style={{ color: daysOk ? "var(--cat-text-muted)" : "#DC2626" }}>
+            {daysOk ? "✓" : "✗"} {t("limitDays")}: <strong>{days}/{maxDays === Infinity ? "∞" : maxDays}</strong>
+          </span>
+        )}
+        <span style={{ color: "var(--cat-text-muted)" }}>
+          ✓ {t("limitTeams")}: <strong>
+            {planInfo.maxTeams}
+            {planInfo.extraTeamPrice > 0 ? ` (+€${planInfo.extraTeamPrice}/${t("perTeam")})` : ""}
+          </strong>
+        </span>
+      </div>
+      {!allOk && (
+        <a href={billingUrl}
+          className="shrink-0 text-xs font-black px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all hover:opacity-80"
+          style={{ background: "#DC2626", color: "#fff", textDecoration: "none" }}>
+          <Zap className="w-3 h-3" />
+          {t("upgradeThisTournament")}
+        </a>
       )}
-      {saving ? "Saving..." : saved ? "Saved" : "Save"}
-    </Button>
+    </div>
   );
 }
 
-/* ────────────────────────────────────────── page */
+// ─────────────────────────────────────────────────────────────
+//  HubCard — expandable card for each section
+// ─────────────────────────────────────────────────────────────
+
+function HubCard({
+  icon: Icon, title, badge, summary, isOpen, onToggle, onSave, onAfterSave, saving, children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  badge: "done" | "required" | "optional";
+  summary: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  onSave?: () => Promise<void>;
+  onAfterSave?: () => void;
+  saving?: boolean;
+  children: React.ReactNode;
+}) {
+  const t = useTranslations("orgAdmin");
+  const [localSaving, setLocalSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+
+  const badgeCfg = {
+    done:     { bg: "rgba(5,150,105,0.12)",  text: "#059669", label: t("stepDone") },
+    required: { bg: "rgba(215,119,8,0.12)",  text: "#D97706", label: t("stepRequired") },
+    optional: { bg: "rgba(100,116,139,0.12)", text: "#64748B", label: t("stepOptional") },
+  }[badge];
+
+  const handleSave = async () => {
+    if (!onSave) return;
+    setLocalSaving(true);
+    try {
+      await onSave();
+      setJustSaved(true);
+      setTimeout(() => {
+        setJustSaved(false);
+        if (onAfterSave) onAfterSave();
+        else onToggle();
+      }, 700);
+    } finally {
+      setLocalSaving(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border overflow-hidden transition-all duration-200"
+      style={{
+        background: "var(--cat-card-bg)",
+        borderColor: isOpen ? "rgba(43,254,186,0.35)" : "var(--cat-card-border)",
+        boxShadow: isOpen ? "0 0 28px rgba(43,254,186,0.07)" : "none",
+      }}>
+      {/* ── Header (always visible, clickable) ── */}
+      <button onClick={onToggle}
+        className="w-full flex items-center gap-3 px-5 py-4 text-left transition-all hover:opacity-80">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors"
+          style={{ background: isOpen ? "rgba(43,254,186,0.15)" : "var(--cat-tag-bg)" }}>
+          <Icon className="w-4.5 h-4.5" style={{ color: isOpen ? ACCENT_CLR : "var(--cat-text-muted)" }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-black" style={{ color: "var(--cat-text)" }}>{title}</p>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: badgeCfg.bg, color: badgeCfg.text }}>
+              {badgeCfg.label}
+            </span>
+          </div>
+          <p className="text-xs mt-0.5 truncate" style={{ color: "var(--cat-text-muted)" }}>{summary}</p>
+        </div>
+        <ChevronDown className="w-4 h-4 shrink-0 transition-transform duration-200"
+          style={{ color: "var(--cat-text-muted)", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
+      </button>
+
+      {/* ── Body (shown when open) ── */}
+      {isOpen && (
+        <div className="border-t px-5 pb-5 pt-4 space-y-5"
+          style={{ borderColor: "rgba(43,254,186,0.12)" }}>
+          {children}
+          {onSave && (
+            <div className="flex justify-end pt-1">
+              <button onClick={handleSave} disabled={localSaving}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all disabled:opacity-60"
+                style={{ background: ACCENT_CLR, color: "#000", boxShadow: `0 0 16px rgba(43,254,186,0.3)` }}>
+                {localSaving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" />{t("saving")}</>
+                ) : justSaved ? (
+                  <><Check className="w-4 h-4" />{t("savedTitle")}</>
+                ) : (
+                  <><Save className="w-4 h-4" />{t("saveAndContinue")}</>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Заголовок шага
+// ─────────────────────────────────────────────────────────────
+
+function StepHeader({ icon: Icon, title, description, badge }: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  badge?: string;
+}) {
+  return (
+    <div className="flex items-start gap-4 mb-6 pb-5 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
+      <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+        style={{ background: "var(--cat-accent)", boxShadow: "0 0 20px var(--cat-accent-glow, rgba(0,200,150,0.25))" }}>
+        <Icon className="w-6 h-6" style={{ color: "var(--cat-accent-text)" }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>{title}</h2>
+          {badge && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+              style={{ background: "var(--badge-warning-bg)", color: "var(--badge-warning-text)" }}>
+              {badge}
+            </span>
+          )}
+        </div>
+        <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>{description}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Поле ввода (premium style)
+// ─────────────────────────────────────────────────────────────
+
+function Field({ label, hint, required, children }: {
+  label: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--cat-text)" }}>
+        {label}{required && <span className="ml-1" style={{ color: "var(--cat-accent)" }}>*</span>}
+      </label>
+      {hint && <p className="text-xs mb-2" style={{ color: "var(--cat-text-muted)" }}>{hint}</p>}
+      {children}
+    </div>
+  );
+}
+
+const inputCls = "w-full rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--cat-accent)] transition-all";
+const inputStyle = {
+  background: "var(--cat-input-bg, var(--cat-card-bg))",
+  border: "1px solid var(--cat-card-border)",
+  color: "var(--cat-text)",
+};
+
+// ─────────────────────────────────────────────────────────────
+//  ШАГ 1: Основное
+// ─────────────────────────────────────────────────────────────
+
+function StepBasics({ name, setName, year, setYear, startDate, setStartDate, endDate, setEndDate, regDeadline, setRegDeadline, currency, setCurrency }: {
+  name: string; setName: (v: string) => void;
+  year: number; setYear: (v: number) => void;
+  startDate: string; setStartDate: (v: string) => void;
+  endDate: string; setEndDate: (v: string) => void;
+  regDeadline: string; setRegDeadline: (v: string) => void;
+  currency: string; setCurrency: (v: string) => void;
+}) {
+  const t = useTranslations("orgAdmin");
+
+  return (
+    <div className="space-y-5">
+      <StepHeader icon={Trophy} title={t("stepBasics")} description={t("stepBasicsHint")} badge={t("required")} />
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="sm:col-span-2">
+          <Field label={t("tournamentName")} required>
+            <input className={inputCls} style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder={t("tournamentNamePlaceholder")} />
+          </Field>
+        </div>
+        <div>
+          <Field label={t("year")} required>
+            <input type="number" className={inputCls} style={inputStyle} value={year} onChange={e => setYear(Number(e.target.value))} min={2020} max={2040} />
+          </Field>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label={t("startDate")}>
+          <input type="date" className={inputCls} style={inputStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
+        </Field>
+        <Field label={t("endDate")}>
+          <input type="date" className={inputCls} style={inputStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label={t("registrationDeadline")} hint={t("registrationDeadlineHint")}>
+          <input type="date" className={inputCls} style={inputStyle} value={regDeadline} onChange={e => setRegDeadline(e.target.value)} />
+        </Field>
+        <Field label={t("currency")}>
+          <select className={inputCls} style={inputStyle} value={currency} onChange={e => setCurrency(e.target.value)}>
+            <option value="EUR">EUR — Euro</option>
+            <option value="USD">USD — US Dollar</option>
+            <option value="GBP">GBP — British Pound</option>
+            <option value="RUB">RUB — Russian Ruble</option>
+          </select>
+        </Field>
+      </div>
+
+      {/* Подсказка о следующем шаге */}
+      <div className="rounded-2xl border px-4 py-3 flex items-center gap-3"
+        style={{ background: "rgba(59,130,246,0.06)", borderColor: "rgba(59,130,246,0.2)" }}>
+        <Info className="w-4 h-4 shrink-0" style={{ color: "#3b82f6" }} />
+        <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("basicsNextHint")}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ШАГ 2: Медиа (логотип + обложка)
+// ─────────────────────────────────────────────────────────────
+
+function StepMedia({ orgSlug, tournamentId, coverUrl, logoUrl, onLogoChange, onCoverChange }: {
+  orgSlug: string;
+  tournamentId: number;
+  coverUrl: string | null;
+  logoUrl: string | null;
+  onLogoChange?: (url: string | null) => void;
+  onCoverChange?: (url: string | null) => void;
+}) {
+  const t = useTranslations("orgAdmin");
+
+  return (
+    <div className="space-y-5">
+      <StepHeader icon={ImageIcon} title={t("stepMedia")} description={t("stepMediaHint")} />
+      <TournamentMediaUpload
+        orgSlug={orgSlug}
+        tournamentId={tournamentId}
+        initialCoverUrl={coverUrl}
+        initialLogoUrl={logoUrl}
+        onLogoChange={onLogoChange}
+        onCoverChange={onCoverChange}
+      />
+      <div className="rounded-2xl border px-4 py-3 flex items-center gap-3"
+        style={{ background: "rgba(139,92,246,0.06)", borderColor: "rgba(139,92,246,0.2)" }}>
+        <Sparkles className="w-4 h-4 shrink-0" style={{ color: "#8b5cf6" }} />
+        <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("mediaHint")}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ШАГ 3: Дивизионы
+// ─────────────────────────────────────────────────────────────
+
+function StepDivisions({ classes, setClasses, planInfo, divisionLimitError, tournamentStartDate, tournamentEndDate }: {
+  classes: TournamentClass[];
+  setClasses: (v: TournamentClass[]) => void;
+  planInfo: { effectivePlan: string; maxDivisions: number; extraDivisionPrice: number } | null;
+  divisionLimitError: { currentPlan: string; maxDivisions: number; attempted: number } | null;
+  tournamentStartDate?: string;
+  tournamentEndDate?: string;
+}) {
+  const t = useTranslations("orgAdmin");
+  const active = classes.filter(c => !c._deleted);
+  const atLimit = planInfo ? active.length >= planInfo.maxDivisions : false;
+
+  const addClass = () => {
+    if (atLimit) return;
+    setClasses([...classes, {
+      name: "", format: null, minBirthYear: null, maxBirthYear: null,
+      maxTeams: null, maxPlayers: 25, maxStaff: 5,
+      startDate: tournamentStartDate || null,
+      endDate: tournamentEndDate || null,
+    }]);
+  };
+
+  const updateClass = (idx: number, patch: Partial<TournamentClass>) => {
+    const updated = [...classes];
+    const realIdx = classes.indexOf(active[idx]);
+    updated[realIdx] = { ...updated[realIdx], ...patch };
+    setClasses(updated);
+  };
+
+  const deleteClass = (idx: number) => {
+    const updated = [...classes];
+    const realIdx = classes.indexOf(active[idx]);
+    if (updated[realIdx].id) {
+      updated[realIdx] = { ...updated[realIdx], _deleted: true };
+    } else {
+      updated.splice(realIdx, 1);
+    }
+    setClasses(updated);
+  };
+
+  return (
+    <div className="space-y-5">
+      <StepHeader icon={GraduationCap} title={t("stepDivisions")} description={t("stepDivisionsHint")} badge={t("required")} />
+
+      {/* Лимит плана */}
+      {planInfo && (
+        <div className="flex items-center justify-between rounded-2xl border px-4 py-3"
+          style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-4 h-4" style={{ color: "var(--cat-accent)" }} />
+            <span className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
+              {active.length} / {planInfo.maxDivisions === 9999 ? "∞" : planInfo.maxDivisions} {t("divisions")}
+            </span>
+          </div>
+          <span className="text-xs px-2 py-1 rounded-full font-bold uppercase"
+            style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
+            {planInfo.effectivePlan}
+          </span>
+        </div>
+      )}
+
+      {/* Ошибка лимита дивизионов */}
+      {divisionLimitError && (
+        <div className="rounded-2xl border px-4 py-3 flex items-start gap-3"
+          style={{ background: "var(--badge-error-bg)", borderColor: "var(--badge-error-text)" }}>
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "var(--badge-error-text)" }} />
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "var(--badge-error-text)" }}>
+              {t("divisionLimitTitle", { max: divisionLimitError.maxDivisions })}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+              {t("divisionLimitHint")}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Список дивизионов */}
+      <div className="space-y-3">
+        {active.map((cls, idx) => (
+          <div key={idx} className="rounded-2xl border p-4"
+            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black"
+                style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
+                {idx + 1}
+              </div>
+              <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{cls.name || t("newDivision")}</span>
+              <button onClick={() => deleteClass(idx)} className="ml-auto p-1.5 rounded-lg hover:opacity-70 transition-opacity"
+                style={{ color: "var(--badge-error-text)", background: "var(--badge-error-bg)" }}>
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="col-span-2">
+                <Field label={t("divisionName")}>
+                  <input className={inputCls} style={inputStyle} value={cls.name} onChange={e => updateClass(idx, { name: e.target.value })} placeholder="U12, Men Open..." />
+                </Field>
+              </div>
+              <div>
+                <Field label={t("startDate")}>
+                  <input type="date" className={inputCls} style={inputStyle} value={cls.startDate ?? ""} onChange={e => updateClass(idx, { startDate: e.target.value || null })} />
+                </Field>
+              </div>
+              <div>
+                <Field label={t("endDate")}>
+                  <input type="date" className={inputCls} style={inputStyle} value={cls.endDate ?? ""} onChange={e => updateClass(idx, { endDate: e.target.value || null })} />
+                </Field>
+              </div>
+              <div>
+                <Field label={t("format")}>
+                  <select className={inputCls} style={inputStyle} value={cls.format ?? ""} onChange={e => updateClass(idx, { format: e.target.value || null })}>
+                    <option value="">{t("selectFormat")}</option>
+                    {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </Field>
+              </div>
+              <div>
+                <Field label={t("maxTeams")}>
+                  <input type="number" className={inputCls} style={inputStyle} value={cls.maxTeams ?? ""} onChange={e => updateClass(idx, { maxTeams: e.target.value ? Number(e.target.value) : null })} min={2} max={100} />
+                </Field>
+              </div>
+              <div>
+                <Field label={t("minBirthYear")}>
+                  <input type="number" className={inputCls} style={inputStyle} value={cls.minBirthYear ?? ""} onChange={e => updateClass(idx, { minBirthYear: e.target.value ? Number(e.target.value) : null })} placeholder="2010" />
+                </Field>
+              </div>
+              <div>
+                <Field label={t("maxBirthYear")}>
+                  <input type="number" className={inputCls} style={inputStyle} value={cls.maxBirthYear ?? ""} onChange={e => updateClass(idx, { maxBirthYear: e.target.value ? Number(e.target.value) : null })} placeholder="2015" />
+                </Field>
+              </div>
+              <div>
+                <Field label={t("maxPlayers")}>
+                  <input type="number" className={inputCls} style={inputStyle} value={cls.maxPlayers ?? ""} onChange={e => updateClass(idx, { maxPlayers: e.target.value ? Number(e.target.value) : null })} min={1} max={50} />
+                </Field>
+              </div>
+              <div>
+                <Field label={t("maxStaff")}>
+                  <input type="number" className={inputCls} style={inputStyle} value={cls.maxStaff ?? ""} onChange={e => updateClass(idx, { maxStaff: e.target.value ? Number(e.target.value) : null })} min={0} max={20} />
+                </Field>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Кнопка добавления */}
+      <button
+        onClick={addClass}
+        disabled={atLimit}
+        className="w-full rounded-2xl border-2 border-dashed py-4 flex items-center justify-center gap-2 text-sm font-semibold transition-all hover:opacity-80 disabled:opacity-40"
+        style={{ borderColor: "var(--cat-accent)", color: "var(--cat-accent)", background: "transparent" }}
+      >
+        <Plus className="w-4 h-4" />
+        {t("addDivision")}
+      </button>
+
+      {active.length === 0 && (
+        <div className="text-center py-8 rounded-2xl border-2 border-dashed"
+          style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-muted)" }}>
+          <GraduationCap className="w-10 h-10 mx-auto mb-2 opacity-25" />
+          <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{t("noDivisions")}</p>
+          <p className="text-xs mt-1">{t("noDivisionsHint")}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ШАГ 4: Формат турнира — единственный источник правды: Format Builder
+// ─────────────────────────────────────────────────────────────
+
+// Inline format wizard REMOVED. Format Builder page is the single source of truth.
+// Setup step 4 shows status cards with links to Format Builder.
+
+const ACCENT_CLR = "#2BFEBA";
+
+// ── StepFormat: status cards linking to Format Builder ────────────────────
+
+// Map from format type to human label
+const FORMAT_LABELS: Record<string, string> = {
+  groups_knockout: "Groups + Playoff",
+  round_robin:     "Round Robin",
+  groups_only:     "Groups only",
+  knockout_only:   "Knockout only",
+};
+
+function StepFormat({ orgSlug, tournamentId, classes, configured, setConfigured }: {
+  orgSlug: string;
+  tournamentId: number;
+  classes: TournamentClass[];
+  configured: Set<string>;
+  setConfigured: (v: Set<string>) => void;
+}) {
+  const t = useTranslations("orgAdmin");
+  const activeClasses = classes.filter(c => !c._deleted && c.name);
+
+  // stageInfo: classKey → { type, groupCount } for already-configured divisions
+  const [stageInfo, setStageInfo] = useState<Record<string, { type: string; groupCount: number } | null>>({});
+
+  // On mount: fetch existing stages for each class to auto-mark as configured
+  useEffect(() => {
+    if (!orgSlug || !tournamentId) return;
+    activeClasses.forEach(cls => {
+      if (!cls.id) return;
+      const key = String(cls.id);
+      fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/stages?classId=${cls.id}`)
+        .then(r => r.ok ? r.json() : [])
+        .then((stages: { type: string }[]) => {
+          if (stages.length > 0) {
+            const hasGroup    = stages.some(s => s.type === "group");
+            const hasKnockout = stages.some(s => s.type === "knockout");
+            const hasLeague   = stages.some(s => s.type === "league");
+            let type = "groups_knockout";
+            if (hasGroup && hasKnockout) type = "groups_knockout";
+            else if (hasGroup && !hasKnockout) type = hasLeague ? "round_robin" : "groups_only";
+            else if (!hasGroup && hasKnockout) type = "knockout_only";
+            else if (hasLeague) type = "round_robin";
+            const groupStage = (stages as { type: string; groups?: unknown[] }[]).find(s => s.type === "group");
+            const groupCount = groupStage?.groups?.length ?? 0;
+            setStageInfo(prev => ({ ...prev, [key]: { type, groupCount } }));
+            setConfigured(new Set([...configured, key]));
+          } else {
+            setStageInfo(prev => ({ ...prev, [key]: null }));
+          }
+        })
+        .catch(() => null);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgSlug, tournamentId, activeClasses.map(c => c.id).join(",")]);
+
+  return (
+    <div className="space-y-5">
+      <StepHeader icon={GitBranch} title={t("stepFormat")} description={t("stepFormatHint")} badge={t("required")} />
+
+      {/* Slot concept banner */}
+      <div className="rounded-2xl border p-5"
+        style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.06), rgba(59,130,246,0.06))", borderColor: "rgba(99,102,241,0.25)" }}>
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "rgba(99,102,241,0.15)" }}>
+            <Sparkles className="w-4 h-4" style={{ color: "#6366f1" }} />
+          </div>
+          <div>
+            <p className="text-sm font-bold mb-1" style={{ color: "var(--cat-text)" }}>
+              {t("slotConceptTitle")}
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: "var(--cat-text-muted)" }}>
+              {t("slotConceptDesc")}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Per-division status cards */}
+      {activeClasses.length === 0 ? (
+        <div className="text-center py-8 rounded-2xl border-2 border-dashed"
+          style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-muted)" }}>
+          <GitBranch className="w-10 h-10 mx-auto mb-2 opacity-25" />
+          <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{t("formatNoDivisions")}</p>
+          <p className="text-xs mt-1">{t("formatNoDivisionsHint")}</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {activeClasses.map(cls => {
+            const key = String(cls.id ?? cls.name);
+            const info = stageInfo[key];
+            const hasSavedStages = !!info;
+            const formatUrl = `/org/${orgSlug}/admin/tournament/${tournamentId}/format?classId=${cls.id}&className=${encodeURIComponent(cls.name)}&from=setup`;
+
+            if (hasSavedStages) {
+              // ── Configured: green card + Edit link ──
+              return (
+                <div key={key} className="rounded-2xl border p-4 flex items-center gap-4"
+                  style={{ background: "rgba(43,254,186,0.05)", borderColor: "rgba(43,254,186,0.35)" }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(43,254,186,0.12)" }}>
+                    <CheckCircle2 className="w-5 h-5" style={{ color: ACCENT_CLR }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{cls.name}</p>
+                    <p className="text-xs font-semibold" style={{ color: ACCENT_CLR }}>
+                      {FORMAT_LABELS[info.type] ?? info.type}
+                      {info.groupCount > 0 ? ` · ${info.groupCount} ${t("groups")}` : ""}
+                    </p>
+                  </div>
+                  <a
+                    href={formatUrl}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:opacity-80 shrink-0"
+                    style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}
+                  >
+                    <GitBranch className="w-3.5 h-3.5" />
+                    {t("editFormat")}
+                  </a>
+                </div>
+              );
+            }
+
+            // ── Not configured: neutral card + Configure link ──
+            return (
+              <div key={key} className="rounded-2xl border p-4 flex items-center gap-4"
+                style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "var(--cat-tag-bg)" }}>
+                  <GitBranch className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{cls.name}</p>
+                  <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("formatNotConfigured")}</p>
+                </div>
+                <a
+                  href={formatUrl}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:opacity-80 shrink-0"
+                  style={{ background: ACCENT_CLR, color: "#000", boxShadow: `0 0 14px rgba(43,254,186,0.4)` }}
+                >
+                  <GitBranch className="w-3.5 h-3.5" />
+                  {t("configureFormat")}
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ШАГ 5: Площадки
+// ─────────────────────────────────────────────────────────────
+
+function StepVenue({ fields, setFields }: {
+  fields: TournamentField[];
+  setFields: (v: TournamentField[]) => void;
+}) {
+  const t = useTranslations("orgAdmin");
+  const active = fields.filter(f => !f._deleted);
+
+  // Add-stadium form state
+  const [showAdd, setShowAdd] = useState(active.length === 0);
+  const [sName, setSName] = useState("");
+  const [sAddress, setSAddress] = useState("");
+  const [sMapUrl, setSMapUrl] = useState("");
+
+  const addStadium = (count: number) => {
+    if (!sName.trim()) return;
+    const base = sName.trim();
+    const addr = sAddress.trim();
+    const map = sMapUrl.trim();
+    const newFields = count === 1
+      ? [{ name: base, address: addr, mapUrl: map, scheduleUrl: "", notes: "", sortOrder: active.length }]
+      : Array.from({ length: count }, (_, i) => ({
+          name: `${base} ${i + 1}`,
+          address: addr, mapUrl: map, scheduleUrl: "", notes: "", sortOrder: active.length + i,
+        }));
+    setFields([...fields, ...newFields]);
+    setSName(""); setSAddress(""); setSMapUrl("");
+    setShowAdd(false);
+  };
+
+  const update = (idx: number, patch: Partial<TournamentField>) => {
+    const updated = [...fields];
+    const realIdx = fields.indexOf(active[idx]);
+    updated[realIdx] = { ...updated[realIdx], ...patch };
+    setFields(updated);
+  };
+
+  const remove = (idx: number) => {
+    const updated = [...fields];
+    const realIdx = fields.indexOf(active[idx]);
+    if (updated[realIdx].id) {
+      updated[realIdx] = { ...updated[realIdx], _deleted: true };
+    } else {
+      updated.splice(realIdx, 1);
+    }
+    setFields(updated);
+  };
+
+  // Group consecutive fields by shared address (= same stadium)
+  type FieldGroup = { address: string; mapUrl: string; label: string; indices: number[] };
+  const groups: FieldGroup[] = [];
+  for (let i = 0; i < active.length; i++) {
+    const f = active[i];
+    const addr = f.address.trim();
+    const lastGroup = groups[groups.length - 1];
+    if (addr && lastGroup && lastGroup.address === addr) {
+      lastGroup.indices.push(i);
+    } else {
+      // Infer stadium label: strip trailing " N" from first field name
+      const label = f.name.replace(/\s+\d+$/, "").trim();
+      groups.push({ address: addr, mapUrl: f.mapUrl.trim(), label, indices: [i] });
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <StepHeader icon={MapPin} title={t("stepVenue")} description={t("stepVenueHint")} />
+
+      {/* ── Add stadium form ── */}
+      {showAdd && (
+        <div className="rounded-2xl border p-5 space-y-4"
+          style={{ background: "rgba(43,254,186,0.04)", borderColor: "rgba(43,254,186,0.25)" }}>
+          <p className="text-sm font-bold flex items-center gap-2" style={{ color: "var(--cat-text)" }}>
+            <MapPin className="w-4 h-4" style={{ color: ACCENT_CLR }} />
+            {t("addStadium")}
+          </p>
+
+          {/* Name (required) */}
+          <div>
+            <label className="text-xs font-semibold block mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
+              {t("stadiumNameLabel")} <span style={{ color: ACCENT_CLR }}>*</span>
+            </label>
+            <input
+              className={inputCls}
+              style={inputStyle}
+              value={sName}
+              onChange={e => setSName(e.target.value)}
+              placeholder={t("stadiumNamePlaceholder")}
+              autoFocus
+            />
+          </div>
+
+          {/* Address */}
+          <div>
+            <label className="text-xs font-semibold block mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
+              {t("address")}
+            </label>
+            <input
+              className={inputCls}
+              style={inputStyle}
+              value={sAddress}
+              onChange={e => setSAddress(e.target.value)}
+              placeholder={t("addressPlaceholder")}
+            />
+          </div>
+
+          {/* Google Maps */}
+          <div>
+            <label className="text-xs font-semibold block mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
+              {t("googleMapsLink")}
+            </label>
+            <input
+              className={inputCls}
+              style={inputStyle}
+              value={sMapUrl}
+              onChange={e => setSMapUrl(e.target.value)}
+              placeholder="https://maps.google.com/..."
+            />
+          </div>
+
+          {/* Field count picker */}
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: "var(--cat-text-muted)" }}>
+              {t("fieldCountLabel")}
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {[1, 2, 3, 4].map(n => (
+                <button
+                  key={n}
+                  onClick={() => addStadium(n)}
+                  disabled={!sName.trim()}
+                  className="py-3 rounded-xl font-black transition-all hover:scale-[1.03] flex flex-col items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: n === 1 ? "var(--cat-tag-bg)" : `rgba(43,254,186,${0.08 + n * 0.04})`,
+                    color: n === 1 ? "var(--cat-text-secondary)" : ACCENT_CLR,
+                    border: `1px solid ${n === 1 ? "var(--cat-card-border)" : "rgba(43,254,186,0.3)"}`,
+                  }}>
+                  <span className="text-xl font-black" style={{ color: n === 1 ? "var(--cat-text)" : ACCENT_CLR }}>{n}</span>
+                  <span className="text-[10px] opacity-70">{n === 1 ? t("fieldSingular") : t("fieldPlural")}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {active.length > 0 && (
+            <button onClick={() => { setSName(""); setSAddress(""); setSMapUrl(""); setShowAdd(false); }}
+              className="text-xs hover:opacity-70 transition-opacity"
+              style={{ color: "var(--cat-text-muted)" }}>
+              {t("cancel")}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Fields list (grouped by stadium / address) ── */}
+      <div className="space-y-4">
+        {groups.map((group, gi) => (
+          <div key={gi}>
+            {/* Stadium group header (only if has address and >1 field, or has address) */}
+            {group.address && (
+              <div className="flex items-start gap-2 mb-2 px-1">
+                <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: ACCENT_CLR }} />
+                <div>
+                  {group.label && (
+                    <p className="text-xs font-bold" style={{ color: "var(--cat-text)" }}>{group.label}</p>
+                  )}
+                  <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>{group.address}</p>
+                  {group.mapUrl && (
+                    <a href={group.mapUrl} target="_blank" rel="noreferrer"
+                      className="text-[11px] hover:underline" style={{ color: ACCENT_CLR }}>
+                      Google Maps ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Individual field cards */}
+            <div className="space-y-2">
+              {group.indices.map((fieldIdx) => {
+                const field = active[fieldIdx];
+                return (
+                  <div key={fieldIdx} className="rounded-2xl border p-4"
+                    style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", marginLeft: group.address ? "1rem" : 0 }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black"
+                        style={{ background: "rgba(59,130,246,0.1)", color: "#3b82f6" }}>
+                        {fieldIdx + 1}
+                      </div>
+                      <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{field.name || t("newField")}</span>
+                      <button onClick={() => remove(fieldIdx)} className="ml-auto p-1.5 rounded-lg hover:opacity-70"
+                        style={{ color: "var(--badge-error-text)", background: "var(--badge-error-bg)" }}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field label={t("fieldName")}>
+                        <input className={inputCls} style={inputStyle} value={field.name}
+                          onChange={e => update(fieldIdx, { name: e.target.value })}
+                          placeholder={t("fieldNamePlaceholder")} />
+                      </Field>
+                      <Field label={t("address")}>
+                        <input className={inputCls} style={inputStyle} value={field.address}
+                          onChange={e => update(fieldIdx, { address: e.target.value })}
+                          placeholder={t("addressPlaceholder")} />
+                      </Field>
+                      <Field label={t("googleMapsLink")}>
+                        <input className={inputCls} style={inputStyle} value={field.mapUrl}
+                          onChange={e => update(fieldIdx, { mapUrl: e.target.value })}
+                          placeholder="https://maps.google.com/..." />
+                      </Field>
+                      <div className="sm:col-span-2">
+                        <Field label={t("notes")}>
+                          <textarea className={inputCls} style={inputStyle} value={field.notes}
+                            onChange={e => update(fieldIdx, { notes: e.target.value })}
+                            rows={2} placeholder={t("fieldNotesPlaceholder")} />
+                        </Field>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Add another stadium ── */}
+      {!showAdd && (
+        <button onClick={() => setShowAdd(true)}
+          className="w-full rounded-2xl border-2 border-dashed py-4 flex items-center justify-center gap-2 text-sm font-semibold transition-all hover:opacity-80"
+          style={{ borderColor: "var(--cat-accent)", color: "var(--cat-accent)" }}>
+          <Plus className="w-4 h-4" /> {t("addStadium")}
+        </button>
+      )}
+
+      {active.length === 0 && !showAdd && (
+        <div className="text-center py-6 rounded-2xl"
+          style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
+          <MapPin className="w-8 h-8 mx-auto mb-2 opacity-25" />
+          <p className="text-sm">{t("noFields")}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ШАГ 6: Продукты и сборы
+// ─────────────────────────────────────────────────────────────
+
+function StepProducts({ products, setProducts }: {
+  products: TournamentProduct[];
+  setProducts: (v: TournamentProduct[]) => void;
+}) {
+  const t = useTranslations("orgAdmin");
+  const active = products.filter(p => !p._deleted);
+
+  const addProduct = () => {
+    setProducts([...products, { name: "", category: "registration", price: "0", perPerson: false, isRequired: false, sortOrder: active.length }]);
+  };
+
+  const update = (idx: number, patch: Partial<TournamentProduct>) => {
+    const updated = [...products];
+    const realIdx = products.indexOf(active[idx]);
+    updated[realIdx] = { ...updated[realIdx], ...patch };
+    setProducts(updated);
+  };
+
+  const remove = (idx: number) => {
+    const updated = [...products];
+    const realIdx = products.indexOf(active[idx]);
+    if (updated[realIdx].id) {
+      updated[realIdx] = { ...updated[realIdx], _deleted: true };
+    } else {
+      updated.splice(realIdx, 1);
+    }
+    setProducts(updated);
+  };
+
+  const categoryColor: Record<string, string> = {
+    registration: "#10b981",
+    accommodation: "#3b82f6",
+    transfer: "#f59e0b",
+    meals: "#ef4444",
+    extra: "#8b5cf6",
+  };
+
+  return (
+    <div className="space-y-5">
+      <StepHeader icon={ShoppingBag} title={t("stepProducts")} description={t("stepProductsHint")} />
+
+      <div className="space-y-3">
+        {active.map((prod, idx) => (
+          <div key={idx} className="rounded-2xl border p-4"
+            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", borderLeftWidth: 3, borderLeftColor: categoryColor[prod.category] ?? "var(--cat-accent)" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ background: `${categoryColor[prod.category]}20`, color: categoryColor[prod.category] }}>
+                {t(`category_${prod.category}`)}
+              </span>
+              <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{prod.name || t("newProduct")}</span>
+              <button onClick={() => remove(idx)} className="ml-auto p-1.5 rounded-lg hover:opacity-70"
+                style={{ color: "var(--badge-error-text)", background: "var(--badge-error-bg)" }}>
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="sm:col-span-2">
+                <Field label={t("productName")}>
+                  <input className={inputCls} style={inputStyle} value={prod.name} onChange={e => update(idx, { name: e.target.value })} placeholder={t("productNamePlaceholder")} />
+                </Field>
+              </div>
+              <Field label={t("category")}>
+                <select className={inputCls} style={inputStyle} value={prod.category} onChange={e => update(idx, { category: e.target.value })}>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{t(`category_${c}`)}</option>)}
+                </select>
+              </Field>
+              <Field label={t("price")}>
+                <input type="number" className={inputCls} style={inputStyle} value={prod.price} onChange={e => update(idx, { price: e.target.value })} min="0" step="0.01" />
+              </Field>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={prod.isRequired} onChange={e => update(idx, { isRequired: e.target.checked })}
+                    className="rounded" />
+                  <span className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>{t("required")}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={prod.perPerson} onChange={e => update(idx, { perPerson: e.target.checked })}
+                    className="rounded" />
+                  <span className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>{t("perPerson")}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={addProduct}
+        className="w-full rounded-2xl border-2 border-dashed py-4 flex items-center justify-center gap-2 text-sm font-semibold transition-all hover:opacity-80"
+        style={{ borderColor: "var(--cat-accent)", color: "var(--cat-accent)" }}>
+        <Plus className="w-4 h-4" /> {t("addProduct")}
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ШАГ 7: Информация (отель + площадка + еда + экстренный)
+// ─────────────────────────────────────────────────────────────
+
+function StepInfo({ tInfo, setTInfo }: {
+  tInfo: TournamentInfoData;
+  setTInfo: (v: TournamentInfoData) => void;
+}) {
+  const t = useTranslations("orgAdmin");
+  const patch = (key: keyof TournamentInfoData, value: string) =>
+    setTInfo({ ...tInfo, [key]: value });
+
+  return (
+    <div className="space-y-5">
+      <StepHeader icon={Info} title={t("stepInfoNew")} description={t("stepInfoNewHint")} />
+
+      {/* Contact */}
+      <div className="rounded-2xl border overflow-hidden"
+        style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+        <div className="flex items-center gap-3 px-4 py-3 border-b"
+          style={{ borderColor: "var(--cat-card-border)", background: "rgba(43,254,186,0.05)" }}>
+          <Phone className="w-4 h-4" style={{ color: ACCENT_CLR }} />
+          <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{t("organizerContact")}</span>
+        </div>
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label={t("contactName")}>
+            <input className={inputCls} style={inputStyle} value={tInfo.contactName ?? ""}
+              onChange={e => patch("contactName", e.target.value)} placeholder="John Smith" />
+          </Field>
+          <Field label={t("contactPhone")}>
+            <input className={inputCls} style={inputStyle} value={tInfo.contactPhone ?? ""}
+              onChange={e => patch("contactPhone", e.target.value)} placeholder="+372 000 0000" />
+          </Field>
+          <Field label={t("contactEmail")}>
+            <input type="email" className={inputCls} style={inputStyle} value={tInfo.contactEmail ?? ""}
+              onChange={e => patch("contactEmail", e.target.value)} placeholder="info@tournament.com" />
+          </Field>
+          <Field label={t("website")}>
+            <input type="url" className={inputCls} style={inputStyle} value={tInfo.website ?? ""}
+              onChange={e => patch("website", e.target.value)} placeholder="https://..." />
+          </Field>
+        </div>
+      </div>
+
+      {/* Social media */}
+      <div className="rounded-2xl border overflow-hidden"
+        style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+        <div className="flex items-center gap-3 px-4 py-3 border-b"
+          style={{ borderColor: "var(--cat-card-border)", background: "rgba(139,92,246,0.05)" }}>
+          <Sparkles className="w-4 h-4" style={{ color: "#8b5cf6" }} />
+          <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{t("socialMedia")}</span>
+        </div>
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label={t("instagram")}>
+            <input className={inputCls} style={inputStyle} value={tInfo.instagram ?? ""}
+              onChange={e => patch("instagram", e.target.value)} placeholder="@tournament" />
+          </Field>
+          <Field label={t("facebook")}>
+            <input className={inputCls} style={inputStyle} value={tInfo.facebook ?? ""}
+              onChange={e => patch("facebook", e.target.value)} placeholder="facebook.com/..." />
+          </Field>
+          <Field label={t("twitter")}>
+            <input className={inputCls} style={inputStyle} value={tInfo.twitter ?? ""}
+              onChange={e => patch("twitter", e.target.value)} placeholder="@tournament" />
+          </Field>
+          <Field label={t("youtube")}>
+            <input className={inputCls} style={inputStyle} value={tInfo.youtube ?? ""}
+              onChange={e => patch("youtube", e.target.value)} placeholder="youtube.com/@..." />
+          </Field>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ШАГ 8: Публикация
+// ─────────────────────────────────────────────────────────────
+
+function StepPublish({
+  data, classes, venueFieldCount, products, regOpen, setRegOpen, orgSlug, tournamentId, planInfo, startDate, endDate, extraTeamsUnpaid,
+}: {
+  data: TournamentData | null;
+  classes: TournamentClass[];
+  venueFieldCount: number;
+  products: TournamentProduct[];
+  regOpen: boolean;
+  setRegOpen: (v: boolean) => void;
+  orgSlug: string;
+  tournamentId: number;
+  planInfo: { effectivePlan: string; maxDivisions: number; maxTeams: number; extraTeamPrice: number; extrasBlocked?: boolean; extrasPaymentDue?: string | null } | null;
+  startDate: string;
+  endDate: string;
+  extraTeamsUnpaid?: { owed: number; owedCents: number } | null;
+}) {
+  const t = useTranslations("orgAdmin");
+  const activeClasses = classes.filter(c => !c._deleted && c.name);
+  const activeProducts = products.filter(p => !p._deleted && p.name);
+
+  const checks = [
+    { label: t("checkName"), done: !!(data?.name) },
+    { label: t("checkDates"), done: !!(data?.startDate && data?.endDate) },
+    { label: t("checkDivisions"), done: activeClasses.length > 0 },
+    { label: t("checkFields"), done: venueFieldCount > 0, optional: true },
+  ];
+
+  const allReady = checks.filter(c => !c.optional).every(c => c.done);
+  const publicUrl = `/${orgSlug ? `t/${orgSlug}` : ""}`;
+
+  // Plan violation check
+  const plan = planInfo?.effectivePlan ?? "free";
+  const billingUrl = `/org/${orgSlug}/admin/tournament/${tournamentId}/billing`;
+  const { allOk: planOk, divOk, daysOk } = planInfo
+    ? computePlanViolations(plan, planInfo.maxDivisions, activeClasses.length, startDate, endDate)
+    : { allOk: true, divOk: true, daysOk: true };
+  const isFreeAndOk = plan === "free" && planOk;
+  const extrasBlocked = planInfo?.extrasBlocked ?? false;
+  const extrasPaymentDue = planInfo?.extrasPaymentDue ?? null;
+
+  return (
+    <div className="space-y-5">
+      <StepHeader icon={Rocket} title={t("stepPublish")} description={t("stepPublishHint")}
+        badge={regOpen ? t("live") : undefined} />
+
+      {/* Чеклист готовности */}
+      <div className="rounded-2xl border overflow-hidden"
+        style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+        <div className="px-4 py-3 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
+          <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{t("readinessCheck")}</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: "var(--cat-card-border)" }}>
+          {checks.map(check => (
+            <div key={check.label} className="flex items-center gap-3 px-4 py-3">
+              {check.done
+                ? <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: "var(--badge-success-text)" }} />
+                : <Circle className="w-5 h-5 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
+              }
+              <span className="text-sm" style={{ color: check.done ? "var(--cat-text)" : "var(--cat-text-muted)" }}>
+                {check.label}
+              </span>
+              {!check.done && (
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full"
+                  style={check.optional
+                    ? { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }
+                    : { background: "var(--badge-warning-bg)", color: "var(--badge-warning-text)" }
+                  }>
+                  {check.optional ? t("optional") : t("required")}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Статистика */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { icon: GraduationCap, value: activeClasses.length, label: t("divisions"), color: "#3b82f6" },
+          { icon: MapPin, value: venueFieldCount, label: t("fields"), color: "#10b981" },
+          { icon: ShoppingBag, value: activeProducts.length, label: t("products"), color: "#f59e0b" },
+        ].map(stat => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className="rounded-2xl border p-4 text-center"
+              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+              <Icon className="w-5 h-5 mx-auto mb-1" style={{ color: stat.color }} />
+              <p className="text-2xl font-black" style={{ color: stat.color }}>{stat.value}</p>
+              <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{stat.label}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Extras overdue block (divisions) */}
+      {extrasBlocked && (
+        <div className="rounded-2xl border p-4 flex items-start gap-3"
+          style={{ background: "rgba(220,38,38,0.06)", borderColor: "rgba(220,38,38,0.3)" }}>
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: "#dc2626" }} />
+          <div>
+            <p className="text-sm font-bold" style={{ color: "#dc2626" }}>{t("extrasOverdue")}</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>{t("extrasBlockedHint")}</p>
+            <a href={billingUrl} className="inline-block mt-2 text-xs font-bold underline" style={{ color: "#dc2626" }}>
+              {t("payExtras")} →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Extra teams unpaid block (shown after failed close-registration attempt) */}
+      {extraTeamsUnpaid && (
+        <div className="rounded-2xl border p-4 flex items-start gap-3"
+          style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.4)" }}>
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: "#f59e0b" }} />
+          <div className="flex-1">
+            <p className="text-sm font-bold" style={{ color: "#f59e0b" }}>
+              Extra teams invoice — €{(extraTeamsUnpaid.owedCents / 100).toFixed(2)}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+              {extraTeamsUnpaid.owed} team(s) over plan limit. Pay the invoice to close registration and start the tournament.
+            </p>
+            <a href={billingUrl} className="inline-block mt-2 text-xs font-bold underline" style={{ color: "#f59e0b" }}>
+              Pay €{(extraTeamsUnpaid.owedCents / 100).toFixed(2)} →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Переключатель регистрации */}
+      <div className="rounded-2xl border p-5"
+        style={{
+          background: regOpen ? "rgba(16,185,129,0.06)" : "var(--cat-card-bg)",
+          borderColor: extrasBlocked ? "rgba(220,38,38,0.3)" : regOpen ? "rgba(16,185,129,0.3)" : "var(--cat-card-border)",
+        }}>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-bold" style={{ color: "var(--cat-text)" }}>
+              {regOpen ? t("registrationOpen") : t("registrationClosed")}
+            </p>
+            <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+              {extrasBlocked
+                ? (extrasPaymentDue ? `${t("extrasDueDate")} ${new Date(extrasPaymentDue + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}` : t("extrasOverdue"))
+                : regOpen ? t("registrationOpenHint") : t("registrationClosedHint")
+              }
+            </p>
+          </div>
+          <button
+            onClick={() => setRegOpen(!regOpen)}
+            disabled={(!allReady && !regOpen) || (extrasBlocked && !regOpen)}
+            className="relative inline-flex h-7 w-12 items-center rounded-full transition-all disabled:opacity-40"
+            style={{ background: regOpen ? "var(--cat-accent)" : "var(--cat-card-border)" }}
+          >
+            <span className="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+              style={{ transform: regOpen ? "translateX(24px)" : "translateX(2px)" }} />
+          </button>
+        </div>
+      </div>
+
+      {!allReady && (
+        <div className="rounded-2xl border px-4 py-3 flex items-start gap-3"
+          style={{ background: "var(--badge-warning-bg)", borderColor: "var(--badge-warning-text)" }}>
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "var(--badge-warning-text)" }} />
+          <p className="text-sm" style={{ color: "var(--badge-warning-text)" }}>{t("publishNotReady")}</p>
+        </div>
+      )}
+
+      {/* Plan status — honest: only show upgrade if actually needed */}
+      {isFreeAndOk ? (
+        // Free and within limits — celebrate!
+        <div className="rounded-2xl border p-5 flex items-start gap-4"
+          style={{ background: "rgba(5,150,105,0.06)", borderColor: "rgba(5,150,105,0.25)" }}>
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+            style={{ background: "rgba(5,150,105,0.15)" }}>
+            <CheckCircle2 className="w-5 h-5" style={{ color: "#059669" }} />
+          </div>
+          <div>
+            <p className="text-sm font-black mb-0.5" style={{ color: "#059669" }}>{t("publishFreeReady")}</p>
+            <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("publishFreeReadyDesc")}</p>
+          </div>
+        </div>
+      ) : !planOk ? (
+        // Limits exceeded — show specific violations + upgrade
+        <div className="rounded-2xl border p-5"
+          style={{ background: "rgba(220,38,38,0.05)", borderColor: "rgba(220,38,38,0.25)" }}>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <p className="text-sm font-black mb-0.5" style={{ color: "var(--cat-text)" }}>
+                {t("tournamentUpgradeTitle")}
+              </p>
+              <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentUpgradeDesc")}</p>
+            </div>
+            <a href={billingUrl}
+              className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all hover:opacity-90"
+              style={{ background: "#DC2626", color: "#fff", textDecoration: "none" }}>
+              <Zap className="w-3.5 h-3.5" /> {t("upgradeThisTournament")}
+            </a>
+          </div>
+          <div className="space-y-2">
+            {!divOk && (
+              <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-xl"
+                style={{ background: "rgba(220,38,38,0.08)", color: "#DC2626" }}>
+                <X className="w-3.5 h-3.5 shrink-0" />
+                <span>{t("limitDivisions")}: {activeClasses.length} — {t("limitExceeded")} · Pro €49 / Elite €89 {t("perTournament")}</span>
+              </div>
+            )}
+            {!daysOk && (
+              <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-xl"
+                style={{ background: "rgba(220,38,38,0.08)", color: "#DC2626" }}>
+                <X className="w-3.5 h-3.5 shrink-0" />
+                <span>{t("limitDays")}: — {t("limitExceeded")} · Starter €19 / Pro €49 {t("perTournament")}</span>
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            {([
+              { icon: Rocket, name: "Starter", price: "€19", color: "#2563EB" },
+              { icon: Zap, name: "Pro", price: "€49", color: "#059669" },
+              { icon: Crown, name: "Elite", price: "€89", color: "#EA580C" },
+            ] as const).map(p => (
+              <a key={p.name} href={billingUrl}
+                className="flex flex-col items-center py-2.5 px-2 rounded-xl text-center transition-all hover:opacity-80"
+                style={{ background: `${p.color}12`, border: `1px solid ${p.color}30`, textDecoration: "none" }}>
+                <p.icon className="w-4 h-4 mb-0.5" style={{ color: p.color }} />
+                <span className="text-[11px] font-black" style={{ color: p.color }}>{p.name}</span>
+                <span className="text-[10px] font-bold mt-0.5" style={{ color: "var(--cat-text)" }}>{p.price}</span>
+                <span className="text-[9px]" style={{ color: "var(--cat-text-muted)" }}>{t("perTournament")}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : (
+        // Paid plan — just show current plan info
+        <div className="rounded-2xl border px-4 py-3 flex items-center gap-3"
+          style={{ background: "rgba(43,254,186,0.04)", borderColor: "rgba(43,254,186,0.2)" }}>
+          <CheckCircle2 className="w-4 h-4" style={{ color: ACCENT_CLR }} />
+          <p className="text-xs font-semibold" style={{ color: "var(--cat-text-muted)" }}>
+            {t("thisTournamentPlan")}: <strong style={{ color: "var(--cat-text)" }}>{plan}</strong>
+          </p>
+          <a href={billingUrl} className="ml-auto text-xs font-semibold transition-all hover:opacity-70"
+            style={{ color: "var(--cat-text-muted)", textDecoration: "none" }}>
+            {t("publishUpgradeBtn")} →
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Setup Hub — main component
+// ─────────────────────────────────────────────────────────────
 
 export function TournamentSetupPageContent() {
+  const t = useTranslations("orgAdmin");
   const adminFetch = useAdminFetch();
   const ctx = useTournament();
+  const searchParams = useSearchParams();
+
+  // Which section is expanded (null = all collapsed)
+  const tabParam = searchParams?.get("tab");
+  const initialOpen: StepKey = tabParam === "classes" ? "divisions"
+    : tabParam === "products" ? "products"
+    : tabParam === "fields" ? "venue"
+    : tabParam === "info" ? "info"
+    : tabParam === "media" ? "media"
+    : "basics";
+  const [openSection, setOpenSection] = useState<StepKey | null>(initialOpen);
+
+  const toggleSection = (key: StepKey) =>
+    setOpenSection(prev => prev === key ? null : key);
+
+  // ── Tournament data ────────────────────────────────────────
   const [data, setData] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("general");
+  const [showSaveOverlay, setShowSaveOverlay] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
-  /* form state */
+  // Plan limits
+  const [planInfo, setPlanInfo] = useState<{
+    effectivePlan: string; maxDivisions: number; maxTeams: number;
+    extraDivisionPrice: number; extraTeamPrice: number;
+    extrasBlocked?: boolean; extrasPaymentDue?: string | null;
+  } | null>(null);
+  const [divisionLimitError, setDivisionLimitError] = useState<{
+    currentPlan: string; maxDivisions: number; attempted: number;
+  } | null>(null);
+  const [extraTeamsUnpaid, setExtraTeamsUnpaid] = useState<{
+    owed: number; owedCents: number;
+  } | null>(null);
+
+  // Basics form
   const [name, setName] = useState("");
-  const [year, setYear] = useState<number>(2026);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [regDeadline, setRegDeadline] = useState("");
   const [regOpen, setRegOpen] = useState(false);
   const [currency, setCurrency] = useState("EUR");
 
+  // Divisions + products
   const [classes, setClasses] = useState<TournamentClass[]>([]);
   const [products, setProducts] = useState<TournamentProduct[]>([]);
+  const [configuredFormats, setConfiguredFormats] = useState<Set<string>>(new Set());
 
-  const [deleteConfirm, setDeleteConfirm] = useState<{
-    type: "class" | "product";
-    idx: number;
-  } | null>(null);
-
-  // Tournament info state
-  const [tInfo, setTInfo] = useState<TournamentInfoData>({});
-  const [infoSaving, setInfoSaving] = useState(false);
-  const [infoSaved, setInfoSaved] = useState(false);
-
-  // Fields state
-  const [fields, setFields] = useState<TournamentField[]>([]);
-  const [fieldsSaving, setFieldsSaving] = useState(false);
-  const [fieldsSaved, setFieldsSaved] = useState(false);
-
-  // Hotels state
+  // Venue + info
+  const [venueFieldCount, setVenueFieldCount] = useState(0);
   const [hotels, setHotels] = useState<TournamentHotel[]>([]);
+  const [tInfo, setTInfo] = useState<TournamentInfoData>({});
   const [hotelsSaving, setHotelsSaving] = useState(false);
-  const [hotelsSaved, setHotelsSaved] = useState(false);
+  const [infoSaving, setInfoSaving] = useState(false);
 
-  /* ─── fetch ─── */
+  // ── Data fetching ──────────────────────────────────────────
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [res, infoRes, fieldsRes, hotelsRes] = await Promise.all([
+      const billingUrl = ctx
+        ? `/api/org/${ctx.orgSlug}/tournament/${ctx.tournamentId}/billing-info`
+        : null;
+      const stadiumsUrl = ctx
+        ? `/api/org/${ctx.orgSlug}/tournament/${ctx.tournamentId}/stadiums`
+        : null;
+      const [res, infoRes, stadiumsRes, hotelsRes, billingRes] = await Promise.all([
         adminFetch("/api/admin/tournaments"),
         adminFetch("/api/admin/tournament-info"),
-        adminFetch("/api/admin/tournament-fields"),
+        stadiumsUrl ? fetch(stadiumsUrl, { credentials: "include" }) : Promise.resolve(null),
         adminFetch("/api/admin/tournament-hotels"),
+        billingUrl ? fetch(billingUrl, { credentials: "include" }) : Promise.resolve(null),
       ]);
       if (!res.ok) throw new Error("Failed to load tournament data");
       const d: TournamentData = await res.json();
@@ -233,15 +1656,14 @@ export function TournamentSetupPageContent() {
       setRegDeadline(toDateInput(d.registrationDeadline));
       setRegOpen(d.registrationOpen);
       setCurrency(d.currency);
-      setClasses((d.classes ?? []).map((c: TournamentClass) => ({ ...c, format: c.format ?? null })));
+      setClasses((d.classes ?? []).map((c: TournamentClass) => ({ ...c, format: c.format ?? null, maxTeams: c.maxTeams ?? null })));
       setProducts(d.products ?? []);
-      if (fieldsRes.ok) {
-        const f = await fieldsRes.json();
-        setFields(Array.isArray(f) ? f.map((x: TournamentField) => ({
-          id: x.id, name: x.name ?? "", address: x.address ?? "",
-          mapUrl: x.mapUrl ?? "", scheduleUrl: x.scheduleUrl ?? "",
-          notes: x.notes ?? "", sortOrder: x.sortOrder ?? 0,
-        })) : []);
+      if (stadiumsRes && stadiumsRes.ok) {
+        const d = await stadiumsRes.json();
+        const fieldCount = (d.stadiums ?? []).reduce(
+          (sum: number, s: { fields?: unknown[] }) => sum + (s.fields?.length ?? 0), 0
+        ) + (d.standaloneFields?.length ?? 0);
+        setVenueFieldCount(fieldCount);
       }
       if (hotelsRes.ok) {
         const h = await hotelsRes.json();
@@ -254,22 +1676,28 @@ export function TournamentSetupPageContent() {
       if (infoRes.ok) {
         const info = await infoRes.json();
         setTInfo({
-          hotelName: info.hotelName ?? "",
-          hotelAddress: info.hotelAddress ?? "",
-          hotelCheckIn: info.hotelCheckIn ?? "",
-          hotelCheckOut: info.hotelCheckOut ?? "",
-          hotelNotes: info.hotelNotes ?? "",
-          venueName: info.venueName ?? "",
-          venueAddress: info.venueAddress ?? "",
-          venueMapUrl: info.venueMapUrl ?? "",
-          mealTimes: info.mealTimes ?? "",
-          mealLocation: info.mealLocation ?? "",
-          mealNotes: info.mealNotes ?? "",
-          emergencyContact: info.emergencyContact ?? "",
+          contactName: info.contactName ?? "", contactPhone: info.contactPhone ?? "",
+          contactEmail: info.contactEmail ?? "", website: info.website ?? "",
+          instagram: info.instagram ?? "", facebook: info.facebook ?? "",
+          twitter: info.twitter ?? "", youtube: info.youtube ?? "",
+          hotelName: info.hotelName ?? "", hotelAddress: info.hotelAddress ?? "",
+          hotelCheckIn: info.hotelCheckIn ?? "", hotelCheckOut: info.hotelCheckOut ?? "",
+          venueName: info.venueName ?? "", venueAddress: info.venueAddress ?? "",
+          venueMapUrl: info.venueMapUrl ?? "", emergencyContact: info.emergencyContact ?? "",
           emergencyPhone: info.emergencyPhone ?? "",
-          scheduleUrl: info.scheduleUrl ?? "",
-          scheduleDescription: info.scheduleDescription ?? "",
-          additionalNotes: info.additionalNotes ?? "",
+        });
+      }
+      if (billingRes && billingRes.ok) {
+        const billing = await billingRes.json();
+        const plan = billing.effectivePlan ?? "free";
+        setPlanInfo({
+          effectivePlan: plan,
+          maxDivisions: billing.features?.maxDivisions ?? 1,
+          maxTeams: billing.features?.maxTeams ?? 12,
+          extraDivisionPrice: 9,
+          extraTeamPrice: plan === "free" ? 0 : plan === "starter" ? 1 : 2,
+          extrasBlocked:    billing.extrasOwed?.blocked ?? false,
+          extrasPaymentDue: billing.extrasOwed?.paymentDue ?? null,
         });
       }
     } catch (e: unknown) {
@@ -277,1004 +1705,466 @@ export function TournamentSetupPageContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [adminFetch, ctx]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  /* ─── save ─── */
-  const save = async (payload: Record<string, unknown>) => {
+  // ── Save functions ─────────────────────────────────────────
+  const saveMain = async (payload: Record<string, unknown>): Promise<boolean> => {
     setSaving(true);
-    setSaved(false);
+    setDivisionLimitError(null);
+    setExtraTeamsUnpaid(null);
     try {
       const res = await adminFetch("/api/admin/tournaments", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      if (res.status === 402) {
+        const err = await res.json();
+        if (err.code === "DIVISION_LIMIT") {
+          setDivisionLimitError({ currentPlan: err.currentPlan, maxDivisions: err.maxDivisions, attempted: err.attempted });
+          return false;
+        }
+        if (err.error === "extra_teams_unpaid") {
+          setExtraTeamsUnpaid({ owed: err.owed, owedCents: err.owedCents });
+          return false;
+        }
+        throw new Error(err.error ?? "Plan limit reached");
+      }
       if (!res.ok) throw new Error("Save failed");
       const updated: TournamentData = await res.json();
       setData(updated);
       setClasses(updated.classes ?? []);
       setProducts(updated.products ?? []);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      return true;
     } catch {
       setError("Failed to save. Please try again.");
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
-  const saveGeneral = () =>
-    save({
-      name,
-      year,
-      startDate: startDate || null,
-      endDate: endDate || null,
-      registrationDeadline: regDeadline || null,
-      registrationOpen: regOpen,
-      currency,
-    });
 
-  const saveClasses = () =>
-    save({
-      classes: classes.filter((c) => !c._deleted),
-    });
-
-  const saveProducts = () =>
-    save({
-      products: products
-        .filter((p) => !p._deleted)
-        .map((p, i) => ({ ...p, sortOrder: i })),
-    });
-
-  const saveFields = async () => {
-    setFieldsSaving(true);
-    setFieldsSaved(false);
-    try {
-      const toDelete = fields.filter((f) => f._deleted && f.id);
-      const toUpsert = fields.filter((f) => !f._deleted);
-      await Promise.all(toDelete.map((f) =>
-        adminFetch(`/api/admin/tournament-fields?id=${f.id}`, { method: "DELETE" })
-      ));
-      for (const f of toUpsert) {
-        if (f.id) {
-          await adminFetch("/api/admin/tournament-fields", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
-        } else {
-          await adminFetch("/api/admin/tournament-fields", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
-        }
-      }
-      // Refresh
-      const res = await adminFetch("/api/admin/tournament-fields");
-      if (res.ok) {
-        const f = await res.json();
-        setFields(Array.isArray(f) ? f.map((x: TournamentField) => ({
-          id: x.id, name: x.name ?? "", address: x.address ?? "",
-          mapUrl: x.mapUrl ?? "", scheduleUrl: x.scheduleUrl ?? "",
-          notes: x.notes ?? "", sortOrder: x.sortOrder ?? 0,
-        })) : []);
-      }
-      setFieldsSaved(true);
-      setTimeout(() => setFieldsSaved(false), 2000);
-    } catch {
-      setError("Failed to save fields.");
-    } finally {
-      setFieldsSaving(false);
-    }
-  };
-
-  const saveHotels = async () => {
-    setHotelsSaving(true);
-    setHotelsSaved(false);
-    try {
-      const toDelete = hotels.filter((h) => h._deleted && h.id);
-      const toUpsert = hotels.filter((h) => !h._deleted);
-      await Promise.all(toDelete.map((h) =>
-        adminFetch(`/api/admin/tournament-hotels?id=${h.id}`, { method: "DELETE" })
-      ));
-      for (const h of toUpsert) {
-        if (h.id) {
-          await adminFetch("/api/admin/tournament-hotels", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(h) });
-        } else {
-          await adminFetch("/api/admin/tournament-hotels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(h) });
-        }
-      }
-      // Refresh
-      const res = await adminFetch("/api/admin/tournament-hotels");
-      if (res.ok) {
-        const h = await res.json();
-        setHotels(Array.isArray(h) ? h.map((x: TournamentHotel) => ({
-          id: x.id, name: x.name ?? "", address: x.address ?? "",
-          contactName: x.contactName ?? "", contactPhone: x.contactPhone ?? "",
-          contactEmail: x.contactEmail ?? "", notes: x.notes ?? "", sortOrder: x.sortOrder ?? 0,
-        })) : []);
-      }
-      setHotelsSaved(true);
-      setTimeout(() => setHotelsSaved(false), 2000);
-    } catch {
-      setError("Failed to save hotels.");
-    } finally {
-      setHotelsSaving(false);
-    }
-  };
-
-  const saveInfo = async () => {
+  const saveInfoData = async () => {
     setInfoSaving(true);
-    setInfoSaved(false);
     try {
-      const res = await adminFetch("/api/admin/tournament-info", {
-        method: "PUT",
+      await adminFetch("/api/admin/tournament-info", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tInfo),
       });
-      if (!res.ok) throw new Error("Save failed");
-      setInfoSaved(true);
-      setTimeout(() => setInfoSaved(false), 2000);
-    } catch {
-      setError("Failed to save info. Please try again.");
     } finally {
       setInfoSaving(false);
     }
   };
 
-  /* ─── class mutations ─── */
-  const addClass = () =>
-    setClasses((prev) => [
-      ...prev,
-      { name: "", format: null, minBirthYear: null, maxPlayers: 25, maxStaff: 5 },
-    ]);
+  // ── Computed state ─────────────────────────────────────────
+  const orgSlug = ctx?.orgSlug ?? "";
+  const tournamentId = ctx?.tournamentId ?? 0;
+  const activeClasses = classes.filter(c => !c._deleted);
 
-  const addField = () =>
-    setFields((prev) => [
-      ...prev,
-      { name: "", address: "", mapUrl: "", scheduleUrl: "", notes: "", sortOrder: prev.length },
-    ]);
-
-  const addHotel = () =>
-    setHotels((prev) => [
-      ...prev,
-      { name: "", address: "", contactName: "", contactPhone: "", contactEmail: "", notes: "", sortOrder: prev.length },
-    ]);
-
-  const updateClass = (idx: number, field: string, value: unknown) =>
-    setClasses((prev) =>
-      prev.map((c, i) => (i === idx ? { ...c, [field]: value } : c))
-    );
-
-  const deleteClass = (idx: number) => {
-    if (classes[idx].id) {
-      // Mark existing for server-side handling
-      setClasses((prev) =>
-        prev.map((c, i) => (i === idx ? { ...c, _deleted: true } : c))
-      );
-    } else {
-      setClasses((prev) => prev.filter((_, i) => i !== idx));
-    }
-    setDeleteConfirm(null);
+  // Section completion status
+  const isDone = {
+    basics: !!(data?.name && data?.startDate && data?.endDate),
+    media: !!(data?.logoUrl || data?.coverUrl),
+    divisions: activeClasses.length > 0,
+    format: activeClasses.length > 0 && activeClasses.every(c => configuredFormats.has(String(c.id ?? c.name))),
+    venue: venueFieldCount > 0,
+    products: products.filter(p => !p._deleted).length > 0,
+    info: !!(tInfo.contactPhone || tInfo.contactEmail || tInfo.instagram || tInfo.facebook),
+    publish: data?.registrationOpen ?? false,
   };
 
-  /* ─── product mutations ─── */
-  const addProduct = () =>
-    setProducts((prev) => [
-      ...prev,
-      {
-        name: "",
-        category: "registration",
-        price: "0",
-        perPerson: false,
-        isRequired: false,
-        sortOrder: prev.length,
-      },
-    ]);
-
-  const updateProduct = (idx: number, field: string, value: unknown) =>
-    setProducts((prev) =>
-      prev.map((p, i) => (i === idx ? { ...p, [field]: value } : p))
-    );
-
-  const deleteProduct = (idx: number) => {
-    if (products[idx].id) {
-      setProducts((prev) =>
-        prev.map((p, i) => (i === idx ? { ...p, _deleted: true } : p))
-      );
-    } else {
-      setProducts((prev) => prev.filter((_, i) => i !== idx));
-    }
-    setDeleteConfirm(null);
+  // Summary strings
+  const summaries: Record<StepKey, string> = {
+    basics: [name, startDate && endDate ? `${startDate} – ${endDate}` : null, currency].filter(Boolean).join(" · ") || t("newTournament"),
+    media: [data?.logoUrl ? "Logo ✓" : null, data?.coverUrl ? "Cover ✓" : null].filter(Boolean).join(" · ") || t("mediaHint"),
+    divisions: activeClasses.length > 0 ? activeClasses.map(c => c.name || t("newDivision")).join(", ") : t("noDivisions"),
+    format: activeClasses.length > 0 ? activeClasses.map(c => c.name).join(", ") : t("formatNoDivisions"),
+    venue: venueFieldCount > 0 ? `${venueFieldCount} ${t("fields")}` : t("noFields"),
+    products: products.filter(p => !p._deleted).length > 0 ? `${products.filter(p => !p._deleted).length} ${t("products")}` : t("stepProducts"),
+    info: tInfo.contactPhone || tInfo.contactEmail ? [tInfo.contactName, tInfo.contactPhone].filter(Boolean).join(" · ") : t("stepInfoNew"),
+    publish: data?.registrationOpen ? t("registrationOpen") : t("registrationClosed"),
   };
 
-  /* ─── render ─── */
+  const getBadge = (key: StepKey): "done" | "required" | "optional" => {
+    const step = STEPS.find(s => s.key === key);
+    if (isDone[key]) return "done";
+    if (step?.required) return "required";
+    return "optional";
+  };
+
+  // ── Loading / Error states ─────────────────────────────────
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-[var(--cat-accent)]" />
+      <div className="flex items-center justify-center py-24 gap-3" style={{ color: "var(--cat-text-muted)" }}>
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--cat-accent)" }} />
+        <span className="text-sm font-semibold">{t("loading")}</span>
       </div>
     );
   }
-
-  if (error && !data) {
+  if (error) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold th-text">
-          Tournament Management
-        </h1>
-        <Card>
-          <p className="text-error text-sm">{error}</p>
-          <Button onClick={fetchData} className="mt-4" variant="secondary">
-            Retry
-          </Button>
-        </Card>
+      <div className="flex items-center justify-center py-24">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 mx-auto mb-3" style={{ color: "var(--badge-error-text)" }} />
+          <p className="font-bold mb-2" style={{ color: "var(--cat-text)" }}>{t("loadError")}</p>
+          <p className="text-sm mb-4" style={{ color: "var(--cat-text-muted)" }}>{error}</p>
+          <button onClick={fetchData} className="px-4 py-2 rounded-xl text-sm font-semibold"
+            style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
+            {t("retry")}
+          </button>
+        </div>
       </div>
     );
   }
 
-  const visibleClasses = classes.filter((c) => !c._deleted);
-  const visibleProducts = products.filter((p) => !p._deleted);
+  // ── Main render: Setup Hub ─────────────────────────────────
+  return (
+    <>
+      <SaveSuccessOverlay visible={showSaveOverlay} />
+
+      <div className="max-w-2xl mx-auto space-y-3 pb-16">
+
+        {/* ── Tournament header ── */}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center shrink-0"
+            style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-card-border)" }}>
+            {data?.logoUrl
+              ? <img src={data.logoUrl} alt="" className="w-full h-full object-cover" />
+              : <Trophy className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
+            }
+          </div>
+          <div>
+            <h1 className="text-lg font-black" style={{ color: "var(--cat-text)" }}>
+              {name || t("newTournament")}
+            </h1>
+            <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("setup")}</p>
+          </div>
+        </div>
+
+        {/* ── Plan widget ── */}
+        <PlanWidget
+          planInfo={planInfo}
+          activeClasses={activeClasses.length}
+          startDate={startDate}
+          endDate={endDate}
+          orgSlug={orgSlug}
+          tournamentId={tournamentId}
+        />
+
+        {/* ── 1. Basics ── */}
+        <HubCard
+          icon={Trophy}
+          title={`1. ${t("stepBasics")}`}
+          badge={getBadge("basics")}
+          summary={summaries.basics}
+          isOpen={openSection === "basics"}
+          onToggle={() => toggleSection("basics")}
+          onSave={async () => { await saveMain({ name, year, startDate: startDate || null, endDate: endDate || null, registrationDeadline: regDeadline || null, registrationOpen: regOpen, currency }); }}
+          onAfterSave={() => setOpenSection("media")}
+          saving={saving}
+        >
+          <StepBasics
+            name={name} setName={setName}
+            year={year} setYear={setYear}
+            startDate={startDate} setStartDate={setStartDate}
+            endDate={endDate} setEndDate={setEndDate}
+            regDeadline={regDeadline} setRegDeadline={setRegDeadline}
+            currency={currency} setCurrency={setCurrency}
+          />
+        </HubCard>
+
+        {/* ── 2. Media (auto-saves on upload, just needs Continue) ── */}
+        <HubCard
+          icon={ImageIcon}
+          title={`2. ${t("stepMedia")}`}
+          badge={getBadge("media")}
+          summary={summaries.media}
+          isOpen={openSection === "media"}
+          onToggle={() => toggleSection("media")}
+          onSave={async () => { /* uploads auto-save */ }}
+          onAfterSave={() => setOpenSection("divisions")}
+          saving={false}
+        >
+          <StepMedia
+            orgSlug={orgSlug}
+            tournamentId={tournamentId}
+            coverUrl={data?.coverUrl ?? null}
+            logoUrl={data?.logoUrl ?? null}
+            onLogoChange={(url) => setData(prev => prev ? { ...prev, logoUrl: url } : prev)}
+            onCoverChange={(url) => setData(prev => prev ? { ...prev, coverUrl: url } : prev)}
+          />
+        </HubCard>
+
+        {/* ── 3. Divisions ── */}
+        <HubCard
+          icon={GraduationCap}
+          title={`3. ${t("stepDivisions")}`}
+          badge={getBadge("divisions")}
+          summary={summaries.divisions}
+          isOpen={openSection === "divisions"}
+          onToggle={() => toggleSection("divisions")}
+          onSave={async () => { await saveMain({ classes: classes.map(c => ({ ...c })) }); }}
+          onAfterSave={() => setOpenSection("format")}
+          saving={saving}
+        >
+          <StepDivisions
+            classes={classes}
+            setClasses={setClasses}
+            planInfo={planInfo}
+            divisionLimitError={divisionLimitError}
+            tournamentStartDate={startDate}
+            tournamentEndDate={endDate}
+          />
+        </HubCard>
+
+        {/* ── 4. Format (saves via its own wizard) ── */}
+        <HubCard
+          icon={GitBranch}
+          title={`4. ${t("stepFormat")}`}
+          badge={getBadge("format")}
+          summary={summaries.format}
+          isOpen={openSection === "format"}
+          onToggle={() => toggleSection("format")}
+          onSave={async () => { /* format wizard saves its own stages */ }}
+          onAfterSave={() => setOpenSection("venue")}
+          saving={false}
+        >
+          <StepFormat
+            orgSlug={orgSlug}
+            tournamentId={tournamentId}
+            classes={classes}
+            configured={configuredFormats}
+            setConfigured={setConfiguredFormats}
+          />
+        </HubCard>
+
+        {/* ── 5. Venue ── */}
+        <HubCard
+          icon={MapPin}
+          title={`5. ${t("stepVenue")}`}
+          badge={getBadge("venue")}
+          summary={summaries.venue}
+          isOpen={openSection === "venue"}
+          onToggle={() => toggleSection("venue")}
+        >
+          <StadiumsPageContent onCountChange={setVenueFieldCount} />
+        </HubCard>
+
+        {/* ── 6. Products ── */}
+        <HubCard
+          icon={ShoppingBag}
+          title={`6. ${t("stepProducts")}`}
+          badge={getBadge("products")}
+          summary={summaries.products}
+          isOpen={openSection === "products"}
+          onToggle={() => toggleSection("products")}
+          onSave={async () => { await saveMain({ products: products.filter(p => !p._deleted).map((p, i) => ({ ...p, sortOrder: i })) }); }}
+          onAfterSave={() => setOpenSection("info")}
+          saving={saving}
+        >
+          <StepProducts products={products} setProducts={setProducts} />
+        </HubCard>
+
+        {/* ── 7. Info ── */}
+        <HubCard
+          icon={Info}
+          title={`7. ${t("stepInfo")}`}
+          badge={getBadge("info")}
+          summary={summaries.info}
+          isOpen={openSection === "info"}
+          onToggle={() => toggleSection("info")}
+          onSave={saveInfoData}
+          onAfterSave={() => setOpenSection("publish")}
+          saving={infoSaving}
+        >
+          <StepInfo tInfo={tInfo} setTInfo={setTInfo} />
+        </HubCard>
+
+        {/* ── 8. Publish ── */}
+        <HubCard
+          icon={Rocket}
+          title={`8. ${t("stepPublish")}`}
+          badge={getBadge("publish")}
+          summary={summaries.publish}
+          isOpen={openSection === "publish"}
+          onToggle={() => toggleSection("publish")}
+          onSave={async () => {
+            const ok = await saveMain({ registrationOpen: regOpen });
+            if (ok) {
+              setShowSaveOverlay(true);
+              // Only redirect to billing if plan limits are exceeded
+              const plan = planInfo?.effectivePlan ?? "free";
+              const { allOk } = planInfo
+                ? computePlanViolations(plan, planInfo.maxDivisions, activeClasses.length, startDate, endDate)
+                : { allOk: true };
+              if (!allOk) {
+                const locale = window.location.pathname.split("/")[1] ?? "en";
+                setTimeout(() => {
+                  window.location.href = `/${locale}/org/${orgSlug}/admin/tournament/${tournamentId}/billing`;
+                }, 1600);
+              }
+            }
+          }}
+          saving={saving}
+        >
+          <StepPublish
+            data={data}
+            classes={classes}
+            venueFieldCount={venueFieldCount}
+            products={products}
+            regOpen={regOpen}
+            setRegOpen={setRegOpen}
+            orgSlug={orgSlug}
+            tournamentId={tournamentId}
+            planInfo={planInfo}
+            extraTeamsUnpaid={extraTeamsUnpaid}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        </HubCard>
+
+        {/* ── Danger Zone ── */}
+        <DangerZone orgSlug={orgSlug} tournamentId={tournamentId} tournamentName={name} />
+
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Danger Zone — запрос на удаление турнира
+// ─────────────────────────────────────────────────────────────
+
+function DangerZone({ orgSlug, tournamentId, tournamentName }: {
+  orgSlug: string;
+  tournamentId: number;
+  tournamentName: string;
+}) {
+  const t = useTranslations("orgAdmin");
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "cancel">("idle");
+  const [hasRequest, setHasRequest] = useState(false);
+
+  // Check if request already exists
+  useEffect(() => {
+    fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/delete-request`, { method: "GET" })
+      .catch(() => null);
+    // We'll determine from data on setup load — for now check via tournament data
+  }, [orgSlug, tournamentId]);
+
+  const submit = async () => {
+    setStatus("sending");
+    const res = await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/delete-request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
+    if (res.ok) {
+      setStatus("sent");
+      setHasRequest(true);
+      setOpen(false);
+    } else {
+      const d = await res.json().catch(() => ({}));
+      if (d.error === "already_requested") { setStatus("sent"); setHasRequest(true); setOpen(false); }
+      else setStatus("idle");
+    }
+  };
+
+  const cancelRequest = async () => {
+    setStatus("cancel");
+    await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/delete-request`, { method: "DELETE" });
+    setStatus("idle");
+    setHasRequest(false);
+  };
 
   return (
-    <div className="space-y-6 w-full">
-      <h1 className="text-2xl font-bold th-text">
-        Tournament Management
-      </h1>
-
-      {error && (
-        <div className="rounded-lg bg-red-50 border border-error/20 px-4 py-3 text-sm text-error">
-          {error}
+    <div className="mt-8 rounded-2xl border-2 border-dashed p-5"
+      style={{ borderColor: "rgba(220,38,38,0.25)", background: "rgba(220,38,38,0.02)" }}>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-sm font-black" style={{ color: "#DC2626" }}>{t("dangerZone")}</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>{t("dangerZoneDesc")}</p>
         </div>
-      )}
 
-      {/* Tabs */}
-      <div className="flex gap-2">
-        <SectionTab
-          active={tab === "general"}
-          onClick={() => setTab("general")}
-          icon={Trophy}
-          label="General Settings"
-        />
-        <SectionTab
-          active={tab === "classes"}
-          onClick={() => setTab("classes")}
-          icon={GraduationCap}
-          label="Classes"
-        />
-        <SectionTab
-          active={tab === "products"}
-          onClick={() => setTab("products")}
-          icon={ShoppingBag}
-          label="Products & Prices"
-        />
-        <SectionTab
-          active={tab === "fields"}
-          onClick={() => setTab("fields")}
-          icon={Info}
-          label="Fields"
-        />
-        <SectionTab
-          active={tab === "hotels"}
-          onClick={() => setTab("hotels")}
-          icon={Info}
-          label="Hotels"
-        />
-        <SectionTab
-          active={tab === "info"}
-          onClick={() => setTab("info")}
-          icon={Info}
-          label="Info"
-        />
-        <SectionTab
-          active={tab === "media"}
-          onClick={() => setTab("media")}
-          icon={ImageIcon}
-          label="Media"
-        />
+        {hasRequest || status === "sent" ? (
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-xl"
+              style={{ background: "rgba(220,38,38,0.1)", color: "#DC2626" }}>
+              ⏳ {t("deleteRequestSent")}
+            </span>
+            <button onClick={cancelRequest} disabled={status === "cancel"}
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all hover:opacity-70"
+              style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-muted)" }}>
+              {t("cancelRequest")}
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setOpen(true)}
+            className="text-xs font-black px-4 py-2 rounded-xl border-2 transition-all hover:bg-red-50"
+            style={{ borderColor: "rgba(220,38,38,0.4)", color: "#DC2626" }}>
+            {t("requestDelete")}
+          </button>
+        )}
       </div>
 
-      {/* ─── General Settings ─── */}
-      {tab === "general" && (
-        <Card>
-          <CardTitle>General Settings</CardTitle>
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Input
-              id="name"
-              label="Tournament name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <Input
-              id="year"
-              label="Year"
-              type="number"
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-            />
-            <Input
-              id="startDate"
-              label="Start date"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <Input
-              id="endDate"
-              label="End date"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-            <Input
-              id="regDeadline"
-              label="Registration deadline"
-              type="date"
-              value={regDeadline}
-              onChange={(e) => setRegDeadline(e.target.value)}
-            />
-            <div className="space-y-1.5">
-              <label
-                htmlFor="currency"
-                className="block text-sm font-medium th-text"
-              >
-                Currency
-              </label>
-              <select
-                id="currency"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="w-full rounded-lg border th-border th-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)]"
-              >
-                <option value="EUR">EUR</option>
-                <option value="USD">USD</option>
-                <option value="GBP">GBP</option>
-                <option value="SEK">SEK</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <label className="flex items-center gap-3 text-sm font-medium th-text cursor-pointer">
-              <input
-                type="checkbox"
-                checked={regOpen}
-                onChange={(e) => setRegOpen(e.target.checked)}
-                className="accent-navy w-4 h-4"
-              />
-              Registration open
-            </label>
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <SaveButton saving={saving} saved={saved} onClick={saveGeneral} />
-          </div>
-        </Card>
-      )}
-
-      {/* ─── Classes ─── */}
-      {tab === "classes" && (
-        <Card padding={false}>
-          <div className="p-6 border-b th-border flex items-center justify-between">
-            <CardTitle>Age Classes</CardTitle>
-            <Button size="sm" onClick={addClass}>
-              <Plus className="w-4 h-4" />
-              Add Class
-            </Button>
-          </div>
-
-          {visibleClasses.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b th-border text-left">
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase w-24">
-                      Пол
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Класс (авто)
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Format
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Год рождения
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Max Players
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Max Staff
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase w-16">
-                      &nbsp;
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {classes.map((cls, idx) =>
-                    cls._deleted ? null : (
-                      <tr
-                        key={cls.id ?? `new-${idx}`}
-                        className="border-b th-border last:border-0 hover:th-bg"
-                      >
-                        {/* Gender toggle */}
-                        <td className="px-4 py-2">
-                          {(() => {
-                            const g = cls.name.startsWith("B") ? "B" : cls.name.startsWith("G") ? "G" : "";
-                            return (
-                              <div className="flex gap-1">
-                                {(["B","G"] as const).map(gdr => (
-                                  <button
-                                    key={gdr}
-                                    type="button"
-                                    onClick={() => {
-                                      const year = cls.minBirthYear ?? "";
-                                      updateClass(idx, "name", year ? `${gdr}${year}` : gdr);
-                                    }}
-                                    className="px-2.5 py-1.5 rounded-lg text-xs font-black border transition-all"
-                                    style={g === gdr ? {
-                                      background: gdr === "B" ? "rgba(59,130,246,0.15)" : "rgba(236,72,153,0.15)",
-                                      borderColor: gdr === "B" ? "#3B82F6" : "#EC4899",
-                                      color: gdr === "B" ? "#3B82F6" : "#EC4899",
-                                    } : {
-                                      background: "var(--cat-tag-bg)",
-                                      borderColor: "var(--cat-card-border)",
-                                      color: "var(--cat-text-muted)",
-                                    }}
-                                  >
-                                    {gdr === "B" ? "♂ B" : "♀ G"}
-                                  </button>
-                                ))}
-                              </div>
-                            );
-                          })()}
-                        </td>
-                        {/* Name (auto) */}
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={cls.name}
-                            onChange={(e) => updateClass(idx, "name", e.target.value)}
-                            placeholder="B2014 / G2011"
-                            className="w-24 rounded-lg border th-border px-3 py-2 text-sm font-bold focus:outline-none focus:border-[var(--cat-accent)]"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <select
-                            value={cls.format ?? ""}
-                            onChange={(e) => updateClass(idx, "format", e.target.value || null)}
-                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)] th-card"
-                          >
-                            <option value="">—</option>
-                            {FORMATS.map((f) => (
-                              <option key={f} value={f}>{f}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="number"
-                            value={cls.minBirthYear ?? ""}
-                            onChange={(e) => {
-                              const yr = e.target.value ? Number(e.target.value) : null;
-                              updateClass(idx, "minBirthYear", yr);
-                              // auto-update name if starts with B or G
-                              if (yr && (cls.name.startsWith("B") || cls.name.startsWith("G"))) {
-                                const prefix = cls.name[0];
-                                updateClass(idx, "name", `${prefix}${yr}`);
-                              }
-                            }}
-                            placeholder="2014"
-                            className="w-24 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="number"
-                            value={cls.maxPlayers ?? ""}
-                            onChange={(e) =>
-                              updateClass(
-                                idx,
-                                "maxPlayers",
-                                e.target.value ? Number(e.target.value) : null
-                              )
-                            }
-                            className="w-20 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="number"
-                            value={cls.maxStaff ?? ""}
-                            onChange={(e) =>
-                              updateClass(
-                                idx,
-                                "maxStaff",
-                                e.target.value ? Number(e.target.value) : null
-                              )
-                            }
-                            className="w-20 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          {deleteConfirm?.type === "class" &&
-                          deleteConfirm.idx === idx ? (
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => deleteClass(idx)}
-                                className="text-xs text-error font-medium cursor-pointer hover:underline"
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteConfirm(null)}
-                                className="text-xs th-text-2 cursor-pointer hover:underline"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setDeleteConfirm({ type: "class", idx })
-                              }
-                              className="th-text-2 hover:text-error transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-10 th-text-2 text-sm">
-              <GraduationCap className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              No classes defined. Click &quot;Add Class&quot; to create one.
-            </div>
-          )}
-
-          <div className="p-4 border-t th-border flex justify-end">
-            <SaveButton saving={saving} saved={saved} onClick={saveClasses} />
-          </div>
-        </Card>
-      )}
-
-      {/* ─── Products & Prices ─── */}
-      {tab === "products" && (
-        <Card padding={false}>
-          <div className="p-6 border-b th-border flex items-center justify-between">
-            <CardTitle>Products & Prices</CardTitle>
-            <Button size="sm" onClick={addProduct}>
-              <Plus className="w-4 h-4" />
-              Add Product
-            </Button>
-          </div>
-
-          {visibleProducts.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b th-border text-left">
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Name
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Category
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase">
-                      Price ({currency})
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center">
-                      Per Person
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center">
-                      Required
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase w-16">
-                      &nbsp;
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((prod, idx) =>
-                    prod._deleted ? null : (
-                      <tr
-                        key={prod.id ?? `new-${idx}`}
-                        className="border-b th-border last:border-0 hover:th-bg"
-                      >
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={prod.name}
-                            onChange={(e) =>
-                              updateProduct(idx, "name", e.target.value)
-                            }
-                            placeholder="Product name"
-                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <select
-                            value={prod.category}
-                            onChange={(e) =>
-                              updateProduct(idx, "category", e.target.value)
-                            }
-                            className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)] th-card"
-                          >
-                            {CATEGORIES.map((cat) => (
-                              <option key={cat} value={cat}>
-                                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={prod.price}
-                            onChange={(e) =>
-                              updateProduct(idx, "price", e.target.value)
-                            }
-                            className="w-28 rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={prod.perPerson}
-                            onChange={(e) =>
-                              updateProduct(
-                                idx,
-                                "perPerson",
-                                e.target.checked
-                              )
-                            }
-                            className="accent-navy w-4 h-4"
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={prod.isRequired}
-                            onChange={(e) =>
-                              updateProduct(
-                                idx,
-                                "isRequired",
-                                e.target.checked
-                              )
-                            }
-                            className="accent-navy w-4 h-4"
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          {deleteConfirm?.type === "product" &&
-                          deleteConfirm.idx === idx ? (
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => deleteProduct(idx)}
-                                className="text-xs text-error font-medium cursor-pointer hover:underline"
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteConfirm(null)}
-                                className="text-xs th-text-2 cursor-pointer hover:underline"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setDeleteConfirm({ type: "product", idx })
-                              }
-                              className="th-text-2 hover:text-error transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-10 th-text-2 text-sm">
-              <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              No products defined. Click &quot;Add Product&quot; to create one.
-            </div>
-          )}
-
-          <div className="p-4 border-t th-border flex justify-end">
-            <SaveButton saving={saving} saved={saved} onClick={saveProducts} />
-          </div>
-        </Card>
-      )}
-
-      {/* ─── Fields tab ─── */}
-      {tab === "fields" && (
-        <Card padding={false}>
-          <div className="p-6 border-b th-border flex items-center justify-between">
-            <CardTitle>⚽ Pitches / Bases</CardTitle>
-            <Button size="sm" onClick={addField}>
-              <Plus className="w-4 h-4" />
-              Add pitch
-            </Button>
-          </div>
-          <div className="divide-y divide-[var(--cat-card-border)]">
-            {fields.filter((f) => !f._deleted).length === 0 && (
-              <div className="text-center py-10 th-text-2 text-sm">
-                No pitches defined. Click &quot;Add pitch&quot; to create one.
+      {/* Modal */}
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.6)" }}
+          onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
+          <div className="w-full max-w-md rounded-3xl border p-6"
+            style={{ background: "var(--cat-card-bg)", borderColor: "rgba(220,38,38,0.3)" }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                style={{ background: "rgba(220,38,38,0.1)" }}>
+                <AlertCircle className="w-5 h-5" style={{ color: "#DC2626" }} />
               </div>
-            )}
-            {fields.map((field, idx) =>
-              field._deleted ? null : (
-                <div key={field.id ?? `new-${idx}`} className="p-5 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-[var(--cat-accent)] bg-[var(--cat-accent)]/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">{idx + 1}</span>
-                    <input
-                      type="text"
-                      value={field.name}
-                      onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, name: e.target.value } : f))}
-                      placeholder="Pitch / base name"
-                      className="flex-1 rounded-lg border th-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, _deleted: true } : f))}
-                      className="th-text-2 hover:text-error transition-colors cursor-pointer shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
-                    <input
-                      type="text"
-                      value={field.address}
-                      onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, address: e.target.value } : f))}
-                      placeholder="Address"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                    <input
-                      type="url"
-                      value={field.mapUrl}
-                      onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, mapUrl: e.target.value } : f))}
-                      placeholder="Map link (Google Maps)"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                    <input
-                      type="url"
-                      value={field.scheduleUrl}
-                      onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, scheduleUrl: e.target.value } : f))}
-                      placeholder="Schedule / bus link"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                    <input
-                      type="text"
-                      value={field.notes}
-                      onChange={(e) => setFields((prev) => prev.map((f, i) => i === idx ? { ...f, notes: e.target.value } : f))}
-                      placeholder="Additional info"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-          <div className="p-4 border-t th-border flex justify-end">
-            <SaveButton saving={fieldsSaving} saved={fieldsSaved} onClick={saveFields} />
-          </div>
-        </Card>
-      )}
-
-      {/* ─── Hotels tab ─── */}
-      {tab === "hotels" && (
-        <Card padding={false}>
-          <div className="p-6 border-b th-border flex items-center justify-between">
-            <CardTitle>🏨 Hotels</CardTitle>
-            <Button size="sm" onClick={addHotel}>
-              <Plus className="w-4 h-4" />
-              Add hotel
-            </Button>
-          </div>
-          <div className="divide-y divide-[var(--cat-card-border)]">
-            {hotels.filter((h) => !h._deleted).length === 0 && (
-              <div className="text-center py-10 th-text-2 text-sm">
-                No hotels yet. Click &quot;Add hotel&quot; to create one.
+              <div>
+                <p className="text-sm font-black" style={{ color: "var(--cat-text)" }}>{t("requestDeleteTitle")}</p>
+                <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{tournamentName}</p>
               </div>
-            )}
-            {hotels.map((hotel, idx) =>
-              hotel._deleted ? null : (
-                <div key={hotel.id ?? `new-${idx}`} className="p-5 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-[var(--cat-accent)] bg-[var(--cat-accent)]/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">{idx + 1}</span>
-                    <input
-                      type="text"
-                      value={hotel.name}
-                      onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, name: e.target.value } : h))}
-                      placeholder="Hotel name"
-                      className="flex-1 rounded-lg border th-border px-3 py-2 text-sm font-medium focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, _deleted: true } : h))}
-                      className="th-text-2 hover:text-error transition-colors cursor-pointer shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
-                    <input
-                      type="text"
-                      value={hotel.address}
-                      onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, address: e.target.value } : h))}
-                      placeholder="Address"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                    <input
-                      type="text"
-                      value={hotel.contactName}
-                      onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, contactName: e.target.value } : h))}
-                      placeholder="Contact person"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                    <input
-                      type="tel"
-                      value={hotel.contactPhone}
-                      onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, contactPhone: e.target.value } : h))}
-                      placeholder="Phone"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                    <input
-                      type="email"
-                      value={hotel.contactEmail}
-                      onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, contactEmail: e.target.value } : h))}
-                      placeholder="Email"
-                      className="rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                    />
-                    <div className="md:col-span-2">
-                      <input
-                        type="text"
-                        value={hotel.notes}
-                        onChange={(e) => setHotels((prev) => prev.map((h, i) => i === idx ? { ...h, notes: e.target.value } : h))}
-                        placeholder="Notes (breakfast, parking, etc.)"
-                        className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-[var(--cat-accent)]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-          <div className="p-4 border-t th-border flex justify-end">
-            <SaveButton saving={hotelsSaving} saved={hotelsSaved} onClick={saveHotels} />
-          </div>
-        </Card>
-      )}
-
-      {/* ─── Tournament Info ─── */}
-      {tab === "info" && (
-        <div className="space-y-5">
-          {/* Hotel */}
-          <Card>
-            <CardTitle>🏨 General Hotel Info</CardTitle>
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input id="hotelName" label="Hotel name" value={tInfo.hotelName ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, hotelName: e.target.value }))} placeholder="Radisson Blu Hotel" />
-              <Input id="hotelAddress" label="Address" value={tInfo.hotelAddress ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, hotelAddress: e.target.value }))} placeholder="Example St. 1, Tallinn" />
-              <Input id="hotelCheckIn" label="Check-in time" value={tInfo.hotelCheckIn ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, hotelCheckIn: e.target.value }))} placeholder="14:00, 15 May" />
-              <Input id="hotelCheckOut" label="Check-out time" value={tInfo.hotelCheckOut ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, hotelCheckOut: e.target.value }))} placeholder="12:00, 18 May" />
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium th-text mb-1.5">Hotel notes</label>
-                <textarea
-                  rows={2}
-                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-none"
-                  value={tInfo.hotelNotes ?? ""}
-                  onChange={(e) => setTInfo((p) => ({ ...p, hotelNotes: e.target.value }))}
-                  placeholder="Breakfast included, free parking..."
-                />
-              </div>
+              <button onClick={() => setOpen(false)} className="ml-auto p-1.5 rounded-lg hover:opacity-60"
+                style={{ color: "var(--cat-text-muted)" }}>
+                <X className="w-4 h-4" />
+              </button>
             </div>
-          </Card>
 
-          {/* Venue */}
-          <Card>
-            <CardTitle>⚽ Venue / Pitches</CardTitle>
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input id="venueName" label="Venue name" value={tInfo.venueName ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, venueName: e.target.value }))} placeholder="A. Le Coq Arena" />
-              <Input id="venueAddress" label="Address" value={tInfo.venueAddress ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, venueAddress: e.target.value }))} placeholder="Asula 4c, Tallinn" />
-              <div className="md:col-span-2">
-                <Input id="venueMapUrl" label="Map link (Google Maps / Waze)" value={tInfo.venueMapUrl ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, venueMapUrl: e.target.value }))} placeholder="https://maps.google.com/..." />
-              </div>
-            </div>
-          </Card>
-
-          {/* Meals */}
-          <Card>
-            <CardTitle>🍽️ Meals</CardTitle>
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input id="mealTimes" label="Meal times" value={tInfo.mealTimes ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, mealTimes: e.target.value }))} placeholder="Breakfast 7:30-9:00, Lunch 13:00, Dinner 19:00" />
-              <Input id="mealLocation" label="Meal location" value={tInfo.mealLocation ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, mealLocation: e.target.value }))} placeholder="Hotel restaurant, 1st floor" />
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium th-text mb-1.5">Meal notes</label>
-                <textarea
-                  rows={2}
-                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-none"
-                  value={tInfo.mealNotes ?? ""}
-                  onChange={(e) => setTInfo((p) => ({ ...p, mealNotes: e.target.value }))}
-                  placeholder="Vegetarian menu available on request..."
-                />
-              </div>
-            </div>
-          </Card>
-
-          {/* Schedule */}
-          <Card>
-            <CardTitle>📅 Schedule</CardTitle>
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Input id="scheduleUrl" label="Schedule URL" value={tInfo.scheduleUrl ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, scheduleUrl: e.target.value }))} placeholder="https://..." />
-              </div>
-              <div className="md:col-span-2">
-                <Input id="scheduleDescription" label="Description" value={tInfo.scheduleDescription ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, scheduleDescription: e.target.value }))} placeholder="Full match and event schedule" />
-              </div>
-            </div>
-          </Card>
-
-          {/* Emergency & Notes */}
-          <Card>
-            <CardTitle>🚨 Emergency Contact</CardTitle>
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input id="emergencyContact" label="Name / Role" value={tInfo.emergencyContact ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, emergencyContact: e.target.value }))} placeholder="John Smith, organizer" />
-              <Input id="emergencyPhone" label="Phone" value={tInfo.emergencyPhone ?? ""} onChange={(e) => setTInfo((p) => ({ ...p, emergencyPhone: e.target.value }))} placeholder="+372 5555 1234" />
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium th-text mb-1.5">Additional notes for teams</label>
-                <textarea
-                  rows={3}
-                  className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/15 focus:border-[var(--cat-accent)] resize-none"
-                  value={tInfo.additionalNotes ?? ""}
-                  onChange={(e) => setTInfo((p) => ({ ...p, additionalNotes: e.target.value }))}
-                  placeholder="Important information for all participants..."
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <SaveButton saving={infoSaving} saved={infoSaved} onClick={saveInfo} />
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* ─── Media ─── */}
-      {tab === "media" && (
-        <div className="space-y-6">
-          <Card>
-            <CardTitle>Tournament Media</CardTitle>
-            <p className="text-sm mt-1 mb-5" style={{ color: "var(--cat-text-muted)" }}>
-              Загрузите обложку (показывается на странице турнира) и логотип (аватар в сайдбаре).
-              Рекомендуемые размеры: обложка 1920×480, логотип квадрат 512×512.
+            <p className="text-xs mb-3 leading-relaxed" style={{ color: "var(--cat-text-muted)" }}>
+              {t("requestDeleteDesc")}
             </p>
-            {ctx ? (
-              <TournamentMediaUpload
-                orgSlug={ctx.orgSlug}
-                tournamentId={ctx.tournamentId}
-                initialCoverUrl={data?.coverUrl ?? null}
-                initialLogoUrl={data?.logoUrl ?? null}
+
+            <div className="mb-4">
+              <label className="text-xs font-semibold block mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
+                {t("deleteReason")} <span style={{ color: "var(--cat-text-muted)", fontWeight: 400 }}>({t("optional")})</span>
+              </label>
+              <textarea
+                className={inputCls}
+                style={inputStyle}
+                rows={3}
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                placeholder={t("deleteReasonPlaceholder")}
               />
-            ) : (
-              <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>Контекст турнира не доступен.</p>
-            )}
-          </Card>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setOpen(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:opacity-70"
+                style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)" }}>
+                {t("cancel")}
+              </button>
+              <button onClick={submit} disabled={status === "sending"}
+                className="flex-1 py-2.5 rounded-xl text-sm font-black transition-all hover:opacity-90 disabled:opacity-60"
+                style={{ background: "#DC2626", color: "#fff" }}>
+                {status === "sending" ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : t("sendDeleteRequest")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

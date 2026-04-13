@@ -117,14 +117,32 @@ function GroupTable({ group, stageName }: { group: Group; stageName: string }) {
                     )}
                   </td>
                   <td className="px-2 py-2.5">
-                    <span className="font-semibold" style={{ color: "var(--cat-text)" }}>
-                      {row.team?.name ?? "—"}
-                    </span>
-                    {row.team?.club?.name && (
-                      <span className="text-[11px] ml-1.5" style={{ color: "var(--cat-text-muted)" }}>
-                        {row.team.club.name}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {/* Club logo or letter avatar */}
+                      {row.team?.club?.badgeUrl ? (
+                        <img src={row.team.club.badgeUrl} alt=""
+                          style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0, borderRadius: 5 }} />
+                      ) : (
+                        <div style={{
+                          width: 28, height: 28, borderRadius: 6, flexShrink: 0,
+                          background: "var(--cat-tag-bg)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 11, fontWeight: 800, color: "var(--cat-text-muted)",
+                        }}>
+                          {(row.team?.name || row.team?.club?.name || "?")[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-semibold text-sm" style={{ color: "var(--cat-text)" }}>
+                          {row.team?.name || row.team?.club?.name || "—"}
+                        </div>
+                        {row.team?.club?.name && row.team.name && row.team.club.name !== row.team.name && (
+                          <div className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
+                            {row.team.club.name}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-2 py-2.5 text-center text-xs" style={{ color: "var(--cat-text-secondary)" }}>{row.played}</td>
                   <td className="px-2 py-2.5 text-center text-xs font-semibold" style={{ color: "#10b981" }}>{row.won}</td>

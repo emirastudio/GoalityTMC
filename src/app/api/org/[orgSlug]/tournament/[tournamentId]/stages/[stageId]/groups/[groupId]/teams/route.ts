@@ -26,7 +26,7 @@ export async function POST(
   // mode: "replace" | "append" — заменить или добавить
   const { teamIds, mode = "append" } = body;
 
-  if (!Array.isArray(teamIds) || teamIds.length === 0) {
+  if (!Array.isArray(teamIds)) {
     return NextResponse.json({ error: "teamIds array required" }, { status: 400 });
   }
 
@@ -45,6 +45,11 @@ export async function POST(
   if (mode === "replace") {
     await db.delete(groupTeams).where(eq(groupTeams.groupId, gid));
     await db.delete(standings).where(eq(standings.groupId, gid));
+  }
+
+  // Пустой массив в режиме replace = очистить группу (без вставки)
+  if (teamIds.length === 0) {
+    return NextResponse.json({ inserted: 0 }, { status: 200 });
   }
 
   // Добавляем команды

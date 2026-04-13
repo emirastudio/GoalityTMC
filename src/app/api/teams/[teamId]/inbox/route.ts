@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { inboxMessages, teamMessageReads, messageRecipients, teams } from "@/db/schema";
+import { inboxMessages, teamMessageReads, messageRecipients, teams, tournamentRegistrations } from "@/db/schema";
 import { eq, and, desc, or, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 
@@ -22,7 +22,18 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Get all messages for this tournament that are either sendToAll or have this team as recipient
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
+  // Get all messages for this tournament that are either sendToAll or have this registration as recipient
   const messages = await db
     .select({
       id: inboxMessages.id,
@@ -34,22 +45,22 @@ export async function GET(
     .from(inboxMessages)
     .where(
       and(
-        eq(inboxMessages.tournamentId, team.tournamentId),
+        eq(inboxMessages.tournamentId, registration.tournamentId),
         or(
           eq(inboxMessages.sendToAll, true),
           sql`EXISTS (
             SELECT 1 FROM ${messageRecipients}
             WHERE ${messageRecipients.messageId} = ${inboxMessages.id}
-            AND ${messageRecipients.teamId} = ${tid}
+            AND ${messageRecipients.registrationId} = ${registration.id}
           )`
         )
       )
     )
     .orderBy(desc(inboxMessages.sentAt));
 
-  // Get read status for this team
+  // Get read status for this registration
   const reads = await db.query.teamMessageReads.findMany({
-    where: eq(teamMessageReads.teamId, tid),
+    where: eq(teamMessageReads.registrationId, registration.id),
   });
   const readMap = new Set(reads.map((r) => r.messageId));
 
@@ -80,13 +91,24 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
   const { messageId } = await req.json();
 
   await db
     .insert(teamMessageReads)
     .values({
       messageId,
-      teamId: parseInt(teamId),
+      registrationId: registration.id,
     })
     .onConflictDoNothing();
 

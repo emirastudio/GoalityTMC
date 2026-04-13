@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { useAdminFetch } from "@/lib/tournament-context";
 import {
   ChevronUp,
@@ -52,18 +53,23 @@ type OverviewRow = {
 type SortKey = keyof OverviewRow;
 type SortDir = "asc" | "desc";
 
-const EXTRA_COLS = [
-  { key: "packageName", label: "Package" },
-  { key: "totalOrdered", label: "Total (€)" },
-  { key: "accommodationTotal", label: "Accom (€)" },
-  { key: "registrationTotal", label: "Reg fee (€)" },
-  { key: "transferTotal", label: "Transfer (€)" },
-  { key: "mealTotal", label: "Meals (€)" },
-  { key: "paid", label: "Paid (€)" },
-  { key: "balance", label: "Balance (€)" },
-] as const;
+type ExtraColDef = {
+  key: string;
+  labelKey: string;
+};
 
-type ExtraColKey = (typeof EXTRA_COLS)[number]["key"];
+const EXTRA_COL_DEFS: ExtraColDef[] = [
+  { key: "packageName", labelKey: "overviewExtraPackage" },
+  { key: "totalOrdered", labelKey: "overviewExtraTotal" },
+  { key: "accommodationTotal", labelKey: "overviewExtraAccom" },
+  { key: "registrationTotal", labelKey: "overviewExtraRegFee" },
+  { key: "transferTotal", labelKey: "overviewExtraTransfer" },
+  { key: "mealTotal", labelKey: "overviewExtraMeals" },
+  { key: "paid", labelKey: "overviewExtraPaid" },
+  { key: "balance", labelKey: "overviewExtraBalance" },
+];
+
+type ExtraColKey = string;
 
 function countryToFlag(code: string | null): string {
   if (!code || code.length !== 2) return "🏳";
@@ -72,22 +78,6 @@ function countryToFlag(code: string | null): string {
     .split("")
     .map((c) => String.fromCodePoint(c.charCodeAt(0) + 127397))
     .join("");
-}
-
-function accomStatus(row: OverviewRow): React.ReactNode {
-  if (row.accomDeclined)
-    return (
-      <span className="inline-flex items-center gap-1 text-xs text-error font-medium">
-        <X className="w-3 h-3" /> Declined
-      </span>
-    );
-  if (row.accomConfirmed)
-    return (
-      <span className="inline-flex items-center gap-1 text-xs text-success font-medium">
-        <Check className="w-3 h-3" /> Confirmed
-      </span>
-    );
-  return <span className="text-xs th-text-2">—</span>;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -113,6 +103,7 @@ function fmt(n: number | null | undefined) {
 
 export default function AdminOverviewPage() {
   const adminFetch = useAdminFetch();
+  const t = useTranslations("superAdmin");
   const [rows, setRows] = useState<OverviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -132,14 +123,40 @@ export default function AdminOverviewPage() {
   const [extraCols, setExtraCols] = useState<Set<ExtraColKey>>(new Set());
   const [showColPicker, setShowColPicker] = useState(false);
 
+  // Build translated extra columns list
+  const EXTRA_COLS = useMemo(
+    () =>
+      EXTRA_COL_DEFS.map((def) => ({
+        key: def.key,
+        label: t(def.labelKey),
+      })),
+    [t]
+  );
+
+  function accomStatus(row: OverviewRow): React.ReactNode {
+    if (row.accomDeclined)
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-error font-medium">
+          <X className="w-3 h-3" /> {t("overviewDeclined")}
+        </span>
+      );
+    if (row.accomConfirmed)
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-success font-medium">
+          <Check className="w-3 h-3" /> {t("overviewConfirmed")}
+        </span>
+      );
+    return <span className="text-xs th-text-2">—</span>;
+  }
+
   useEffect(() => {
     adminFetch("/api/admin/overview")
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) setRows(data);
-        else setError("Failed to load data");
+        else setError(t("overviewError"));
       })
-      .catch(() => setError("Network error"))
+      .catch(() => setError(t("overviewNetworkError")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -229,24 +246,24 @@ export default function AdminOverviewPage() {
   function exportCsv() {
     const extraColList = EXTRA_COLS.filter((c) => extraCols.has(c.key));
     const headers = [
-      "Reg#",
-      "Country",
-      "Club",
-      "Team",
-      "Division",
-      "Status",
-      "Players",
-      "Staff",
-      "Accompanying",
-      "Arrival",
-      "Departure",
-      "Accom status",
-      "Accom players",
-      "Accom staff",
-      "Accom acc.",
-      "Check-in",
-      "Check-out",
-      "Transfer",
+      t("overviewCsvRegNumber"),
+      t("overviewCsvCountry"),
+      t("overviewCsvClub"),
+      t("overviewCsvTeam"),
+      t("overviewCsvDivision"),
+      t("overviewCsvStatus"),
+      t("overviewCsvPlayers"),
+      t("overviewCsvStaff"),
+      t("overviewCsvAccompanying"),
+      t("overviewCsvArrival"),
+      t("overviewCsvDeparture"),
+      t("overviewCsvAccomStatus"),
+      t("overviewCsvAccomPlayers"),
+      t("overviewCsvAccomStaff"),
+      t("overviewCsvAccomAcc"),
+      t("overviewCsvCheckIn"),
+      t("overviewCsvCheckOut"),
+      t("overviewCsvTransfer"),
       ...extraColList.map((c) => c.label),
     ];
 
@@ -263,13 +280,13 @@ export default function AdminOverviewPage() {
         r.accompanying,
         r.arrivalDate ? `${r.arrivalDate}${r.arrivalTime ? " " + r.arrivalTime : ""}` : "",
         r.departureDate ? `${r.departureDate}${r.departureTime ? " " + r.departureTime : ""}` : "",
-        r.accomDeclined ? "Declined" : r.accomConfirmed ? "Confirmed" : "—",
+        r.accomDeclined ? t("overviewDeclined") : r.accomConfirmed ? t("overviewConfirmed") : "—",
         r.accomPlayers ?? "",
         r.accomStaff ?? "",
         r.accomAccompanying ?? "",
         r.accomCheckIn ?? "",
         r.accomCheckOut ?? "",
-        r.hasTransfer ? "Yes" : "No",
+        r.hasTransfer ? t("overviewYes") : t("overviewNo"),
       ];
       const extra = extraColList.map((c) => {
         const v = r[c.key as keyof OverviewRow];
@@ -321,7 +338,7 @@ export default function AdminOverviewPage() {
 
   if (loading)
     return (
-      <div className="p-8 text-center th-text-2">Loading…</div>
+      <div className="p-8 text-center th-text-2">{t("overviewLoading")}</div>
     );
   if (error)
     return <div className="p-8 text-center text-error">{error}</div>;
@@ -331,9 +348,9 @@ export default function AdminOverviewPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold th-text">Overview</h1>
+          <h1 className="text-xl font-bold th-text">{t("overviewTitle")}</h1>
           <p className="text-sm th-text-2">
-            {visible.length} of {rows.length} teams
+            {t("overviewTeamsCount", { visible: visible.length, total: rows.length })}
           </p>
         </div>
         <button
@@ -341,7 +358,7 @@ export default function AdminOverviewPage() {
           className="flex items-center gap-2 rounded-lg border th-border th-card px-3 py-2 text-sm font-medium hover:th-bg transition-colors"
         >
           <Download className="w-4 h-4" />
-          Export CSV
+          {t("overviewExportCsv")}
         </button>
       </div>
 
@@ -350,7 +367,7 @@ export default function AdminOverviewPage() {
         <Filter className="w-4 h-4 th-text-2 shrink-0" />
         <input
           type="search"
-          placeholder="Search club / team…"
+          placeholder={t("overviewSearchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="border th-border rounded-lg px-3 py-1.5 text-sm min-w-[160px] focus:outline-none focus:ring-2 focus:ring-navy/30"
@@ -360,7 +377,7 @@ export default function AdminOverviewPage() {
           onChange={(e) => setFilterDivision(e.target.value)}
           className="border th-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 th-card"
         >
-          <option value="all">All divisions</option>
+          <option value="all">{t("overviewAllDivisions")}</option>
           {divisions.map((d) => (
             <option key={d} value={d}>
               {d}
@@ -372,7 +389,7 @@ export default function AdminOverviewPage() {
           onChange={(e) => setFilterCountry(e.target.value)}
           className="border th-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 th-card"
         >
-          <option value="all">All countries</option>
+          <option value="all">{t("overviewAllCountries")}</option>
           {countries.map((c) => (
             <option key={c} value={c}>
               {countryToFlag(c)} {c}
@@ -384,7 +401,7 @@ export default function AdminOverviewPage() {
           onChange={(e) => setFilterStatus(e.target.value)}
           className="border th-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 th-card"
         >
-          <option value="all">All statuses</option>
+          <option value="all">{t("overviewAllStatuses")}</option>
           {statuses.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -396,11 +413,11 @@ export default function AdminOverviewPage() {
           onChange={(e) => setFilterAccom(e.target.value)}
           className="border th-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 th-card"
         >
-          <option value="all">All accom</option>
-          <option value="confirmed">Accom confirmed</option>
-          <option value="declined">Accom declined</option>
-          <option value="pending">Accom pending</option>
-          <option value="none">No accom request</option>
+          <option value="all">{t("overviewAllAccom")}</option>
+          <option value="confirmed">{t("overviewAccomConfirmed")}</option>
+          <option value="declined">{t("overviewAccomDeclined")}</option>
+          <option value="pending">{t("overviewAccomPending")}</option>
+          <option value="none">{t("overviewNoAccomRequest")}</option>
         </select>
         {(search || filterDivision !== "all" || filterCountry !== "all" || filterStatus !== "all" || filterAccom !== "all") && (
           <button
@@ -413,7 +430,7 @@ export default function AdminOverviewPage() {
             }}
             className="text-xs th-text-2 hover:text-error flex items-center gap-1 transition-colors"
           >
-            <X className="w-3 h-3" /> Clear
+            <X className="w-3 h-3" /> {t("overviewClearFilters")}
           </button>
         )}
       </div>
@@ -432,7 +449,7 @@ export default function AdminOverviewPage() {
               }`}
             >
               <Plus className="w-3.5 h-3.5" />
-              Columns {extraCols.size > 0 && `(${extraCols.size})`}
+              {t("overviewColumns")} {extraCols.size > 0 && `(${extraCols.size})`}
             </button>
             {showColPicker && (
               <div className="absolute right-0 top-full mt-1 popup-bg border th-border rounded-xl shadow-lg p-2 z-20 min-w-[180px]">
@@ -462,23 +479,23 @@ export default function AdminOverviewPage() {
                 <Th col="regNumber" className="pl-3">
                   #
                 </Th>
-                <Th>Flag</Th>
-                <Th col="clubName">Club</Th>
-                <Th col="teamName">Team</Th>
-                <Th col="division">Division</Th>
-                <Th col="status">Status</Th>
-                <Th col="players">Players</Th>
-                <Th col="staff">Staff</Th>
-                <Th col="accompanying">Acc.</Th>
-                <Th col="arrivalDate">Arrival</Th>
-                <Th col="departureDate">Departure</Th>
-                <Th>Accom</Th>
-                <Th col="accomPlayers">A.Pl</Th>
-                <Th col="accomStaff">A.St</Th>
-                <Th col="accomAccompanying">A.Ac</Th>
-                <Th col="accomCheckIn">Check-in</Th>
-                <Th col="accomCheckOut">Check-out</Th>
-                <Th col="hasTransfer">Transfer</Th>
+                <Th>{t("overviewColFlag")}</Th>
+                <Th col="clubName">{t("overviewColClub")}</Th>
+                <Th col="teamName">{t("overviewColTeam")}</Th>
+                <Th col="division">{t("overviewColDivision")}</Th>
+                <Th col="status">{t("overviewColStatus")}</Th>
+                <Th col="players">{t("overviewColPlayers")}</Th>
+                <Th col="staff">{t("overviewColStaff")}</Th>
+                <Th col="accompanying">{t("overviewColAcc")}</Th>
+                <Th col="arrivalDate">{t("overviewColArrival")}</Th>
+                <Th col="departureDate">{t("overviewColDeparture")}</Th>
+                <Th>{t("overviewColAccom")}</Th>
+                <Th col="accomPlayers">{t("overviewColAccomPlayers")}</Th>
+                <Th col="accomStaff">{t("overviewColAccomStaff")}</Th>
+                <Th col="accomAccompanying">{t("overviewColAccomAcc")}</Th>
+                <Th col="accomCheckIn">{t("overviewColCheckIn")}</Th>
+                <Th col="accomCheckOut">{t("overviewColCheckOut")}</Th>
+                <Th col="hasTransfer">{t("overviewColTransfer")}</Th>
                 {activeExtraCols.map((c) => (
                   <Th key={c.key} col={c.key as SortKey}>
                     {c.label}
@@ -493,7 +510,7 @@ export default function AdminOverviewPage() {
                     colSpan={18 + activeExtraCols.length}
                     className="text-center py-12 th-text-2"
                   >
-                    No teams found
+                    {t("overviewNoTeams")}
                   </td>
                 </tr>
               )}
@@ -609,7 +626,7 @@ export default function AdminOverviewPage() {
                             {(val as string) ?? <span className="th-text-2/40">—</span>}
                             {c.key === "packageName" && row.packagePublished && (
                               <span className="ml-1 text-[9px] bg-success/15 text-success rounded px-1">
-                                pub
+                                {t("overviewPub")}
                               </span>
                             )}
                           </span>
@@ -629,26 +646,26 @@ export default function AdminOverviewPage() {
         {visible.length > 0 && (
           <div className="bg-navy/5 border-t th-border px-3 py-2 flex flex-wrap gap-4 text-xs th-text-2">
             <span>
-              <strong className="th-text">{visible.reduce((s, r) => s + r.players, 0)}</strong> players
+              <strong className="th-text">{visible.reduce((s, r) => s + r.players, 0)}</strong> {t("overviewSummaryPlayers")}
             </span>
             <span>
-              <strong className="th-text">{visible.reduce((s, r) => s + r.staff, 0)}</strong> staff
+              <strong className="th-text">{visible.reduce((s, r) => s + r.staff, 0)}</strong> {t("overviewSummaryStaff")}
             </span>
             <span>
-              <strong className="th-text">{visible.reduce((s, r) => s + r.accompanying, 0)}</strong> accompanying
+              <strong className="th-text">{visible.reduce((s, r) => s + r.accompanying, 0)}</strong> {t("overviewSummaryAccompanying")}
             </span>
             <span>
-              <strong className="th-text">{visible.filter((r) => r.hasTransfer).length}</strong> with transfer
+              <strong className="th-text">{visible.filter((r) => r.hasTransfer).length}</strong> {t("overviewSummaryWithTransfer")}
             </span>
             <span>
-              <strong className="th-text">{visible.filter((r) => r.accomConfirmed).length}</strong> accom confirmed
+              <strong className="th-text">{visible.filter((r) => r.accomConfirmed).length}</strong> {t("overviewSummaryAccomConfirmed")}
             </span>
             {extraCols.has("totalOrdered") && (
               <span>
                 <strong className="th-text">
                   €{visible.reduce((s, r) => s + r.totalOrdered, 0).toLocaleString("en")}
                 </strong>{" "}
-                total ordered
+                {t("overviewSummaryTotalOrdered")}
               </span>
             )}
             {extraCols.has("paid") && (
@@ -656,7 +673,7 @@ export default function AdminOverviewPage() {
                 <strong className="th-text">
                   €{visible.reduce((s, r) => s + r.paid, 0).toLocaleString("en")}
                 </strong>{" "}
-                paid
+                {t("overviewSummaryPaid")}
               </span>
             )}
           </div>

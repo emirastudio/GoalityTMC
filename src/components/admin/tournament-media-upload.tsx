@@ -3,15 +3,19 @@
 import { useRef, useState } from "react";
 import { ImagePlus, Trash2, Loader2, Camera, Shield } from "lucide-react";
 import { ImageCropperModal } from "./image-cropper-modal";
+import { useTranslations } from "next-intl";
 
 interface Props {
   orgSlug: string;
   tournamentId: number;
   initialCoverUrl: string | null;
   initialLogoUrl: string | null;
+  onLogoChange?: (url: string | null) => void;
+  onCoverChange?: (url: string | null) => void;
 }
 
-export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, initialLogoUrl }: Props) {
+export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, initialLogoUrl, onLogoChange, onCoverChange }: Props) {
+  const t = useTranslations("orgAdmin");
   const [coverUrl, setCoverUrl] = useState(initialCoverUrl);
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -44,6 +48,7 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
       if (res.ok) {
         const data = await res.json();
         setLogoUrl(data.logoUrl);
+        onLogoChange?.(data.logoUrl);
       }
       setUploadingLogo(false);
     } else {
@@ -54,6 +59,7 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
       if (res.ok) {
         const data = await res.json();
         setCoverUrl(data.coverUrl);
+        onCoverChange?.(data.coverUrl);
       }
       setUploadingCover(false);
     }
@@ -63,6 +69,7 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
     setUploadingCover(true);
     await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/cover`, { method: "DELETE" });
     setCoverUrl(null);
+    onCoverChange?.(null);
     setUploadingCover(false);
   }
 
@@ -101,7 +108,7 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
                 style={{ background: "var(--cat-card-border)" }}>
                 <ImagePlus className="w-5 h-5" style={{ color: "var(--cat-text-muted)" }} />
               </div>
-              <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>Загрузить обложку</p>
+              <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>{t("uploadCover")}</p>
               <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>1920×480 · JPG/PNG · до 20MB</p>
             </div>
           )}
@@ -122,25 +129,26 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
                 style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
                 onClick={e => { e.stopPropagation(); coverRef.current?.click(); }}
               >
-                <Camera className="w-4 h-4" /> Сменить
+                <Camera className="w-4 h-4" /> {t("changeCover")}
               </button>
               <button
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
                 style={{ background: "rgba(239,68,68,0.25)", color: "#EF4444", backdropFilter: "blur(8px)" }}
                 onClick={e => { e.stopPropagation(); deleteCover(); }}
               >
-                <Trash2 className="w-4 h-4" /> Удалить
+                <Trash2 className="w-4 h-4" /> {t("deleteCover")}
               </button>
             </div>
           )}
 
-          <input ref={coverRef} type="file" accept="image/*" className="hidden"
-            onChange={e => e.target.files?.[0] && openCropperForFile(e.target.files[0], "cover")} />
+          <input ref={coverRef} type="file" accept="image/*"
+            style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+            onChange={e => { if (e.target.files?.[0]) { openCropperForFile(e.target.files[0], "cover"); e.target.value = ""; } }} />
 
           <div className="absolute top-3 left-3">
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
               style={{ background: "rgba(0,0,0,0.45)", color: "rgba(255,255,255,0.75)", backdropFilter: "blur(4px)" }}>
-              Обложка
+              {t("cover")}
             </span>
           </div>
         </div>
@@ -178,18 +186,19 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
               }
             </div>
 
-            <input ref={logoRef} type="file" accept="image/*" className="hidden"
-              onChange={e => e.target.files?.[0] && openCropperForFile(e.target.files[0], "logo")} />
+            <input ref={logoRef} type="file" accept="image/*"
+              style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+              onChange={e => { if (e.target.files?.[0]) { openCropperForFile(e.target.files[0], "logo"); e.target.value = ""; } }} />
           </div>
 
           <div>
-            <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>Логотип турнира</p>
+            <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{t("tournamentLogo")}</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-              Аватар в сайдбаре · PNG/SVG · квадрат · до 10MB
+              {t("logoHint")}
             </p>
             <button className="text-xs font-medium mt-1.5" style={{ color: "var(--cat-accent)" }}
               onClick={() => logoRef.current?.click()}>
-              {logoUrl ? "Сменить лого →" : "Загрузить лого →"}
+              {logoUrl ? t("changeLogo") : t("uploadLogo")}
             </button>
           </div>
         </div>

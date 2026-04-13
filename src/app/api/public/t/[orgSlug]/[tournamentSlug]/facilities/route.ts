@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organizations, tournaments, tournamentFields, tournamentHotels } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { organizations, tournaments, tournamentFields, tournamentHotels, tournamentStadiums } from "@/db/schema";
+import { eq, and, asc, isNull } from "drizzle-orm";
 
 // GET /api/public/t/[orgSlug]/[tournamentSlug]/facilities
-// Публичная информация о полях и отелях турнира
+// Публичная информация о стадионах, площадках и отелях турнира
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ orgSlug: string; tournamentSlug: string }> }
@@ -24,14 +24,29 @@ export async function GET(
   });
   if (!tournament) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const [fields, hotels] = await Promise.all([
+  const [stadiums, standaloneFields, hotels] = await Promise.all([
+    // Stadiums with their fields
+    db.query.tournamentStadiums.findMany({
+      where: eq(tournamentStadiums.tournamentId, tournament.id),
+      orderBy: [asc(tournamentStadiums.sortOrder), asc(tournamentStadiums.id)],
+      with: {
+        fields: {
+          orderBy: [asc(tournamentFields.sortOrder), asc(tournamentFields.id)],
+        },
+      },
+    }),
+    // Standalone fields (no stadium parent)
     db.select().from(tournamentFields)
-      .where(eq(tournamentFields.tournamentId, tournament.id))
+      .where(and(
+        eq(tournamentFields.tournamentId, tournament.id),
+        isNull(tournamentFields.stadiumId)
+      ))
       .orderBy(asc(tournamentFields.sortOrder), asc(tournamentFields.id)),
+    // Hotels
     db.select().from(tournamentHotels)
       .where(eq(tournamentHotels.tournamentId, tournament.id))
       .orderBy(asc(tournamentHotels.sortOrder), asc(tournamentHotels.id)),
   ]);
 
-  return NextResponse.json({ fields, hotels });
+  return NextResponse.json({ stadiums, standaloneFields, hotels });
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { teamInvites, teams, clubs, clubUsers } from "@/db/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { teamInvites, teams, clubs, clubUsers, tournamentRegistrations } from "@/db/schema";
+import { eq, and, isNull, desc } from "drizzle-orm";
 import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ token: string }> };
@@ -57,12 +57,22 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     .set({ usedAt: new Date() })
     .where(eq(teamInvites.id, invite.id));
 
+  // Find latest registration for any team belonging to this club
+  const latestReg = await db
+    .select({ tournamentId: tournamentRegistrations.tournamentId })
+    .from(tournamentRegistrations)
+    .innerJoin(teams, eq(teams.id, tournamentRegistrations.teamId))
+    .where(eq(teams.clubId, club.id))
+    .orderBy(desc(tournamentRegistrations.id))
+    .limit(1);
+  const tournamentId = latestReg[0]?.tournamentId ?? undefined;
+
   // Создать сессию и сразу залогинить
   const sessionToken = createToken({
     userId: newUser.id,
     role: "club",
     clubId: invite.clubId,
-    tournamentId: club.tournamentId,
+    tournamentId,
     teamId: invite.teamId,
   });
 

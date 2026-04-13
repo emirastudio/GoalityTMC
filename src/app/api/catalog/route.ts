@@ -1,13 +1,33 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { tournaments, organizations, teams, clubs, tournamentClasses } from "@/db/schema";
-import { eq, count, and } from "drizzle-orm";
+import { tournaments, organizations, teams, tournamentClasses, tournamentRegistrations } from "@/db/schema";
+import { eq, count, and, sql } from "drizzle-orm";
 
 export async function GET() {
-  // Get all tournaments with registration open, grouped by organization
-  const allTournaments = await db.query.tournaments.findMany({
+  // Get all tournaments with registration open
+  const rawTournaments = await db.query.tournaments.findMany({
     where: eq(tournaments.registrationOpen, true),
     orderBy: (t, { asc }) => [asc(t.startDate)],
+  });
+
+  // Filter out free-plan tournaments that need an upgrade.
+  // For each org, only the oldest active free tournament is eligible; paid plans always eligible.
+  const orgOldestFreeId: Record<number, number> = {};
+  for (const t of rawTournaments) {
+    if ((t.plan as string) !== "free") continue;
+    const existing = orgOldestFreeId[t.organizationId];
+    if (existing === undefined) {
+      orgOldestFreeId[t.organizationId] = t.id;
+    } else {
+      const existingT = rawTournaments.find(x => x.id === existing)!;
+      if (new Date(t.createdAt).getTime() < new Date(existingT.createdAt).getTime()) {
+        orgOldestFreeId[t.organizationId] = t.id;
+      }
+    }
+  }
+  const allTournaments = rawTournaments.filter(t => {
+    if ((t.plan as string) !== "free") return true;
+    return t.id === orgOldestFreeId[t.organizationId];
   });
 
   const enriched = await Promise.all(
@@ -17,16 +37,17 @@ export async function GET() {
         where: eq(organizations.id, tournament.organizationId),
       });
 
-      // Count teams and clubs
+      // Count teams and clubs via tournamentRegistrations
       const [teamCount] = await db
         .select({ value: count() })
-        .from(teams)
-        .where(eq(teams.tournamentId, tournament.id));
+        .from(tournamentRegistrations)
+        .where(eq(tournamentRegistrations.tournamentId, tournament.id));
 
       const [clubCount] = await db
-        .select({ value: count() })
-        .from(clubs)
-        .where(eq(clubs.tournamentId, tournament.id));
+        .select({ value: sql<number>`COUNT(DISTINCT ${teams.clubId})` })
+        .from(tournamentRegistrations)
+        .innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
+        .where(eq(tournamentRegistrations.tournamentId, tournament.id));
 
       // Get classes
       const classes = await db.query.tournamentClasses.findMany({

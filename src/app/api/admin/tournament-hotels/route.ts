@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { tournamentHotels, teams } from "@/db/schema";
+import { tournamentHotels, tournamentRegistrations } from "@/db/schema";
 import { requireTournamentAdmin, requireAdmin, isError } from "@/lib/api-auth";
 import { eq, asc } from "drizzle-orm";
 
@@ -71,11 +71,11 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id = parseInt(searchParams.get("id") ?? "0");
 
-  // Unassign teams from this hotel before deleting
+  // Unassign registrations from this hotel before deleting
   await db
-    .update(teams)
+    .update(tournamentRegistrations)
     .set({ hotelId: null })
-    .where(eq(teams.hotelId, id));
+    .where(eq(tournamentRegistrations.hotelId, id));
 
   await db.delete(tournamentHotels).where(eq(tournamentHotels.id, id));
 

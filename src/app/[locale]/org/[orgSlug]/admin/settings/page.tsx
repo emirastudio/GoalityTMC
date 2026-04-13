@@ -60,28 +60,28 @@ export default async function OrgSettingsPage({ params }: Props) {
       <form action={saveSettings} className="space-y-4 max-w-xl">
         <div className="th-card border th-border rounded-xl p-5 space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wide th-text-m">
-            {t("organization") ?? "Organization"}
+            {t("organization")}
           </p>
 
           <div>
-            <label className={labelCls}>{t("orgName") ?? "Name"}</label>
+            <label className={labelCls}>{t("orgName")}</label>
             <input name="name" defaultValue={organization.name} className={inputCls} required />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>{t("country") ?? "Country"}</label>
+              <label className={labelCls}>{t("country")}</label>
               <input name="country" defaultValue={organization.country ?? ""} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>{t("city") ?? "City"}</label>
+              <label className={labelCls}>{t("city")}</label>
               <input name="city" defaultValue={organization.city ?? ""} className={inputCls} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>{t("currency") ?? "Currency"}</label>
+              <label className={labelCls}>{t("currency")}</label>
               <select name="currency" defaultValue={organization.currency} className={inputCls}>
                 <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
@@ -89,7 +89,7 @@ export default async function OrgSettingsPage({ params }: Props) {
               </select>
             </div>
             <div>
-              <label className={labelCls}>{t("language") ?? "Default language"}</label>
+              <label className={labelCls}>{t("language")}</label>
               <select name="defaultLocale" defaultValue={organization.defaultLocale} className={inputCls}>
                 <option value="en">English</option>
                 <option value="ru">Русский</option>
@@ -101,19 +101,19 @@ export default async function OrgSettingsPage({ params }: Props) {
 
         <div className="th-card border th-border rounded-xl p-5 space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wide th-text-m">
-            {t("contacts") ?? "Contacts"}
+            {t("contacts")}
           </p>
 
           <div>
-            <label className={labelCls}>{t("contactEmail") ?? "Email"}</label>
+            <label className={labelCls}>{t("contactEmail")}</label>
             <input name="contactEmail" type="email" defaultValue={organization.contactEmail ?? ""} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>{t("contactPhone") ?? "Phone"}</label>
+            <label className={labelCls}>{t("contactPhone")}</label>
             <input name="contactPhone" defaultValue={organization.contactPhone ?? ""} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>{t("website") ?? "Website"}</label>
+            <label className={labelCls}>{t("website")}</label>
             <input name="website" defaultValue={organization.website ?? ""} className={inputCls} />
           </div>
         </div>
@@ -123,7 +123,7 @@ export default async function OrgSettingsPage({ params }: Props) {
           className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium"
           style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
         >
-          {t("save") ?? "Save"}
+          {t("save")}
         </button>
       </form>
     </div>

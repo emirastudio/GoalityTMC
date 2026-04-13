@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       country: clubs.country,
       city: clubs.city,
       badgeUrl: clubs.badgeUrl,
-      tournamentId: clubs.tournamentId,
+      isVerified: clubs.isVerified,
       teamCount: sql<number>`count(${teams.id})::int`,
     })
     .from(clubs)

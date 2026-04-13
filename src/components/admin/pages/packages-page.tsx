@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useAdminFetch } from "@/lib/tournament-context";
 import { LangTabs, type Lang } from "@/components/admin/lang-tabs";
-// no useTranslations — admin panel uses hardcoded English labels
 import { Input } from "@/components/ui/input";
 import {
   Layers,
@@ -87,12 +87,12 @@ function SectionTab({
   );
 }
 
-function SavedBadge({ visible }: { visible: boolean }) {
+function SavedBadge({ visible, label }: { visible: boolean; label: string }) {
   if (!visible) return null;
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
       <Check className="w-3.5 h-3.5" />
-      Saved!
+      {label}
     </span>
   );
 }
@@ -123,6 +123,7 @@ const EMPTY_FORM = {
 };
 
 function PackagesTab() {
+  const t = useTranslations("orgAdmin.pkg");
   const adminFetch = useAdminFetch();
   const [packages, setPackages] = useState<ServicePackage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,7 +192,7 @@ function PackagesTab() {
 
   const saveForm = async () => {
     if (!form.name.trim()) {
-      setError("Package name is required");
+      setError(t("nameRequired"));
       return;
     }
     setSaving(true);
@@ -253,10 +254,10 @@ function PackagesTab() {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold th-text-2 uppercase tracking-wide">
-          Packages
+          {t("title")}
         </h2>
         <div className="flex items-center gap-3">
-          <SavedBadge visible={saved} />
+          <SavedBadge visible={saved} label={t("saved")} />
           {editId === null && (
             <Button
               onClick={openNew}
@@ -265,7 +266,7 @@ function PackagesTab() {
               size="sm"
             >
               <Plus className="w-4 h-4 mr-1.5" />
-              Create Package
+              {t("create")}
             </Button>
           )}
         </div>
@@ -278,36 +279,36 @@ function PackagesTab() {
         <div className="rounded-xl border th-border th-card shadow-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-base th-text">
-              {editId === "new" ? "Create Package" : "Edit Package"}
+              {editId === "new" ? t("create") : t("edit")}
             </h3>
             <LangTabs lang={lang} onChange={setLang} />
           </div>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-medium th-text-2">
-                Name {lang === "en" ? "*" : <span className="th-text-2/60">(RU — leave empty to use English)</span>}
+                {t("nameLabel")} {lang === "en" ? "*" : <span className="th-text-2/60">({t("leaveEmptyRu")})</span>}
               </label>
               <Input
                 value={lang === "en" ? form.name : form.nameRu}
                 onChange={(e) => setForm((f) => lang === "en" ? { ...f, name: e.target.value } : { ...f, nameRu: e.target.value })}
-                placeholder={lang === "en" ? "Standard Package" : "Стандартный пакет"}
+                placeholder={lang === "en" ? t("namePlaceholder") : t("namePlaceholderRu")}
               />
             </div>
             <div className="space-y-1.5">
               <label className="block text-xs font-medium th-text-2">
-                Description {lang === "ru" && <span className="th-text-2/60">(leave empty to use English)</span>}
+                {t("description")} {lang === "ru" && <span className="th-text-2/60">({t("leaveEmptyDesc")})</span>}
               </label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 rows={3}
-                placeholder={lang === "en" ? "Describe what's included…" : "Описание пакета…"}
+                placeholder={lang === "en" ? t("descPlaceholder") : t("descPlaceholderRu")}
                 className="w-full rounded-md border th-border th-card px-3 py-2 text-sm th-text placeholder:th-text-2/50 focus:outline-none focus:ring-2 focus:ring-navy/30 resize-none"
               />
             </div>
             <div className="space-y-1.5">
               <label className="block text-xs font-medium th-text-2">
-                Accommodation option
+                {t("accommodationOption")}
               </label>
               <select
                 value={form.accommodationOptionId}
@@ -315,7 +316,7 @@ function PackagesTab() {
                 disabled={!form.includeAccommodation}
                 className="w-full rounded-md border th-border th-card px-3 py-2 text-sm th-text focus:outline-none focus:ring-2 focus:ring-navy/30 appearance-none disabled:opacity-40"
               >
-                <option value="">— Select accommodation —</option>
+                <option value="">{t("selectAccommodation")}</option>
                 {accOptions.map((opt) => (
                   <option key={opt.id} value={String(opt.id)}>{opt.name}</option>
                 ))}
@@ -325,14 +326,14 @@ function PackagesTab() {
 
           {/* Included services */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold th-text-2 uppercase tracking-wide">Included services</p>
+            <p className="text-xs font-semibold th-text-2 uppercase tracking-wide">{t("includedServices")}</p>
             <div className="grid grid-cols-2 gap-2">
               {(
                 [
-                  { key: "includeRegistration", label: "📋 Registration Fee" },
-                  { key: "includeAccommodation", label: "🏨 Accommodation" },
-                  { key: "includeTransfer", label: "🚌 Transfer" },
-                  { key: "includeMeals", label: "🍽️ Extra Meals" },
+                  { key: "includeRegistration", label: t("incRegFee") },
+                  { key: "includeAccommodation", label: t("incAccommodation") },
+                  { key: "includeTransfer", label: t("incTransfer") },
+                  { key: "includeMeals", label: t("incMeals") },
                 ] as const
               ).map(({ key, label }) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer select-none th-bg rounded-lg px-3 py-2 border th-border hover:opacity-80 transition-colors">
@@ -364,7 +365,7 @@ function PackagesTab() {
               checked={form.isDefault}
               onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))}
             />
-            <span className="text-sm font-medium th-text">Default package</span>
+            <span className="text-sm font-medium th-text">{t("defaultPackage")}</span>
           </label>
           <div className="flex items-center gap-2 pt-1">
             <Button
@@ -379,10 +380,10 @@ function PackagesTab() {
               ) : (
                 <Check className="w-3.5 h-3.5 mr-1.5" />
               )}
-              Save
+              {t("save")}
             </Button>
             <Button variant="secondary" size="sm" onClick={cancelEdit} disabled={saving}>
-              Cancel
+              {t("cancel")}
             </Button>
           </div>
         </div>
@@ -392,12 +393,12 @@ function PackagesTab() {
       {loading ? (
         <div className="flex items-center justify-center py-16 th-text-2">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          <span className="text-sm">Loading…</span>
+          <span className="text-sm">{t("loading")}</span>
         </div>
       ) : packages.length === 0 ? (
         <div className="rounded-xl border th-border th-card shadow-sm px-6 py-12 text-center">
           <Layers className="w-8 h-8 th-text-2/40 mx-auto mb-3" />
-          <p className="text-sm th-text-2">No packages yet</p>
+          <p className="text-sm th-text-2">{t("noPackages")}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -411,7 +412,7 @@ function PackagesTab() {
                   <span className="font-semibold text-sm th-text">{pkg.name}</span>
                   {pkg.isDefault && (
                     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
-                      Default
+                      {t("default")}
                     </span>
                   )}
                 </div>
@@ -424,31 +425,31 @@ function PackagesTab() {
               {/* Service badges */}
               <div className="flex flex-wrap gap-1">
                 {pkg.includeRegistration && (
-                  <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs text-blue-700">📋 Fee</span>
+                  <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs text-blue-700">{t("incRegFee")}</span>
                 )}
                 {pkg.includeAccommodation && (
                   <span className="inline-flex items-center rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-xs text-purple-700">
-                    🏨 {accOptions.find(o => o.id === pkg.accommodationOptionId)?.name ?? "Hotel"}
+                    {accOptions.find(o => o.id === pkg.accommodationOptionId)?.name ?? t("incAccommodation")}
                   </span>
                 )}
                 {pkg.includeTransfer && (
-                  <span className="inline-flex items-center rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-xs text-orange-700">🚌 Transfer</span>
+                  <span className="inline-flex items-center rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-xs text-orange-700">{t("incTransfer")}</span>
                 )}
                 {pkg.includeMeals && (
-                  <span className="inline-flex items-center rounded-full bg-green-50 border border-green-200 px-2 py-0.5 text-xs text-green-700">🍽️ Meals</span>
+                  <span className="inline-flex items-center rounded-full bg-green-50 border border-green-200 px-2 py-0.5 text-xs text-green-700">{t("incMeals")}</span>
                 )}
               </div>
 
               <div className="flex items-center gap-1.5 text-xs th-text-2">
                 <Users className="w-3.5 h-3.5" />
                 <span>
-                  {pkg.assignedTeams} teams
+                  {t("teams", { count: pkg.assignedTeams })}
                 </span>
               </div>
 
               <div className="flex items-center justify-between mt-2 pt-2 border-t th-border">
                 <span className="text-xs th-text-2">
-                  {pkg.publishedTeams ?? 0}/{pkg.assignedTeams} published
+                  {t("published", { published: pkg.publishedTeams ?? 0, total: pkg.assignedTeams })}
                 </span>
                 <button
                   type="button"
@@ -457,7 +458,7 @@ function PackagesTab() {
                   className="text-xs font-semibold hover:opacity-90 px-3 py-1 rounded-md transition-colors disabled:opacity-40 cursor-pointer"
                   style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
                 >
-                  {publishing === pkg.id ? "..." : "Publish All"}
+                  {publishing === pkg.id ? "..." : t("publishAll")}
                 </button>
               </div>
 
@@ -469,7 +470,7 @@ function PackagesTab() {
                   className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:opacity-80 transition-colors cursor-pointer disabled:opacity-40"
                 >
                   <Pencil className="w-3.5 h-3.5" />
-                  Edit
+                  {t("editBtn")}
                 </button>
 
                 {deleteId === pkg.id ? (
@@ -479,7 +480,7 @@ function PackagesTab() {
                       onClick={() => deletePackage(pkg.id)}
                       className="text-xs font-medium text-error cursor-pointer hover:underline"
                     >
-                      Are you sure?
+                      {t("deleteConfirm")}
                     </button>
                     <button
                       type="button"
@@ -496,13 +497,13 @@ function PackagesTab() {
                     disabled={pkg.assignedTeams > 0}
                     title={
                       pkg.assignedTeams > 0
-                        ? `Cannot delete: ${pkg.assignedTeams} team(s) assigned`
+                        ? t("cannotDelete", { count: pkg.assignedTeams })
                         : undefined
                     }
                     className="inline-flex items-center gap-1.5 text-xs font-medium th-text-2 hover:text-error transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ml-auto"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    Delete
+                    {t("delete")}
                   </button>
                 )}
               </div>
@@ -517,6 +518,7 @@ function PackagesTab() {
 /* ─────────────────────────────────────────── AssignmentsTab */
 
 function AssignmentsTab() {
+  const t = useTranslations("orgAdmin.pkg");
   const adminFetch = useAdminFetch();
 
   const [teams, setTeams] = useState<Team[]>([]);
@@ -665,7 +667,7 @@ function AssignmentsTab() {
   const assignDefaultToAll = async () => {
     const defaultPkg = packages.find((p) => p.isDefault);
     if (!defaultPkg) {
-      setError("No default package configured");
+      setError(t("noDefaultConfigured"));
       return;
     }
     setBulkAssigning(true);
@@ -698,13 +700,13 @@ function AssignmentsTab() {
       {/* Toolbar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-sm font-semibold th-text-2 uppercase tracking-wide">
-          Team Assignments
+          {t("assignments")}
         </h2>
         <div className="flex items-center gap-3">
           {saved === "bulk" && (
             <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
               <Check className="w-3.5 h-3.5" />
-              Saved!
+              {t("saved")}
             </span>
           )}
           {defaultPkg && unassignedCount > 0 && (
@@ -721,7 +723,7 @@ function AssignmentsTab() {
               ) : (
                 <Layers className="w-3.5 h-3.5 mr-1.5" />
               )}
-              Assign default to all ({unassignedCount})
+              {t("assignDefaultAll", { count: unassignedCount })}
             </Button>
           )}
         </div>
@@ -732,12 +734,12 @@ function AssignmentsTab() {
       {loading ? (
         <div className="flex items-center justify-center py-16 th-text-2">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          <span className="text-sm">Loading…</span>
+          <span className="text-sm">{t("loading")}</span>
         </div>
       ) : teams.length === 0 ? (
         <div className="rounded-xl border th-border th-card shadow-sm px-6 py-12 text-center">
           <Users className="w-8 h-8 th-text-2/40 mx-auto mb-3" />
-          <p className="text-sm th-text-2">No teams found</p>
+          <p className="text-sm th-text-2">{t("noTeams")}</p>
         </div>
       ) : (
         <div className="rounded-xl border th-border th-card shadow-sm overflow-hidden">
@@ -749,16 +751,16 @@ function AssignmentsTab() {
                     #
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold th-text-2 uppercase tracking-wide">
-                    Team
+                    {t("teamCol")}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold th-text-2 uppercase tracking-wide">
-                    Club
+                    {t("clubCol")}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold th-text-2 uppercase tracking-wide">
-                    Current Package
+                    {t("currentPackage")}
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold th-text-2 uppercase tracking-wide">
-                    Actions
+                    {t("actionsCol")}
                   </th>
                 </tr>
               </thead>
@@ -794,7 +796,7 @@ function AssignmentsTab() {
                                 ? { background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }
                                 : { background: "rgba(245,158,11,0.1)", color: "#F59E0B" }}
                             >
-                              {togglingPublish === team.id ? "..." : team.currentPackage.isPublished ? "✓ Published" : "Unpublished"}
+                              {togglingPublish === team.id ? "..." : team.currentPackage.isPublished ? `✓ ${t("publishedStatus")}` : t("unpublished")}
                             </button>
                           )}
                         </div>
@@ -804,7 +806,7 @@ function AssignmentsTab() {
                           {justSaved && (
                             <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
                               <Check className="w-3 h-3" />
-                              Saved
+                              {t("savedShort")}
                             </span>
                           )}
 
@@ -821,7 +823,7 @@ function AssignmentsTab() {
                                 disabled={isAssigning || isRemoving}
                                 className="appearance-none rounded-md border th-border th-card pl-3 pr-8 py-1.5 text-xs font-medium th-text focus:outline-none focus:ring-2 focus:ring-navy/30 cursor-pointer disabled:opacity-50 min-w-[140px]"
                               >
-                                <option value="">— Assign package —</option>
+                                <option value="">{t("assignPackage")}</option>
                                 {packages.map((pkg) => (
                                   <option key={pkg.id} value={String(pkg.id)}>
                                     {pkg.name}
@@ -849,7 +851,7 @@ function AssignmentsTab() {
                               ) : (
                                 <X className="w-3.5 h-3.5" />
                               )}
-                              Remove
+                              {t("remove")}
                             </button>
                           )}
                         </div>
@@ -869,6 +871,7 @@ function AssignmentsTab() {
 /* ─────────────────────────────────────────── Page */
 
 export function PackagesPageContent() {
+  const t = useTranslations("orgAdmin.pkg");
   const [tab, setTab] = useState<Tab>("packages");
 
   return (
@@ -877,10 +880,10 @@ export function PackagesPageContent() {
       <div>
         <h1 className="text-xl font-bold th-text flex items-center gap-2.5">
           <Layers className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
-          Packages
+          {t("title")}
         </h1>
         <p className="text-sm th-text-2 mt-1">
-          Manage service packages and assign them to teams
+          {t("subtitle")}
         </p>
       </div>
 
@@ -890,13 +893,13 @@ export function PackagesPageContent() {
           active={tab === "packages"}
           onClick={() => setTab("packages")}
           icon={Layers}
-          label="Packages"
+          label={t("title")}
         />
         <SectionTab
           active={tab === "assignments"}
           onClick={() => setTab("assignments")}
           icon={Users}
-          label="Team Assignments"
+          label={t("assignments")}
         />
       </div>
 

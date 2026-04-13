@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import {
   teams,
+  tournamentRegistrations,
   packageAssignments,
   servicePackages,
   packageItems,
@@ -54,9 +55,20 @@ export async function GET(
   const team = await authorizeTeam(tid, session.clubId);
   if (!team) return NextResponse.json({ error: "Team not found" }, { status: 404 });
 
+  // Load registration
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: session.tournamentId
+      ? and(eq(tournamentRegistrations.teamId, tid), eq(tournamentRegistrations.tournamentId, session.tournamentId))
+      : eq(tournamentRegistrations.teamId, tid),
+    orderBy: (r, { desc }) => [desc(r.id)],
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "No registration found" }, { status: 404 });
+  }
+
   // Check published package assignment
   const assignment = await db.query.packageAssignments.findFirst({
-    where: eq(packageAssignments.teamId, tid),
+    where: eq(packageAssignments.registrationId, registration.id),
   });
 
   if (!assignment || !assignment.isPublished) {
@@ -111,9 +123,9 @@ export async function GET(
     .where(eq(packageItems.packageId, assignment.packageId))
     .orderBy(packageItems.sortOrder);
 
-  // Per-team overrides
+  // Per-registration overrides
   const overrides = await db.query.teamPackageItemOverrides.findMany({
-    where: eq(teamPackageItemOverrides.teamId, tid),
+    where: eq(teamPackageItemOverrides.registrationId, registration.id),
   });
   const ovMap = new Map(overrides.map((o) => [o.packageItemId, o]));
 

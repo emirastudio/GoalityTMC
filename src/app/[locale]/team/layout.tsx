@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { GlobalHeader, AdminHeaderActions } from "@/components/ui/global-header";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { clubs, teams, people, tournamentClasses, inboxMessages, teamMessageReads, messageRecipients } from "@/db/schema";
+import { clubs, teams, people, tournamentClasses, inboxMessages, teamMessageReads, messageRecipients, tournamentRegistrations } from "@/db/schema";
 import { eq, and, count, sql, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
@@ -26,15 +26,53 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
 
   if (!club) redirect("/en/login");
 
-  const classes = await db.query.tournamentClasses.findMany({
-    where: eq(tournamentClasses.tournamentId, club.tournamentId),
-    orderBy: (c, { asc }) => [asc(c.minBirthYear)],
+  // Get tournamentId from club's teams' registrations
+  const anyReg = await db.query.tournamentRegistrations.findFirst({
+    where: sql`${tournamentRegistrations.teamId} IN (SELECT id FROM teams WHERE club_id = ${club.id})`,
   });
+  const clubTournamentId = anyReg?.tournamentId ?? null;
+
+  // Guard: no tournament registrations → redirect to club dashboard
+  if (!clubTournamentId) {
+    redirect("/en/club/dashboard");
+  }
+
+  const classes = clubTournamentId
+    ? await db.query.tournamentClasses.findMany({
+        where: eq(tournamentClasses.tournamentId, clubTournamentId),
+        orderBy: (c, { asc }) => [asc(c.minBirthYear)],
+      })
+    : [];
 
   const clubTeams = await db.query.teams.findMany({
     where: eq(teams.clubId, club.id),
     orderBy: (t, { asc }) => [asc(t.createdAt)],
   });
+
+  // Load registrations for club's teams to get regNumber, status, classId
+  const clubTeamIds = clubTeams.map((t) => t.id);
+  const registrations = clubTeamIds.length > 0
+    ? await db.query.tournamentRegistrations.findMany({
+        where: sql`${tournamentRegistrations.teamId} = ANY(ARRAY[${sql.join(clubTeamIds.map(id => sql`${id}`), sql`, `)}]::int[])`,
+      })
+    : [];
+  // Use most recent registration per team (in case a team is in multiple tournaments)
+  const regByTeamId = new Map<number, typeof registrations[0]>();
+  for (const reg of registrations) {
+    if (!regByTeamId.has(reg.teamId) || reg.createdAt > regByTeamId.get(reg.teamId)!.createdAt) {
+      regByTeamId.set(reg.teamId, reg);
+    }
+  }
+
+  // Get classes for these registrations
+  const classIds = [...new Set(registrations.map((r) => r.classId).filter(Boolean))] as number[];
+  const classesData = classIds.length > 0
+    ? await db.query.tournamentClasses.findMany({ where: sql`${tournamentClasses.id} = ANY(ARRAY[${sql.join(classIds.map(id => sql`${id}`), sql`, `)}]::int[])` })
+    : [];
+  const classMap = new Map(classesData.map((c) => [c.id, c]));
+
+  // Also get tournamentId from the registration for inbox queries
+  const activeTournamentId = registrations.length > 0 ? registrations[0].tournamentId : null;
 
   const enrichedTeams = await Promise.all(
     clubTeams.map(async (team) => {
@@ -47,20 +85,22 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
         .from(people)
         .where(and(eq(people.teamId, team.id), eq(people.personType, "staff")));
 
-      let className = "";
-      if (team.classId) {
-        const cls = await db.query.tournamentClasses.findFirst({
-          where: eq(tournamentClasses.id, team.classId),
-        });
-        className = cls?.name ?? "";
-      }
+      const reg = regByTeamId.get(team.id);
+      const className = reg?.classId ? (classMap.get(reg.classId)?.name ?? "") : "";
+
+      // Build display name: priority = reg.displayName, then team.name, then derived
+      const displayName = reg?.displayName ?? team.name ?? null;
 
       return {
         id: team.id,
-        regNumber: team.regNumber,
+        regNumber: reg?.regNumber ?? 0,
         name: team.name ?? "",
+        displayName,
+        birthYear: team.birthYear ?? null,
+        gender: (team.gender ?? "male") as "male" | "female" | "mixed",
+        squadAlias: reg?.squadAlias ?? "",
         className,
-        status: team.status,
+        status: reg?.status ?? "draft",
         playersCount: Number(pc?.count ?? 0),
         staffCount: Number(sc?.count ?? 0),
       };
@@ -74,26 +114,33 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     : enrichedTeams[0];
 
   let inboxCount = 0;
-  if (activeTeam) {
+  if (activeTeam && clubTournamentId) {
+    const activeReg = regByTeamId.get(activeTeam.id);
+    const activeRegId = activeReg?.id ?? null;
+
     const [countRow] = await db
       .select({ value: sql<number>`COUNT(*)` })
       .from(inboxMessages)
       .where(
         and(
-          eq(inboxMessages.tournamentId, club.tournamentId),
+          eq(inboxMessages.tournamentId, clubTournamentId),
           or(
             eq(inboxMessages.sendToAll, true),
-            sql`EXISTS (
-              SELECT 1 FROM ${messageRecipients}
-              WHERE ${messageRecipients.messageId} = ${inboxMessages.id}
-              AND ${messageRecipients.teamId} = ${activeTeam.id}
-            )`
+            activeRegId
+              ? sql`EXISTS (
+                  SELECT 1 FROM ${messageRecipients}
+                  WHERE ${messageRecipients.messageId} = ${inboxMessages.id}
+                  AND ${messageRecipients.registrationId} = ${activeRegId}
+                )`
+              : sql`false`
           ),
-          sql`NOT EXISTS (
-            SELECT 1 FROM ${teamMessageReads}
-            WHERE ${teamMessageReads.messageId} = ${inboxMessages.id}
-            AND ${teamMessageReads.teamId} = ${activeTeam.id}
-          )`
+          activeRegId
+            ? sql`NOT EXISTS (
+                SELECT 1 FROM ${teamMessageReads}
+                WHERE ${teamMessageReads.messageId} = ${inboxMessages.id}
+                AND ${teamMessageReads.registrationId} = ${activeRegId}
+              )`
+            : sql`true`
         )
       );
     inboxCount = Number(countRow?.value ?? 0);
@@ -111,7 +158,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     <TeamProvider
       initialTeamId={activeTeam?.id ?? null}
       initialClubId={club.id}
-      initialTournamentId={club.tournamentId}
+      initialTournamentId={clubTournamentId}
       initialInboxCount={inboxCount}
       isTeamManager={isTeamManager}
     >
@@ -135,7 +182,10 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
                 </div>
                 <div className="min-w-0">
                   <p className="text-[13px] font-bold truncate th-text">{club.name}</p>
-                  <p className="text-[11px] truncate th-text-2">{activeTeam?.name}</p>
+                  <p className="text-[11px] truncate th-text-2">
+                    {activeTeam?.displayName ?? activeTeam?.name ?? ""}
+                    {activeTeam?.birthYear ? ` · ${activeTeam.birthYear}` : ""}
+                  </p>
                 </div>
               </div>
             ) : (

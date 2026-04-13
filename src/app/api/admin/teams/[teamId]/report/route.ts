@@ -4,6 +4,7 @@ import {
   teams, clubs, tournamentClasses, people, packageAssignments, servicePackages,
   teamBookings, teamServiceOverrides, payments, teamTravel, tournamentInfo,
   accommodationOptions, extraMealOptions, transferOptions, registrationFees, tournamentHotels,
+  tournamentRegistrations,
 } from "@/db/schema";
 import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq, and } from "drizzle-orm";
@@ -11,7 +12,7 @@ import { recalculateAll } from "@/lib/booking-calculator";
 
 type RouteContext = { params: Promise<{ teamId: string }> };
 
-export async function GET(_req: NextRequest, context: RouteContext) {
+export async function GET(req: NextRequest, context: RouteContext) {
   const session = await requireAdmin();
   if (isError(session)) return session;
 
@@ -21,11 +22,20 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   const team = await db.query.teams.findFirst({ where: eq(teams.id, teamIdNum) });
   if (!team) return NextResponse.json({ error: "Team not found" }, { status: 404 });
 
+  // Load the tournament registration for this team (use tournamentId from query param if provided)
+  const urlTournamentId = req.nextUrl.searchParams.get("tournamentId");
+  const registration = await db.query.tournamentRegistrations.findFirst({
+    where: urlTournamentId
+      ? and(eq(tournamentRegistrations.teamId, teamIdNum), eq(tournamentRegistrations.tournamentId, Number(urlTournamentId)))
+      : eq(tournamentRegistrations.teamId, teamIdNum),
+  });
+  if (!registration) return NextResponse.json({ error: "Registration not found" }, { status: 404 });
+
   const [club, tournamentClass, allPeople, assignment] = await Promise.all([
     team.clubId ? db.query.clubs.findFirst({ where: eq(clubs.id, team.clubId) }) : Promise.resolve(null),
-    team.classId ? db.query.tournamentClasses.findFirst({ where: eq(tournamentClasses.id, team.classId) }) : Promise.resolve(null),
+    registration.classId ? db.query.tournamentClasses.findFirst({ where: eq(tournamentClasses.id, registration.classId) }) : Promise.resolve(null),
     db.query.people.findMany({ where: eq(people.teamId, teamIdNum) }),
-    db.query.packageAssignments.findFirst({ where: eq(packageAssignments.teamId, teamIdNum) }),
+    db.query.packageAssignments.findFirst({ where: eq(packageAssignments.registrationId, registration.id) }),
   ]);
 
   const playerCount = allPeople.filter((p) => p.personType === "player").length;
@@ -40,14 +50,14 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   // Load raw bookings + overrides + current service prices
   const [rawBookings, overrides, accommodations, meals, transfers, regFees] = await Promise.all([
     db.query.teamBookings.findMany({
-      where: eq(teamBookings.teamId, teamIdNum),
+      where: eq(teamBookings.registrationId, registration.id),
       orderBy: (b, { asc }) => [asc(b.createdAt)],
     }),
-    db.query.teamServiceOverrides.findMany({ where: eq(teamServiceOverrides.teamId, teamIdNum) }),
-    db.query.accommodationOptions.findMany({ where: eq(accommodationOptions.tournamentId, team.tournamentId) }),
-    db.query.extraMealOptions.findMany({ where: eq(extraMealOptions.tournamentId, team.tournamentId) }),
-    db.query.transferOptions.findMany({ where: eq(transferOptions.tournamentId, team.tournamentId) }),
-    db.query.registrationFees.findMany({ where: eq(registrationFees.tournamentId, team.tournamentId) }),
+    db.query.teamServiceOverrides.findMany({ where: eq(teamServiceOverrides.registrationId, registration.id) }),
+    db.query.accommodationOptions.findMany({ where: eq(accommodationOptions.tournamentId, registration.tournamentId) }),
+    db.query.extraMealOptions.findMany({ where: eq(extraMealOptions.tournamentId, registration.tournamentId) }),
+    db.query.transferOptions.findMany({ where: eq(transferOptions.tournamentId, registration.tournamentId) }),
+    db.query.registrationFees.findMany({ where: eq(registrationFees.tournamentId, registration.tournamentId) }),
   ]);
 
   // ─── Recalculate all booking prices from current settings ─────────────────
@@ -72,10 +82,10 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   // Payments
   const [paymentTotals, paymentsHistory] = await Promise.all([
     db.query.payments.findMany({
-      where: and(eq(payments.teamId, teamIdNum), eq(payments.status, "received")),
+      where: and(eq(payments.registrationId, registration.id), eq(payments.status, "received")),
     }),
     db.query.payments.findMany({
-      where: eq(payments.teamId, teamIdNum),
+      where: eq(payments.registrationId, registration.id),
       orderBy: (p, { desc }) => [desc(p.createdAt)],
     }),
   ]);
@@ -83,24 +93,26 @@ export async function GET(_req: NextRequest, context: RouteContext) {
 
   // Travel + tournament data
   const [travel, tInfo, assignedHotel, availableHotels] = await Promise.all([
-    db.query.teamTravel.findFirst({ where: eq(teamTravel.teamId, teamIdNum) }),
-    db.query.tournamentInfo.findFirst({ where: eq(tournamentInfo.tournamentId, team.tournamentId) }),
-    team.hotelId ? db.query.tournamentHotels.findFirst({ where: eq(tournamentHotels.id, team.hotelId) }) : Promise.resolve(null),
+    db.query.teamTravel.findFirst({ where: eq(teamTravel.registrationId, registration.id) }),
+    db.query.tournamentInfo.findFirst({ where: eq(tournamentInfo.tournamentId, registration.tournamentId) }),
+    registration.hotelId ? db.query.tournamentHotels.findFirst({ where: eq(tournamentHotels.id, registration.hotelId) }) : Promise.resolve(null),
     db.query.tournamentHotels.findMany({
-      where: eq(tournamentHotels.tournamentId, team.tournamentId),
+      where: eq(tournamentHotels.tournamentId, registration.tournamentId),
       orderBy: (h, { asc }) => [asc(h.sortOrder), asc(h.id)],
     }),
   ]);
 
   return NextResponse.json({
     team: {
-      id: team.id, name: team.name, regNumber: team.regNumber, status: team.status,
-      notes: team.notes, hotelId: team.hotelId ?? null,
-      accomPlayers: team.accomPlayers ?? 0, accomStaff: team.accomStaff ?? 0,
-      accomAccompanying: team.accomAccompanying ?? 0,
-      accomCheckIn: team.accomCheckIn ?? null, accomCheckOut: team.accomCheckOut ?? null,
-      accomNotes: team.accomNotes ?? null,
-      accomDeclined: team.accomDeclined, accomConfirmed: team.accomConfirmed,
+      id: team.id, name: team.name,
+      registrationId: registration.id,
+      regNumber: registration.regNumber, status: registration.status,
+      notes: registration.notes, hotelId: registration.hotelId ?? null,
+      accomPlayers: registration.accomPlayers ?? 0, accomStaff: registration.accomStaff ?? 0,
+      accomAccompanying: registration.accomAccompanying ?? 0,
+      accomCheckIn: registration.accomCheckIn ?? null, accomCheckOut: registration.accomCheckOut ?? null,
+      accomNotes: registration.accomNotes ?? null,
+      accomDeclined: registration.accomDeclined, accomConfirmed: registration.accomConfirmed,
     },
     club: club ? {
       id: club.id, name: club.name, badgeUrl: club.badgeUrl,

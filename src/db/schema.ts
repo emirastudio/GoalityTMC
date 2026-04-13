@@ -17,7 +17,13 @@ import { relations } from "drizzle-orm";
 
 // ─── Enums ──────────────────────────────────────────────
 
-export const orgPlanEnum = pgEnum("org_plan", ["free", "basic", "premium"]);
+export const orgPlanEnum = pgEnum("org_plan", ["free", "starter", "pro", "elite"]);
+export const tournamentPlanEnum = pgEnum("tournament_plan", ["free", "starter", "pro", "elite"]);
+export const blogPostStatusEnum = pgEnum("blog_post_status", ["draft", "published", "archived"]);
+export const eliteSubStatusEnum = pgEnum("elite_sub_status", ["active", "trialing", "past_due", "cancelled"]);
+export const purchaseStatusEnum = pgEnum("purchase_status", ["pending", "completed", "refunded", "expired"]);
+
+export const teamGenderEnum = pgEnum("team_gender", ["male", "female", "mixed"]);
 
 export const teamStatusEnum = pgEnum("team_status", [
   "draft",
@@ -75,10 +81,15 @@ export const organizations = pgTable("organizations", {
   defaultLocale: varchar("default_locale", { length: 5 }).default("en").notNull(),
   currency: varchar("currency", { length: 3 }).default("EUR").notNull(),
   plan: orgPlanEnum("plan").default("free").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  eliteSubId: text("elite_sub_id"),
+  eliteSubStatus: eliteSubStatusEnum("elite_sub_status"),
+  eliteSubPeriodEnd: timestamp("elite_sub_period_end"),
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   website: text("website"),
   brandColor: varchar("brand_color", { length: 20 }).default("#272D2D"),
+  type: varchar("type", { length: 20 }).default("managed").notNull(), // "managed" | "listing"
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -95,18 +106,111 @@ export const tournaments = pgTable("tournaments", {
   description: text("description"),
   logoUrl: text("logo_url"),
   coverUrl: text("cover_url"),
+  cardImageUrl: text("card_image_url"),
   registrationOpen: boolean("registration_open").default(false).notNull(),
   registrationDeadline: timestamp("registration_deadline"),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
   currency: text("currency").default("EUR").notNull(),
+  // ── Location & onboarding ───────────────────────────────
+  country: text("country"),
+  city: text("city"),
+  specificDays: text("specific_days"),       // JSON: string[] of "YYYY-MM-DD"
+  hasAccommodation: boolean("has_accommodation").default(false).notNull(),
+  hasMeals: boolean("has_meals").default(false).notNull(),
+  hasTransfer: boolean("has_transfer").default(false).notNull(),
+  // ── Plan & billing ──────────────────────────────────────
+  plan: tournamentPlanEnum("plan").default("free").notNull(),
+  extraTeamsPurchased: integer("extra_teams_purchased").default(0).notNull(),
+  extraDivisionsPurchased: integer("extra_divisions_purchased").default(0).notNull(),
+  planOverrideBy: integer("plan_override_by").references(() => adminUsers.id, { onDelete: "set null" }),
+  planOverrideReason: text("plan_override_reason"),
+  planOverrideAt: timestamp("plan_override_at"),
+  // ── Deferred billing deadline ────────────────────────────
+  // Set to end-of-month when organizer creates extra (paid) divisions beyond plan limit.
+  // Cleared when extras are paid. Publish is blocked if this date is in the past and extrasOwed > 0.
+  extrasPaymentDue: date("extras_payment_due"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  // ── Deletion flow ───────────────────────────────────────
+  deleteRequestedAt: timestamp("delete_requested_at"),   // organizer requested → superadmin decides
+  deleteRequestReason: text("delete_request_reason"),
+  deletedAt: timestamp("deleted_at"),                    // superadmin approved → soft delete (30 days)
 }, (table) => [
   uniqueIndex("tournaments_org_slug_idx").on(table.organizationId, table.slug),
 ]);
 
 // ─── Tournament Classes ─────────────────────────────────
+
+export type DayScheduleEntry = {
+  date: string;           // "2026-08-14"
+  startTime: string;      // "09:00"
+  endTime: string;        // "18:00"
+};
+
+export type FieldDayScheduleEntry = {
+  fieldId: number;
+  date: string;           // "2026-08-14"
+  startTime: string | null;  // null = closed
+  endTime: string | null;
+};
+
+export type ScheduleConfig = {
+  fieldIds: number[];
+  dailyStartTime: string;           // "09:00" — global default
+  dailyEndTime: string;             // "18:00" — global default
+  halvesCount: 1 | 2;              // number of halves per match
+  halfDurationMinutes: number;      // duration of each half
+  breakBetweenHalvesMinutes: number;// break between halves (only used when halvesCount=2)
+  breakBetweenMatchesMinutes: number;// break between games
+  maxMatchesPerTeamPerDay: number;
+  minRestBetweenTeamMatchesMinutes: number; // мин. отдых между матчами одной команды
+  enableTeamRestRule?: boolean;     // toggle: enforce team rest rule
+
+  // Per-day time overrides (overrides dailyStart/End for that day)
+  daySchedule?: DayScheduleEntry[];
+
+  // Per-field per-day overrides (overrides daySchedule for that field+day; null = field closed)
+  fieldDaySchedule?: FieldDayScheduleEntry[];
+
+  // Per-stadium per-day overrides (ONE TRUTH source for schedule generation)
+  stadiumDaySchedule?: Array<{
+    stadiumId: number;
+    date: string;        // "2026-08-14"
+    startTime: string | null;  // null = стадион закрыт
+    endTime: string | null;
+  }>;
+
+  // Field → allowed stage IDs. Key = fieldId as string. Empty array = all stages allowed.
+  fieldStageIds?: Record<string, number[]>;
+
+  /** @deprecated use halvesCount * halfDurationMinutes + ... instead */
+  matchDurationMinutes?: number;
+
+  // ─── Scheduling v2 additions ───────────────────────────
+  /** Soft-constraint weights used by the LNS solver. Higher = stronger pull. */
+  weights?: {
+    fieldUtilization?: number;            // default 0.5
+    teamRestComfort?: number;             // default 0.8
+    homeAwayBalance?: number;             // default 0.3
+    primetimeForBigMatches?: number;      // default 0.2
+    groupFieldAffinity?: number;          // default 0.6
+    refereeWorkloadBalance?: number;      // default 0.5
+    travelMinimization?: number;          // default 0.2
+    dayLoadBalance?: number;              // default 0.3
+  };
+  /** Warmup minutes added before a match's half-times (0 = none). */
+  bufferBeforeMinutes?: number;
+  /** Cleanup minutes added after a match (0 = none). */
+  bufferAfterMinutes?: number;
+  /** If true, multiple tours of the same group may run in parallel on different fields. */
+  allowParallelGroupRounds?: boolean;
+  /** How strictly a group's matches must stay on one field. */
+  groupFieldAffinity?: "strict" | "preferred" | "none";
+  /** Discretization for slot pool in minutes (default 5). Smaller = slower, better. */
+  slotGranularityMinutes?: number;
+};
+
 export const tournamentClasses = pgTable("tournament_classes", {
   id: serial("id").primaryKey(),
   tournamentId: integer("tournament_id")
@@ -118,23 +222,65 @@ export const tournamentClasses = pgTable("tournament_classes", {
   maxBirthYear: integer("max_birth_year"),
   maxPlayers: integer("max_players").default(25),
   maxStaff: integer("max_staff").default(5),
+  maxTeams: integer("max_teams"),
+  scheduleConfig: jsonb("schedule_config").$type<ScheduleConfig | null>(),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// ─── Tournament Fields (football pitches / venues) ──────
+// ─── Tournament Stadiums (parent venues) ─────────────────
+export const tournamentStadiums = pgTable("tournament_stadiums", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  name: text("name").notNull(),           // "Infonet Arena"
+  address: text("address"),
+  contactName: text("contact_name"),
+  contactPhone: text("contact_phone"),
+  mapsUrl: text("maps_url"),              // Google Maps link
+  wazeUrl: text("waze_url"),              // Waze link
+  notes: text("notes"),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Tournament Fields (площадки — subdivisions of a stadium) ──────
 export const tournamentFields = pgTable("tournament_fields", {
   id: serial("id").primaryKey(),
   tournamentId: integer("tournament_id")
     .references(() => tournaments.id, { onDelete: "cascade" })
     .notNull(),
-  name: text("name").notNull(),           // "База Спартак", "Стадион А"
+  stadiumId: integer("stadium_id")
+    .references(() => tournamentStadiums.id, { onDelete: "set null" }),
+  name: text("name").notNull(),           // "A", "B", "1", "2" or standalone "База Спартак"
+  // address / mapUrl kept for standalone fields (no stadium)
   address: text("address"),
-  mapUrl: text("map_url"),                // Google Maps link
-  scheduleUrl: text("schedule_url"),      // Link to schedule/buses
-  notes: text("notes"),                   // Any extra info
+  mapUrl: text("map_url"),
+  scheduleUrl: text("schedule_url"),
+  notes: text("notes"),
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ─── Stadium Schedule (per-stadium opening hours per date) ──────────────────
+// Позволяет задать разное время работы каждого стадиона по дням.
+// Если для стадиона+даты нет записи — используется глобальное расписание дивизиона.
+export const tournamentStadiumSchedule = pgTable("tournament_stadium_schedule", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  stadiumId: integer("stadium_id")
+    .references(() => tournamentStadiums.id, { onDelete: "cascade" })
+    .notNull(),
+  date: text("date").notNull(),       // "2026-08-14"
+  startTime: text("start_time"),      // "09:00" — null = стадион закрыт в этот день
+  endTime: text("end_time"),          // "18:00" — null = стадион закрыт в этот день
+}, (t) => [
+  uniqueIndex("tournament_stadium_schedule_uniq").on(t.tournamentId, t.stadiumId, t.date),
+]);
 
 // ─── Tournament Hotels ───────────────────────────────────
 export const tournamentHotels = pgTable("tournament_hotels", {
@@ -174,19 +320,23 @@ export const tournamentProducts = pgTable("tournament_products", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// ─── Clubs (1 club = N teams) ───────────────────────────
+// ─── Clubs (глобальная сущность — существует независимо от турниров) ──
 export const clubs = pgTable("clubs", {
   id: serial("id").primaryKey(),
-  tournamentId: integer("tournament_id")
-    .references(() => tournaments.id, { onDelete: "cascade" })
-    .notNull(),
   name: text("name").notNull(),
+  slug: varchar("slug", { length: 100 }).unique(),
   country: text("country"),
   city: text("city"),
   badgeUrl: text("badge_url"),
   contactName: text("contact_name"),
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
+  website: text("website"),
+  instagram: text("instagram"),
+  facebook: text("facebook"),
+  onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  verifiedAt: timestamp("verified_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -220,40 +370,78 @@ export const teamInvites = pgTable("team_invites", {
   usedAt: timestamp("used_at"),
 });
 
-// ─── Teams (belongs to a club) ──────────────────────────
-export const teams = pgTable(
-  "teams",
-  {
-    id: serial("id").primaryKey(),
-    tournamentId: integer("tournament_id")
-      .references(() => tournaments.id, { onDelete: "cascade" })
-      .notNull(),
-    clubId: integer("club_id")
-      .references(() => clubs.id, { onDelete: "cascade" }),
-    classId: integer("class_id").references(() => tournamentClasses.id),
-    name: text("name"),
-    status: teamStatusEnum("status").default("draft").notNull(),
-    regNumber: integer("reg_number").notNull(),
-    notes: text("notes"), // admin notes about this team
-    hotelId: integer("hotel_id"), // assigned hotel (references tournament_hotels)
-    accomPlayers: integer("accom_players").default(0),
-    accomStaff: integer("accom_staff").default(0),
-    accomAccompanying: integer("accom_accompanying").default(0),
-    accomCheckIn: text("accom_check_in"),
-    accomCheckOut: text("accom_check_out"),
-    accomNotes: text("accom_notes"),
-    accomDeclined: boolean("accom_declined").default(false).notNull(),
-    accomConfirmed: boolean("accom_confirmed").default(false).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  },
-  (table) => [
-    uniqueIndex("teams_tournament_reg_idx").on(
-      table.tournamentId,
-      table.regNumber
-    ),
-  ]
-);
+// ─── Club Invites ───────────────────────────────────────────
+// Приглашение менеджера/тренера на уровне клуба (без привязки к команде)
+export const clubInvites = pgTable("club_invites", {
+  id: serial("id").primaryKey(),
+  clubId: integer("club_id")
+    .references(() => clubs.id, { onDelete: "cascade" })
+    .notNull(),
+  token: text("token").notNull().unique(),
+  invitedEmail: text("invited_email"), // опционально — email куда слали
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+});
+
+// ─── Teams (глобальная сущность — принадлежит клубу) ────────
+// Команда существует независимо от турниров.
+// Идентичность: клуб + год рождения + пол (неизменны).
+// name — опциональный кастомный override (напр. "Академия А").
+// Участие в турнире оформляется через tournament_registrations.
+export const teams = pgTable("teams", {
+  id: serial("id").primaryKey(),
+  clubId: integer("club_id")
+    .references(() => clubs.id, { onDelete: "cascade" })
+    .notNull(),
+  name: text("name"),                          // кастомное название (необязательно)
+  birthYear: integer("birth_year"),            // год рождения детей (null для взрослых)
+  gender: teamGenderEnum("gender").default("male").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ─── Tournament Registrations ──────────────────────────────
+// Запись об участии команды в конкретном турнире+дивизионе.
+// Здесь хранится всё турнирно-специфичное: номер, статус, проживание.
+// squadAlias — псевдоним состава ('' = один состав, 'Black'/'White' = два).
+// displayName — как команда называется именно в этом турнире.
+export const tournamentRegistrations = pgTable("tournament_registrations", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id")
+    .references(() => teams.id, { onDelete: "cascade" })
+    .notNull(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  classId: integer("class_id")
+    .references(() => tournamentClasses.id, { onDelete: "set null" }),
+  regNumber: integer("reg_number").notNull(),
+  status: teamStatusEnum("status").default("draft").notNull(),
+  // Псевдоним состава: '' = один состав, 'Black'/'White'/'A'/'B' = несколько
+  squadAlias: text("squad_alias").default("").notNull(),
+  // Название команды в рамках этого турнира (если отличается от базового)
+  displayName: text("display_name"),
+  notes: text("notes"),
+  hotelId: integer("hotel_id"),
+  accomPlayers: integer("accom_players").default(0),
+  accomStaff: integer("accom_staff").default(0),
+  accomAccompanying: integer("accom_accompanying").default(0),
+  accomCheckIn: text("accom_check_in"),
+  accomCheckOut: text("accom_check_out"),
+  accomNotes: text("accom_notes"),
+  accomDeclined: boolean("accom_declined").default(false).notNull(),
+  accomConfirmed: boolean("accom_confirmed").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("registrations_tournament_reg_idx").on(table.tournamentId, table.regNumber),
+  // Уникальность: команда + турнир + псевдоним состава
+  uniqueIndex("registrations_team_tournament_squad_idx").on(table.teamId, table.tournamentId, table.squadAlias),
+  index("idx_registrations_tournament").on(table.tournamentId),
+  index("idx_registrations_team").on(table.teamId),
+  index("idx_registrations_class").on(table.classId),
+]);
 
 // teamUsers removed — login is per club via clubUsers
 
@@ -298,12 +486,11 @@ export const people = pgTable("people", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// ─── Team Price Overrides (custom pricing per team) ─────
-// Admin can override base tournament product prices per team
+// ─── Team Price Overrides (custom pricing per registration) ─
 export const teamPriceOverrides = pgTable("team_price_overrides", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
     .notNull(),
   productId: integer("product_id")
     .references(() => tournamentProducts.id, { onDelete: "cascade" })
@@ -316,8 +503,8 @@ export const teamPriceOverrides = pgTable("team_price_overrides", {
 // ─── Orders ─────────────────────────────────────────────
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
     .notNull(),
   productId: integer("product_id")
     .references(() => tournamentProducts.id)
@@ -332,8 +519,8 @@ export const orders = pgTable("orders", {
 // ─── Payments ───────────────────────────────────────────
 export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
     .notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   currency: text("currency").default("EUR").notNull(),
@@ -348,8 +535,8 @@ export const payments = pgTable("payments", {
 // ─── Team Travel ────────────────────────────────────────
 export const teamTravel = pgTable("team_travel", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
   arrivalType: text("arrival_type"), // airport, port, railway, bus_station, own_bus
@@ -381,23 +568,23 @@ export const teamMessageReads = pgTable("team_message_reads", {
   messageId: integer("message_id")
     .references(() => inboxMessages.id, { onDelete: "cascade" })
     .notNull(),
-  teamId: integer("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
     .notNull(),
   readAt: timestamp("read_at").defaultNow().notNull(),
 });
 
-// Message recipients (for targeted sends — specific teams)
+// Message recipients (for targeted sends — specific registrations)
 export const messageRecipients = pgTable("message_recipients", {
   id: serial("id").primaryKey(),
   messageId: integer("message_id").notNull().references(() => inboxMessages.id, { onDelete: "cascade" }),
-  teamId: integer("team_id").notNull().references(() => teams.id, { onDelete: "cascade" }),
+  registrationId: integer("registration_id").notNull().references(() => tournamentRegistrations.id, { onDelete: "cascade" }),
 });
 
 // Questions from teams to admin
 export const teamQuestions = pgTable("team_questions", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id").notNull().references(() => teams.id, { onDelete: "cascade" }),
+  registrationId: integer("registration_id").notNull().references(() => tournamentRegistrations.id, { onDelete: "cascade" }),
   tournamentId: integer("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
@@ -535,11 +722,11 @@ export const registrationFees = pgTable("registration_fees", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// ─── Package Assignments (package → team) ───────────────
+// ─── Package Assignments (package → registration) ────────
 export const packageAssignments = pgTable("package_assignments", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
   packageId: integer("package_id")
@@ -554,11 +741,11 @@ export const packageAssignments = pgTable("package_assignments", {
   mealsCountOverride: integer("meals_count_override"),
 });
 
-// ─── Team Service Overrides (per-team custom pricing) ───
+// ─── Team Service Overrides (per-registration custom pricing) ─
 export const teamServiceOverrides = pgTable("team_service_overrides", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
     .notNull(),
   serviceType: serviceTypeEnum("service_type").notNull(),
   serviceId: integer("service_id").notNull(),
@@ -571,8 +758,8 @@ export const teamServiceOverrides = pgTable("team_service_overrides", {
 // ─── Team Bookings (replaces orders for new model) ──────
 export const teamBookings = pgTable("team_bookings", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
     .notNull(),
   bookingType: bookingTypeEnum("booking_type").notNull(),
   serviceId: integer("service_id").notNull(),
@@ -648,12 +835,11 @@ export const packageItems = pgTable("package_items", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// ─── Team Package Overrides (per-team custom pricing) ───
-// Override price of a specific package item for a specific team
+// ─── Team Package Overrides (per-registration custom pricing) ─
 export const teamPackageItemOverrides = pgTable("team_package_item_overrides", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
     .notNull(),
   packageItemId: integer("package_item_id")
     .references(() => packageItems.id, { onDelete: "cascade" })
@@ -770,7 +956,7 @@ export const tournamentStages = pgTable("tournament_stages", {
     "goals_scored",
     "fair_play",
   ]),
-  classId: integer("class_id").references(() => tournamentClasses.id, { onDelete: "set null" }),
+  classId: integer("class_id").references(() => tournamentClasses.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
@@ -792,6 +978,7 @@ export const stageGroups = pgTable("stage_groups", {
     .notNull(),
   name: varchar("name", { length: 20 }).notNull(), // "A", "B", "Group 1"
   order: integer("order").default(0).notNull(),
+  targetSize: integer("target_size"), // intended team-slot count (null = use actual team count)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_stage_groups_stage").on(table.stageId),
@@ -851,6 +1038,7 @@ export const matches = pgTable("matches", {
   roundId: integer("round_id")
     .references(() => matchRounds.id, { onDelete: "set null" }),    // null для группового
   matchNumber: integer("match_number"),                              // глобальный номер
+  groupRound: integer("group_round"),                                // номер тура в групповом этапе (1,2,3...) — null для плей-офф
 
   homeTeamId: integer("home_team_id")
     .references(() => teams.id, { onDelete: "set null" }),
@@ -884,6 +1072,16 @@ export const matches = pgTable("matches", {
   notes: text("notes"),
   version: integer("version").default(0).notNull(), // optimistic locking
 
+  // ─── Scheduling v2 — lock semantics ───────────────
+  // Pinned matches are untouchable by the solver. Stores who + why for audit.
+  lockedAt: timestamp("locked_at"),
+  lockedByUserId: integer("locked_by_user_id")
+    .references(() => adminUsers.id, { onDelete: "set null" }),
+  lockReason: text("lock_reason"),
+  // Per-match buffer overrides (null = use division config default)
+  bufferBeforeMinutes: integer("buffer_before_minutes"),
+  bufferAfterMinutes: integer("buffer_after_minutes"),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   deletedAt: timestamp("deleted_at"),                // soft delete — никогда не удаляем
@@ -895,6 +1093,7 @@ export const matches = pgTable("matches", {
   index("idx_matches_field_time").on(table.fieldId, table.scheduledAt),
   index("idx_matches_stage").on(table.stageId),
   index("idx_matches_group").on(table.groupId),
+  index("idx_matches_locked").on(table.tournamentId, table.lockedAt),
 ]);
 
 // ─── Протокол матча (события) ──────────────────────────────
@@ -1019,6 +1218,143 @@ export const stageSlots = pgTable("stage_slots", {
   index("idx_stage_slots_stage").on(table.stageId),
 ]);
 
+// ═══════════════════════════════════════════════════════════
+// SCHEDULING v2 — referees, blackouts, solver runs, notifications
+// ═══════════════════════════════════════════════════════════
+
+// ─── Tournament Referees (roster per tournament) ────────────
+export const tournamentReferees = pgTable("tournament_referees", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" })
+    .notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  level: text("level"),                    // "junior"|"senior"|"national" (free text)
+  colorTag: text("color_tag"),             // hex color for calendar chip
+  notes: text("notes"),
+  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_tournament_referees_tournament").on(table.tournamentId),
+]);
+
+// ─── Referee Availability / Blackout Windows ────────────────
+// isBlackout=false → "referee is available this window"
+// isBlackout=true  → "referee is UNAVAILABLE this window"
+// If no rows exist for a date, referee is considered available for tournament hours.
+export const refereeAvailability = pgTable("referee_availability", {
+  id: serial("id").primaryKey(),
+  refereeId: integer("referee_id")
+    .references(() => tournamentReferees.id, { onDelete: "cascade" })
+    .notNull(),
+  date: date("date").notNull(),
+  startTime: text("start_time"),           // "HH:MM" local, null = whole day
+  endTime: text("end_time"),
+  isBlackout: boolean("is_blackout").default(false).notNull(),
+  notes: text("notes"),
+}, (table) => [
+  index("idx_referee_availability_referee").on(table.refereeId, table.date),
+]);
+
+// ─── Team Blackouts ─────────────────────────────────────────
+// Travel windows, parallel-tournament conflicts, team sickness, etc.
+export const teamBlackouts = pgTable("team_blackouts", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id")
+    .references(() => teams.id, { onDelete: "cascade" })
+    .notNull(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  date: date("date").notNull(),
+  startTime: text("start_time"),           // null = all day
+  endTime: text("end_time"),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_team_blackouts_tournament_date").on(table.tournamentId, table.date),
+  index("idx_team_blackouts_team").on(table.teamId),
+]);
+
+// ─── Match Referees (M:N between matches and referees) ─────
+export const matchReferees = pgTable("match_referees", {
+  matchId: integer("match_id")
+    .references(() => matches.id, { onDelete: "cascade" })
+    .notNull(),
+  refereeId: integer("referee_id")
+    .references(() => tournamentReferees.id, { onDelete: "cascade" })
+    .notNull(),
+  role: text("role").notNull(),            // "main"|"assistant1"|"assistant2"|"fourth"
+}, (table) => [
+  uniqueIndex("idx_match_referees_pk").on(table.matchId, table.refereeId),
+  index("idx_match_referees_referee").on(table.refereeId),
+]);
+
+// ─── Schedule Runs (durable state machine + audit log) ─────
+// One row per solver invocation. Stores the full Problem snapshot so re-runs
+// with the same seed produce identical Solutions ("deterministic replay").
+// Large JSONB — result_summary is the cheap list view, result is the full blob.
+export const scheduleRuns = pgTable("schedule_runs", {
+  id: varchar("id", { length: 32 }).primaryKey(),   // nanoid, shareable in URLs
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" })
+    .notNull(),
+  classId: integer("class_id")
+    .references(() => tournamentClasses.id, { onDelete: "cascade" }),   // null = whole tournament
+  parentRunId: varchar("parent_run_id", { length: 32 }),                // what-if forks (FK added via relations)
+  status: text("status").notNull(),        // "queued"|"running"|"succeeded"|"failed"|"cancelled"|"applied"|"what_if"
+  kind: text("kind").notNull(),            // "solve"|"what_if"|"manual_edit"
+  inputHash: text("input_hash").notNull(),
+  params: jsonb("params").notNull(),       // full Problem snapshot
+  resultSummary: jsonb("result_summary"),  // {score, hardViolations, unplacedCount, elapsedMs}
+  result: jsonb("result"),                 // full Solution (may be large, stored in TOAST)
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdByUserId: integer("created_by_user_id")
+    .references(() => adminUsers.id, { onDelete: "set null" }),
+  startedAt: timestamp("started_at"),
+  finishedAt: timestamp("finished_at"),
+  appliedAt: timestamp("applied_at"),
+  appliedByUserId: integer("applied_by_user_id")
+    .references(() => adminUsers.id, { onDelete: "set null" }),
+}, (table) => [
+  index("idx_schedule_runs_tournament").on(table.tournamentId, table.createdAt),
+  index("idx_schedule_runs_status").on(table.status),
+  index("idx_schedule_runs_input_hash").on(table.inputHash),
+]);
+
+// ─── Notification Queue (in-process drain loop, no pg-boss) ─
+// Durable queue for outgoing schedule-changed emails, etc.
+// Drained by a setInterval worker started from instrumentation.ts.
+export const notificationQueue = pgTable("notification_queue", {
+  id: serial("id").primaryKey(),
+  kind: text("kind").notNull(),            // "schedule_changed"|"match_locked"|"run_applied"
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  targetType: text("target_type").notNull(), // "team"|"referee"|"user"
+  targetId: integer("target_id").notNull(),
+  payload: jsonb("payload").notNull(),
+  status: text("status").default("pending").notNull(), // "pending"|"sent"|"failed"
+  attempts: integer("attempts").default(0).notNull(),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  sentAt: timestamp("sent_at"),
+}, (table) => [
+  index("idx_notification_queue_pending").on(table.status, table.createdAt),
+  index("idx_notification_queue_tournament").on(table.tournamentId),
+]);
+
 // ─── Audit log изменений результатов ───────────────────────
 // Кто, когда и почему изменил счёт
 
@@ -1063,9 +1399,112 @@ export const registrationAttempts = pgTable("registration_attempts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ─── Blog Posts (platform-level, not org-scoped) ────────────
+export const blogPosts = pgTable(
+  "blog_posts",
+  {
+    id: serial("id").primaryKey(),
+    slug: varchar("slug", { length: 255 }).notNull().unique(),
+    status: blogPostStatusEnum("status").default("draft").notNull(),
+
+    titleEn: text("title_en").notNull(),
+    titleRu: text("title_ru"),
+    contentEn: text("content_en").notNull(),
+    contentRu: text("content_ru"),
+    excerptEn: text("excerpt_en"),
+    excerptRu: text("excerpt_ru"),
+
+    coverImageUrl: text("cover_image_url"),
+    category: varchar("category", { length: 100 }),
+    tags: jsonb("tags").$type<string[]>().default([]),
+
+    seoTitleEn: text("seo_title_en"),
+    seoTitleRu: text("seo_title_ru"),
+    seoDescriptionEn: text("seo_description_en"),
+    seoDescriptionRu: text("seo_description_ru"),
+
+    authorName: varchar("author_name", { length: 255 }).default("Goality Team"),
+    publishedAt: timestamp("published_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [index("idx_blog_status_published").on(table.status, table.publishedAt)]
+);
+
 // ═══════════════════════════════════════════════════════════
 // DRIZZLE RELATIONS — для relational query API (with: {...})
 // ═══════════════════════════════════════════════════════════
+
+// ─── Monetization Tables ────────────────────────────────────
+
+export const tournamentPurchases = pgTable("tournament_purchases", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
+  stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
+  plan: tournamentPlanEnum("plan").notNull(),
+  extraTeams: integer("extra_teams").default(0).notNull(),
+  extraDivisions: integer("extra_divisions").default(0).notNull(),
+  amountEurCents: integer("amount_eur_cents").notNull(),
+  status: purchaseStatusEnum("status").default("pending").notNull(),
+  completedAt: timestamp("completed_at"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const platformSubscriptions = pgTable("platform_subscriptions", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
+  stripeCustomerId: text("stripe_customer_id").notNull(),
+  stripePriceId: text("stripe_price_id").notNull(),
+  billingInterval: text("billing_interval").notNull(),  // 'month' | 'year'
+  status: eliteSubStatusEnum("status").default("active").notNull(),
+  currentPeriodStart: timestamp("current_period_start").notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+  cancelledAt: timestamp("cancelled_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const planOverrideAudits = pgTable("plan_override_audits", {
+  id: serial("id").primaryKey(),
+  entityType: text("entity_type").notNull(),  // 'tournament' | 'organization'
+  entityId: integer("entity_id").notNull(),
+  entityName: text("entity_name").notNull(),
+  adminId: integer("admin_id").notNull().references(() => adminUsers.id),
+  adminEmail: text("admin_email").notNull(),
+  previousPlan: text("previous_plan").notNull(),
+  newPlan: text("new_plan").notNull(),
+  reason: text("reason").notNull(),
+  ipAddress: text("ip_address"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const stripeWebhookEvents = pgTable("stripe_webhook_events", {
+  id: text("id").primaryKey(),  // Stripe event id (evt_...)
+  type: text("type").notNull(),
+  processedAt: timestamp("processed_at").defaultNow().notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+// ─── Monetization Relations ──────────────────────────────────
+
+export const tournamentPurchasesRelations = relations(tournamentPurchases, ({ one }) => ({
+  tournament: one(tournaments, { fields: [tournamentPurchases.tournamentId], references: [tournaments.id] }),
+  organization: one(organizations, { fields: [tournamentPurchases.organizationId], references: [organizations.id] }),
+}));
+
+export const platformSubscriptionsRelations = relations(platformSubscriptions, ({ one }) => ({
+  organization: one(organizations, { fields: [platformSubscriptions.organizationId], references: [organizations.id] }),
+}));
+
+export const planOverrideAuditsRelations = relations(planOverrideAudits, ({ one }) => ({
+  admin: one(adminUsers, { fields: [planOverrideAudits.adminId], references: [adminUsers.id] }),
+}));
 
 // ─── Existing tables ────────────────────────────────────────
 
@@ -1076,6 +1515,7 @@ export const clubsRelations = relations(clubs, ({ many }) => ({
 
 export const teamsRelations = relations(teams, ({ one, many }) => ({
   club: one(clubs, { fields: [teams.clubId], references: [clubs.id] }),
+  registrations: many(tournamentRegistrations),
   people: many(people),
   groupTeams: many(groupTeams),
   standings: many(standings),
@@ -1083,12 +1523,40 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
   awayMatches: many(matches, { relationName: "awayTeam" }),
 }));
 
+export const tournamentRegistrationsRelations = relations(tournamentRegistrations, ({ one, many }) => ({
+  team: one(teams, { fields: [tournamentRegistrations.teamId], references: [teams.id] }),
+  tournament: one(tournaments, { fields: [tournamentRegistrations.tournamentId], references: [tournaments.id] }),
+  class: one(tournamentClasses, { fields: [tournamentRegistrations.classId], references: [tournamentClasses.id] }),
+  payments: many(payments),
+  bookings: many(teamBookings),
+  orders: many(orders),
+  travel: one(teamTravel),
+  packageAssignment: one(packageAssignments),
+  serviceOverrides: many(teamServiceOverrides),
+  packageItemOverrides: many(teamPackageItemOverrides),
+  messageReads: many(teamMessageReads),
+  questions: many(teamQuestions),
+  priceOverrides: many(teamPriceOverrides),
+}));
+
 export const peopleRelations = relations(people, ({ one }) => ({
   team: one(teams, { fields: [people.teamId], references: [teams.id] }),
 }));
 
+export const tournamentStadiumsRelations = relations(tournamentStadiums, ({ one, many }) => ({
+  tournament: one(tournaments, { fields: [tournamentStadiums.tournamentId], references: [tournaments.id] }),
+  fields: many(tournamentFields),
+  schedules: many(tournamentStadiumSchedule),
+}));
+
+export const tournamentStadiumScheduleRelations = relations(tournamentStadiumSchedule, ({ one }) => ({
+  tournament: one(tournaments, { fields: [tournamentStadiumSchedule.tournamentId], references: [tournaments.id] }),
+  stadium: one(tournamentStadiums, { fields: [tournamentStadiumSchedule.stadiumId], references: [tournamentStadiums.id] }),
+}));
+
 export const tournamentFieldsRelations = relations(tournamentFields, ({ one, many }) => ({
   tournament: one(tournaments, { fields: [tournamentFields.tournamentId], references: [tournaments.id] }),
+  stadium: one(tournamentStadiums, { fields: [tournamentFields.stadiumId], references: [tournamentStadiums.id] }),
   matches: many(matches),
 }));
 
@@ -1166,4 +1634,90 @@ export const stageSlotsRelations = relations(stageSlots, ({ one }) => ({
 export const matchResultLogRelations = relations(matchResultLog, ({ one }) => ({
   match: one(matches, { fields: [matchResultLog.matchId], references: [matches.id] }),
   changedByUser: one(adminUsers, { fields: [matchResultLog.changedBy], references: [adminUsers.id] }),
+}));
+
+// ─── Listing Tournaments ─────────────────────────────────
+// Для организаторов типа "listing" — упрощённая страница турнира в каталоге
+export const listingTournaments = pgTable("listing_tournaments", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  country: text("country"),
+  city: text("city"),
+  logoUrl: text("logo_url"),
+  coverUrl: text("cover_url"),
+  photos: text("photos").default("[]"), // JSON array of up to 5 URLs
+  regulations: text("regulations"),
+  formats: text("formats"),
+  divisions: text("divisions"),
+  pricing: text("pricing"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  website: text("website"),
+  ageGroups: text("age_groups").default("[]"), // JSON: [{name,gender}]
+  cardImageUrl: text("card_image_url"),
+  // Multi-language translations (non-EN content stored here; EN = main columns)
+  translations: jsonb("translations").default({}),
+  // Extra details
+  venue: text("venue"),                         // specific location name / arena
+  registrationDeadline: date("registration_deadline"),
+  level: text("level"),                         // Local / Regional / National / International
+  prizeInfo: text("prize_info"),                // prize pool / awards
+  instagram: text("instagram"),
+  facebook: text("facebook"),
+  // Stripe subscription
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("inactive"),
+  subscriptionPeriodEnd: timestamp("subscription_period_end"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const listingTournamentsRelations = relations(listingTournaments, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [listingTournaments.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+// ─── Scheduling v2 Relations ─────────────────────────────────
+
+export const tournamentRefereesRelations = relations(tournamentReferees, ({ one, many }) => ({
+  tournament: one(tournaments, { fields: [tournamentReferees.tournamentId], references: [tournaments.id] }),
+  organization: one(organizations, { fields: [tournamentReferees.organizationId], references: [organizations.id] }),
+  availability: many(refereeAvailability),
+  matchAssignments: many(matchReferees),
+}));
+
+export const refereeAvailabilityRelations = relations(refereeAvailability, ({ one }) => ({
+  referee: one(tournamentReferees, { fields: [refereeAvailability.refereeId], references: [tournamentReferees.id] }),
+}));
+
+export const teamBlackoutsRelations = relations(teamBlackouts, ({ one }) => ({
+  team: one(teams, { fields: [teamBlackouts.teamId], references: [teams.id] }),
+  tournament: one(tournaments, { fields: [teamBlackouts.tournamentId], references: [tournaments.id] }),
+}));
+
+export const matchRefereesRelations = relations(matchReferees, ({ one }) => ({
+  match: one(matches, { fields: [matchReferees.matchId], references: [matches.id] }),
+  referee: one(tournamentReferees, { fields: [matchReferees.refereeId], references: [tournamentReferees.id] }),
+}));
+
+export const scheduleRunsRelations = relations(scheduleRuns, ({ one }) => ({
+  tournament: one(tournaments, { fields: [scheduleRuns.tournamentId], references: [tournaments.id] }),
+  organization: one(organizations, { fields: [scheduleRuns.organizationId], references: [organizations.id] }),
+  class: one(tournamentClasses, { fields: [scheduleRuns.classId], references: [tournamentClasses.id] }),
+  parentRun: one(scheduleRuns, { fields: [scheduleRuns.parentRunId], references: [scheduleRuns.id], relationName: "parentRun" }),
+  createdBy: one(adminUsers, { fields: [scheduleRuns.createdByUserId], references: [adminUsers.id], relationName: "scheduleRunCreator" }),
+  appliedBy: one(adminUsers, { fields: [scheduleRuns.appliedByUserId], references: [adminUsers.id], relationName: "scheduleRunApplier" }),
+}));
+
+export const notificationQueueRelations = relations(notificationQueue, ({ one }) => ({
+  tournament: one(tournaments, { fields: [notificationQueue.tournamentId], references: [tournaments.id] }),
 }));
