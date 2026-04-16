@@ -83,6 +83,43 @@ interface Match {
 }
 
 // ─────────────────────────────────────────────
+//  Draw-lock helpers (shared by Auto-draw / Clear / DnD save)
+// ─────────────────────────────────────────────
+
+type DrawLockState = {
+  tournamentPublished: boolean;
+  publishedAt: string | null;
+  committed: boolean;
+  hasScores: boolean;
+  matchesTotal: number;
+  matchesWithTeams: number;
+  matchesWithScores: number;
+} | null;
+
+/**
+ * Build headers for "destructive" writes to group_teams (mode=replace).
+ * Adds the unlock tokens the server expects when the stage's draw is
+ * committed or already has recorded scores. Clients that haven't done
+ * the unlock dance will land on the modal flow anyway — these headers
+ * just carry the explicit consent signal through to the server for its
+ * own defence-in-depth checks.
+ */
+function drawReplaceHeaders(
+  lock: DrawLockState,
+  unlocked: boolean,
+): HeadersInit {
+  const h: Record<string, string> = { "Content-Type": "application/json" };
+  if (!lock) return h;
+  if (lock.committed && unlocked) {
+    h["X-Draw-Unlock"] = "CONFIRM";
+  }
+  if (lock.hasScores && unlocked) {
+    h["X-Draw-Unlock-Scores"] = "CONFIRM";
+  }
+  return h;
+}
+
+// ─────────────────────────────────────────────
 //  Helper UI components
 // ─────────────────────────────────────────────
 
@@ -1452,6 +1489,26 @@ function DrawTab({
   const [applyingDraw, setApplyingDraw] = useState(false);
   const [applyDrawResult, setApplyDrawResult] = useState<string | null>(null);
   const [assignMap, setAssignMap] = useState<Record<number, number[]>>({});
+  // ── Draw lock guard ─────────────────────────────────────────────
+  // Server reports whether this stage's draw has been applied and whether
+  // the tournament schedule is published. We gate destructive actions
+  // (Auto-draw / Clear / Revert) on this state + a client-side `unlocked`
+  // toggle the organizer explicitly confirms in a modal.
+  const [lockState, setLockState] = useState<{
+    tournamentPublished: boolean;
+    publishedAt: string | null;
+    committed: boolean;
+    hasScores: boolean;
+    matchesTotal: number;
+    matchesWithTeams: number;
+    matchesWithScores: number;
+  } | null>(null);
+  const [unlocked, setUnlocked] = useState(false);
+  const [reverting, setReverting] = useState(false);
+  const [drawConfirm, setDrawConfirm] = useState<
+    | null
+    | { kind: "auto-draw" | "clear" | "revert" | "unlock" | "unlock-scores" }
+  >(null);
 
   // Baskets (корзины посева)
   const [baskets, setBaskets] = useState<DrawBasket[]>([]);
@@ -1499,6 +1556,25 @@ function DrawTab({
       });
   }, [base, selectedStageId]);
 
+  // Fetch lock state whenever the stage changes. Reset the client unlock
+  // flag on every stage switch so the organizer can't "carry" an unlock
+  // from one stage to another.
+  const loadLockState = useCallback(() => {
+    if (!selectedStageId) {
+      setLockState(null);
+      return;
+    }
+    fetch(`${base}/stages/${selectedStageId}/lock-state`)
+      .then(r => (r.ok ? r.json() : null))
+      .then((data) => setLockState(data ?? null))
+      .catch(() => setLockState(null));
+  }, [base, selectedStageId]);
+
+  useEffect(() => {
+    loadLockState();
+    setUnlocked(false);
+  }, [loadLockState]);
+
   const assignedTeamIds = new Set(Object.values(assignMap).flat());
   const unassignedTeams = allTeams.filter(tm => !assignedTeamIds.has(tm.id));
   const basketedTeamIds = new Set(baskets.flatMap(b => b.teamIds));
@@ -1524,9 +1600,10 @@ function DrawTab({
     try {
       await fetch(`${base}/stages/${selectedStageId}/groups/${groupId}/teams`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: drawReplaceHeaders(lockState, unlocked),
         body: JSON.stringify({ teamIds: assignMap[groupId] ?? [], mode: "replace" }),
       });
+      loadLockState();
     } finally {
       setSaving(null);
     }
@@ -1639,7 +1716,46 @@ function DrawTab({
     return a;
   }
 
-  async function autoDraw() {
+  // Public entry points that gate destructive actions behind the
+  // confirmation modal. The "run*" variants below do the actual work and
+  // are only called once the organizer has confirmed (and unlocked, if
+  // the stage was committed).
+  function autoDraw() {
+    if (groups.length === 0 || allTeams.length === 0) return;
+    if (lockState?.tournamentPublished) {
+      setDrawConfirm({ kind: "unlock" }); // banner explains why — modal
+      return;                              // just nudges them to unpublish
+    }
+    if (lockState?.committed && !unlocked) {
+      setDrawConfirm({ kind: lockState.hasScores ? "unlock-scores" : "unlock" });
+      return;
+    }
+    setDrawConfirm({ kind: "auto-draw" });
+  }
+
+  function clearDraw() {
+    if (!selectedStageId || groups.length === 0) return;
+    if (lockState?.tournamentPublished) {
+      setDrawConfirm({ kind: "unlock" });
+      return;
+    }
+    if (lockState?.committed && !unlocked) {
+      setDrawConfirm({ kind: lockState.hasScores ? "unlock-scores" : "unlock" });
+      return;
+    }
+    setDrawConfirm({ kind: "clear" });
+  }
+
+  function revertToApplied() {
+    if (!selectedStageId) return;
+    if (lockState?.tournamentPublished) {
+      setDrawConfirm({ kind: "unlock" });
+      return;
+    }
+    setDrawConfirm({ kind: "revert" });
+  }
+
+  async function runAutoDraw() {
     if (groups.length === 0 || allTeams.length === 0) return;
     setAutoDrawing(true);
     try {
@@ -1685,16 +1801,17 @@ function DrawTab({
       await Promise.all(groups.map(g =>
         fetch(`${base}/stages/${selectedStageId}/groups/${g.id}/teams`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: drawReplaceHeaders(lockState, unlocked),
           body: JSON.stringify({ teamIds: newMap[g.id], mode: "replace" }),
         })
       ));
+      loadLockState();
     } finally {
       setAutoDrawing(false);
     }
   }
 
-  async function clearDraw() {
+  async function runClearDraw() {
     if (!selectedStageId || groups.length === 0) return;
     setClearing(true);
     try {
@@ -1704,12 +1821,40 @@ function DrawTab({
       await Promise.all(groups.map(g =>
         fetch(`${base}/stages/${selectedStageId}/groups/${g.id}/teams`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: drawReplaceHeaders(lockState, unlocked),
           body: JSON.stringify({ teamIds: [], mode: "replace" }),
         })
       ));
+      loadLockState();
     } finally {
       setClearing(false);
+    }
+  }
+
+  async function runRevertToApplied() {
+    if (!selectedStageId) return;
+    setReverting(true);
+    try {
+      const res = await fetch(`${base}/stages/${selectedStageId}/revert-to-applied`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        // Reload groups so the UI matches the restored assignment.
+        const gRes = await fetch(`${base}/stages/${selectedStageId}/groups`);
+        if (gRes.ok) {
+          const data: Group[] = await gRes.json();
+          setGroups(data);
+          const map: Record<number, number[]> = {};
+          for (const g of data) {
+            map[g.id] = (g.groupTeams ?? []).map(gt => gt.teamId);
+          }
+          setAssignMap(map);
+        }
+        loadLockState();
+      }
+    } finally {
+      setReverting(false);
     }
   }
 
@@ -1778,6 +1923,12 @@ function DrawTab({
                 <Trash2 className="w-3.5 h-3.5" /> {t("clear")}
               </Btn>
             )}
+            {/* Revert — only meaningful after apply-draw has ever run. */}
+            {lockState?.committed && !lockState.tournamentPublished && (
+              <Btn variant="ghost" size="sm" onClick={revertToApplied} loading={reverting}>
+                <RefreshCw className="w-3.5 h-3.5" /> {t("revertToApplied")}
+              </Btn>
+            )}
             {selectedStageId && Object.values(assignMap).some(ids => ids.length > 0) && (
               <DrawShowLauncher
                 orgSlug={orgSlug}
@@ -1806,6 +1957,18 @@ function DrawTab({
           </div>
         }
       />
+
+      {/* Draw-lock banner: red when published (blocks all edits), orange
+          when results exist, blue when draw applied but no results yet. */}
+      {lockState && (lockState.tournamentPublished || lockState.committed) && (
+        <DrawLockBanner
+          lock={lockState}
+          unlocked={unlocked}
+          orgSlug={orgSlug}
+          tournamentId={tournamentId}
+          t={t}
+        />
+      )}
 
       {applyDrawResult && (
         <div className="rounded-2xl border px-4 py-3 flex items-center gap-3"
@@ -2277,6 +2440,314 @@ function DrawTab({
           </span>
         </div>
       )}
+
+      {/* Confirmation modal for destructive draw actions. Same component
+          handles five cases: auto-draw, clear, revert, unlock, unlock
+          with recorded scores. */}
+      {drawConfirm?.kind && (
+        <DrawConfirmModal
+          kind={drawConfirm.kind}
+          lock={lockState}
+          orgSlug={orgSlug}
+          tournamentId={tournamentId}
+          t={t}
+          onCancel={() => setDrawConfirm(null)}
+          onConfirm={async (mode) => {
+            const kind = drawConfirm.kind;
+            setDrawConfirm(null);
+            if (kind === "unlock" || kind === "unlock-scores") {
+              // User authorized unlocking — flip the client flag. They
+              // still have to click Auto-draw / Clear again after this.
+              setUnlocked(true);
+              return;
+            }
+            if (kind === "auto-draw") await runAutoDraw();
+            else if (kind === "clear") await runClearDraw();
+            else if (kind === "revert") await runRevertToApplied();
+            // mode is reserved for future extension (e.g. stricter revert)
+            void mode;
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  Draw-lock UI: banner + confirmation modal
+//
+//  These live at the same level as DrawTab so they can be reused if we
+//  later surface the same guard on other pages (match-hub, standings
+//  editor, etc.). Both are presentation-only; the decision logic is in
+//  DrawTab via drawReplaceHeaders() and the autoDraw/clearDraw wrappers.
+// ─────────────────────────────────────────────
+
+type DrawI18n = ReturnType<typeof useTranslations>;
+
+function DrawLockBanner({
+  lock,
+  unlocked,
+  orgSlug,
+  tournamentId,
+  t,
+}: {
+  lock: NonNullable<DrawLockState>;
+  unlocked: boolean;
+  orgSlug: string;
+  tournamentId: number;
+  t: DrawI18n;
+}) {
+  // Priority order of concerns — we render only the most severe one.
+  // Published (red) > Committed+scores (orange) > Committed (blue).
+  let tone: "red" | "orange" | "blue" = "blue";
+  let title = t("lockBannerCommittedTitle");
+  let body = t("lockBannerCommittedBody", {
+    matches: lock.matchesWithTeams,
+  });
+  let action: { label: string; href: string } | null = null;
+
+  if (lock.tournamentPublished) {
+    tone = "red";
+    title = t("lockBannerPublishedTitle");
+    body = t("lockBannerPublishedBody");
+    action = {
+      label: t("lockBannerGoToPublish"),
+      href: `/org/${orgSlug}/admin/tournament/${tournamentId}/publish`,
+    };
+  } else if (lock.hasScores) {
+    tone = "orange";
+    title = t("lockBannerScoresTitle");
+    body = t("lockBannerScoresBody", {
+      matches: lock.matchesWithScores,
+    });
+  }
+
+  const colors: Record<typeof tone, { bg: string; border: string; text: string }> = {
+    red:    { bg: "rgba(239,68,68,0.06)",  border: "rgba(239,68,68,0.35)",  text: "#ef4444" },
+    orange: { bg: "rgba(245,158,11,0.06)", border: "rgba(245,158,11,0.35)", text: "#f59e0b" },
+    blue:   { bg: "rgba(59,130,246,0.06)", border: "rgba(59,130,246,0.35)", text: "#3b82f6" },
+  };
+  const c = colors[tone];
+
+  return (
+    <div
+      className="rounded-2xl border px-4 py-3 flex items-start gap-3"
+      style={{ background: c.bg, borderColor: c.border }}
+    >
+      <Shield className="w-4 h-4 mt-0.5 shrink-0" style={{ color: c.text }} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold mb-0.5" style={{ color: c.text }}>
+          {title}
+        </p>
+        <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
+          {body}
+          {unlocked && !lock.tournamentPublished && (
+            <>
+              {" "}
+              <span className="font-semibold" style={{ color: c.text }}>
+                · {t("lockBannerUnlocked")}
+              </span>
+            </>
+          )}
+        </p>
+      </div>
+      {action && (
+        <a
+          href={action.href}
+          className="text-xs font-bold shrink-0 underline-offset-2 hover:underline"
+          style={{ color: c.text }}
+        >
+          {action.label} →
+        </a>
+      )}
+    </div>
+  );
+}
+
+function DrawConfirmModal({
+  kind,
+  lock,
+  orgSlug,
+  tournamentId,
+  t,
+  onCancel,
+  onConfirm,
+}: {
+  kind: "auto-draw" | "clear" | "revert" | "unlock" | "unlock-scores";
+  lock: DrawLockState;
+  orgSlug: string;
+  tournamentId: number;
+  t: DrawI18n;
+  onCancel: () => void;
+  onConfirm: (mode: "confirmed" | "typed") => void;
+}) {
+  // Require typing CONFIRM for the most destructive variant — the one
+  // where scores are about to be disconnected from their teams.
+  const requireTyping = kind === "unlock-scores";
+  const [typed, setTyped] = useState("");
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  // Hard-block case: tournament published. Modal just points to publish.
+  if (lock?.tournamentPublished) {
+    return (
+      <div
+        className="fixed inset-0 z-[90] flex items-center justify-center px-4"
+        style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(3px)" }}
+        onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+      >
+        <div className="w-full max-w-sm rounded-3xl p-6"
+          style={{ background: "var(--cat-card-bg)", border: "1px solid rgba(239,68,68,0.3)" }}>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: "rgba(239,68,68,0.12)" }}>
+              <Shield className="w-5 h-5" style={{ color: "#ef4444" }} />
+            </div>
+            <h3 className="text-base font-black" style={{ color: "var(--cat-text)" }}>
+              {t("modalPublishedTitle")}
+            </h3>
+          </div>
+          <p className="text-sm mb-5" style={{ color: "var(--cat-text-secondary)" }}>
+            {t("modalPublishedBody")}
+          </p>
+          <div className="flex items-center gap-2">
+            <button onClick={onCancel}
+              className="flex-1 py-2 rounded-xl text-sm font-semibold"
+              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)" }}>
+              {t("modalCancel")}
+            </button>
+            <a href={`/org/${orgSlug}/admin/tournament/${tournamentId}/publish`}
+              className="flex-1 py-2 rounded-xl text-sm font-bold text-center"
+              style={{ background: "#ef4444", color: "#fff" }}>
+              {t("modalGoToPublish")}
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Content per kind.
+  const body: { title: string; message: string; cta: string; danger: boolean } = (() => {
+    switch (kind) {
+      case "auto-draw":
+        return {
+          title: t("modalAutoDrawTitle"),
+          message: t("modalAutoDrawBody"),
+          cta: t("modalAutoDrawCta"),
+          danger: false,
+        };
+      case "clear":
+        return {
+          title: t("modalClearTitle"),
+          message: t("modalClearBody"),
+          cta: t("modalClearCta"),
+          danger: true,
+        };
+      case "revert":
+        return {
+          title: t("modalRevertTitle"),
+          message: t("modalRevertBody"),
+          cta: t("modalRevertCta"),
+          danger: false,
+        };
+      case "unlock":
+        return {
+          title: t("modalUnlockTitle"),
+          message: t("modalUnlockBody", {
+            matches: lock?.matchesWithTeams ?? 0,
+          }),
+          cta: t("modalUnlockCta"),
+          danger: true,
+        };
+      case "unlock-scores":
+        return {
+          title: t("modalUnlockScoresTitle"),
+          message: t("modalUnlockScoresBody", {
+            matches: lock?.matchesWithScores ?? 0,
+          }),
+          cta: t("modalUnlockScoresCta"),
+          danger: true,
+        };
+    }
+  })();
+
+  const canConfirm = !requireTyping || typed.trim().toUpperCase() === "CONFIRM";
+
+  return (
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center px-4"
+      style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(3px)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div className="w-full max-w-sm rounded-3xl p-6"
+        style={{
+          background: "var(--cat-card-bg)",
+          border: `1px solid ${body.danger ? "rgba(239,68,68,0.3)" : "var(--cat-card-border)"}`,
+        }}>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{
+              background: body.danger ? "rgba(239,68,68,0.12)" : "var(--cat-tag-bg)",
+            }}>
+            {body.danger ? (
+              <AlertCircle className="w-5 h-5" style={{ color: "#ef4444" }} />
+            ) : (
+              <RefreshCw className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
+            )}
+          </div>
+          <h3 className="text-base font-black" style={{ color: "var(--cat-text)" }}>
+            {body.title}
+          </h3>
+        </div>
+        <p className="text-sm mb-5" style={{ color: "var(--cat-text-secondary)" }}>
+          {body.message}
+        </p>
+
+        {requireTyping && (
+          <div className="mb-5">
+            <label className="text-xs font-bold mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
+              {t("modalTypeConfirm")}
+            </label>
+            <input
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              placeholder="CONFIRM"
+              className="w-full rounded-xl px-3 py-2 text-sm font-mono outline-none"
+              style={{
+                background: "var(--cat-input-bg, var(--cat-card-bg))",
+                border: "1px solid var(--cat-card-border)",
+                color: "var(--cat-text)",
+              }}
+              autoFocus
+            />
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <button onClick={onCancel}
+            className="flex-1 py-2 rounded-xl text-sm font-semibold"
+            style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)" }}>
+            {t("modalCancel")}
+          </button>
+          <button
+            onClick={() => onConfirm(requireTyping ? "typed" : "confirmed")}
+            disabled={!canConfirm}
+            className="flex-1 py-2 rounded-xl text-sm font-bold disabled:opacity-40"
+            style={{
+              background: body.danger ? "#ef4444" : "var(--cat-accent)",
+              color: body.danger ? "#fff" : "var(--cat-accent-text)",
+            }}>
+            {body.cta}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

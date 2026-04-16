@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { matches, stageGroups, groupTeams, tournamentStages } from "@/db/schema";
+import {
+  matches,
+  stageGroups,
+  groupTeams,
+  tournamentStages,
+  tournaments,
+} from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
 import { generateRoundRobin } from "@/lib/scheduling";
 import { eq, and, isNull, asc } from "drizzle-orm";
@@ -37,6 +43,23 @@ export async function POST(
   });
   if (!stage) return NextResponse.json({ error: "Stage not found" }, { status: 404 });
 
+  // Block apply-draw while the tournament schedule is published — once
+  // public, the bracket/pairings are effectively locked until unpublish.
+  const tournamentRow = await db.query.tournaments.findFirst({
+    where: eq(tournaments.id, ctx.tournament.id),
+    columns: { schedulePublishedAt: true },
+  });
+  if (tournamentRow?.schedulePublishedAt) {
+    return NextResponse.json(
+      {
+        error: "tournament_published",
+        publishedAt: tournamentRow.schedulePublishedAt.toISOString(),
+        hint: "Unpublish the schedule before re-applying the draw.",
+      },
+      { status: 423 },
+    );
+  }
+
   // Load groups with their assigned teams
   const groups = await db.query.stageGroups.findMany({
     where: targetGroupId
@@ -50,7 +73,10 @@ export async function POST(
     return NextResponse.json({ error: "No groups found for this stage" }, { status: 404 });
   }
 
-  const perGroup: Record<number, { updated: number; inserted: number; cleared: number }> = {};
+  const perGroup: Record<
+    number,
+    { updated: number; inserted: number; cleared: number; skippedWithScores: number }
+  > = {};
   let totalUpdated = 0;
   let totalInserted = 0;
 
@@ -85,7 +111,7 @@ export async function POST(
           cleared++;
         }
       }
-      perGroup[group.id] = { updated: 0, inserted: 0, cleared };
+      perGroup[group.id] = { updated: 0, inserted: 0, cleared, skippedWithScores: 0 };
       continue;
     }
 
@@ -122,10 +148,23 @@ export async function POST(
 
     let updated = 0;
     let inserted = 0;
+    let skippedWithScores = 0;
 
-    // Update existing slot-matches with pairings (1:1 by position)
+    // Update existing slot-matches with pairings (1:1 by position).
+    //
+    // Critical safety rule: if a match already has a recorded score we do
+    // NOT rewrite homeTeamId/awayTeamId on it. Doing so would keep the
+    // goals on the match row but attach them to entirely different teams —
+    // silently falsifying history. The admin must explicitly clear the
+    // score first (via the match editor) if they truly want to redraw
+    // that slot.
     const updateCount = Math.min(filteredPairings.length, existingMatches.length);
     for (let i = 0; i < updateCount; i++) {
+      const existing = existingMatches[i];
+      if (existing.homeScore != null || existing.awayScore != null) {
+        skippedWithScores++;
+        continue;
+      }
       await db
         .update(matches)
         .set({
@@ -134,7 +173,7 @@ export async function POST(
           groupRound: filteredPairings[i].round,
           updatedAt: new Date(),
         })
-        .where(eq(matches.id, existingMatches[i].id));
+        .where(eq(matches.id, existing.id));
       updated++;
     }
 
@@ -185,7 +224,7 @@ export async function POST(
       }
     }
 
-    perGroup[group.id] = { updated, inserted, cleared };
+    perGroup[group.id] = { updated, inserted, cleared, skippedWithScores };
     totalUpdated += updated + inserted;
     totalInserted += inserted;
   }
