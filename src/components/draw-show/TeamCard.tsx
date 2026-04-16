@@ -71,19 +71,25 @@ function initials(name: string): string {
 
 // ─── Spotlight variant ─────────────────────────────────────────────────
 
-function Spotlight({ team, layoutId }: { team: DrawInputTeam; layoutId: string }) {
+function Spotlight({ team, layoutId: _layoutId }: { team: DrawInputTeam; layoutId: string }) {
   const flag = flagFromCode(team.countryCode);
-  // Note on exit: we DON'T declare an exit variant here. The slot card
-  // that takes over uses the same layoutId, so framer-motion runs a
-  // shared-layout morph (center→slot). Adding an opacity/scale exit on
-  // top of that produces two conflicting animations and visually
-  // manifests as a "ghost" double-render. Shared layout alone is
-  // cleaner: the big card shrinks and flies into its slot in one tween.
+  // Originally this card shared a `layoutId` with the slot version so
+  // framer-motion would morph the big hero into the small group row.
+  // That approach produced visible "ghost" frames mid-tween (the
+  // spotlight's large typography and the slot's compact structure are
+  // too different for a clean shared-layout interpolation).
+  //
+  // New approach: the spotlight and slot are independent. The
+  // spotlight fades/shrinks in the centre, the slot fades into its
+  // group. The emotional effect is still "team disappears from the
+  // urn and appears in the group" — just no artifacts in between.
+  // `_layoutId` is kept in the prop signature for API compatibility;
+  // it's intentionally unused here.
   return (
     <motion.div
-      layoutId={layoutId}
       initial={{ opacity: 0, scale: 0.85 }}
       animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.6, transition: { duration: 0.3 } }}
       transition={{ type: "spring", stiffness: 220, damping: 24 }}
       className="relative flex items-center gap-5 rounded-3xl px-8 py-6"
       style={{
@@ -166,16 +172,17 @@ function BadgeLarge({ team }: { team: DrawInputTeam }) {
 
 // ─── Slot variant (compact, inside a group) ────────────────────────────
 
-function Slot({ team, layoutId }: { team: DrawInputTeam; layoutId: string }) {
+function Slot({ team, layoutId: _layoutId }: { team: DrawInputTeam; layoutId: string }) {
   const flag = flagFromCode(team.countryCode);
-  // No initial/animate props: the matching layoutId on the incoming
-  // spotlight drives a single shared-layout tween into this slot. Any
-  // extra opacity/scale animation here fights that tween and causes a
-  // double-render "ghost" mid-transition (observed in QA).
+  // Simple fade-in-from-above: gives the slot a clear "I just landed"
+  // feel without trying to morph from the spotlight's very different
+  // layout. `_layoutId` kept for prop-signature parity with the old
+  // shared-layout implementation.
   return (
     <motion.div
-      layoutId={layoutId}
-      transition={{ type: "spring", stiffness: 240, damping: 28 }}
+      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: "spring", stiffness: 240, damping: 26 }}
       className="flex items-center gap-2 rounded-xl px-2.5 py-2"
       style={{
         background: "rgba(255,255,255,0.06)",
