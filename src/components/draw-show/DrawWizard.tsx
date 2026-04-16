@@ -396,13 +396,17 @@ export function DrawWizard({ id }: { id?: string }) {
         }),
       });
       if (res.ok) {
-        const { id } = (await res.json()) as { id: string };
-        // Land on the success/preview screen instead of the show
-        // itself: the creator gets the share link, embed code,
-        // social buttons + a clear "Watch your show" CTA. Visitors
-        // who later open the share link still go straight to the
-        // show / countdown.
-        router.push(`/draw/created?s=${id}`);
+        const data = (await res.json()) as
+          | { id: string }
+          | { checkoutUrl: string; sessionId: string };
+        if ("checkoutUrl" in data) {
+          // Paywall active — send the user to Stripe Checkout. They
+          // return to /draw/thanks?cs=... which polls the webhook
+          // result and then redirects to /draw/created?s=<id>.
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+        router.push(`/draw/created?s=${data.id}`);
         return;
       }
       // Server rejected the payload — fall through to base64 fallback.

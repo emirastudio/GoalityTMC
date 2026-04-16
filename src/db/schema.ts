@@ -1792,6 +1792,28 @@ export const drawPromoCodes = pgTable("draw_promo_codes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// ─── Pending Stripe Checkout sessions for /draw paywall ─────────
+//
+// Populated when the wizard submits and the paywall is enabled. The
+// actual public_draws row is NOT created until the Stripe webhook
+// confirms payment — abandoned carts leave no orphan draws.
+export const drawPendingPurchases = pgTable("draw_pending_purchases", {
+  id: serial("id").primaryKey(),
+  stripeSessionId: text("stripe_session_id").notNull().unique(),
+  state: jsonb("state").notNull(),
+  email: text("email").notNull(),
+  organization: text("organization"),
+  promoCode: text("promo_code"),
+  finalPriceCents: integer("final_price_cents").notNull(),
+  discountCents: integer("discount_cents").default(0).notNull(),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  referrer: text("referrer"),
+  locale: text("locale"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
 // ─── Audit journal for superadmin ───────────────────────────────
 //
 // Append-only log: visited (landing loaded), created (wizard

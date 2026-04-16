@@ -4416,6 +4416,17 @@
     "previewHint": "Jäta tagasiarvestus vahele ja vaata loosimist — teistele esilinastus käivitub ikkagi määratud ajal.",
     "madeWith": "Tehtud"
   },
+  "drawThanks": {
+    "pendingTitle": "Makse kinnitatud — valmistame sinu show",
+    "pendingBody": "Stripe teavitas meid maksest. Anname serverile paar sekundit, et kõik kokku panna.",
+    "pendingSlow": "Ootame kauem kui tavaliselt ({seconds} katset). Saad lehe sulgeda — link saabub e-postile niipea, kui show on valmis.",
+    "readyTitle": "Valmis",
+    "readyBody": "Avame sinu show.",
+    "errorTitle": "Midagi ei klapi",
+    "errorBody": "Ei leidnud oodatud makset. Kontrolli e-posti — link võib juba seal oodata.",
+    "timeoutBody": "Webhook pole veel saabunud. Võid lehe sulgeda — link saadetakse e-postile niipea, kui server teate saab.",
+    "backCta": "Tagasi /draw-le"
+  },
   "drawCreated": {
     "missingId": "Sellele lehele on vaja loosimise id-d URL-is.",
     "backToWizard": "Tagasi visardi juurde",

@@ -4416,6 +4416,17 @@
     "previewHint": "Skip the countdown and watch the draw — the premiere still triggers at the scheduled time for everyone else.",
     "madeWith": "Made with"
   },
+  "drawThanks": {
+    "pendingTitle": "Payment confirmed — preparing your show",
+    "pendingBody": "Stripe notified us of the payment. Giving the server a second or two to stitch everything together.",
+    "pendingSlow": "Still waiting after {seconds} attempts — this almost never takes this long. You can safely leave and we'll email the link.",
+    "readyTitle": "All set",
+    "readyBody": "Taking you to your show now.",
+    "errorTitle": "Something didn't match up",
+    "errorBody": "We couldn't match this success page to a pending payment. Check your email — the share link may already be waiting.",
+    "timeoutBody": "The webhook hasn't landed yet. You can close this page; as soon as it does, the share link will go out by email.",
+    "backCta": "Back to /draw"
+  },
   "drawCreated": {
     "missingId": "This page needs a draw id in the URL.",
     "backToWizard": "Back to the wizard",
