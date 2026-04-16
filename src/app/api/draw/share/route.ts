@@ -166,7 +166,17 @@ export async function POST(req: NextRequest) {
     ? validatedPromo.finalPriceCents
     : DRAW_BASE_PRICE_CENTS;
   const discountCents = validatedPromo.valid ? validatedPromo.discountCents : 0;
-  const origin = new URL(req.url).origin;
+  // IMPORTANT: req.url behind PM2 resolves to http://localhost:3001,
+  // so we can't derive success_url / cancel_url from it — Stripe would
+  // send the user to their own localhost and see ERR_CONNECTION_REFUSED.
+  // Use the env-configured public origin first; fall back to the
+  // forwarded headers, and only last to req.url.
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (req.headers.get("x-forwarded-proto") && req.headers.get("x-forwarded-host")
+      ? `${req.headers.get("x-forwarded-proto")}://${req.headers.get("x-forwarded-host")}`
+      : req.headers.get("origin")) ||
+    new URL(req.url).origin;
   const stripe = getStripe();
 
   const stateObj = state as {

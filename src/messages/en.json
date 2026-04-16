@@ -2029,6 +2029,10 @@
   "landing": {
     "navHome": "Home",
     "navFeatures": "Features",
+    "navFeaturesPlatform": "Tournament platform",
+    "navFeaturesPlatformDesc": "Registration, schedule, live standings, protocols — the full Goality stack.",
+    "navFeaturesDrawShow": "Draw Show",
+    "navFeaturesDrawShowDesc": "Beautiful tournament draw, as a shareable live show.",
     "navCatalog": "Tournaments",
     "navListing": "List your tournament",
     "navPricing": "Pricing",
@@ -4294,10 +4298,6 @@
     "ctaBtnSecondary": "All features",
     "ctaNote": "Free plan available · No credit card required · Setup in 5 minutes",
     "navFeatures": "Features",
-    "navFeaturesPlatform": "Tournament platform",
-    "navFeaturesPlatformDesc": "Registration, schedule, live standings, protocols — the full Goality stack.",
-    "navFeaturesDrawShow": "Draw Show",
-    "navFeaturesDrawShowDesc": "Beautiful tournament draw, as a shareable live show.",
     "navPricing": "Pricing",
     "navStart": "Get started"
   },

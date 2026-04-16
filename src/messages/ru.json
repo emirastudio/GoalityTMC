@@ -2029,6 +2029,10 @@
   "landing": {
     "navHome": "Главная",
     "navFeatures": "Возможности",
+    "navFeaturesPlatform": "Платформа турниров",
+    "navFeaturesPlatformDesc": "Регистрация, расписание, live-таблицы, протоколы — весь Goality.",
+    "navFeaturesDrawShow": "Шоу-жеребьёвка",
+    "navFeaturesDrawShowDesc": "Красивая жеребьёвка турнира в формате живого шоу.",
     "navCatalog": "Турниры",
     "navListing": "Листинг",
     "navPricing": "Цены",
@@ -4294,10 +4298,6 @@
     "ctaBtnSecondary": "Все функции",
     "ctaNote": "Есть бесплатный план · Карта не нужна · Настройка за 5 минут",
     "navFeatures": "Возможности",
-    "navFeaturesPlatform": "Платформа турниров",
-    "navFeaturesPlatformDesc": "Регистрация, расписание, live-таблицы, протоколы — весь Goality.",
-    "navFeaturesDrawShow": "Шоу-жеребьёвка",
-    "navFeaturesDrawShowDesc": "Красивая жеребьёвка турнира в формате живого шоу.",
     "navPricing": "Цены",
     "navStart": "Начать"
   },

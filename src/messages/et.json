@@ -2029,6 +2029,10 @@
   "landing": {
     "navHome": "Avaleht",
     "navFeatures": "Võimalused",
+    "navFeaturesPlatform": "Turniiride platvorm",
+    "navFeaturesPlatformDesc": "Registreerimine, ajakava, live-tabelid, protokollid — kogu Goality.",
+    "navFeaturesDrawShow": "Loosimise show",
+    "navFeaturesDrawShowDesc": "Ilus turniiri loosimine elava show formaadis.",
     "navCatalog": "Turniirid",
     "navListing": "Listamine",
     "navPricing": "Hinnad",
@@ -4294,10 +4298,6 @@
     "ctaBtnSecondary": "Kõik funktsioonid",
     "ctaNote": "Tasuta plaan olemas · Kaarti ei vajata · Seadistamine 5 minutiga",
     "navFeatures": "Funktsioonid",
-    "navFeaturesPlatform": "Turniiride platvorm",
-    "navFeaturesPlatformDesc": "Registreerimine, ajakava, live-tabelid, protokollid — kogu Goality.",
-    "navFeaturesDrawShow": "Loosimise show",
-    "navFeaturesDrawShowDesc": "Ilus turniiri loosimine elava show formaadis.",
     "navPricing": "Hinnad",
     "navStart": "Alusta"
   },
