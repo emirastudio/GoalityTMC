@@ -721,6 +721,121 @@ export default function FeaturesPage() {
           </div>
         </section>
 
+        {/* ── Draw Show spotlight ── */}
+        {/* Standalone product highlight — links straight to /draw so
+            visitors browsing features can find the one piece they can
+            try without an account. Deliberately dark/cinematic to
+            stand out from the rest of the feature grid. */}
+        <section className="max-w-[1200px] mx-auto px-6 py-20">
+          <div
+            className="relative rounded-3xl overflow-hidden p-10 md:p-14 border"
+            style={{
+              background:
+                "linear-gradient(135deg, #05080f 0%, #0b1122 50%, #05080f 100%)",
+              borderColor: "rgba(43,254,186,0.35)",
+              boxShadow: "0 40px 100px -20px rgba(43,254,186,0.15)",
+            }}
+          >
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 0%, rgba(43,254,186,0.22) 0%, transparent 55%)",
+              }}
+            />
+            <div className="relative z-10 grid md:grid-cols-[1fr_auto] gap-8 items-center">
+              <div>
+                <div
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-4 border text-[10px] font-black uppercase tracking-widest"
+                  style={{
+                    background: "rgba(43,254,186,0.12)",
+                    borderColor: "rgba(43,254,186,0.35)",
+                    color: "#2BFEBA",
+                  }}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {t("drawShowBadge")}
+                </div>
+                <h2
+                  className="text-3xl md:text-5xl font-black mb-3 tracking-tight"
+                  style={{ color: "#f5f7fb", letterSpacing: "-0.02em" }}
+                >
+                  {t("drawShowTitle")}
+                </h2>
+                <p
+                  className="text-[15px] md:text-base leading-relaxed mb-6 max-w-lg"
+                  style={{ color: "rgba(245,247,251,0.7)" }}
+                >
+                  {t("drawShowBody")}
+                </p>
+                <ul
+                  className="space-y-2 mb-8 text-[14px]"
+                  style={{ color: "rgba(245,247,251,0.85)" }}
+                >
+                  {[
+                    t("drawShowFeature1"),
+                    t("drawShowFeature2"),
+                    t("drawShowFeature3"),
+                    t("drawShowFeature4"),
+                  ].map((line, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <CheckCircle
+                        className="w-4 h-4 shrink-0 mt-0.5"
+                        style={{ color: "#2BFEBA" }}
+                      />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Link
+                    href="/draw"
+                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl text-[15px] font-black"
+                    style={{
+                      background: "#2BFEBA",
+                      color: "#05080f",
+                      boxShadow: "0 12px 40px -8px rgba(43,254,186,0.4)",
+                    }}
+                  >
+                    <Play className="w-4 h-4" />
+                    {t("drawShowCta")}
+                  </Link>
+                  <span
+                    className="text-xs"
+                    style={{ color: "rgba(245,247,251,0.55)" }}
+                  >
+                    <span className="line-through mr-1">€49</span>
+                    <span
+                      className="font-bold"
+                      style={{ color: "#2BFEBA" }}
+                    >
+                      {t("drawShowPrice")}
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <div
+                className="hidden md:flex items-center justify-center rounded-2xl"
+                style={{
+                  width: 240,
+                  height: 240,
+                  background:
+                    "linear-gradient(135deg, rgba(43,254,186,0.16), rgba(43,254,186,0.04))",
+                  border: "1px solid rgba(43,254,186,0.3)",
+                  boxShadow:
+                    "0 24px 70px -12px rgba(43,254,186,0.4)",
+                }}
+              >
+                <Play
+                  className="w-20 h-20"
+                  style={{ color: "#2BFEBA", opacity: 0.9 }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="max-w-[1200px] mx-auto px-6 py-24">
           <div className="relative rounded-2xl overflow-hidden p-12 text-center border"
