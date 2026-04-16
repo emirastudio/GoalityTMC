@@ -210,9 +210,10 @@ export function DrawWizard({ id }: { id?: string }) {
   if (teams.length > MAX_TEAMS) {
     issues.push(t("errorTooMany", { max: MAX_TEAMS }));
   }
-  if (mode === "playoff" && teams.length > 0 && teams.length % 2 !== 0) {
-    issues.push(t("errorPlayoffOdd"));
-  }
+  // No hard error for odd playoff counts: with N teams that aren't a
+  // power of two we either give BYEs to top-seeded teams (default) or
+  // schedule a short preliminary round between the bottom seeds. Show
+  // a soft notice instead so the user knows what's about to happen.
   if (mode === "groups" && teams.length > 0 && teams.length < groupCount) {
     issues.push(
       t("errorFewerTeamsThanGroups", { teams: teams.length, groups: groupCount }),
@@ -417,8 +418,12 @@ export function DrawWizard({ id }: { id?: string }) {
                 uploadLabel={t("brandingLogoUpload")}
                 uploadErrorLabel={t("brandingLogoUploadError")}
               />
+              {/* type="text" rather than "url" so the browser doesn't
+                  reject our own /uploads/... relative paths returned
+                  by the file uploader. We trust the uploader output
+                  and don't need spec-strict URL validation here. */}
               <input
-                type="url"
+                type="text"
                 value={tournamentLogoUrl}
                 onChange={(e) => setTournamentLogoUrl(e.target.value)}
                 placeholder={t("brandingLogoPlaceholder")}
@@ -612,6 +617,45 @@ export function DrawWizard({ id }: { id?: string }) {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Playoff bracket info — handles BYE / preliminary round
+              cases gracefully so an odd team count isn't a blocker. */}
+          {mode === "playoff" && teams.length >= 2 && (
+            (() => {
+              const info = playoffShape(teams.length);
+              return (
+                <div
+                  className="rounded-2xl px-4 py-3"
+                  style={{
+                    background: "rgba(43,254,186,0.05)",
+                    border: "1px solid rgba(43,254,186,0.25)",
+                  }}
+                >
+                  <p
+                    className="text-xs font-semibold leading-relaxed"
+                    style={{ color: "var(--cat-text-secondary)" }}
+                  >
+                    {info.byes > 0
+                      ? t("playoffSummaryByes", {
+                          teams: teams.length,
+                          bracket: info.bracketSize,
+                          byes: info.byes,
+                        })
+                      : info.preliminaryMatches > 0
+                        ? t("playoffSummaryPrelim", {
+                            teams: teams.length,
+                            prelim: info.preliminaryMatches,
+                            mainRound: info.mainRoundTeams,
+                          })
+                        : t("playoffSummaryClean", {
+                            teams: teams.length,
+                            pairs: teams.length / 2,
+                          })}
+                  </p>
+                </div>
+              );
+            })()
           )}
 
           {/* League summary — tells the user how many rounds/matches. */}
@@ -849,7 +893,7 @@ function DetailedRowEditor({
       </select>
 
       <input
-        type="url"
+        type="text"
         value={row.logoUrl}
         onChange={(e) => onUpdate({ logoUrl: e.target.value })}
         placeholder={placeholderLogo}
@@ -1089,6 +1133,43 @@ function leagueMatchesOf(n: number): number {
 /** Loose email check — server-side does its own. */
 function isValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
+
+/**
+ * Describe what the bracket will look like for `n` teams. Two
+ * conventions handle non-power-of-two counts:
+ *
+ *   • BYEs for top seeds (default) — pad up to the next power of two.
+ *     E.g. 6 teams → bracket of 8, 2 BYEs in the first round.
+ *
+ *   • Preliminary round between bottom seeds — only the excess teams
+ *     play a short qualifier, then the winners join the rest at the
+ *     "clean" power-of-two round. E.g. 6 teams → 4 stay seeded for
+ *     QFs, 4 play 2 prelim matches; winners + 4 = 6 → wait, 2
+ *     prelim matches yield 2 winners → 4 + 2 = 6 again. The cleaner
+ *     framing: cut the bracket to the largest power of two ≤ n
+ *     (here 4 main slots), excess (n - mainSlots) teams play
+ *     `excess` prelim matches against `excess` of the seeded teams.
+ *     We surface both numbers so the organizer picks consciously.
+ */
+function playoffShape(n: number): {
+  bracketSize: number;
+  byes: number;
+  mainRoundTeams: number;
+  preliminaryMatches: number;
+} {
+  if (n < 2) {
+    return { bracketSize: 0, byes: 0, mainRoundTeams: 0, preliminaryMatches: 0 };
+  }
+  const isPow2 = (n & (n - 1)) === 0;
+  const nextPow2 = 1 << Math.ceil(Math.log2(n));
+  const prevPow2 = 1 << Math.floor(Math.log2(n));
+  return {
+    bracketSize: nextPow2,
+    byes: isPow2 ? 0 : nextPow2 - n,
+    mainRoundTeams: prevPow2,
+    preliminaryMatches: isPow2 ? 0 : n - prevPow2,
+  };
 }
 
 // ─── Lead-capture modal ──────────────────────────────────────────────

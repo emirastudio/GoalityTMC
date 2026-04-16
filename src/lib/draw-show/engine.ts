@@ -281,9 +281,12 @@ function buildPlayoffPlan(
   config: DrawConfig,
   rng: ReturnType<typeof createRng>,
 ): DrawResult {
-  if (teams.length % 2 !== 0) {
-    throw new Error("Playoff mode requires an even number of teams");
-  }
+  // Odd team counts are valid: the show treats the lowest-seeded
+  // (i.e. last shuffled) team as a BYE pair partner — they're paired
+  // with an empty slot so the visualisation still has N pairs in the
+  // first round, with the BYE rendered as "→ BYE / advances to round
+  // 2". Future iterations may instead schedule a preliminary round
+  // between excess teams; for v1 the BYE is the safer default.
 
   // Branch A: caller already has the pairs (embedded flow with manual
   // bracket). Reveal in random order, pair by pair.
@@ -322,8 +325,14 @@ function buildPlayoffPlan(
   }
 
   // Branch B: shuffle teams and pair adjacent indices. Simple, fair, gives
-  // the "names pop out two at a time" effect.
+  // the "names pop out two at a time" effect. For odd team counts we
+  // append a synthetic BYE team so the loop never produces an
+  // undefined `away`. Display layers can detect `__bye__` and render
+  // it as "advances to round 2" instead of a real opponent.
   const shuffled = rng.shuffle([...teams]);
+  if (shuffled.length % 2 === 1) {
+    shuffled.push({ id: "__bye__", name: "BYE" });
+  }
   const pairs: [DrawInputTeam, DrawInputTeam][] = [];
   const steps: DrawStep[] = [];
   for (let i = 0; i < shuffled.length; i += 2) {

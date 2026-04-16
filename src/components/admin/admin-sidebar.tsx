@@ -16,6 +16,7 @@ import {
   UserCheck,
   Activity,
   CreditCard,
+  Sparkles,
 } from "lucide-react";
 
 const navItems = [
@@ -26,6 +27,7 @@ const navItems = [
   { key: "users",          icon: Users,           href: "/admin/users" },
   { key: "planOverrides",  icon: ClipboardList,   href: "/admin/plan-overrides" },
   { key: "planSales",      icon: CreditCard,      href: "/admin/plan-sales" },
+  { key: "drawEvents",     icon: Sparkles,        href: "/admin/draw-events" },
   { key: "blog",           icon: BookOpen,        href: "/admin/blog" },
   { key: "health",         icon: Activity,        href: "/admin/health" },
   { key: "settings",       icon: Settings,        href: "/admin/settings" },
