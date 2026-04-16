@@ -208,6 +208,7 @@ export async function POST(req: NextRequest) {
           scheduledAt?: string;
           scheduledAtTz?: string;
         };
+        console.log(`[draw-share] sending email to ${email} for draw ${id}`);
         sendDrawShareLink({
           to: email,
           drawId: id,
@@ -216,9 +217,13 @@ export async function POST(req: NextRequest) {
           scheduledAt: stateObj.scheduledAt,
           scheduledAtTz: stateObj.scheduledAtTz,
           organization,
-        }).catch((e) => {
-          console.error("sendDrawShareLink failed", e);
-        });
+        })
+          .then(() => {
+            console.log(`[draw-share] email sent to ${email}`);
+          })
+          .catch((e) => {
+            console.error(`[draw-share] sendDrawShareLink failed for ${email}:`, e);
+          });
       }
 
       return NextResponse.json({ id }, { status: 201 });
