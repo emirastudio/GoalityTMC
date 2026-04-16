@@ -9,7 +9,9 @@ import {
   platformSubscriptions,
   listingTournaments,
   stripeWebhookEvents,
+  drawPendingPurchases,
 } from "@/db/schema";
+import { createDrawFromWizard } from "@/lib/draw-show/create-draw";
 import { eq, sql } from "drizzle-orm";
 import type Stripe from "stripe";
 
@@ -93,6 +95,14 @@ export async function POST(req: NextRequest) {
 // ─── Handler: One-time tournament purchase ───────────────────
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // Draw Show standalone paywall lives in the same Stripe webhook —
+  // we route by the `flow` marker the /api/draw/share endpoint puts
+  // on its sessions so no new Stripe Dashboard config is needed.
+  if (session.mode === "payment" && session.metadata?.flow === "draw_show") {
+    await handleDrawShowPaymentCompleted(session);
+    return;
+  }
+
   if (session.mode === "payment") {
     const { tournamentId, plan, extraTeams, extraDivisions } = session.metadata ?? {};
     if (!tournamentId || !plan) return;
@@ -362,4 +372,69 @@ async function handlePaymentFailed(invoice: any) {
     .where(eq(organizations.eliteSubId, subId));
 
   console.log(`[Billing] Payment failed for subscription ${subId}`);
+}
+
+// ─── Handler: Draw Show one-off (€11) ───────────────────────
+//
+// Pulls the stashed wizard state from draw_pending_purchases, runs
+// createDrawFromWizard to insert the public_draws row + lead + audit
+// event + share-link email, then deletes the pending row.
+//
+// Idempotent: if the pending row is already gone (webhook retry or
+// double fire) the handler is a safe no-op.
+async function handleDrawShowPaymentCompleted(
+  session: Stripe.Checkout.Session,
+) {
+  if (session.payment_status !== "paid") {
+    console.warn(
+      `[Draw Show] session ${session.id} completed but not paid (${session.payment_status})`,
+    );
+    return;
+  }
+
+  const [pending] = await db
+    .select()
+    .from(drawPendingPurchases)
+    .where(eq(drawPendingPurchases.stripeSessionId, session.id))
+    .limit(1);
+
+  if (!pending) {
+    console.log(
+      `[Draw Show] no pending row for ${session.id} — already processed`,
+    );
+    return;
+  }
+
+  try {
+    await createDrawFromWizard({
+      state: pending.state,
+      email: pending.email,
+      organization: pending.organization ?? undefined,
+      promoCode: pending.promoCode ?? undefined,
+      status: pending.promoCode ? "promo" : "paid",
+      ip: pending.ip,
+      userAgent: pending.userAgent,
+      referrer: pending.referrer,
+      locale: pending.locale,
+    });
+  } catch (e) {
+    console.error(
+      `[Draw Show] createDrawFromWizard failed for ${session.id}`,
+      e,
+    );
+    // Rethrow so the outer handler returns 500 and Stripe retries.
+    throw e;
+  }
+
+  try {
+    await db
+      .delete(drawPendingPurchases)
+      .where(eq(drawPendingPurchases.stripeSessionId, session.id));
+  } catch (e) {
+    console.error(
+      `[Draw Show] pending cleanup failed for ${session.id}`,
+      e,
+    );
+    // Draw already created — the row is harmless. Don't rethrow.
+  }
 }
