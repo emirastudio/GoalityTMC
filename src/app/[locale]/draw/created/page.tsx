@@ -24,6 +24,8 @@ import {
   Mail,
   Sparkles,
   ExternalLink,
+  Image as ImageIcon,
+  Download,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -49,6 +51,9 @@ export default function DrawCreatedPage() {
     : "";
   const embedSrc = origin
     ? `${origin}/${localePart}/draw/present?s=${id}&embed=1`
+    : "";
+  const posterUrl = origin
+    ? `${origin}/api/draw/s/${id}/poster`
     : "";
   const embedCode = embedSrc
     ? `<iframe src="${embedSrc}" width="100%" height="640" frameborder="0" allow="fullscreen" style="border-radius:24px;border:1px solid #1f2937;"></iframe>`
@@ -213,6 +218,18 @@ export default function DrawCreatedPage() {
         {/* Social share buttons */}
         <SocialBlock url={presentUrl} title={t("shareLabel")} />
 
+        {/* Story image — 1080×1920 PNG, ready to post on Instagram /
+            Facebook / Telegram stories. Click downloads it as a file
+            so the user can hand it straight to the native uploader. */}
+        <StoryImageBlock
+          posterUrl={posterUrl}
+          drawId={id}
+          title={t("storyTitle")}
+          hint={t("storyHint")}
+          downloadLabel={t("storyDownload")}
+          previewLabel={t("storyPreview")}
+        />
+
         {/* Embed code */}
         <CopyBlock
           icon={<Code2 className="w-3.5 h-3.5" />}
@@ -338,6 +355,96 @@ function CopyBlock({
           {hint}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * StoryImageBlock — preview + download CTA for the 1080×1920 PNG
+ * generated server-side by /api/draw/s/[id]/poster. Shows a small
+ * thumbnail so the user knows what they're posting before they
+ * commit, then a primary "Download" button that triggers a real
+ * file download (rather than just opening the image in a new tab).
+ */
+function StoryImageBlock({
+  posterUrl,
+  drawId,
+  title,
+  hint,
+  downloadLabel,
+  previewLabel,
+}: {
+  posterUrl: string;
+  drawId: string;
+  title: string;
+  hint: string;
+  downloadLabel: string;
+  previewLabel: string;
+}) {
+  if (!posterUrl) return null;
+  return (
+    <div
+      className="rounded-2xl p-5"
+      style={{
+        background: "var(--cat-card-bg)",
+        border: "1px solid var(--cat-card-border)",
+      }}
+    >
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <p
+          className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5"
+          style={{ color: "var(--cat-text-muted)" }}
+        >
+          <ImageIcon className="w-3.5 h-3.5" />
+          {title}
+        </p>
+      </div>
+      <div className="flex items-stretch gap-3">
+        {/* Thumbnail — 1080×1920 source served via /api endpoint, we
+            just constrain the visual size with CSS. */}
+        <a
+          href={posterUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 rounded-xl overflow-hidden"
+          style={{
+            border: "1px solid var(--cat-card-border)",
+            width: 96,
+            aspectRatio: "9 / 16",
+            background:
+              "linear-gradient(135deg, #05080f 0%, #0b1122 50%, #05080f 100%)",
+          }}
+          title={previewLabel}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={posterUrl}
+            alt=""
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </a>
+        <div className="flex-1 flex flex-col justify-between">
+          <p
+            className="text-xs leading-relaxed"
+            style={{ color: "var(--cat-text-muted)" }}
+          >
+            {hint}
+          </p>
+          <a
+            href={posterUrl}
+            download={`draw-show-${drawId}.png`}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold mt-3"
+            style={{
+              background: "var(--cat-accent)",
+              color: "var(--cat-accent-text)",
+            }}
+          >
+            <Download className="w-4 h-4" />
+            {downloadLabel}
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

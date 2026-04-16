@@ -61,6 +61,13 @@ type Props = {
    */
   publicDrawId?: string;
   /**
+   * iframe-embed mode (`?embed=1` on the present page). Hides the
+   * close button (there's nowhere to close to inside an iframe),
+   * shrinks the brand credit, and turns key hints down a notch so
+   * the embed doesn't look like a debug overlay on the host page.
+   */
+  embedMode?: boolean;
+  /**
    * Names of teams that belong to this tournament but are NOT in any
    * group — the unassigned pool. Surfaced on the done screen so the
    * organizer knows why the total doesn't match their expectation.
@@ -96,6 +103,7 @@ export function DrawStage({
   unassignedTeams,
   totalTeamsCount,
   publicDrawId,
+  embedMode = false,
 }: Props) {
   // SSR guard: portal needs document.
   const [mounted, setMounted] = useState(false);
@@ -420,17 +428,19 @@ export function DrawStage({
               <Maximize2 className="w-4 h-4" />
             )}
           </button>
-          <button
-            onClick={onClose}
-            title={t("stage.close")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-70"
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              color: "rgba(245,247,251,0.7)",
-            }}
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {!embedMode && (
+            <button
+              onClick={onClose}
+              title={t("stage.close")}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-70"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                color: "rgba(245,247,251,0.7)",
+              }}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -575,15 +585,17 @@ export function DrawStage({
       />
 
       {/* ── Footer key hints ────────────────────────────────── */}
-      <div
-        className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-5 px-8 text-[11px]"
-        style={{ color: "rgba(245,247,251,0.4)", zIndex: 2 }}
-      >
-        <KbdHint label={t("stage.hintPlayPause")}>Space</KbdHint>
-        <KbdHint label={t("stage.hintStep")}>← →</KbdHint>
-        <KbdHint label={t("stage.hintFullscreen")}>F</KbdHint>
-        <KbdHint label={t("stage.hintClose")}>Esc</KbdHint>
-      </div>
+      {!embedMode && (
+        <div
+          className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-5 px-8 text-[11px]"
+          style={{ color: "rgba(245,247,251,0.4)", zIndex: 2 }}
+        >
+          <KbdHint label={t("stage.hintPlayPause")}>Space</KbdHint>
+          <KbdHint label={t("stage.hintStep")}>← →</KbdHint>
+          <KbdHint label={t("stage.hintFullscreen")}>F</KbdHint>
+          <KbdHint label={t("stage.hintClose")}>Esc</KbdHint>
+        </div>
+      )}
 
       {/* ── Brand credit ────────────────────────────────────────
           Small but unmissable: every show carries a link back to
@@ -593,11 +605,15 @@ export function DrawStage({
         href="/"
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-3 right-4 inline-flex items-center gap-1.5 text-[10px] font-semibold tracking-wide transition-opacity hover:opacity-100"
+        className={`absolute right-4 inline-flex items-center gap-1.5 font-semibold tracking-wide transition-opacity hover:opacity-100 ${
+          embedMode
+            ? "bottom-1.5 text-[9px]"
+            : "bottom-3 text-[10px]"
+        }`}
         style={{ color: "rgba(245,247,251,0.35)", zIndex: 2 }}
       >
         <Sparkles
-          className="w-3 h-3"
+          className={embedMode ? "w-2.5 h-2.5" : "w-3 h-3"}
           style={{ color: "#2BFEBA" }}
         />
         <span>{t("stage.madeWith")}</span>

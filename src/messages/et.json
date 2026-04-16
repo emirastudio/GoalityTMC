@@ -4407,7 +4407,11 @@
     "embedHint": "Kleebi kuhu tahes — toetab täisekraani ja autoplay.",
     "copy": "Kopeeri",
     "copied": "Kopeeritud!",
-    "newDraw": "Loo veel üks loosimine"
+    "newDraw": "Loo veel üks loosimine",
+    "storyTitle": "Stoory pilt (1080×1920)",
+    "storyHint": "Laadi alla vertikaalne plakat Instagrami, Facebooki või Telegrami stooride jaoks — turniiri nimi, esilinastuse aeg ja link kinematograafilisel taustal.",
+    "storyDownload": "Laadi alla stoory",
+    "storyPreview": "Ava täissuuruses"
   },
   "drawPresent": {
     "defaultTitle": "Turniiri loosimine",

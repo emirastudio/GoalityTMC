@@ -4407,7 +4407,11 @@
     "embedHint": "Paste this anywhere — supports fullscreen and auto-play.",
     "copy": "Copy",
     "copied": "Copied!",
-    "newDraw": "Create another draw"
+    "newDraw": "Create another draw",
+    "storyTitle": "Story image (1080×1920)",
+    "storyHint": "Download a vertical poster ready for Instagram, Facebook or Telegram stories — your tournament name, premiere time and the share link, all on a cinema-style background.",
+    "storyDownload": "Download story",
+    "storyPreview": "Open full size"
   },
   "drawPresent": {
     "defaultTitle": "Tournament Draw",

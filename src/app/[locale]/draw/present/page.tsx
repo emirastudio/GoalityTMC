@@ -35,6 +35,7 @@ type LoadState =
 export default function DrawPresentPage() {
   const params = useSearchParams();
   const sParam = params?.get("s") ?? "";
+  const embedMode = params?.get("embed") === "1";
   const t = useTranslations("drawPresent");
 
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
@@ -124,7 +125,9 @@ export default function DrawPresentPage() {
 
   // When the user closes the stage (ESC or X) we don't kick them off
   // the page — we show a "replay / copy link / back to wizard" panel.
-  if (stageClosed) {
+  // In embed mode, the close button is hidden so this branch never
+  // triggers; if it somehow does, we silently restart the show.
+  if (stageClosed && !embedMode) {
     return (
       <AfterStagePanel
         shareUrl={shareUrl}
@@ -181,6 +184,7 @@ export default function DrawPresentPage() {
         totalTeamsCount={teams.length}
         onClose={() => setStageClosed(true)}
         publicDrawId={stageDrawId}
+        embedMode={embedMode}
       />
     </>
   );
