@@ -4391,6 +4391,24 @@
     "previewHint": "Jäta tagasiarvestus vahele ja vaata loosimist — teistele esilinastus käivitub ikkagi määratud ajal.",
     "madeWith": "Tehtud"
   },
+  "drawCreated": {
+    "missingId": "Sellele lehele on vaja loosimise id-d URL-is.",
+    "backToWizard": "Tagasi visardi juurde",
+    "eyebrow": "Loosimine loodud",
+    "title": "Sinu show on valmis 🎬",
+    "emailSent": "Saatsime lingi ka sinu <chip>e-postile</chip> turvalisuse tagamiseks.",
+    "watchEyebrow": "Eelvaade",
+    "watchTitle": "Vaata oma loosimise show'd",
+    "watchSubtitle": "Näita projektoril, jaga hetke võistkondadega.",
+    "watchCta": "Ava show",
+    "shareLinkLabel": "Jagamise link",
+    "shareLabel": "Jaga võistkondade ja publikuga",
+    "embedLabel": "Lisa oma saidile",
+    "embedHint": "Kleebi kuhu tahes — toetab täisekraani ja autoplay.",
+    "copy": "Kopeeri",
+    "copied": "Kopeeritud!",
+    "newDraw": "Loo veel üks loosimine"
+  },
   "drawPresent": {
     "defaultTitle": "Turniiri loosimine",
     "invalidTitle": "See loosimise link on vigane",

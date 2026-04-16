@@ -18,6 +18,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { publicDraws, publicDrawLeads, drawShowEvents } from "@/db/schema";
 import { generateShortId } from "@/lib/draw-show/short-id";
+import { sendDrawShareLink } from "@/lib/email";
 
 // Conservative cap so an abusive client can't stuff the table with
 // megabyte payloads. The wizard produces a few KB at most.
@@ -136,6 +137,31 @@ export async function POST(req: NextRequest) {
         });
       } catch (e) {
         console.error("draw_show_events insert (created) failed", e);
+      }
+
+      // Fire-and-forget the share-link email. We don't want a flaky
+      // SMTP server to fail the whole submit, so any error is logged
+      // but the user still gets their share id back.
+      if (email && consent) {
+        const stateObj = state as {
+          branding?: {
+            tournamentName?: string;
+            divisionName?: string;
+          };
+          scheduledAt?: string;
+          scheduledAtTz?: string;
+        };
+        sendDrawShareLink({
+          to: email,
+          drawId: id,
+          tournamentName: stateObj.branding?.tournamentName,
+          divisionName: stateObj.branding?.divisionName,
+          scheduledAt: stateObj.scheduledAt,
+          scheduledAtTz: stateObj.scheduledAtTz,
+          organization,
+        }).catch((e) => {
+          console.error("sendDrawShareLink failed", e);
+        });
       }
 
       return NextResponse.json({ id }, { status: 201 });

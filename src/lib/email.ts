@@ -565,3 +565,87 @@ export async function sendNewQuestionNotification({
     }),
   });
 }
+
+// ─── Draw Show: share-link receipt ────────────────────────────────────────────
+//
+// Sent immediately after the standalone /draw wizard creates a draw.
+// One-click "open my show" CTA + a copyable share link, plus the
+// scheduled-premiere note when the user picked a future start time.
+export async function sendDrawShareLink({
+  to,
+  drawId,
+  tournamentName,
+  divisionName,
+  scheduledAt,
+  scheduledAtTz,
+  organization,
+}: {
+  to: string;
+  drawId: string;
+  tournamentName?: string | null;
+  divisionName?: string | null;
+  scheduledAt?: string | null;
+  scheduledAtTz?: string | null;
+  organization?: string | null;
+}) {
+  const presentUrl = `${APP_URL}/en/draw/present?s=${drawId}`;
+  const newDrawUrl = `${APP_URL}/en/draw`;
+  const headline = tournamentName?.trim() || "Your Draw Show";
+  const sub = divisionName?.trim();
+  const scheduledLabel = scheduledAt
+    ? new Intl.DateTimeFormat("en-GB", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short",
+        timeZone: scheduledAtTz ?? "UTC",
+      }).format(new Date(scheduledAt))
+    : null;
+
+  await transporter.sendMail({
+    from: FROM,
+    to,
+    subject: scheduledAt
+      ? `🎬 ${headline}${sub ? " · " + sub : ""} — premiere link inside`
+      : `🎬 ${headline}${sub ? " · " + sub : ""} — your draw is ready`,
+    text:
+      `Your Draw Show link: ${presentUrl}\n\n` +
+      (scheduledAt
+        ? `Premiere starts: ${scheduledLabel}\n\n`
+        : "") +
+      `Open the link to run the show on a big screen, share it with teams, ` +
+      `or post it on socials. Same link, same show — every time.\n\n` +
+      `Need another draw? ${newDrawUrl}\n\n` +
+      `— Goality TMC`,
+    html: base({
+      preheader: scheduledAt
+        ? `Your Draw Show is scheduled. Share the link.`
+        : `Your Draw Show link is ready to share.`,
+      body: `
+        ${h1(`🎬 ${headline} is ready`)}
+        ${sub ? p(`<strong>Division:</strong> ${sub}`) : ""}
+        ${p(
+          scheduledAt
+            ? `Visitors who open the link before the premiere see a beautiful countdown, then the show starts automatically.`
+            : `Open the link below to run the show on the big screen, share it with teams, or post it on socials.`,
+        )}
+
+        ${infoTable(
+          (scheduledAt
+            ? infoRow("Premiere", scheduledLabel ?? "—")
+            : infoRow("Status", "Live · ready to play")) +
+          (organization ? infoRow("Organization", organization) : "") +
+          infoRow("Share link", `<a href="${presentUrl}" style="color:#0ea5e9;text-decoration:none;">${presentUrl}</a>`),
+        )}
+
+        ${p(
+          `Same link, same show — every time. Bookmark it or send to your team chat.`,
+          "color:#6b7280;font-size:13px;",
+        )}
+      `,
+      cta: { label: "Open my Draw Show →", url: presentUrl, color: "#2BFEBA" },
+    }),
+  });
+}

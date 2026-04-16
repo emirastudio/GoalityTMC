@@ -330,7 +330,12 @@ export function DrawWizard({ id }: { id?: string }) {
       });
       if (res.ok) {
         const { id } = (await res.json()) as { id: string };
-        router.push(`/draw/present?s=${id}`);
+        // Land on the success/preview screen instead of the show
+        // itself: the creator gets the share link, embed code,
+        // social buttons + a clear "Watch your show" CTA. Visitors
+        // who later open the share link still go straight to the
+        // show / countdown.
+        router.push(`/draw/created?s=${id}`);
         return;
       }
       // Server rejected the payload — fall through to base64 fallback.
@@ -340,6 +345,8 @@ export function DrawWizard({ id }: { id?: string }) {
 
     try {
       const encoded = encodeDrawState(state);
+      // Base64 fallback skips the success page (no server-stored id
+      // to share via API) and goes straight to the show.
       router.push(`/draw/present?s=${encoded}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "unknown error");

@@ -4391,6 +4391,24 @@
     "previewHint": "Skip the countdown and watch the draw — the premiere still triggers at the scheduled time for everyone else.",
     "madeWith": "Made with"
   },
+  "drawCreated": {
+    "missingId": "This page needs a draw id in the URL.",
+    "backToWizard": "Back to the wizard",
+    "eyebrow": "Draw created",
+    "title": "Your show is ready 🎬",
+    "emailSent": "We've also sent the link to your <chip>email</chip> for safekeeping.",
+    "watchEyebrow": "Preview",
+    "watchTitle": "Watch your draw show",
+    "watchSubtitle": "Run it on the projector, share the moment with your teams.",
+    "watchCta": "Open the show",
+    "shareLinkLabel": "Share link",
+    "shareLabel": "Share with teams and audience",
+    "embedLabel": "Embed on your site",
+    "embedHint": "Paste this anywhere — supports fullscreen and auto-play.",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "newDraw": "Create another draw"
+  },
   "drawPresent": {
     "defaultTitle": "Tournament Draw",
     "invalidTitle": "This draw link is invalid",
