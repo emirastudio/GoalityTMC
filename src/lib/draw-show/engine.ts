@@ -14,6 +14,7 @@
  */
 
 import { createRng, seedFromString } from "@/lib/scheduling/rng";
+import { generateRoundRobin } from "@/lib/scheduling/fixtures";
 import type {
   DrawConfig,
   DrawInputTeam,
@@ -43,6 +44,8 @@ export function buildDrawPlan(
       return buildGroupsPlan(teams, config, rng);
     case "playoff":
       return buildPlayoffPlan(teams, config, rng);
+    case "league":
+      return buildLeaguePlan(teams, config, rng);
     case "groups-playoff":
       // Deferred — engine is shaped for it but the UI flow isn't in v1.
       throw new Error(
@@ -53,6 +56,81 @@ export function buildDrawPlan(
       throw new Error(`Unknown draw mode: ${_exhaustive}`);
     }
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  League (round-robin)
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Builds the full round-robin schedule and emits one DrawStep per match.
+ *
+ * Reveal order is round-by-round, and within a round we shuffle match
+ * order so the first pair announced isn't always the same. The
+ * underlying Berger algorithm lives in src/lib/scheduling/fixtures.ts —
+ * reusing it keeps the league engine consistent with the real
+ * tournament scheduler.
+ */
+function buildLeaguePlan(
+  teams: DrawInputTeam[],
+  config: DrawConfig,
+  rng: ReturnType<typeof createRng>,
+): DrawResult {
+  if (teams.length < 2) {
+    throw new Error("League needs at least 2 teams");
+  }
+
+  // Shuffle team order once so identical input with identical seed still
+  // produces a varied-looking first round. Berger is deterministic on
+  // input order, so the shuffle is what gives the show its freshness.
+  const shuffled = rng.shuffle([...teams]);
+
+  // Berger expects numeric ids — we hand out 0..N-1 and map back by index.
+  const numericIds = shuffled.map((_, i) => i);
+  const pairings = generateRoundRobin(numericIds, false);
+  // Drop BYEs (odd-team count produces null entries) — they're not matches.
+  const realPairings = pairings.filter(
+    (p) => p.homeTeamId != null && p.awayTeamId != null,
+  );
+
+  // Group by round, then shuffle inside each round for reveal variety.
+  const byRound = new Map<number, typeof realPairings>();
+  for (const p of realPairings) {
+    const arr = byRound.get(p.round) ?? [];
+    arr.push(p);
+    byRound.set(p.round, arr);
+  }
+
+  const rounds: { home: DrawInputTeam; away: DrawInputTeam }[][] = [];
+  const steps: DrawStep[] = [];
+  let stepIdx = 0;
+  const sortedRoundKeys = [...byRound.keys()].sort((a, b) => a - b);
+
+  for (const r of sortedRoundKeys) {
+    const inRound = rng.shuffle([...byRound.get(r)!]);
+    const roundMatches: { home: DrawInputTeam; away: DrawInputTeam }[] = [];
+    inRound.forEach((p, i) => {
+      const home = shuffled[p.homeTeamId as number];
+      const away = shuffled[p.awayTeamId as number];
+      roundMatches.push({ home, away });
+      steps.push({
+        kind: "league-match",
+        index: stepIdx++,
+        round: r,
+        matchInRound: i,
+        home,
+        away,
+      });
+    });
+    rounds.push(roundMatches);
+  }
+
+  return {
+    config,
+    seed: config.seed,
+    leagueRounds: rounds,
+    steps,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -1,53 +1,139 @@
 "use client";
 
 /**
- * DrawWizard — inline form on the /draw landing where anonymous visitors
- * set up their draw before launching the stage.
+ * DrawWizard — inline form where anonymous visitors set up their draw
+ * before launching the stage.
  *
- * Inputs:
- *   • Team list (textarea, one per line — matches how people copy from Excel)
- *   • Mode: groups | playoff
- *   • Group count (2–8) when mode === "groups"
+ * Two input modes:
+ *   • Bulk paste: one team per line in a textarea (fastest, matches
+ *     how most organizers have their list in Excel).
+ *   • Detailed: row-by-row editor with logo URL, team name and country
+ *     flag. Takes longer but produces a polished show.
  *
- * On submit the component encodes everything into a ShareableDrawState,
- * base64url-encodes it, and navigates the page to /[locale]/draw/present?s=…
- * The presentation route decodes the same state and drives the stage. No
- * database; everything lives in the URL so share-links round-trip.
+ * Three formats:
+ *   • Group stage — N teams split across K groups.
+ *   • League — round-robin, every team plays every other once.
+ *   • Playoff pairs — N/2 head-to-head matches.
+ *
+ * On submit the component encodes the state to a URL and navigates to
+ * /draw/present. No server state; no database. The shape is wide enough
+ * that once server-side share-link storage lands, the encode step just
+ * POSTs instead of base64-encoding.
  */
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { ArrowRight, ListChecks, Shuffle, Users, Layers } from "lucide-react";
+import {
+  ArrowRight,
+  ListChecks,
+  Shuffle,
+  Users,
+  Layers,
+  Rows3,
+  Repeat,
+  Trash2,
+  Plus,
+  Image as ImageIcon,
+} from "lucide-react";
 import { encodeDrawState } from "@/lib/draw-show/encode-state";
 import type { ShareableDrawState } from "@/lib/draw-show/types";
 
-// Cap team count at a level where the share-URL still fits comfortably
-// in common platform limits (~2 KB). Beyond this, the UX of a paste-a-
-// list flow breaks down anyway.
 const MAX_TEAMS = 64;
 const MIN_TEAMS = 2;
+const MIN_GROUPS = 2;
+const MAX_GROUPS = 16;
 
-type Mode = "groups" | "playoff";
+type Mode = "groups" | "playoff" | "league";
+type InputMode = "bulk" | "detailed";
+
+type DetailedRow = {
+  id: string;
+  name: string;
+  countryCode: string;
+  logoUrl: string;
+};
+
+// Common country codes offered in the detailed picker. Keeping the
+// list short so the dropdown stays usable; users can type any ISO-2
+// code manually. Extend as demand dictates.
+const COUNTRY_OPTIONS: { code: string; label: string }[] = [
+  { code: "",   label: "—" },
+  { code: "EE", label: "🇪🇪 Estonia" },
+  { code: "RU", label: "🇷🇺 Russia" },
+  { code: "LV", label: "🇱🇻 Latvia" },
+  { code: "LT", label: "🇱🇹 Lithuania" },
+  { code: "FI", label: "🇫🇮 Finland" },
+  { code: "SE", label: "🇸🇪 Sweden" },
+  { code: "NO", label: "🇳🇴 Norway" },
+  { code: "DK", label: "🇩🇰 Denmark" },
+  { code: "PL", label: "🇵🇱 Poland" },
+  { code: "DE", label: "🇩🇪 Germany" },
+  { code: "FR", label: "🇫🇷 France" },
+  { code: "ES", label: "🇪🇸 Spain" },
+  { code: "IT", label: "🇮🇹 Italy" },
+  { code: "NL", label: "🇳🇱 Netherlands" },
+  { code: "PT", label: "🇵🇹 Portugal" },
+  { code: "GB", label: "🇬🇧 UK" },
+  { code: "IE", label: "🇮🇪 Ireland" },
+  { code: "BE", label: "🇧🇪 Belgium" },
+  { code: "CH", label: "🇨🇭 Switzerland" },
+  { code: "AT", label: "🇦🇹 Austria" },
+  { code: "CZ", label: "🇨🇿 Czechia" },
+  { code: "SK", label: "🇸🇰 Slovakia" },
+  { code: "HU", label: "🇭🇺 Hungary" },
+  { code: "UA", label: "🇺🇦 Ukraine" },
+  { code: "BY", label: "🇧🇾 Belarus" },
+  { code: "TR", label: "🇹🇷 Turkey" },
+  { code: "US", label: "🇺🇸 USA" },
+  { code: "BR", label: "🇧🇷 Brazil" },
+  { code: "AR", label: "🇦🇷 Argentina" },
+  { code: "JP", label: "🇯🇵 Japan" },
+];
+
+function freshRow(): DetailedRow {
+  return {
+    id: `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    name: "",
+    countryCode: "",
+    logoUrl: "",
+  };
+}
 
 export function DrawWizard({ id }: { id?: string }) {
   const t = useTranslations("drawWizard");
   const router = useRouter();
 
+  const [inputMode, setInputMode] = useState<InputMode>("bulk");
   const [rawTeams, setRawTeams] = useState("");
+  const [detailedRows, setDetailedRows] = useState<DetailedRow[]>([
+    freshRow(),
+    freshRow(),
+  ]);
   const [mode, setMode] = useState<Mode>("groups");
   const [groupCount, setGroupCount] = useState(4);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const teams = useMemo(
-    () =>
-      rawTeams
-        .split("\n")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0),
-    [rawTeams],
-  );
+  // Unified team list regardless of input mode. Detailed rows are
+  // filtered to those with a non-empty name so a half-filled row
+  // doesn't ruin validation. Bulk paste stays whitespace-split.
+  const teams = useMemo(() => {
+    if (inputMode === "detailed") {
+      return detailedRows
+        .map((r) => ({
+          name: r.name.trim(),
+          countryCode: r.countryCode.trim().toUpperCase() || undefined,
+          logoUrl: r.logoUrl.trim() || undefined,
+        }))
+        .filter((r) => r.name.length > 0);
+    }
+    return rawTeams
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0)
+      .map((name) => ({ name, countryCode: undefined, logoUrl: undefined }));
+  }, [inputMode, detailedRows, rawTeams]);
 
   // ── Validation ────────────────────────────────────────────────────
   const issues: string[] = [];
@@ -65,13 +151,16 @@ export function DrawWizard({ id }: { id?: string }) {
       t("errorFewerTeamsThanGroups", { teams: teams.length, groups: groupCount }),
     );
   }
+  if (mode === "groups" && (groupCount < MIN_GROUPS || groupCount > MAX_GROUPS)) {
+    issues.push(t("errorGroupCountRange", { min: MIN_GROUPS, max: MAX_GROUPS }));
+  }
 
   const duplicates = useMemo(() => {
     const seen = new Set<string>();
     const dup: string[] = [];
-    for (const name of teams) {
-      const key = name.toLowerCase();
-      if (seen.has(key) && !dup.includes(name)) dup.push(name);
+    for (const team of teams) {
+      const key = team.name.toLowerCase();
+      if (seen.has(key) && !dup.includes(team.name)) dup.push(team.name);
       seen.add(key);
     }
     return dup;
@@ -82,14 +171,23 @@ export function DrawWizard({ id }: { id?: string }) {
 
   const canSubmit = teams.length >= MIN_TEAMS && issues.length === 0;
 
+  // ── Detailed row operations ───────────────────────────────────────
+  const addRow = () => setDetailedRows((rs) => [...rs, freshRow()]);
+  const removeRow = (rowId: string) =>
+    setDetailedRows((rs) =>
+      rs.length > 1 ? rs.filter((r) => r.id !== rowId) : rs,
+    );
+  const updateRow = (rowId: string, patch: Partial<DetailedRow>) =>
+    setDetailedRows((rs) =>
+      rs.map((r) => (r.id === rowId ? { ...r, ...patch } : r)),
+    );
+
   // ── Submit: build state → encode → navigate ───────────────────────
   function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
     try {
-      // Stable id per team, derived from its slug position so the
-      // share-link is reproducible when someone edits the pasted list.
       const state: ShareableDrawState = {
         v: 1,
         config: {
@@ -98,9 +196,10 @@ export function DrawWizard({ id }: { id?: string }) {
           seedingMode: "random",
           seed: Date.now().toString(36),
         },
-        teams: teams.map((name, i) => ({
+        teams: teams.map((tm, i) => ({
           id: `t${i}`,
-          name,
+          name: tm.name,
+          countryCode: tm.countryCode,
         })),
       };
       const encoded = encodeDrawState(state);
@@ -137,45 +236,109 @@ export function DrawWizard({ id }: { id?: string }) {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ── Teams ── */}
+          {/* ── Input mode toggle ── */}
           <div>
             <LabelRow icon={<Users className="w-4 h-4" />}>
               {t("teamsLabel")}
               <CounterPill count={teams.length} />
             </LabelRow>
-            <textarea
-              value={rawTeams}
-              onChange={(e) => setRawTeams(e.target.value)}
-              placeholder={t("teamsPlaceholder")}
-              rows={8}
-              className="w-full rounded-2xl px-4 py-3 text-sm outline-none resize-y font-mono"
-              style={{
-                background: "var(--cat-input-bg, var(--cat-card-bg))",
-                border: "1px solid var(--cat-card-border)",
-                color: "var(--cat-text)",
-                minHeight: 180,
-              }}
-            />
-            <p
-              className="text-xs mt-1.5"
-              style={{ color: "var(--cat-text-muted)" }}
+            <div
+              className="inline-flex p-1 rounded-xl mb-3"
+              style={{ background: "var(--cat-tag-bg)" }}
             >
-              {t("teamsHint", { min: MIN_TEAMS, max: MAX_TEAMS })}
-            </p>
+              <ModeTab
+                active={inputMode === "bulk"}
+                icon={<Rows3 className="w-3.5 h-3.5" />}
+                label={t("inputBulk")}
+                onClick={() => setInputMode("bulk")}
+              />
+              <ModeTab
+                active={inputMode === "detailed"}
+                icon={<ListChecks className="w-3.5 h-3.5" />}
+                label={t("inputDetailed")}
+                onClick={() => setInputMode("detailed")}
+              />
+            </div>
+
+            {inputMode === "bulk" ? (
+              <>
+                <textarea
+                  value={rawTeams}
+                  onChange={(e) => setRawTeams(e.target.value)}
+                  placeholder={t("teamsPlaceholder")}
+                  rows={8}
+                  className="w-full rounded-2xl px-4 py-3 text-sm outline-none resize-y font-mono"
+                  style={{
+                    background: "var(--cat-input-bg, var(--cat-card-bg))",
+                    border: "1px solid var(--cat-card-border)",
+                    color: "var(--cat-text)",
+                    minHeight: 180,
+                  }}
+                />
+                <p
+                  className="text-xs mt-1.5"
+                  style={{ color: "var(--cat-text-muted)" }}
+                >
+                  {t("teamsHintBulk", { min: MIN_TEAMS, max: MAX_TEAMS })}
+                </p>
+              </>
+            ) : (
+              <div className="space-y-2">
+                {detailedRows.map((row, i) => (
+                  <DetailedRowEditor
+                    key={row.id}
+                    row={row}
+                    index={i}
+                    canRemove={detailedRows.length > 1}
+                    onUpdate={(patch) => updateRow(row.id, patch)}
+                    onRemove={() => removeRow(row.id)}
+                    placeholderName={t("rowPlaceholderName")}
+                    placeholderLogo={t("rowPlaceholderLogo")}
+                    countryLabel={t("rowCountry")}
+                  />
+                ))}
+                <button
+                  type="button"
+                  onClick={addRow}
+                  disabled={detailedRows.length >= MAX_TEAMS}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold mt-2 transition-opacity hover:opacity-80 disabled:opacity-40"
+                  style={{
+                    background: "rgba(43,254,186,0.08)",
+                    color: "var(--cat-accent)",
+                    border: "1px dashed rgba(43,254,186,0.4)",
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5" /> {t("addTeam")}
+                </button>
+                <p
+                  className="text-xs mt-1.5"
+                  style={{ color: "var(--cat-text-muted)" }}
+                >
+                  {t("teamsHintDetailed", { min: MIN_TEAMS, max: MAX_TEAMS })}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* ── Mode ── */}
+          {/* ── Format ── */}
           <div>
             <LabelRow icon={<ListChecks className="w-4 h-4" />}>
               {t("modeLabel")}
             </LabelRow>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <ModeCard
                 active={mode === "groups"}
                 icon={<Layers className="w-4 h-4" />}
                 title={t("modeGroups")}
                 body={t("modeGroupsBody")}
                 onClick={() => setMode("groups")}
+              />
+              <ModeCard
+                active={mode === "league"}
+                icon={<Repeat className="w-4 h-4" />}
+                title={t("modeLeague")}
+                body={t("modeLeagueBody")}
+                onClick={() => setMode("league")}
               />
               <ModeCard
                 active={mode === "playoff"}
@@ -187,13 +350,13 @@ export function DrawWizard({ id }: { id?: string }) {
             </div>
           </div>
 
-          {/* ── Groups count (mode=groups only) ── */}
+          {/* ── Group count (mode=groups only) ── */}
           {mode === "groups" && (
             <div>
               <LabelRow icon={<Layers className="w-4 h-4" />}>
                 {t("groupCountLabel")}
               </LabelRow>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {[2, 3, 4, 5, 6, 8].map((n) => (
                   <button
                     key={n}
@@ -216,7 +379,55 @@ export function DrawWizard({ id }: { id?: string }) {
                     {n}
                   </button>
                 ))}
+                {/* Custom count input — accepts any number in range. */}
+                <div
+                  className="flex items-center gap-1.5 rounded-xl px-2 py-1"
+                  style={{
+                    background: "var(--cat-tag-bg)",
+                    border: "1px solid var(--cat-card-border)",
+                  }}
+                >
+                  <span
+                    className="text-xs font-bold uppercase tracking-widest"
+                    style={{ color: "var(--cat-text-muted)" }}
+                  >
+                    {t("groupCountCustom")}
+                  </span>
+                  <input
+                    type="number"
+                    min={MIN_GROUPS}
+                    max={MAX_GROUPS}
+                    value={groupCount}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value);
+                      if (Number.isFinite(v)) setGroupCount(v);
+                    }}
+                    className="w-14 text-sm font-bold bg-transparent outline-none text-center"
+                    style={{ color: "var(--cat-text)" }}
+                  />
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* League summary — tells the user how many rounds/matches. */}
+          {mode === "league" && teams.length >= 2 && (
+            <div
+              className="rounded-2xl px-4 py-3"
+              style={{
+                background: "rgba(43,254,186,0.05)",
+                border: "1px solid rgba(43,254,186,0.25)",
+              }}
+            >
+              <p
+                className="text-xs font-semibold leading-relaxed"
+                style={{ color: "var(--cat-text-secondary)" }}
+              >
+                {t("leagueSummary", {
+                  rounds: leagueRoundsOf(teams.length),
+                  matches: leagueMatchesOf(teams.length),
+                })}
+              </p>
             </div>
           )}
 
@@ -281,6 +492,122 @@ export function DrawWizard({ id }: { id?: string }) {
 
 // ─── Sub-components ───────────────────────────────────────────────────
 
+function DetailedRowEditor({
+  row,
+  index,
+  canRemove,
+  onUpdate,
+  onRemove,
+  placeholderName,
+  placeholderLogo,
+  countryLabel,
+}: {
+  row: DetailedRow;
+  index: number;
+  canRemove: boolean;
+  onUpdate: (patch: Partial<DetailedRow>) => void;
+  onRemove: () => void;
+  placeholderName: string;
+  placeholderLogo: string;
+  countryLabel: string;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 rounded-xl p-2"
+      style={{
+        background: "var(--cat-tag-bg)",
+        border: "1px solid var(--cat-card-border)",
+      }}
+    >
+      <span
+        className="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-black shrink-0"
+        style={{ background: "rgba(43,254,186,0.12)", color: "var(--cat-accent)" }}
+      >
+        {index + 1}
+      </span>
+
+      {/* Logo preview or placeholder */}
+      <div
+        className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 overflow-hidden"
+        style={{
+          background: "var(--cat-card-bg)",
+          border: "1px solid var(--cat-card-border)",
+        }}
+      >
+        {row.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={row.logoUrl}
+            alt=""
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <ImageIcon
+            className="w-4 h-4"
+            style={{ color: "var(--cat-text-muted)" }}
+          />
+        )}
+      </div>
+
+      <input
+        type="text"
+        value={row.name}
+        onChange={(e) => onUpdate({ name: e.target.value })}
+        placeholder={placeholderName}
+        className="flex-1 min-w-0 bg-transparent outline-none text-sm font-semibold px-1"
+        style={{ color: "var(--cat-text)" }}
+      />
+
+      <select
+        value={row.countryCode}
+        onChange={(e) => onUpdate({ countryCode: e.target.value })}
+        title={countryLabel}
+        className="rounded-md px-1.5 py-1 text-xs outline-none shrink-0"
+        style={{
+          background: "var(--cat-card-bg)",
+          border: "1px solid var(--cat-card-border)",
+          color: "var(--cat-text)",
+          maxWidth: 140,
+        }}
+      >
+        {COUNTRY_OPTIONS.map((c) => (
+          <option key={c.code} value={c.code}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+
+      <input
+        type="url"
+        value={row.logoUrl}
+        onChange={(e) => onUpdate({ logoUrl: e.target.value })}
+        placeholder={placeholderLogo}
+        className="w-36 hidden md:block bg-transparent outline-none text-xs px-1.5 py-1 rounded-md"
+        style={{
+          color: "var(--cat-text-muted)",
+          border: "1px solid var(--cat-card-border)",
+          background: "var(--cat-card-bg)",
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={!canRemove}
+        className="w-8 h-8 rounded-md flex items-center justify-center transition-opacity hover:opacity-80 disabled:opacity-30 shrink-0"
+        style={{
+          color: "var(--cat-text-muted)",
+        }}
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 function LabelRow({
   icon,
   children,
@@ -312,6 +639,34 @@ function CounterPill({ count }: { count: number }) {
     >
       {count}
     </span>
+  );
+}
+
+function ModeTab({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-opacity hover:opacity-80"
+      style={{
+        background: active ? "var(--cat-card-bg)" : "transparent",
+        color: active ? "var(--cat-accent)" : "var(--cat-text-muted)",
+        boxShadow: active ? "0 1px 2px rgba(0,0,0,0.15)" : undefined,
+      }}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
@@ -359,4 +714,16 @@ function ModeCard({
       </p>
     </button>
   );
+}
+
+// ─── League math helpers ─────────────────────────────────────────────
+
+/** Round count for a round-robin with n teams (Berger circle method). */
+function leagueRoundsOf(n: number): number {
+  return n < 2 ? 0 : n % 2 === 0 ? n - 1 : n;
+}
+
+/** Total match count for a round-robin with n teams: C(n,2). */
+function leagueMatchesOf(n: number): number {
+  return n < 2 ? 0 : (n * (n - 1)) / 2;
 }

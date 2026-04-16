@@ -221,10 +221,14 @@ export function DrawStage({
   }, []);
 
   // ── Derived view state ────────────────────────────────────────────
+  // Only groups / playoff steps carry a single "team" payload we track
+  // here; league steps carry a pair (home + away) and are tracked
+  // separately via revealedLeagueKeys below.
   const revealedTeamIds = useMemo(() => {
     const set = new Set<string>();
     for (let i = 0; i < placedCount && i < steps.length; i++) {
-      set.add(steps[i].team.id);
+      const s = steps[i];
+      if (s.kind === "place-group" || s.kind === "pair") set.add(s.team.id);
     }
     return set;
   }, [placedCount, steps]);
@@ -245,7 +249,21 @@ export function DrawStage({
       : null;
 
   const isGroupsMode = !isError && plan.config.mode === "groups";
+  const isLeagueMode = !isError && plan.config.mode === "league";
   const isDone = placedCount >= total && total > 0;
+
+  // Derived data for league mode: which match is currently in the
+  // spotlight and which match ids have been revealed. The set is indexed
+  // by (round, matchInRound) to avoid any string-key collisions.
+  const revealedLeagueKeys = useMemo(() => {
+    const set = new Set<string>();
+    if (!isLeagueMode) return set;
+    for (let i = 0; i < placedCount && i < steps.length; i++) {
+      const s = steps[i];
+      if (s.kind === "league-match") set.add(`${s.round}:${s.matchInRound}`);
+    }
+    return set;
+  }, [isLeagueMode, placedCount, steps]);
 
   if (!mounted) return null;
 
@@ -387,16 +405,16 @@ export function DrawStage({
                       unassignedTeams={unassignedTeams}
                       unassignedLabel={t("stage.unassignedTeams")}
                     />
-                  ) : showSpotlight && currentStep ? (
+                  ) : showSpotlight &&
+                    currentStep &&
+                    currentStep.kind === "place-group" ? (
                     <SpotlightWithTarget
                       key={`spot-${placedCount}`}
                       team={currentStep.team}
                       layoutId={layoutIdFor(currentStep.team.id)}
-                      targetLetter={
-                        currentStep.kind === "place-group"
-                          ? String.fromCharCode(65 + currentStep.groupIndex)
-                          : undefined
-                      }
+                      targetLetter={String.fromCharCode(
+                        65 + currentStep.groupIndex,
+                      )}
                       targetLabel={t("stage.toGroup")}
                     />
                   ) : (
@@ -415,8 +433,42 @@ export function DrawStage({
               </div>
             </div>
           </LayoutGroup>
+        ) : isLeagueMode ? (
+          <div className="w-full flex flex-col items-center justify-start gap-6 pt-2 overflow-y-auto">
+            <LeagueBoard
+              rounds={plan.leagueRounds ?? []}
+              revealedKeys={revealedLeagueKeys}
+              roundLabel={t("stage.roundLabel")}
+              totalRounds={plan.leagueRounds?.length ?? 0}
+              placedCount={placedCount}
+              totalMatches={total}
+              statusLabel={t("stage.leagueStatus")}
+            />
+            <div className="flex-1 flex items-center justify-center min-h-[140px] w-full">
+              <AnimatePresence mode="wait">
+                {isDone ? (
+                  <DonePanel
+                    key="done"
+                    title={t("stage.leagueDoneTitle")}
+                    subtitle={t("stage.leagueDoneSubtitle", {
+                      matches: total,
+                      rounds: plan.leagueRounds?.length ?? 0,
+                    })}
+                  />
+                ) : showSpotlight && currentStep && currentStep.kind === "league-match" ? (
+                  <LeagueSpotlight
+                    key={`lspot-${placedCount}`}
+                    home={currentStep.home}
+                    away={currentStep.away}
+                    round={currentStep.round}
+                    roundLabel={t("stage.roundLabel")}
+                  />
+                ) : null}
+              </AnimatePresence>
+            </div>
+          </div>
         ) : (
-          // Non-groups modes (playoff, etc.) — placeholder until phase 3.5
+          // Other modes (playoff pairs etc.) — phase 3.5 fills these in.
           <div className="flex items-center justify-center">
             <p className="text-sm" style={{ color: "rgba(245,247,251,0.6)" }}>
               {t("stage.modeComingSoon")}
@@ -596,6 +648,196 @@ function ErrorPanel({ message, title }: { message: string; title: string }) {
         </p>
       </div>
     </div>
+  );
+}
+
+// ─── League visualisation ─────────────────────────────────────────────
+// League mode doesn't use groups; it reveals a round-robin schedule one
+// match at a time. The board shows all rounds as columns (or rows on
+// narrow screens); matches fill in as they're revealed. A short
+// spotlight under the board announces the pair currently being shown.
+
+function LeagueBoard({
+  rounds,
+  revealedKeys,
+  roundLabel,
+  totalRounds,
+  placedCount,
+  totalMatches,
+  statusLabel,
+}: {
+  rounds: { home: DrawInputTeam; away: DrawInputTeam }[][];
+  revealedKeys: ReadonlySet<string>;
+  roundLabel: string;
+  totalRounds: number;
+  placedCount: number;
+  totalMatches: number;
+  statusLabel: string;
+}) {
+  if (rounds.length === 0) return null;
+  return (
+    <div className="w-full max-w-6xl">
+      <div
+        className="flex items-center justify-between px-1 mb-3 text-xs font-bold uppercase tracking-widest"
+        style={{ color: "rgba(245,247,251,0.55)" }}
+      >
+        <span>
+          {statusLabel} · {placedCount}/{totalMatches}
+        </span>
+        <span>
+          {totalRounds} {roundLabel.toLowerCase()}
+        </span>
+      </div>
+      <div
+        className="grid gap-3"
+        style={{
+          gridTemplateColumns: `repeat(${Math.min(rounds.length, 4)}, minmax(0,1fr))`,
+        }}
+      >
+        {rounds.map((matches, ri) => {
+          const allRevealed = matches.every((_, mi) =>
+            revealedKeys.has(`${ri + 1}:${mi}`),
+          );
+          return (
+            <div
+              key={ri}
+              className="rounded-2xl p-3 flex flex-col"
+              style={{
+                background: "rgba(255,255,255,0.035)",
+                border: "1px solid rgba(255,255,255,0.07)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span
+                  className="text-sm font-black"
+                  style={{ color: allRevealed ? "#2BFEBA" : "#f5f7fb" }}
+                >
+                  {roundLabel} {ri + 1}
+                </span>
+                <span
+                  className="text-[10px] font-bold tabular-nums"
+                  style={{ color: "rgba(245,247,251,0.5)" }}
+                >
+                  {matches.filter((_, mi) => revealedKeys.has(`${ri + 1}:${mi}`)).length}
+                  /{matches.length}
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {matches.map((m, mi) => {
+                  const revealed = revealedKeys.has(`${ri + 1}:${mi}`);
+                  return (
+                    <div
+                      key={mi}
+                      className="rounded-lg px-2 py-1.5 flex items-center gap-1.5 text-[11px] min-h-[28px]"
+                      style={{
+                        background: revealed
+                          ? "rgba(255,255,255,0.06)"
+                          : "rgba(255,255,255,0.02)",
+                        border: revealed
+                          ? "1px solid rgba(255,255,255,0.1)"
+                          : "1px dashed rgba(255,255,255,0.07)",
+                      }}
+                    >
+                      {revealed ? (
+                        <>
+                          <span
+                            className="flex-1 truncate font-semibold"
+                            style={{ color: "#f5f7fb" }}
+                          >
+                            {m.home.name}
+                          </span>
+                          <span
+                            className="text-[9px] font-black uppercase tracking-widest shrink-0"
+                            style={{ color: "rgba(245,247,251,0.4)" }}
+                          >
+                            vs
+                          </span>
+                          <span
+                            className="flex-1 truncate font-semibold text-right"
+                            style={{ color: "#f5f7fb" }}
+                          >
+                            {m.away.name}
+                          </span>
+                        </>
+                      ) : (
+                        <span
+                          className="flex-1 text-center"
+                          style={{ color: "rgba(245,247,251,0.3)" }}
+                        >
+                          ·
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function LeagueSpotlight({
+  home,
+  away,
+  round,
+  roundLabel,
+}: {
+  home: DrawInputTeam;
+  away: DrawInputTeam;
+  round: number;
+  roundLabel: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ type: "spring", stiffness: 220, damping: 22 }}
+      className="flex flex-col items-center gap-3"
+    >
+      <span
+        className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full"
+        style={{
+          background: "rgba(43,254,186,0.12)",
+          color: "#2BFEBA",
+          border: "1px solid rgba(43,254,186,0.35)",
+        }}
+      >
+        {roundLabel} {round}
+      </span>
+      <div
+        className="flex items-center gap-4 md:gap-6 rounded-3xl px-6 md:px-10 py-5"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(43,254,186,0.14), rgba(43,254,186,0.04))",
+          border: "1px solid rgba(43,254,186,0.45)",
+          boxShadow:
+            "0 16px 50px -10px rgba(43,254,186,0.35), 0 0 100px -20px rgba(43,254,186,0.5)",
+        }}
+      >
+        <p
+          className="text-xl md:text-2xl font-black truncate"
+          style={{ color: "#f5f7fb" }}
+        >
+          {home.name}
+        </p>
+        <span
+          className="text-sm md:text-base font-black uppercase tracking-widest"
+          style={{ color: "#2BFEBA" }}
+        >
+          vs
+        </span>
+        <p
+          className="text-xl md:text-2xl font-black truncate"
+          style={{ color: "#f5f7fb" }}
+        >
+          {away.name}
+        </p>
+      </div>
+    </motion.div>
   );
 }
 

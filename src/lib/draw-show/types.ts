@@ -38,9 +38,11 @@ export type DrawInputTeam = {
  *
  * - `groups` — distribute N teams into K groups (no pairings generated).
  * - `playoff` — pair teams into N/2 matches, no groups.
+ * - `league` — round-robin: every team plays every other team once. Draw
+ *   reveals the full schedule round by round, pair by pair.
  * - `groups-playoff` — reserved for a future iteration; engine may throw.
  */
-export type DrawMode = "groups" | "playoff" | "groups-playoff";
+export type DrawMode = "groups" | "playoff" | "league" | "groups-playoff";
 
 /**
  * - `random` — fully random order, one team at a time.
@@ -105,6 +107,16 @@ export type DrawStep =
       pairIndex: number;
       /** Which side of the pair this team goes on. */
       side: "home" | "away";
+    }
+  | {
+      kind: "league-match";
+      index: number;
+      /** 1-based round number (Berger output uses 1..N-1 for n teams). */
+      round: number;
+      /** 0-based match index within the round. */
+      matchInRound: number;
+      home: DrawInputTeam;
+      away: DrawInputTeam;
     };
 
 /**
@@ -121,6 +133,11 @@ export type DrawResult = {
   seed: string;
   groups?: DrawInputTeam[][];
   pairs?: [DrawInputTeam, DrawInputTeam][];
+  /**
+   * League round-robin schedule: `leagueRounds[round-1]` is the list of
+   * matches in that round. Populated when `config.mode === "league"`.
+   */
+  leagueRounds?: { home: DrawInputTeam; away: DrawInputTeam }[][];
   steps: DrawStep[];
 };
 
