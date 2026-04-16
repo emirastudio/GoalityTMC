@@ -4339,6 +4339,9 @@
     "rowLogoUploadError": "Upload failed — click to retry",
     "brandingLogoUpload": "Click to upload tournament logo",
     "brandingLogoUploadError": "Upload failed — click to retry",
+    "scheduleLabel": "Premiere",
+    "scheduleClear": "Clear",
+    "scheduleHint": "Share the link ahead of time — visitors see a countdown, then the show premieres automatically at this date and time.",
     "modeLabel": "Format",
     "modeGroups": "Group stage",
     "modeGroupsBody": "Spread teams across groups, revealed one by one.",
@@ -4357,6 +4360,18 @@
     "errorFewerTeamsThanGroups": "You have {teams} teams but picked {groups} groups. Pick fewer groups or add more teams.",
     "errorGroupCountRange": "Group count must be between {min} and {max}.",
     "errorDuplicates": "Duplicate team names: {names}. Rename so the reveal order is clear."
+  },
+  "countdown": {
+    "eyebrow": "Premiere",
+    "defaultTitle": "Tournament Draw",
+    "startsAt": "Starts {when}",
+    "unitDays": "Days",
+    "unitHours": "Hours",
+    "unitMinutes": "Minutes",
+    "unitSeconds": "Seconds",
+    "previewNow": "Preview now",
+    "previewHint": "Skip the countdown and watch the draw — the premiere still triggers at the scheduled time for everyone else.",
+    "madeWith": "Made with"
   },
   "drawPresent": {
     "defaultTitle": "Tournament Draw",

@@ -38,6 +38,7 @@ import {
   Trophy,
   Upload,
   Loader2,
+  Clock,
 } from "lucide-react";
 import { encodeDrawState } from "@/lib/draw-show/encode-state";
 import type { ShareableDrawState } from "@/lib/draw-show/types";
@@ -142,6 +143,10 @@ export function DrawWizard({ id }: { id?: string }) {
   const [tournamentLogoUrl, setTournamentLogoUrl] = useState("");
   const [mode, setMode] = useState<Mode>("groups");
   const [groupCount, setGroupCount] = useState(4);
+  // Optional scheduled premiere. Stored as the raw <input
+  // type="datetime-local"> string (YYYY-MM-DDTHH:MM) and converted to
+  // ISO on submit so the consumer always sees a normalized timestamp.
+  const [scheduledAt, setScheduledAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -235,6 +240,15 @@ export function DrawWizard({ id }: { id?: string }) {
           }
         : undefined;
 
+    // Normalize the datetime-local value (local time, no timezone) to
+    // a proper ISO timestamp so the countdown on /present renders
+    // against the correct instant everywhere.
+    let scheduledAtIso: string | undefined;
+    if (scheduledAt) {
+      const d = new Date(scheduledAt);
+      if (!Number.isNaN(d.getTime())) scheduledAtIso = d.toISOString();
+    }
+
     const state: ShareableDrawState = {
       v: 1,
       config: {
@@ -250,6 +264,7 @@ export function DrawWizard({ id }: { id?: string }) {
         logoUrl: tm.logoUrl,
       })),
       ...(branding ? { branding } : {}),
+      ...(scheduledAtIso ? { scheduledAt: scheduledAtIso } : {}),
     };
 
     try {
@@ -565,6 +580,51 @@ export function DrawWizard({ id }: { id?: string }) {
               </p>
             </div>
           )}
+
+          {/* ── Schedule (optional premiere) ── */}
+          <div>
+            <LabelRow icon={<Clock className="w-4 h-4" />}>
+              {t("scheduleLabel")}
+              <span
+                className="text-[10px] font-semibold uppercase tracking-widest normal-case"
+                style={{ color: "var(--cat-text-muted)" }}
+              >
+                {t("brandingOptional")}
+              </span>
+            </LabelRow>
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="rounded-xl px-3 py-2 text-sm outline-none"
+                style={{
+                  background: "var(--cat-input-bg, var(--cat-card-bg))",
+                  border: "1px solid var(--cat-card-border)",
+                  color: "var(--cat-text)",
+                }}
+              />
+              {scheduledAt && (
+                <button
+                  type="button"
+                  onClick={() => setScheduledAt("")}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                  style={{
+                    background: "var(--cat-tag-bg)",
+                    color: "var(--cat-text-secondary)",
+                  }}
+                >
+                  {t("scheduleClear")}
+                </button>
+              )}
+            </div>
+            <p
+              className="text-xs mt-1.5"
+              style={{ color: "var(--cat-text-muted)" }}
+            >
+              {t("scheduleHint")}
+            </p>
+          </div>
 
           {/* ── Issues / error ── */}
           {issues.length > 0 && (

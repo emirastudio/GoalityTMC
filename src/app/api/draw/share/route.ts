@@ -94,6 +94,16 @@ function isShareableDrawStateShape(value: unknown): value is object {
     if (typeof t.id !== "string" || t.id.length === 0) return false;
     if (typeof t.name !== "string" || t.name.length === 0) return false;
   }
+
+  // scheduledAt is optional; when present it's a string (the client
+  // writes ISO, we don't bother parsing here — consumers handle it).
+  if (
+    value.scheduledAt !== undefined &&
+    typeof value.scheduledAt !== "string"
+  ) {
+    return false;
+  }
+
   return true;
 }
 

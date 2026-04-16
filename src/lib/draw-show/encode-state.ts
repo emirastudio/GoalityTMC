@@ -157,6 +157,13 @@ function isShareableDrawState(value: unknown): value is ShareableDrawState {
     }
   }
 
+  if (
+    value.scheduledAt !== undefined &&
+    typeof value.scheduledAt !== "string"
+  ) {
+    return false;
+  }
+
   return true;
 }
 

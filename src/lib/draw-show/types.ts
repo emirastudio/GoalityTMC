@@ -170,4 +170,11 @@ export type ShareableDrawState = {
     divisionName?: string;
     logoUrl?: string;
   };
+  /**
+   * Optional ISO timestamp for a scheduled premiere. When present and
+   * in the future, the present page shows a countdown instead of
+   * immediately starting the show. Hitting the timestamp (or any visit
+   * after it) plays the premiere; subsequent visits play replays.
+   */
+  scheduledAt?: string;
 };

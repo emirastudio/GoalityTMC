@@ -25,6 +25,7 @@ import type {
   ShareableDrawState,
 } from "@/lib/draw-show/types";
 import { DrawStage } from "@/components/draw-show/DrawStage";
+import { CountdownPanel } from "@/components/draw-show/CountdownPanel";
 
 type LoadState =
   | { status: "loading" }
@@ -39,6 +40,10 @@ export default function DrawPresentPage() {
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
   const [showShareToast, setShowShareToast] = useState(false);
   const [stageClosed, setStageClosed] = useState(false);
+  // "Jumped ahead of the schedule" flag. Set when any visitor clicks
+  // "Preview now" on the countdown or when the timer hits zero
+  // naturally. In both cases we swap to DrawStage.
+  const [previewOverride, setPreviewOverride] = useState(false);
 
   // Resolve the `s` query param in one of two modes:
   //   • short id (6-char from our alphabet) → fetch from /api/draw/s/<id>
@@ -137,6 +142,27 @@ export default function DrawPresentPage() {
   const stageTitle = branding?.tournamentName?.trim() || t("defaultTitle");
   const stageSubtitle = branding?.divisionName?.trim() || undefined;
   const stageLogo = branding?.logoUrl?.trim() || null;
+
+  // If the creator scheduled a premiere and we haven't reached it yet,
+  // show the countdown instead of the stage. The override flag lets
+  // anyone click "Preview now" to skip ahead — useful for the creator
+  // and for anyone who discovers the link late.
+  if (
+    decoded.scheduledAt &&
+    !previewOverride &&
+    Date.parse(decoded.scheduledAt) > Date.now()
+  ) {
+    return (
+      <CountdownPanel
+        scheduledAt={decoded.scheduledAt}
+        title={stageTitle}
+        subtitle={stageSubtitle}
+        logoUrl={stageLogo}
+        onComplete={() => setPreviewOverride(true)}
+        onPreview={() => setPreviewOverride(true)}
+      />
+    );
+  }
 
   return (
     <>

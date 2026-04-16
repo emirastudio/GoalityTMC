@@ -4339,6 +4339,9 @@
     "rowLogoUploadError": "Üleslaadimine ebaõnnestus — klõpsa uuesti",
     "brandingLogoUpload": "Klõpsa turniiri logo üleslaadimiseks",
     "brandingLogoUploadError": "Üleslaadimine ebaõnnestus — klõpsa uuesti",
+    "scheduleLabel": "Esilinastus",
+    "scheduleClear": "Tühjenda",
+    "scheduleHint": "Jaga linki varakult — külastajad näevad tagasiarvestust ja show käivitub automaatselt määratud ajal.",
     "modeLabel": "Formaat",
     "modeGroups": "Gruppide etapp",
     "modeGroupsBody": "Jaota võistkonnad gruppidesse, üks samm korraga.",
@@ -4357,6 +4360,18 @@
     "errorFewerTeamsThanGroups": "Sul on {teams} võistkonda {groups} grupi jaoks. Vali vähem gruppe või lisa võistkondi.",
     "errorGroupCountRange": "Gruppide arv peab olema {min} kuni {max}.",
     "errorDuplicates": "Topeltnimed: {names}. Nimeta ümber, et järjekord oleks selge."
+  },
+  "countdown": {
+    "eyebrow": "Esilinastus",
+    "defaultTitle": "Turniiri loosimine",
+    "startsAt": "Algab {when}",
+    "unitDays": "Päeva",
+    "unitHours": "Tundi",
+    "unitMinutes": "Minutit",
+    "unitSeconds": "Sekundit",
+    "previewNow": "Vaata kohe",
+    "previewHint": "Jäta tagasiarvestus vahele ja vaata loosimist — teistele esilinastus käivitub ikkagi määratud ajal.",
+    "madeWith": "Tehtud"
   },
   "drawPresent": {
     "defaultTitle": "Turniiri loosimine",
