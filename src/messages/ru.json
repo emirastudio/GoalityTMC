@@ -4413,7 +4413,8 @@
       "leagueStatus": "Расписание лиги",
       "leagueDoneTitle": "Расписание лиги готово",
       "leagueDoneSubtitle": "{rounds} раундов · {matches} матчей зафиксированы",
-      "madeWith": "Сделано на"
+      "madeWith": "Сделано на",
+      "introGo": "ПОЕХАЛИ!"
     },
     "controls": {
       "play": "Продолжить",

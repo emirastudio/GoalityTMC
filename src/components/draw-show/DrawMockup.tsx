@@ -38,10 +38,12 @@ const DEMO_TEAMS = [
   { name: "Inter Milano",   flag: "🇮🇹", group: 3, color: "#1e40af" },
 ];
 
-// Keep the whole cycle under ~20s so visitors see a "complete"
-// moment and a restart without scrolling away.
-const REVEAL_MS = 900;
-const PAUSE_AT_END_MS = 2400;
+// Slower, more cinematic cadence so each reveal has a clear "appear ·
+// breathe · fly away" arc rather than feeling like a flipbook. Visitors
+// still see a full loop in ~25 s which is fine for an auto-playing hero.
+const REVEAL_MS = 1500;
+const GAP_MS = 250;
+const PAUSE_AT_END_MS = 2800;
 
 export function DrawMockup() {
   // step = how many teams revealed so far (0..DEMO_TEAMS.length).
@@ -60,15 +62,18 @@ export function DrawMockup() {
       return () => window.clearTimeout(t);
     }
 
-    // Two-phase loop: spotlight visible for most of the cycle, then a
-    // brief gap before advancing — same rhythm as the real stage.
-    const showT = window.setTimeout(() => setSpotlight(false), REVEAL_MS - 250);
+    // Three-phase loop so each card has space to breathe:
+    //   1. spotlight appears and holds for REVEAL_MS
+    //   2. spotlight exits (handled by AnimatePresence below)
+    //   3. GAP_MS pause before the next step mounts
+    // This avoids the "flip-book" feel the old 900 ms cadence had.
+    const hideT = window.setTimeout(() => setSpotlight(false), REVEAL_MS);
     const nextT = window.setTimeout(() => {
       setStep((s) => s + 1);
       setSpotlight(true);
-    }, REVEAL_MS);
+    }, REVEAL_MS + GAP_MS);
     return () => {
-      window.clearTimeout(showT);
+      window.clearTimeout(hideT);
       window.clearTimeout(nextT);
     };
   }, [step]);
@@ -230,43 +235,77 @@ export function DrawMockup() {
         })}
       </div>
 
-      {/* Spotlight overlay — centered vertically over the groups so
-          the big "team leaving the urn" card is the focal point. */}
+      {/* Spotlight overlay — centered vertically over the groups. Big,
+          glowing card with a pulse ring on enter and a "swoosh toward
+          the target group" on exit so the visitor's eye naturally
+          follows where the team is headed. */}
       <div className="absolute inset-x-0 top-14 bottom-6 flex items-center justify-center pointer-events-none">
         <AnimatePresence mode="wait">
           {currentTeam && spotlight && (
             <motion.div
               key={`spot-${step}`}
-              layoutId={`mockup-team-${currentTeam.name}`}
-              transition={{ type: "spring", stiffness: 200, damping: 24 }}
-              className="flex items-center gap-3.5 rounded-2xl px-6 py-4"
+              initial={{ opacity: 0, scale: 0.7, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{
+                // Swoosh toward the target group (left/right half).
+                // Mockup has 4 groups in one row, so direction is
+                // simply signed distance from centre normalised.
+                opacity: 0,
+                scale: 0.3,
+                x: ((currentTeam.group - 1.5) / 1.5) * 180,
+                y: -120,
+                rotate: ((currentTeam.group - 1.5) / 1.5) * 6,
+                transition: { duration: 0.5, ease: [0.6, 0, 0.4, 1] },
+              }}
+              transition={{ type: "spring", stiffness: 180, damping: 22 }}
+              className="relative flex items-center gap-4 rounded-3xl px-7 md:px-9 py-5 md:py-6"
               style={{
                 background:
-                  "linear-gradient(135deg, rgba(43,254,186,0.2), rgba(43,254,186,0.04))",
-                border: "1px solid rgba(43,254,186,0.55)",
+                  "linear-gradient(135deg, rgba(43,254,186,0.22), rgba(43,254,186,0.04))",
+                border: "1px solid rgba(43,254,186,0.6)",
                 boxShadow:
-                  "0 20px 60px -10px rgba(43,254,186,0.5), 0 0 100px -20px rgba(43,254,186,0.5)",
-                backdropFilter: "blur(8px)",
+                  "0 24px 70px -12px rgba(43,254,186,0.55), 0 0 140px -25px rgba(43,254,186,0.6)",
+                backdropFilter: "blur(10px)",
               }}
             >
+              {/* Pulse ring on enter — single sweep */}
+              <motion.div
+                aria-hidden
+                className="absolute inset-0 rounded-3xl pointer-events-none"
+                initial={{ boxShadow: "0 0 0 0 rgba(43,254,186,0.6)" }}
+                animate={{
+                  boxShadow: [
+                    "0 0 0 0 rgba(43,254,186,0.6)",
+                    "0 0 0 36px rgba(43,254,186,0)",
+                  ],
+                }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+              />
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-lg font-black text-white shrink-0"
-                style={{ background: currentTeam.color }}
+                className="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-2xl md:text-3xl font-black text-white shrink-0"
+                style={{
+                  background: currentTeam.color,
+                  boxShadow: "0 10px 28px -6px rgba(0,0,0,0.45)",
+                }}
               >
                 {currentTeam.name[0]}
               </div>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1">
                 <span
-                  className="text-base md:text-lg font-black leading-tight"
-                  style={{ color: "#f5f7fb" }}
+                  className="text-xl md:text-2xl font-black leading-tight"
+                  style={{
+                    color: "#f5f7fb",
+                    letterSpacing: "-0.02em",
+                    textShadow: "0 0 30px rgba(43,254,186,0.3)",
+                  }}
                 >
                   {currentTeam.name}
                 </span>
                 <span
-                  className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1"
+                  className="text-[11px] md:text-xs font-bold uppercase tracking-widest inline-flex items-center gap-1.5"
                   style={{ color: "#2BFEBA" }}
                 >
-                  <span className="text-sm leading-none">{currentTeam.flag}</span>
+                  <span className="text-base leading-none">{currentTeam.flag}</span>
                   → group {String.fromCharCode(65 + currentTeam.group)}
                 </span>
               </div>

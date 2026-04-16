@@ -4413,7 +4413,8 @@
       "leagueStatus": "Liiga ajakava",
       "leagueDoneTitle": "Liiga ajakava valmis",
       "leagueDoneSubtitle": "{rounds} vooru · {matches} mängu paigas",
-      "madeWith": "Tehtud"
+      "madeWith": "Tehtud",
+      "introGo": "STARDIME!"
     },
     "controls": {
       "play": "Mängi",

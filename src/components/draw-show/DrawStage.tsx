@@ -31,6 +31,7 @@ import {
   Sparkles,
   Trophy,
   ArrowDown,
+  Play,
 } from "lucide-react";
 import { buildDrawPlan } from "@/lib/draw-show/engine";
 import type { DrawConfig, DrawInputTeam, DrawResult } from "@/lib/draw-show/types";
@@ -69,10 +70,14 @@ type Props = {
 // ── Timing ─────────────────────────────────────────────────────────────
 // Tuned for a live audience: long enough to read a team name, short
 // enough that a 40-team draw doesn't drag. Presenters can tap → to skip.
-const FIRST_SPOTLIGHT_DELAY_MS = 700;
-const BETWEEN_REVEALS_MS = 350;
-const SPOTLIGHT_DURATION_MS = 1700;
+const FIRST_SPOTLIGHT_DELAY_MS = 400;
+const BETWEEN_REVEALS_MS = 500;
+const SPOTLIGHT_DURATION_MS = 2100;
 const CONTROLS_IDLE_MS = 1800;
+
+// Dramatic intro countdown before the very first team is revealed. Each
+// number sits on screen for this many ms; at 0 the show begins.
+const INTRO_STEP_MS = 900;
 
 export function DrawStage({
   teams,
@@ -118,10 +123,35 @@ export function DrawStage({
   const [placedCount, setPlacedCount] = useState(0);
   const [showSpotlight, setShowSpotlight] = useState(false);
   const [playing, setPlaying] = useState(true);
+  // Intro countdown (5..4..3..2..1..GO). `null` means "intro done,
+  // proceed with reveals". We render a dedicated panel while this is
+  // non-null and suppress the reveal loop during it.
+  const [introStep, setIntroStep] = useState<number | "go" | null>(5);
+
+  // Drive the intro countdown. Each tick lasts INTRO_STEP_MS; the
+  // final "GO" flashes for a beat before we hand off to the reveal
+  // engine.
+  useEffect(() => {
+    if (introStep === null) return;
+    if (!playing) return;
+    const t = window.setTimeout(() => {
+      if (introStep === "go") {
+        setIntroStep(null);
+      } else if (introStep <= 1) {
+        setIntroStep("go");
+      } else {
+        setIntroStep((s) =>
+          s === null || s === "go" ? s : (s as number) - 1,
+        );
+      }
+    }, INTRO_STEP_MS);
+    return () => window.clearTimeout(t);
+  }, [introStep, playing]);
 
   // Driving timer: chain spotlight → place → advance.
   useEffect(() => {
     if (!playing || isError) return;
+    if (introStep !== null) return; // wait for 5..4..3..2..1..GO
     if (placedCount >= total) return; // done
 
     const delayToShow =
@@ -140,7 +170,7 @@ export function DrawStage({
       window.clearTimeout(showTimer);
       window.clearTimeout(placeTimer);
     };
-  }, [playing, placedCount, total, isError]);
+  }, [playing, placedCount, total, isError, introStep]);
 
   // Manual controls.
   const canNext = placedCount < total;
@@ -247,6 +277,23 @@ export function DrawStage({
     currentStep && currentStep.kind === "place-group"
       ? currentStep.groupIndex
       : null;
+
+  // Map the active group index to a horizontal "fly-away" direction so
+  // the spotlight visibly heads toward its target when it exits.
+  // Groups A-D form the top row, E-H the bottom row — we only care
+  // about the column, which is gi % 4 for most configurations.
+  const exitDirection = useMemo(() => {
+    if (activeGroupIndex == null) return 0;
+    if ("error" in plan) return 0;
+    const groupCount =
+      plan.config.mode === "groups" ? (plan.groups?.length ?? 4) : 4;
+    const cols = Math.min(groupCount, 4);
+    // Centre of the grid is (cols - 1) / 2 — direction is signed
+    // distance from that centre normalised to roughly [-1, 1].
+    const col = activeGroupIndex % cols;
+    const centre = (cols - 1) / 2;
+    return cols === 1 ? 0 : (col - centre) / centre;
+  }, [activeGroupIndex, plan]);
 
   const isGroupsMode = !isError && plan.config.mode === "groups";
   const isLeagueMode = !isError && plan.config.mode === "league";
@@ -365,6 +412,15 @@ export function DrawStage({
         </div>
       </div>
 
+      {/* Dramatic 5..4..3..2..1..GO overlay, rendered above the body
+          until the intro finishes. Portals stay where they are so
+          closing/Esc still works during the intro. */}
+      <AnimatePresence>
+        {introStep !== null && !isError && (
+          <IntroCountdown step={introStep} goLabel={t("stage.introGo")} />
+        )}
+      </AnimatePresence>
+
       {/* ── Body ──────────────────────────────────────────────── */}
       <div className="relative flex-1 flex items-stretch justify-center px-6 pb-16 z-[1]">
         {isError ? (
@@ -416,6 +472,7 @@ export function DrawStage({
                         65 + currentStep.groupIndex,
                       )}
                       targetLabel={t("stage.toGroup")}
+                      exitDirection={exitDirection}
                     />
                   ) : (
                     <motion.div
@@ -538,25 +595,106 @@ export function DrawStage({
 
 // ─── Sub-components ─────────────────────────────────────────────────────
 
+/**
+ * Cinema-style 5..4..3..2..1..GO overlay shown before the first reveal.
+ * Huge number in the centre with a pulse-and-shrink animation and an
+ * expanding mint ring; final "GO" flashes green. Non-interactive — the
+ * parent drives the number via `step` and swaps us out when done.
+ */
+function IntroCountdown({
+  step,
+  goLabel,
+}: {
+  step: number | "go";
+  goLabel: string;
+}) {
+  const isGo = step === "go";
+  const display = isGo ? goLabel : String(step);
+  return (
+    <motion.div
+      key={display}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+    >
+      {/* Ambient darkening so the number pops over the stage */}
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{ background: "rgba(5,8,15,0.5)" }}
+      />
+
+      {/* Expanding ring */}
+      <motion.div
+        aria-hidden
+        key={`ring-${display}`}
+        className="absolute rounded-full"
+        initial={{
+          width: 80,
+          height: 80,
+          opacity: 0.9,
+          borderWidth: 3,
+        }}
+        animate={{
+          width: 520,
+          height: 520,
+          opacity: 0,
+          borderWidth: 1,
+        }}
+        transition={{ duration: 0.9, ease: "easeOut" }}
+        style={{
+          border: `1px solid ${isGo ? "#2BFEBA" : "rgba(43,254,186,0.6)"}`,
+          boxShadow: `0 0 60px ${isGo ? "rgba(43,254,186,0.5)" : "rgba(43,254,186,0.3)"}`,
+        }}
+      />
+
+      {/* The number / GO label */}
+      <motion.div
+        key={`num-${display}`}
+        initial={{ scale: 0.3, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 1.5, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 240, damping: 18 }}
+        className="relative font-black select-none tabular-nums"
+        style={{
+          color: isGo ? "#2BFEBA" : "#f5f7fb",
+          fontSize: isGo ? "14rem" : "18rem",
+          lineHeight: 1,
+          letterSpacing: "-0.05em",
+          textShadow: isGo
+            ? "0 0 80px rgba(43,254,186,0.7), 0 0 140px rgba(43,254,186,0.4)"
+            : "0 0 60px rgba(43,254,186,0.35)",
+        }}
+      >
+        {display}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function SpotlightWithTarget({
   team,
   layoutId,
   targetLetter,
   targetLabel,
+  exitDirection = 0,
 }: {
   team: DrawInputTeam;
   layoutId: string;
   targetLetter?: string;
   targetLabel: string;
+  exitDirection?: number;
 }) {
-  // The outer wrapper intentionally has no motion props: the inner
-  // TeamCard carries the layoutId that framer-motion uses for the
-  // shared-layout morph into the group slot. Wrapping it in another
-  // fading motion.div conflicts with that transition and produces the
-  // visible "ghost" double-render we saw during QA.
   return (
     <div className="flex flex-col items-center gap-3">
-      <TeamCard team={team} variant="spotlight" layoutId={layoutId} />
+      <TeamCard
+        team={team}
+        variant="spotlight"
+        layoutId={layoutId}
+        exitDirection={exitDirection}
+      />
       {targetLetter && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}

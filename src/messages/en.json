@@ -4413,7 +4413,8 @@
       "leagueStatus": "League schedule",
       "leagueDoneTitle": "League schedule drawn",
       "leagueDoneSubtitle": "{rounds} rounds · {matches} matches locked in",
-      "madeWith": "Made with"
+      "madeWith": "Made with",
+      "introGo": "GO!"
     },
     "controls": {
       "play": "Play",

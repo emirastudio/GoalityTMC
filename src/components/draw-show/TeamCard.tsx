@@ -20,17 +20,19 @@ type Variant = "spotlight" | "slot";
 type Props = {
   team: DrawInputTeam;
   variant: Variant;
-  /**
-   * Stable layoutId tying spotlight and slot renders of the same team
-   * together so framer-motion animates between them. Usually
-   * `team-${team.id}` but the parent controls it to avoid collisions
-   * when a team could theoretically appear twice in the same draw.
-   */
+  /** Legacy layoutId — see comments inside Spotlight/Slot for why it's unused. */
   layoutId: string;
+  /**
+   * Spotlight-only: horizontal exit direction hint (-1..+1). Passed to
+   * the exit transform so the card "flies" toward its target group.
+   * Ignored for the slot variant.
+   */
+  exitDirection?: number;
 };
 
-export function TeamCard({ team, variant, layoutId }: Props) {
-  if (variant === "spotlight") return <Spotlight team={team} layoutId={layoutId} />;
+export function TeamCard({ team, variant, layoutId, exitDirection }: Props) {
+  if (variant === "spotlight")
+    return <Spotlight team={team} layoutId={layoutId} exitDirection={exitDirection} />;
   return <Slot team={team} layoutId={layoutId} />;
 }
 
@@ -71,46 +73,75 @@ function initials(name: string): string {
 
 // ─── Spotlight variant ─────────────────────────────────────────────────
 
-function Spotlight({ team, layoutId: _layoutId }: { team: DrawInputTeam; layoutId: string }) {
+function Spotlight({
+  team,
+  layoutId: _layoutId,
+  exitDirection = 0,
+}: {
+  team: DrawInputTeam;
+  layoutId: string;
+  /**
+   * Horizontal hint for the "fly-away" exit (−1 far left, 0 center,
+   * +1 far right). Caller computes this from the target group's
+   * position on the board so the card swooshes toward its destination.
+   */
+  exitDirection?: number;
+}) {
   const flag = flagFromCode(team.countryCode);
-  // Originally this card shared a `layoutId` with the slot version so
-  // framer-motion would morph the big hero into the small group row.
-  // That approach produced visible "ghost" frames mid-tween (the
-  // spotlight's large typography and the slot's compact structure are
-  // too different for a clean shared-layout interpolation).
-  //
-  // New approach: the spotlight and slot are independent. The
-  // spotlight fades/shrinks in the centre, the slot fades into its
-  // group. The emotional effect is still "team disappears from the
-  // urn and appears in the group" — just no artifacts in between.
-  // `_layoutId` is kept in the prop signature for API compatibility;
-  // it's intentionally unused here.
+  // Large, glowing hero: 150×150 badge, 6xl name, pulse rings, sparkle
+  // burst on enter. The exit translates the card toward `exitDirection`
+  // so it reads as "flying into the group" without the shared-layout
+  // artifacts of the old approach.
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.85 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.6, transition: { duration: 0.3 } }}
-      transition={{ type: "spring", stiffness: 220, damping: 24 }}
-      className="relative flex items-center gap-5 rounded-3xl px-8 py-6"
+      initial={{ opacity: 0, scale: 0.7, y: 40 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{
+        opacity: 0,
+        scale: 0.25,
+        x: exitDirection * 260,
+        y: -140,
+        rotate: exitDirection * 8,
+        transition: { duration: 0.55, ease: [0.6, 0, 0.4, 1] },
+      }}
+      transition={{ type: "spring", stiffness: 180, damping: 22 }}
+      className="relative flex items-center gap-7 rounded-[2rem] px-10 md:px-14 py-8 md:py-10"
       style={{
         background:
-          "linear-gradient(135deg, rgba(43,254,186,0.16), rgba(43,254,186,0.04))",
-        border: "1px solid rgba(43,254,186,0.45)",
+          "linear-gradient(135deg, rgba(43,254,186,0.22), rgba(43,254,186,0.04))",
+        border: "1px solid rgba(43,254,186,0.55)",
         boxShadow:
-          "0 20px 60px -10px rgba(43,254,186,0.35), 0 0 120px -20px rgba(43,254,186,0.5)",
-        backdropFilter: "blur(10px)",
+          "0 28px 80px -12px rgba(43,254,186,0.5), 0 0 160px -30px rgba(43,254,186,0.6)",
+        backdropFilter: "blur(12px)",
       }}
     >
-      {/* Pulsing halo behind the card */}
+      {/* Expanding halo — one big breath behind the card */}
       <motion.div
         aria-hidden
-        className="absolute -inset-6 rounded-[2rem] pointer-events-none"
+        className="absolute -inset-10 rounded-[3rem] pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle, rgba(43,254,186,0.28) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(43,254,186,0.32) 0%, transparent 70%)",
         }}
-        animate={{ opacity: [0.6, 1, 0.6] }}
-        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        animate={{
+          opacity: [0.55, 1, 0.55],
+          scale: [0.95, 1.05, 0.95],
+        }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Double ring sweep — triggers once on enter */}
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 rounded-[2rem] pointer-events-none"
+        initial={{ boxShadow: "0 0 0 0 rgba(43,254,186,0.55)" }}
+        animate={{
+          boxShadow: [
+            "0 0 0 0 rgba(43,254,186,0.55)",
+            "0 0 0 40px rgba(43,254,186,0)",
+          ],
+        }}
+        transition={{ duration: 1.4, ease: "easeOut" }}
       />
 
       <BadgeLarge team={team} />
@@ -118,24 +149,28 @@ function Spotlight({ team, layoutId: _layoutId }: { team: DrawInputTeam; layoutI
       <div className="relative flex-1 min-w-0">
         {team.clubName && team.clubName !== team.name && (
           <p
-            className="text-xs font-semibold uppercase tracking-widest mb-1 truncate"
+            className="text-sm font-semibold uppercase tracking-widest mb-2 truncate"
             style={{ color: "rgba(245,247,251,0.55)" }}
           >
             {team.clubName}
           </p>
         )}
         <p
-          className="text-4xl font-black leading-tight truncate"
-          style={{ color: "#f5f7fb" }}
+          className="text-5xl md:text-6xl font-black leading-tight truncate"
+          style={{
+            color: "#f5f7fb",
+            textShadow: "0 0 40px rgba(43,254,186,0.35)",
+            letterSpacing: "-0.02em",
+          }}
         >
           {team.name}
         </p>
         {(flag || team.city) && (
           <p
-            className="text-sm font-semibold mt-1.5 flex items-center gap-2"
-            style={{ color: "rgba(245,247,251,0.7)" }}
+            className="text-base md:text-lg font-semibold mt-2.5 flex items-center gap-2.5"
+            style={{ color: "rgba(245,247,251,0.75)" }}
           >
-            {flag && <span className="text-xl">{flag}</span>}
+            {flag && <span className="text-2xl leading-none">{flag}</span>}
             {team.city && <span>{team.city}</span>}
           </p>
         )}
@@ -151,18 +186,23 @@ function BadgeLarge({ team }: { team: DrawInputTeam }) {
       <img
         src={team.logoUrl}
         alt=""
-        className="relative w-24 h-24 rounded-2xl object-cover shrink-0"
-        style={{ border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.04)" }}
+        className="relative w-32 h-32 md:w-40 md:h-40 rounded-3xl object-cover shrink-0"
+        style={{
+          border: "1px solid rgba(255,255,255,0.14)",
+          background: "rgba(255,255,255,0.04)",
+          boxShadow: "0 12px 32px -8px rgba(0,0,0,0.4)",
+        }}
       />
     );
   }
   return (
     <div
-      className="relative w-24 h-24 rounded-2xl flex items-center justify-center shrink-0 text-3xl font-black"
+      className="relative w-32 h-32 md:w-40 md:h-40 rounded-3xl flex items-center justify-center shrink-0 text-5xl md:text-6xl font-black"
       style={{
         background: fallbackBadgeColor(team.id),
         color: "#ffffff",
-        textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+        textShadow: "0 3px 8px rgba(0,0,0,0.4)",
+        boxShadow: "0 12px 32px -8px rgba(0,0,0,0.4)",
       }}
     >
       {initials(team.name)}
