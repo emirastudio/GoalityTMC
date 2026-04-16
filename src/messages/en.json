@@ -4465,6 +4465,13 @@
       "leagueStatus": "League schedule",
       "leagueDoneTitle": "League schedule drawn",
       "leagueDoneSubtitle": "{rounds} rounds · {matches} matches locked in",
+      "pairLabel": "Pair",
+      "vs": "vs",
+      "bye": "BYE — advances",
+      "sideHome": "home side",
+      "sideAway": "away side",
+      "playoffDoneTitle": "Bracket drawn",
+      "playoffDoneSubtitle": "{pairs} head-to-head pairs locked in",
       "madeWith": "Made with",
       "introGo": "GO!"
     },

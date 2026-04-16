@@ -4465,6 +4465,13 @@
       "leagueStatus": "Расписание лиги",
       "leagueDoneTitle": "Расписание лиги готово",
       "leagueDoneSubtitle": "{rounds} раундов · {matches} матчей зафиксированы",
+      "pairLabel": "Пара",
+      "vs": "vs",
+      "bye": "BYE — проходит дальше",
+      "sideHome": "хозяева",
+      "sideAway": "гости",
+      "playoffDoneTitle": "Сетка готова",
+      "playoffDoneSubtitle": "{pairs} пар зафиксировано",
       "madeWith": "Сделано на",
       "introGo": "ПОЕХАЛИ!"
     },

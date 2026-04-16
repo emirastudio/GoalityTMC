@@ -4465,6 +4465,13 @@
       "leagueStatus": "Liiga ajakava",
       "leagueDoneTitle": "Liiga ajakava valmis",
       "leagueDoneSubtitle": "{rounds} vooru · {matches} mängu paigas",
+      "pairLabel": "Paar",
+      "vs": "vs",
+      "bye": "BYE — pääseb edasi",
+      "sideHome": "kodu",
+      "sideAway": "võõrsil",
+      "playoffDoneTitle": "Tabel paigas",
+      "playoffDoneSubtitle": "{pairs} paari paigas",
       "madeWith": "Tehtud",
       "introGo": "STARDIME!"
     },

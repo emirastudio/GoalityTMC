@@ -327,7 +327,22 @@ export function DrawStage({
 
   const isGroupsMode = !isError && plan.config.mode === "groups";
   const isLeagueMode = !isError && plan.config.mode === "league";
+  const isPlayoffMode = !isError && plan.config.mode === "playoff";
   const isDone = placedCount >= total && total > 0;
+
+  // For playoff: each step has (pairIndex, side), so we track which
+  // (pairIndex, side) tuples have been revealed for the bracket grid
+  // to know which slots to fill. The set is keyed "pi:side" to avoid
+  // collisions between, say, pair 1 home and pair 1 away.
+  const revealedPairKeys = useMemo(() => {
+    const set = new Set<string>();
+    if (!isPlayoffMode) return set;
+    for (let i = 0; i < placedCount && i < steps.length; i++) {
+      const s = steps[i];
+      if (s.kind === "pair") set.add(`${s.pairIndex}:${s.side}`);
+    }
+    return set;
+  }, [isPlayoffMode, placedCount, steps]);
 
   // Derived data for league mode: which match is currently in the
   // spotlight and which match ids have been revealed. The set is indexed
@@ -554,8 +569,48 @@ export function DrawStage({
               </AnimatePresence>
             </BodyOverlay>
           </>
+        ) : isPlayoffMode ? (
+          <>
+            <div className="flex-1 overflow-y-auto px-6 pb-44 pt-2 w-full">
+              <PlayoffBracket
+                pairs={plan.pairs ?? []}
+                revealedPairKeys={revealedPairKeys}
+                pairLabel={t("stage.pairLabel")}
+                vsLabel={t("stage.vs")}
+                byeLabel={t("stage.bye")}
+              />
+            </div>
+            <BodyOverlay>
+              <AnimatePresence mode="wait">
+                {isDone ? (
+                  <DonePanel
+                    key="done"
+                    title={t("stage.playoffDoneTitle")}
+                    subtitle={t("stage.playoffDoneSubtitle", {
+                      pairs: plan.pairs?.length ?? 0,
+                    })}
+                  />
+                ) : showSpotlight &&
+                  currentStep &&
+                  currentStep.kind === "pair" ? (
+                  <PlayoffSpotlight
+                    key={`pspot-${placedCount}`}
+                    team={currentStep.team}
+                    pairIndex={currentStep.pairIndex}
+                    side={currentStep.side}
+                    pairLabel={t("stage.pairLabel")}
+                    sideLabel={t(
+                      currentStep.side === "home"
+                        ? "stage.sideHome"
+                        : "stage.sideAway",
+                    )}
+                  />
+                ) : null}
+              </AnimatePresence>
+            </BodyOverlay>
+          </>
         ) : (
-          // Other modes (playoff pairs etc.) — phase 3.5 fills these in.
+          // Other modes — phase 3.5 fills these in.
           <div className="flex-1 flex items-center justify-center px-6 pb-16">
             <p className="text-sm" style={{ color: "rgba(245,247,251,0.6)" }}>
               {t("stage.modeComingSoon")}
@@ -991,6 +1046,224 @@ function BodyOverlay({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * PlayoffBracket — vertical list of head-to-head pairs that fill in
+ * as the draw reveals each side. BYE entries (id `__bye__`) render
+ * as a muted "BYE — advances" pill instead of a real team row.
+ */
+function PlayoffBracket({
+  pairs,
+  revealedPairKeys,
+  pairLabel,
+  vsLabel,
+  byeLabel,
+}: {
+  pairs: [DrawInputTeam, DrawInputTeam][];
+  revealedPairKeys: ReadonlySet<string>;
+  pairLabel: string;
+  vsLabel: string;
+  byeLabel: string;
+}) {
+  if (pairs.length === 0) return null;
+  const cols = pairs.length <= 4 ? 1 : pairs.length <= 8 ? 2 : 3;
+  return (
+    <div className="w-full max-w-5xl mx-auto">
+      <div
+        className="grid gap-3"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {pairs.map((pair, pi) => {
+          const homeRevealed = revealedPairKeys.has(`${pi}:home`);
+          const awayRevealed = revealedPairKeys.has(`${pi}:away`);
+          const bothRevealed = homeRevealed && awayRevealed;
+          return (
+            <div
+              key={pi}
+              className="rounded-2xl p-3 flex flex-col"
+              style={{
+                background: bothRevealed
+                  ? "rgba(43,254,186,0.06)"
+                  : "rgba(255,255,255,0.035)",
+                border: `1px solid ${
+                  bothRevealed
+                    ? "rgba(43,254,186,0.35)"
+                    : "rgba(255,255,255,0.07)"
+                }`,
+              }}
+            >
+              <div className="flex items-center justify-between px-1 mb-2">
+                <span
+                  className="text-xs font-bold uppercase tracking-widest"
+                  style={{ color: bothRevealed ? "#2BFEBA" : "#f5f7fb" }}
+                >
+                  {pairLabel} {pi + 1}
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                <PairSlot
+                  team={pair[0]}
+                  revealed={homeRevealed}
+                  byeLabel={byeLabel}
+                />
+                <div
+                  className="text-center text-[10px] font-black uppercase tracking-widest"
+                  style={{ color: "rgba(245,247,251,0.4)" }}
+                >
+                  {vsLabel}
+                </div>
+                <PairSlot
+                  team={pair[1]}
+                  revealed={awayRevealed}
+                  byeLabel={byeLabel}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PairSlot({
+  team,
+  revealed,
+  byeLabel,
+}: {
+  team: DrawInputTeam;
+  revealed: boolean;
+  byeLabel: string;
+}) {
+  const isBye = team.id === "__bye__";
+  if (!revealed) {
+    return (
+      <div
+        className="rounded-lg px-2.5 py-2 min-h-[34px]"
+        style={{
+          background: "rgba(255,255,255,0.02)",
+          border: "1px dashed rgba(255,255,255,0.07)",
+        }}
+      />
+    );
+  }
+  if (isBye) {
+    return (
+      <div
+        className="rounded-lg px-2.5 py-2 text-center text-xs font-bold uppercase tracking-widest"
+        style={{
+          background: "rgba(245,158,11,0.08)",
+          border: "1px solid rgba(245,158,11,0.3)",
+          color: "#f59e0b",
+        }}
+      >
+        {byeLabel}
+      </div>
+    );
+  }
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 240, damping: 26 }}
+      className="rounded-lg px-2.5 py-2 flex items-center gap-2"
+      style={{
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <span
+        className="text-sm font-semibold truncate flex-1"
+        style={{ color: "#f5f7fb" }}
+      >
+        {team.name}
+      </span>
+    </motion.div>
+  );
+}
+
+function PlayoffSpotlight({
+  team,
+  pairIndex,
+  side,
+  pairLabel,
+  sideLabel,
+}: {
+  team: DrawInputTeam;
+  pairIndex: number;
+  side: "home" | "away";
+  pairLabel: string;
+  sideLabel: string;
+}) {
+  const isBye = team.id === "__bye__";
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.7, y: 30 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{
+        opacity: 0,
+        scale: 0.5,
+        y: side === "home" ? 80 : -80,
+        transition: { duration: 0.45, ease: [0.6, 0, 0.4, 1] },
+      }}
+      transition={{ type: "spring", stiffness: 180, damping: 22 }}
+      className="flex flex-col items-center gap-3 relative"
+    >
+      <motion.div
+        aria-hidden
+        className="absolute -inset-12 rounded-[3rem] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(43,254,186,0.32) 0%, transparent 70%)",
+        }}
+        animate={{ opacity: [0.55, 1, 0.55], scale: [0.95, 1.05, 0.95] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div
+        className="relative flex items-center gap-6 rounded-[2rem] px-8 md:px-12 py-7 md:py-9"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(43,254,186,0.22), rgba(43,254,186,0.04))",
+          border: "1px solid rgba(43,254,186,0.55)",
+          boxShadow:
+            "0 28px 80px -12px rgba(43,254,186,0.5), 0 0 160px -30px rgba(43,254,186,0.6)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <p
+          className="text-4xl md:text-6xl font-black truncate max-w-[60vw]"
+          style={{
+            color: "#f5f7fb",
+            letterSpacing: "-0.02em",
+            textShadow: "0 0 40px rgba(43,254,186,0.35)",
+          }}
+        >
+          {isBye ? "BYE" : team.name}
+        </p>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="flex items-center gap-2 px-4 py-1.5 rounded-full"
+        style={{
+          background: "rgba(43,254,186,0.12)",
+          border: "1px solid rgba(43,254,186,0.35)",
+        }}
+      >
+        <ArrowDown className="w-3.5 h-3.5" style={{ color: "#2BFEBA" }} />
+        <span
+          className="text-xs font-bold uppercase tracking-widest"
+          style={{ color: "#2BFEBA" }}
+        >
+          {pairLabel} {pairIndex + 1} · {sideLabel}
+        </span>
+      </motion.div>
+    </motion.div>
   );
 }
 
