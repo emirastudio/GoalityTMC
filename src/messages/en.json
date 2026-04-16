@@ -4467,7 +4467,7 @@
       "leagueDoneSubtitle": "{rounds} rounds · {matches} matches locked in",
       "pairLabel": "Pair",
       "vs": "vs",
-      "bye": "BYE — advances",
+      "bye": "No opponent · advances",
       "sideHome": "home side",
       "sideAway": "away side",
       "playoffDoneTitle": "Bracket drawn",

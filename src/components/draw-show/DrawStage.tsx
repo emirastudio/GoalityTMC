@@ -823,13 +823,25 @@ function DonePanel({
   unassignedLabel?: string;
 }) {
   const hasUnassigned = (unassignedTeams?.length ?? 0) > 0;
+  // Solid dark backdrop + border so the done summary clearly sits
+  // ABOVE the bracket / board behind it instead of melting into the
+  // grid. Padding pulled in so the card still feels compact at the
+  // centre of the viewport.
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 22 }}
-      className="text-center flex flex-col items-center gap-3"
+      className="text-center flex flex-col items-center gap-3 rounded-3xl px-8 py-7 max-w-md"
+      style={{
+        background:
+          "linear-gradient(135deg, rgba(11,17,34,0.95), rgba(5,8,15,0.95))",
+        border: "1px solid rgba(43,254,186,0.4)",
+        boxShadow:
+          "0 32px 80px -12px rgba(0,0,0,0.6), 0 0 120px -30px rgba(43,254,186,0.45)",
+        backdropFilter: "blur(18px)",
+      }}
     >
       <div
         className="w-14 h-14 rounded-2xl flex items-center justify-center"
@@ -1150,19 +1162,29 @@ function PairSlot({
     );
   }
   if (isBye) {
+    // Self-explanatory BYE pill — icon + the shorter "проходит
+    // дальше / advances" wording works better than the bare term.
     return (
       <div
-        className="rounded-lg px-2.5 py-2 text-center text-xs font-bold uppercase tracking-widest"
+        className="rounded-lg px-2.5 py-2 flex items-center justify-center gap-2"
         style={{
-          background: "rgba(245,158,11,0.08)",
-          border: "1px solid rgba(245,158,11,0.3)",
+          background: "rgba(245,158,11,0.1)",
+          border: "1px dashed rgba(245,158,11,0.4)",
           color: "#f59e0b",
         }}
       >
-        {byeLabel}
+        <Trophy className="w-3.5 h-3.5" />
+        <span className="text-xs font-bold uppercase tracking-widest">
+          {byeLabel}
+        </span>
       </div>
     );
   }
+
+  // Real team row — same shape as the GroupBoard slot: badge, name,
+  // country flag. Picks up logoUrl from the team payload (uploaded
+  // via wizard or wired from the embedded tournament).
+  const flag = teamFlag(team.countryCode);
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
@@ -1174,14 +1196,68 @@ function PairSlot({
         border: "1px solid rgba(255,255,255,0.08)",
       }}
     >
+      <PairBadge team={team} />
       <span
         className="text-sm font-semibold truncate flex-1"
         style={{ color: "#f5f7fb" }}
       >
         {team.name}
       </span>
+      {flag && <span className="text-base shrink-0">{flag}</span>}
     </motion.div>
   );
+}
+
+function PairBadge({ team }: { team: DrawInputTeam }) {
+  if (team.logoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={team.logoUrl}
+        alt=""
+        className="w-6 h-6 rounded-md object-cover shrink-0"
+        style={{ background: "rgba(255,255,255,0.06)" }}
+      />
+    );
+  }
+  return (
+    <div
+      className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black shrink-0"
+      style={{
+        background: stableColorFromId(team.id),
+        color: "#ffffff",
+        textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+      }}
+    >
+      {teamInitials(team.name)}
+    </div>
+  );
+}
+
+// ── Tiny shared helpers (kept local to avoid circular imports) ──
+
+function teamFlag(code: string | null | undefined): string | null {
+  if (!code || code.length !== 2) return null;
+  const A = 0x41;
+  const BASE = 0x1f1e6;
+  const a = code.toUpperCase().charCodeAt(0);
+  const b = code.toUpperCase().charCodeAt(1);
+  if (a < A || a > A + 25 || b < A || b > A + 25) return null;
+  return (
+    String.fromCodePoint(BASE + (a - A)) +
+    String.fromCodePoint(BASE + (b - A))
+  );
+}
+
+function teamInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).slice(0, 2);
+  return parts.map((p) => p[0] ?? "").join("").toUpperCase() || "?";
+}
+
+function stableColorFromId(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360}, 70%, 55%)`;
 }
 
 function PlayoffSpotlight({

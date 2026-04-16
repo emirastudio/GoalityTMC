@@ -4467,7 +4467,7 @@
       "leagueDoneSubtitle": "{rounds} раундов · {matches} матчей зафиксированы",
       "pairLabel": "Пара",
       "vs": "vs",
-      "bye": "BYE — проходит дальше",
+      "bye": "Без соперника · в следующий раунд",
       "sideHome": "хозяева",
       "sideAway": "гости",
       "playoffDoneTitle": "Сетка готова",
