@@ -80,7 +80,7 @@ export function DrawMockup() {
     // like (header + groups + controls strip) without leaving empty
     // space in the middle that the 16:9 version had with only 8 teams.
     <div
-      className="relative mx-auto max-w-4xl rounded-3xl overflow-hidden"
+      className="relative mx-auto max-w-5xl rounded-3xl overflow-hidden"
       style={{
         background:
           "linear-gradient(135deg, #05080f 0%, #0b1122 50%, #05080f 100%)",

@@ -21,7 +21,7 @@
  * POSTs instead of base64-encoding.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -36,6 +36,8 @@ import {
   Plus,
   Image as ImageIcon,
   Trophy,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { encodeDrawState } from "@/lib/draw-show/encode-state";
 import type { ShareableDrawState } from "@/lib/draw-show/types";
@@ -99,6 +101,27 @@ function freshRow(): DetailedRow {
     countryCode: "",
     logoUrl: "",
   };
+}
+
+/**
+ * Upload a logo file to the server. Returns the public URL on success
+ * or throws on error. Callers are responsible for surfacing failure to
+ * the user — this helper stays free of React state so it can be reused
+ * by both the per-team editor and the tournament branding picker.
+ */
+async function uploadLogo(file: File): Promise<string> {
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await fetch("/api/draw/upload-logo", {
+    method: "POST",
+    body: fd,
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `upload_failed_${res.status}`);
+  }
+  const { url } = (await res.json()) as { url: string };
+  return url;
 }
 
 export function DrawWizard({ id }: { id?: string }) {
@@ -257,7 +280,7 @@ export function DrawWizard({ id }: { id?: string }) {
   return (
     <section
       id={id}
-      className="relative max-w-3xl mx-auto px-6 md:px-10 pb-16"
+      className="relative max-w-5xl mx-auto px-6 md:px-10 pb-16"
     >
       <div
         className="rounded-3xl p-6 md:p-8"
@@ -317,18 +340,27 @@ export function DrawWizard({ id }: { id?: string }) {
                 }}
               />
             </div>
-            <input
-              type="url"
-              value={tournamentLogoUrl}
-              onChange={(e) => setTournamentLogoUrl(e.target.value)}
-              placeholder={t("brandingLogoPlaceholder")}
-              className="w-full mt-2 rounded-xl px-3 py-2 text-sm outline-none"
-              style={{
-                background: "var(--cat-input-bg, var(--cat-card-bg))",
-                border: "1px solid var(--cat-card-border)",
-                color: "var(--cat-text)",
-              }}
-            />
+            <div className="mt-2 flex items-center gap-2">
+              <LogoPicker
+                url={tournamentLogoUrl}
+                onChange={setTournamentLogoUrl}
+                size={40}
+                uploadLabel={t("brandingLogoUpload")}
+                uploadErrorLabel={t("brandingLogoUploadError")}
+              />
+              <input
+                type="url"
+                value={tournamentLogoUrl}
+                onChange={(e) => setTournamentLogoUrl(e.target.value)}
+                placeholder={t("brandingLogoPlaceholder")}
+                className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+                style={{
+                  background: "var(--cat-input-bg, var(--cat-card-bg))",
+                  border: "1px solid var(--cat-card-border)",
+                  color: "var(--cat-text)",
+                }}
+              />
+            </div>
             <p
               className="text-xs mt-1.5"
               style={{ color: "var(--cat-text-muted)" }}
@@ -396,6 +428,8 @@ export function DrawWizard({ id }: { id?: string }) {
                     placeholderName={t("rowPlaceholderName")}
                     placeholderLogo={t("rowPlaceholderLogo")}
                     countryLabel={t("rowCountry")}
+                    uploadLabel={t("rowLogoUpload")}
+                    uploadErrorLabel={t("rowLogoUploadError")}
                   />
                 ))}
                 <button
@@ -602,6 +636,8 @@ function DetailedRowEditor({
   placeholderName,
   placeholderLogo,
   countryLabel,
+  uploadLabel,
+  uploadErrorLabel,
 }: {
   row: DetailedRow;
   index: number;
@@ -611,6 +647,8 @@ function DetailedRowEditor({
   placeholderName: string;
   placeholderLogo: string;
   countryLabel: string;
+  uploadLabel: string;
+  uploadErrorLabel: string;
 }) {
   return (
     <div
@@ -627,31 +665,13 @@ function DetailedRowEditor({
         {index + 1}
       </span>
 
-      {/* Logo preview or placeholder */}
-      <div
-        className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 overflow-hidden"
-        style={{
-          background: "var(--cat-card-bg)",
-          border: "1px solid var(--cat-card-border)",
-        }}
-      >
-        {row.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={row.logoUrl}
-            alt=""
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-        ) : (
-          <ImageIcon
-            className="w-4 h-4"
-            style={{ color: "var(--cat-text-muted)" }}
-          />
-        )}
-      </div>
+      <LogoPicker
+        url={row.logoUrl}
+        onChange={(url) => onUpdate({ logoUrl: url })}
+        size={36}
+        uploadLabel={uploadLabel}
+        uploadErrorLabel={uploadErrorLabel}
+      />
 
       <input
         type="text"
@@ -686,7 +706,7 @@ function DetailedRowEditor({
         value={row.logoUrl}
         onChange={(e) => onUpdate({ logoUrl: e.target.value })}
         placeholder={placeholderLogo}
-        className="w-36 hidden md:block bg-transparent outline-none text-xs px-1.5 py-1 rounded-md"
+        className="w-36 hidden lg:block bg-transparent outline-none text-xs px-1.5 py-1 rounded-md"
         style={{
           color: "var(--cat-text-muted)",
           border: "1px solid var(--cat-card-border)",
@@ -706,6 +726,96 @@ function DetailedRowEditor({
         <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
+  );
+}
+
+/**
+ * LogoPicker — clickable square that doubles as a preview and upload
+ * trigger. Hosts a hidden <input type="file">, uploads on change, and
+ * writes the returned URL back through `onChange`. Users can also
+ * type a URL directly into the companion text field upstream.
+ */
+function LogoPicker({
+  url,
+  onChange,
+  size = 36,
+  uploadLabel,
+  uploadErrorLabel,
+}: {
+  url: string;
+  onChange: (url: string) => void;
+  size?: number;
+  uploadLabel: string;
+  uploadErrorLabel: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    setFailed(false);
+    try {
+      const newUrl = await uploadLogo(file);
+      onChange(newUrl);
+    } catch (e) {
+      console.error("logo upload failed", e);
+      setFailed(true);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => fileRef.current?.click()}
+      title={failed ? uploadErrorLabel : uploadLabel}
+      className="relative rounded-md flex items-center justify-center shrink-0 overflow-hidden transition-opacity hover:opacity-90"
+      style={{
+        width: size,
+        height: size,
+        background: "var(--cat-card-bg)",
+        border: failed
+          ? "1px solid #ef4444"
+          : "1px dashed var(--cat-card-border)",
+      }}
+    >
+      {uploading ? (
+        <Loader2
+          className="w-4 h-4 animate-spin"
+          style={{ color: "var(--cat-accent)" }}
+        />
+      ) : url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={url}
+          alt=""
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+        />
+      ) : (
+        <Upload
+          className="w-3.5 h-3.5"
+          style={{ color: "var(--cat-text-muted)" }}
+        />
+      )}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void handleFile(f);
+          // Reset so the same file can be re-picked after an error.
+          e.currentTarget.value = "";
+        }}
+      />
+    </button>
   );
 }
 
