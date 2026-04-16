@@ -21,7 +21,7 @@
  * POSTs instead of base64-encoding.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -41,6 +41,9 @@ import {
   Clock,
   Mail,
   Lock,
+  Tag,
+  Check,
+  XCircle,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { encodeDrawState } from "@/lib/draw-show/encode-state";
@@ -181,6 +184,68 @@ export function DrawWizard({ id }: { id?: string }) {
   const [leadEmail, setLeadEmail] = useState("");
   const [leadOrg, setLeadOrg] = useState("");
   const [leadConsent, setLeadConsent] = useState(false);
+  // Promo code state. Validated against /api/draw/validate-promo as
+  // the user types (debounced) so the price reflects the discount
+  // before they hit submit.
+  const [promoCode, setPromoCode] = useState("");
+  const [promoState, setPromoState] = useState<
+    | { status: "idle" }
+    | { status: "checking" }
+    | {
+        status: "valid";
+        discountType: "free" | "percent" | "flat";
+        discountCents: number;
+        finalPriceCents: number;
+        isFree: boolean;
+      }
+    | { status: "invalid"; reason: string }
+  >({ status: "idle" });
+
+  // Debounced server-side promo validation. Cancels in-flight checks
+  // when the input changes again so we don't get race conditions on
+  // typing.
+  useEffect(() => {
+    const code = promoCode.trim();
+    if (!code) {
+      setPromoState({ status: "idle" });
+      return;
+    }
+    setPromoState({ status: "checking" });
+    const handle = window.setTimeout(() => {
+      let cancelled = false;
+      fetch("/api/draw/validate-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (cancelled) return;
+          if (data.valid) {
+            setPromoState({
+              status: "valid",
+              discountType: data.discountType,
+              discountCents: data.discountCents,
+              finalPriceCents: data.finalPriceCents,
+              isFree: data.isFree,
+            });
+          } else {
+            setPromoState({
+              status: "invalid",
+              reason: data.reason ?? "unknown",
+            });
+          }
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setPromoState({ status: "invalid", reason: "network" });
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, 350);
+    return () => window.clearTimeout(handle);
+  }, [promoCode]);
 
   // Unified team list regardless of input mode. Detailed rows are
   // filtered to those with a non-empty name so a half-filled row
@@ -326,6 +391,8 @@ export function DrawWizard({ id }: { id?: string }) {
           email: leadEmail.trim().toLowerCase(),
           organization: leadOrg.trim() || undefined,
           consent: leadConsent,
+          promoCode:
+            promoState.status === "valid" ? promoCode.trim() : undefined,
         }),
       });
       if (res.ok) {
@@ -742,6 +809,35 @@ export function DrawWizard({ id }: { id?: string }) {
             </p>
           </div>
 
+          {/* ── Promo code (optional) ── */}
+          <div>
+            <LabelRow icon={<Tag className="w-4 h-4" />}>
+              {t("promoLabel")}
+              <span
+                className="text-[10px] font-semibold uppercase tracking-widest normal-case"
+                style={{ color: "var(--cat-text-muted)" }}
+              >
+                {t("brandingOptional")}
+              </span>
+            </LabelRow>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder={t("promoPlaceholder")}
+                className="flex-1 rounded-xl px-3 py-2 text-sm font-mono uppercase outline-none"
+                style={{
+                  background: "var(--cat-input-bg, var(--cat-card-bg))",
+                  border: "1px solid var(--cat-card-border)",
+                  color: "var(--cat-text)",
+                  letterSpacing: "0.05em",
+                }}
+              />
+              <PromoChip state={promoState} t={t} />
+            </div>
+          </div>
+
           {/* ── Issues / error ── */}
           {issues.length > 0 && (
             <div
@@ -1140,6 +1236,84 @@ function leagueMatchesOf(n: number): number {
 /** Loose email check — server-side does its own. */
 function isValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
+
+/**
+ * PromoChip — status badge next to the promo input. Renders one of:
+ *   • idle         → empty (input is empty)
+ *   • checking     → spinner
+ *   • valid + free → mint "Free" pill
+ *   • valid + %    → mint "−50%" pill
+ *   • valid + flat → mint "−€5" pill
+ *   • invalid      → red reason chip
+ */
+function PromoChip({
+  state,
+  t,
+}: {
+  state:
+    | { status: "idle" }
+    | { status: "checking" }
+    | {
+        status: "valid";
+        discountType: "free" | "percent" | "flat";
+        discountCents: number;
+        finalPriceCents: number;
+        isFree: boolean;
+      }
+    | { status: "invalid"; reason: string };
+  t: ReturnType<typeof useTranslations>;
+}) {
+  if (state.status === "idle") return null;
+  if (state.status === "checking") {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold"
+        style={{
+          background: "var(--cat-tag-bg)",
+          color: "var(--cat-text-muted)",
+        }}
+      >
+        <Loader2 className="w-3 h-3 animate-spin" />
+      </span>
+    );
+  }
+  if (state.status === "invalid") {
+    const key = `promoError_${state.reason}` as const;
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold"
+        style={{
+          background: "rgba(239,68,68,0.08)",
+          color: "#ef4444",
+          border: "1px solid rgba(239,68,68,0.3)",
+        }}
+      >
+        <XCircle className="w-3.5 h-3.5" />
+        {t.has(key as never) ? t(key as never) : t("promoError_unknown")}
+      </span>
+    );
+  }
+  // valid
+  const label =
+    state.discountType === "free"
+      ? t("promoFree")
+      : state.discountType === "percent"
+        ? `−${Math.round((state.discountCents / 1100) * 100)}% · €${(state.finalPriceCents / 100).toFixed(2)}`
+        : `−€${(state.discountCents / 100).toFixed(2)} · €${(state.finalPriceCents / 100).toFixed(2)}`;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+      style={{
+        background: "rgba(43,254,186,0.12)",
+        color: "var(--cat-accent)",
+        border: "1px solid rgba(43,254,186,0.4)",
+      }}
+    >
+      <Check className="w-3.5 h-3.5" />
+      {label}
+    </span>
+  );
 }
 
 /**

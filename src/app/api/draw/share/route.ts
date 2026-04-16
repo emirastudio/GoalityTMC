@@ -14,10 +14,19 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { publicDraws, publicDrawLeads, drawShowEvents } from "@/db/schema";
+import {
+  publicDraws,
+  publicDrawLeads,
+  drawShowEvents,
+  drawPromoCodes,
+} from "@/db/schema";
 import { generateShortId } from "@/lib/draw-show/short-id";
+import {
+  normalizePromoCode,
+  validatePromo,
+} from "@/lib/draw-show/promo";
 import { sendDrawShareLink } from "@/lib/email";
 
 // Conservative cap so an abusive client can't stuff the table with
@@ -33,6 +42,7 @@ type SharePayload = {
   email: string;
   consent: boolean;
   organization?: string;
+  promoCode?: string;
 };
 
 export async function POST(req: NextRequest) {
@@ -63,6 +73,7 @@ export async function POST(req: NextRequest) {
   let email: string | null = null;
   let consent = false;
   let organization: string | undefined;
+  let promoCodeRaw: string | undefined;
 
   if (looksWrapped) {
     const payload = raw as SharePayload;
@@ -78,8 +89,31 @@ export async function POST(req: NextRequest) {
     if (typeof payload.organization === "string") {
       organization = payload.organization.trim() || undefined;
     }
+    if (typeof payload.promoCode === "string" && payload.promoCode.trim()) {
+      promoCodeRaw = payload.promoCode;
+    }
   } else {
     state = raw;
+  }
+
+  // Validate the promo code (if any) BEFORE creating the draw so we
+  // never end up with a created row + a failed promo apply.
+  let validatedPromo: { code: string; type: string } | null = null;
+  if (promoCodeRaw) {
+    const codeNorm = normalizePromoCode(promoCodeRaw);
+    const [promoRow] = await db
+      .select()
+      .from(drawPromoCodes)
+      .where(eq(drawPromoCodes.code, codeNorm))
+      .limit(1);
+    const result = validatePromo(promoRow ?? null);
+    if (!result.valid) {
+      return NextResponse.json(
+        { error: "invalid_promo", reason: result.reason },
+        { status: 400 },
+      );
+    }
+    validatedPromo = { code: result.code, type: result.discountType };
   }
 
   if (!isShareableDrawStateShape(state)) {
@@ -126,17 +160,40 @@ export async function POST(req: NextRequest) {
       try {
         await db.insert(drawShowEvents).values({
           eventType: "created",
-          status: "free_standalone",
+          status: validatedPromo ? "promo" : "free_standalone",
           drawId: id,
           email,
+          promoCode: validatedPromo?.code ?? null,
           ip,
           userAgent,
           referrer,
           locale,
-          meta: { organization },
+          meta: {
+            organization,
+            ...(validatedPromo
+              ? { promoDiscountType: validatedPromo.type }
+              : {}),
+          },
         });
       } catch (e) {
         console.error("draw_show_events insert (created) failed", e);
+      }
+
+      // Bump the promo-code use counter once the draw is safely
+      // persisted. Best-effort — if the increment fails we've still
+      // recorded the use in draw_show_events.
+      if (validatedPromo) {
+        try {
+          await db
+            .update(drawPromoCodes)
+            .set({
+              currentUses: sql`${drawPromoCodes.currentUses} + 1`,
+              updatedAt: new Date(),
+            })
+            .where(eq(drawPromoCodes.code, validatedPromo.code));
+        } catch (e) {
+          console.error("promo current_uses bump failed", e);
+        }
       }
 
       // Fire-and-forget the share-link email. We don't want a flaky

@@ -1765,6 +1765,33 @@ export const publicDrawLeads = pgTable("public_draw_leads", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ─── Promo codes for /draw ──────────────────────────────────────
+//
+// Superadmin-managed coupons that reduce or zero the standalone Draw
+// Show price. `discount_type` is one of:
+//
+//   • free    — 100 % off; events status becomes "promo"
+//   • percent — discount_value is 0..100, applied as a fraction
+//   • flat    — discount_value is cents (EUR), capped at the price
+//
+// Validity windows + max-uses guards live alongside so codes can be
+// time-limited (campaigns) or single-use (gifts to specific people).
+export const drawPromoCodes = pgTable("draw_promo_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  discountType: text("discount_type").notNull(), // 'free' | 'percent' | 'flat'
+  discountValue: integer("discount_value").default(0).notNull(),
+  maxUses: integer("max_uses"),
+  currentUses: integer("current_uses").default(0).notNull(),
+  validFrom: timestamp("valid_from"),
+  validTo: timestamp("valid_to"),
+  disabled: boolean("disabled").default(false).notNull(),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => adminUsers.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // ─── Audit journal for superadmin ───────────────────────────────
 //
 // Append-only log: visited (landing loaded), created (wizard
