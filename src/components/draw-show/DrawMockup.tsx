@@ -16,21 +16,32 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
-// Fake-but-plausible team list. Eight teams → four groups of two, a
-// compact shape that fits in the mockup's viewport.
+// Fake-but-plausible team list. Sixteen teams → four groups of four —
+// the classic UEFA group-stage shape, and visually dense enough to
+// fill the hero mockup without awkward empty space in the middle.
 const DEMO_TEAMS = [
-  { name: "Ajax Juniors", flag: "🇳🇱", group: 0, color: "#ef4444" },
-  { name: "FC Barcelona", flag: "🇪🇸", group: 1, color: "#3b82f6" },
-  { name: "Bayern U15",   flag: "🇩🇪", group: 2, color: "#f59e0b" },
-  { name: "AC Milano",    flag: "🇮🇹", group: 3, color: "#10b981" },
-  { name: "Porto Academy",flag: "🇵🇹", group: 0, color: "#8b5cf6" },
-  { name: "PSG Jeunes",   flag: "🇫🇷", group: 1, color: "#ec4899" },
-  { name: "Celtic FC",    flag: "🇬🇧", group: 2, color: "#06b6d4" },
-  { name: "Benfica U15",  flag: "🇵🇹", group: 3, color: "#f97316" },
+  { name: "Ajax Juniors",   flag: "🇳🇱", group: 0, color: "#ef4444" },
+  { name: "FC Barcelona",   flag: "🇪🇸", group: 1, color: "#3b82f6" },
+  { name: "Bayern U15",     flag: "🇩🇪", group: 2, color: "#f59e0b" },
+  { name: "AC Milano",      flag: "🇮🇹", group: 3, color: "#10b981" },
+  { name: "Porto Academy",  flag: "🇵🇹", group: 0, color: "#8b5cf6" },
+  { name: "PSG Jeunes",     flag: "🇫🇷", group: 1, color: "#ec4899" },
+  { name: "Celtic FC",      flag: "🇬🇧", group: 2, color: "#06b6d4" },
+  { name: "Benfica U15",    flag: "🇵🇹", group: 3, color: "#f97316" },
+  { name: "Juventus Next",  flag: "🇮🇹", group: 0, color: "#64748b" },
+  { name: "Man City EDS",   flag: "🇬🇧", group: 1, color: "#0ea5e9" },
+  { name: "Real Madrid C",  flag: "🇪🇸", group: 2, color: "#a855f7" },
+  { name: "Dortmund U15",   flag: "🇩🇪", group: 3, color: "#facc15" },
+  { name: "Feyenoord Jr",   flag: "🇳🇱", group: 0, color: "#14b8a6" },
+  { name: "Lyon OL Jeunes", flag: "🇫🇷", group: 1, color: "#dc2626" },
+  { name: "Sporting CP",    flag: "🇵🇹", group: 2, color: "#22c55e" },
+  { name: "Inter Milano",   flag: "🇮🇹", group: 3, color: "#1e40af" },
 ];
 
-const REVEAL_MS = 1200;
-const PAUSE_AT_END_MS = 2200;
+// Keep the whole cycle under ~20s so visitors see a "complete"
+// moment and a restart without scrolling away.
+const REVEAL_MS = 900;
+const PAUSE_AT_END_MS = 2400;
 
 export function DrawMockup() {
   // step = how many teams revealed so far (0..DEMO_TEAMS.length).
@@ -65,14 +76,17 @@ export function DrawMockup() {
   const currentTeam = step < DEMO_TEAMS.length ? DEMO_TEAMS[step] : null;
 
   return (
+    // 16:7.5-ish aspect matches what the real fullscreen stage feels
+    // like (header + groups + controls strip) without leaving empty
+    // space in the middle that the 16:9 version had with only 8 teams.
     <div
-      className="relative mx-auto max-w-3xl rounded-3xl overflow-hidden"
+      className="relative mx-auto max-w-4xl rounded-3xl overflow-hidden"
       style={{
         background:
           "linear-gradient(135deg, #05080f 0%, #0b1122 50%, #05080f 100%)",
         border: "1px solid rgba(43,254,186,0.2)",
         boxShadow: "0 24px 80px -20px rgba(43,254,186,0.3)",
-        aspectRatio: "16 / 9",
+        aspectRatio: "16 / 10",
       }}
     >
       {/* Ambient mint spotlight from top — echoes the real stage. */}
@@ -120,16 +134,20 @@ export function DrawMockup() {
         </span>
       </div>
 
-      {/* Groups grid: four groups, two slots each. */}
-      <div className="absolute top-14 left-0 right-0 px-5 pb-4 grid grid-cols-4 gap-2">
+      {/* Groups grid: four groups, four slots each — matches the most
+          common real-world tournament shape (UEFA-style). Groups grow
+          to fill the available vertical space below the header, so
+          there's no dead zone in the middle of the card. */}
+      <div className="absolute top-14 bottom-6 left-0 right-0 px-5 grid grid-cols-4 gap-2.5">
         {[0, 1, 2, 3].map((gi) => {
           const placed = DEMO_TEAMS
             .slice(0, step)
             .filter((team) => team.group === gi);
+          const groupTeams = DEMO_TEAMS.filter((team) => team.group === gi);
           return (
             <div
               key={gi}
-              className="rounded-lg p-2"
+              className="rounded-xl p-2.5 flex flex-col"
               style={{
                 background:
                   currentTeam?.group === gi && spotlight
@@ -139,60 +157,67 @@ export function DrawMockup() {
                   currentTeam?.group === gi && spotlight
                     ? "1px solid rgba(43,254,186,0.4)"
                     : "1px solid rgba(255,255,255,0.06)",
-                minHeight: 80,
               }}
             >
-              <div className="flex items-baseline gap-1 mb-1.5 px-0.5">
+              <div className="flex items-baseline justify-between gap-1 mb-2 px-0.5">
+                <div className="flex items-baseline gap-1">
+                  <span
+                    className="text-lg font-black leading-none"
+                    style={{
+                      color:
+                        currentTeam?.group === gi && spotlight
+                          ? "#2BFEBA"
+                          : "#f5f7fb",
+                    }}
+                  >
+                    {String.fromCharCode(65 + gi)}
+                  </span>
+                  <span
+                    className="text-[9px] font-bold uppercase tracking-widest"
+                    style={{ color: "rgba(245,247,251,0.5)" }}
+                  >
+                    Grp
+                  </span>
+                </div>
                 <span
-                  className="text-base font-black leading-none"
-                  style={{
-                    color:
-                      currentTeam?.group === gi && spotlight
-                        ? "#2BFEBA"
-                        : "#f5f7fb",
-                  }}
+                  className="text-[10px] font-bold tabular-nums"
+                  style={{ color: "rgba(245,247,251,0.45)" }}
                 >
-                  {String.fromCharCode(65 + gi)}
-                </span>
-                <span
-                  className="text-[8px] font-bold uppercase tracking-widest"
-                  style={{ color: "rgba(245,247,251,0.5)" }}
-                >
-                  Grp
+                  {placed.length}/{groupTeams.length}
                 </span>
               </div>
-              <div className="space-y-1">
+              <div className="flex-1 flex flex-col gap-1.5">
                 {placed.map((team, i) => (
                   <motion.div
                     key={`${gi}-${i}-${team.name}`}
                     layoutId={`mockup-team-${team.name}`}
                     transition={{ type: "spring", stiffness: 220, damping: 28 }}
-                    className="flex items-center gap-1.5 rounded-md px-1.5 py-1"
+                    className="flex items-center gap-1.5 rounded-md px-2 py-1.5"
                     style={{
                       background: "rgba(255,255,255,0.06)",
                       border: "1px solid rgba(255,255,255,0.08)",
                     }}
                   >
                     <div
-                      className="w-3.5 h-3.5 rounded-sm flex items-center justify-center text-[8px] font-black text-white shrink-0"
+                      className="w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-black text-white shrink-0"
                       style={{ background: team.color }}
                     >
                       {team.name[0]}
                     </div>
                     <span
-                      className="text-[10px] font-semibold truncate"
+                      className="text-[11px] font-semibold truncate flex-1"
                       style={{ color: "#f5f7fb" }}
                     >
                       {team.name}
                     </span>
-                    <span className="text-[9px] shrink-0">{team.flag}</span>
+                    <span className="text-[10px] shrink-0">{team.flag}</span>
                   </motion.div>
                 ))}
                 {/* Filler empty slots so group height is stable. */}
-                {Array.from({ length: Math.max(0, 2 - placed.length) }).map((_, i) => (
+                {Array.from({ length: Math.max(0, groupTeams.length - placed.length) }).map((_, i) => (
                   <div
                     key={`empty-${i}`}
-                    className="h-5 rounded-md"
+                    className="flex-1 min-h-[22px] rounded-md"
                     style={{
                       background: "rgba(255,255,255,0.02)",
                       border: "1px dashed rgba(255,255,255,0.07)",
@@ -205,45 +230,46 @@ export function DrawMockup() {
         })}
       </div>
 
-      {/* Spotlight overlay — the currently revealing team, big and glowing. */}
-      <div className="absolute inset-x-0 bottom-4 flex items-end justify-center pointer-events-none">
+      {/* Spotlight overlay — centered vertically over the groups so
+          the big "team leaving the urn" card is the focal point. */}
+      <div className="absolute inset-x-0 top-14 bottom-6 flex items-center justify-center pointer-events-none">
         <AnimatePresence mode="wait">
           {currentTeam && spotlight && (
             <motion.div
               key={`spot-${step}`}
               layoutId={`mockup-team-${currentTeam.name}`}
-              transition={{ type: "spring", stiffness: 220, damping: 26 }}
-              className="flex items-center gap-2.5 rounded-xl px-4 py-2.5"
+              transition={{ type: "spring", stiffness: 200, damping: 24 }}
+              className="flex items-center gap-3.5 rounded-2xl px-6 py-4"
               style={{
                 background:
-                  "linear-gradient(135deg, rgba(43,254,186,0.18), rgba(43,254,186,0.04))",
-                border: "1px solid rgba(43,254,186,0.5)",
+                  "linear-gradient(135deg, rgba(43,254,186,0.2), rgba(43,254,186,0.04))",
+                border: "1px solid rgba(43,254,186,0.55)",
                 boxShadow:
-                  "0 12px 36px -8px rgba(43,254,186,0.4), 0 0 60px -10px rgba(43,254,186,0.4)",
+                  "0 20px 60px -10px rgba(43,254,186,0.5), 0 0 100px -20px rgba(43,254,186,0.5)",
+                backdropFilter: "blur(8px)",
               }}
             >
               <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0"
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-lg font-black text-white shrink-0"
                 style={{ background: currentTeam.color }}
               >
                 {currentTeam.name[0]}
               </div>
-              <span
-                className="text-sm font-black"
-                style={{ color: "#f5f7fb" }}
-              >
-                {currentTeam.name}
-              </span>
-              <span className="text-base">{currentTeam.flag}</span>
-              <span
-                className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md"
-                style={{
-                  background: "rgba(43,254,186,0.2)",
-                  color: "#2BFEBA",
-                }}
-              >
-                → {String.fromCharCode(65 + currentTeam.group)}
-              </span>
+              <div className="flex flex-col gap-0.5">
+                <span
+                  className="text-base md:text-lg font-black leading-tight"
+                  style={{ color: "#f5f7fb" }}
+                >
+                  {currentTeam.name}
+                </span>
+                <span
+                  className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1"
+                  style={{ color: "#2BFEBA" }}
+                >
+                  <span className="text-sm leading-none">{currentTeam.flag}</span>
+                  → group {String.fromCharCode(65 + currentTeam.group)}
+                </span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
