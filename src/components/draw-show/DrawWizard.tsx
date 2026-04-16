@@ -1434,12 +1434,20 @@ function LeadGateModal({
           {t("leadBody")}
         </p>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (canProceed && !submitting) onSubmit();
-          }}
+        {/* No <form> wrapper here — the modal lives inside the
+            wizard's main form and nested forms are invalid HTML.
+            Browsers either drop the inner form or bubble its submit
+            to the outer one, in which case clicking "Get link" does
+            nothing. We bind Enter on the inputs + click on the
+            primary button to fire onSubmit() directly. */}
+        <div
           className="space-y-3"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && canProceed && !submitting) {
+              e.preventDefault();
+              onSubmit();
+            }
+          }}
         >
           <input
             type="email"
@@ -1524,7 +1532,10 @@ function LeadGateModal({
               {t("leadCancel")}
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={() => {
+                if (canProceed && !submitting) onSubmit();
+              }}
               disabled={!canProceed || submitting}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold inline-flex items-center justify-center gap-1.5 disabled:opacity-40"
               style={{
@@ -1540,7 +1551,7 @@ function LeadGateModal({
               {submitting ? t("leadSubmitting") : t("leadSubmit")}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
