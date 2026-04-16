@@ -1726,3 +1726,23 @@ export const scheduleRunsRelations = relations(scheduleRuns, ({ one }) => ({
 export const notificationQueueRelations = relations(notificationQueue, ({ one }) => ({
   tournament: one(tournaments, { fields: [notificationQueue.tournamentId], references: [tournaments.id] }),
 }));
+
+// ─── Public Draws (standalone /draw share-link storage) ─────────
+//
+// Anonymous visitors at /draw create a draw setup in the wizard and
+// need a short URL to share it with their audience/teams. Instead of
+// encoding the whole state in the URL (which produces 1-2 KB base64
+// blobs that don't fit in SMS or social previews), we persist the
+// state here under a 6-char id and hand out a compact share URL.
+//
+// `state` holds the ShareableDrawState exactly as the client emits it.
+// No auth, no organization link — this table is deliberately isolated
+// from the tournament model. A TTL cleanup job can prune by createdAt
+// if needed; for v1 we keep everything.
+export const publicDraws = pgTable("public_draws", {
+  id: text("id").primaryKey(),
+  state: jsonb("state").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Opaque viewer counter — cheap engagement metric, non-authoritative.
+  viewCount: integer("view_count").default(0).notNull(),
+});

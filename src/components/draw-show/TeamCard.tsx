@@ -168,12 +168,14 @@ function BadgeLarge({ team }: { team: DrawInputTeam }) {
 
 function Slot({ team, layoutId }: { team: DrawInputTeam; layoutId: string }) {
   const flag = flagFromCode(team.countryCode);
+  // No initial/animate props: the matching layoutId on the incoming
+  // spotlight drives a single shared-layout tween into this slot. Any
+  // extra opacity/scale animation here fights that tween and causes a
+  // double-render "ghost" mid-transition (observed in QA).
   return (
     <motion.div
       layoutId={layoutId}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ type: "spring", stiffness: 280, damping: 28 }}
+      transition={{ type: "spring", stiffness: 240, damping: 28 }}
       className="flex items-center gap-2 rounded-xl px-2.5 py-2"
       style={{
         background: "rgba(255,255,255,0.06)",

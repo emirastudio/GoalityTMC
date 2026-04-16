@@ -16,6 +16,7 @@ import { useTranslations } from "next-intl";
 import { Sparkles, ArrowDown, Play, Share2, Tv, Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-provider";
 import { Link } from "@/i18n/navigation";
+import { DrawMockup } from "./DrawMockup";
 
 export function DrawLanding({
   onStart,
@@ -126,12 +127,56 @@ export function DrawLanding({
           </div>
         </div>
 
+        {/* Important upsell signal: organizers who already pay for Pro
+            or Elite on the main platform don't need to buy this
+            separately — it's bundled. Keeps existing customers from
+            feeling upcharged and nudges prospects towards the bigger
+            plan. */}
+        <div
+          className="mt-6 inline-flex items-start gap-2.5 rounded-2xl px-4 py-2.5 text-left max-w-xl mx-auto"
+          style={{
+            background: "rgba(43,254,186,0.06)",
+            border: "1px solid rgba(43,254,186,0.2)",
+          }}
+        >
+          <Sparkles
+            className="w-4 h-4 mt-0.5 shrink-0"
+            style={{ color: "var(--cat-accent)" }}
+          />
+          <p
+            className="text-xs leading-relaxed"
+            style={{ color: "var(--cat-text-secondary)" }}
+          >
+            {t.rich("includedInPlan", {
+              plan: (chunks) => (
+                <span className="font-bold" style={{ color: "var(--cat-accent)" }}>
+                  {chunks}
+                </span>
+              ),
+            })}
+          </p>
+        </div>
+
         <div className="mt-12 flex justify-center" aria-hidden>
           <ArrowDown
             className="w-5 h-5 animate-bounce"
             style={{ color: "var(--cat-text-muted)" }}
           />
         </div>
+      </section>
+
+      {/* ── Animated mockup (auto-plays a fake draw) ──
+          Gives visitors a preview of what the product feels like
+          without making them click through the wizard first. Pure
+          decoration — framer-motion animations, no server state. */}
+      <section className="relative z-[1] max-w-5xl mx-auto px-6 md:px-10 pb-16">
+        <DrawMockup />
+        <p
+          className="text-center text-xs mt-4"
+          style={{ color: "var(--cat-text-muted)" }}
+        >
+          {t("mockupCaption")}
+        </p>
       </section>
 
       {/* ── Feature strip ─────────────────────────────── */}
