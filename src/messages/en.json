@@ -3472,6 +3472,8 @@
     },
     "drawByBaskets": "Draw by baskets",
     "drawAuto": "Auto draw",
+    "applyDraw": "Apply draw",
+    "showDraw": "Draw Show",
     "dropToRemoveFromBasket": "Drop to remove from basket",
     "allTeamsInBaskets": "All teams in baskets",
     "dropToPool": "Drop to return to pool",
@@ -4254,5 +4256,20 @@
     "navFeatures": "Features",
     "navPricing": "Pricing",
     "navStart": "Get started"
+  },
+  "drawShow": {
+    "stage": {
+      "eyebrow": "Tournament Draw",
+      "defaultTitle": "Draw Show",
+      "close": "Close",
+      "enterFullscreen": "Enter fullscreen",
+      "exitFullscreen": "Exit fullscreen",
+      "ready": "Ready",
+      "placeholderTitle": "Draw is ready to start",
+      "placeholderHint": "{count} reveal steps queued. The animated reveal lands in the next update.",
+      "errorTitle": "Cannot start the show",
+      "hintFullscreen": "Fullscreen",
+      "hintClose": "Close"
+    }
   }
 }

@@ -3472,6 +3472,8 @@
     },
     "drawByBaskets": "Жеребьёвка по корзинам",
     "drawAuto": "Авто-жеребьёвка",
+    "applyDraw": "Применить жеребьёвку",
+    "showDraw": "Шоу-жеребьёвка",
     "dropToRemoveFromBasket": "Отпустите чтобы убрать из корзины",
     "allTeamsInBaskets": "Все команды в корзинах",
     "dropToPool": "Отпустите — вернуть в пул",
@@ -4254,5 +4256,20 @@
     "navFeatures": "Возможности",
     "navPricing": "Цены",
     "navStart": "Начать"
+  },
+  "drawShow": {
+    "stage": {
+      "eyebrow": "Жеребьёвка турнира",
+      "defaultTitle": "Шоу-жеребьёвка",
+      "close": "Закрыть",
+      "enterFullscreen": "На весь экран",
+      "exitFullscreen": "Выйти из полноэкранного",
+      "ready": "Готово",
+      "placeholderTitle": "Жеребьёвка готова к запуску",
+      "placeholderHint": "Подготовлено {count} шагов. Анимированное шоу подключим в следующем обновлении.",
+      "errorTitle": "Не удалось запустить шоу",
+      "hintFullscreen": "На весь экран",
+      "hintClose": "Закрыть"
+    }
   }
 }

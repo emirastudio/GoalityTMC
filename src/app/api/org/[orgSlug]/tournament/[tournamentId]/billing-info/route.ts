@@ -129,6 +129,7 @@ export async function GET(
       hasMatchHub:     limits.hasMatchHub,
       hasEliteFormats: limits.hasEliteFormats,
       hasMultiAdmin:   limits.hasMultiAdmin,
+      hasDrawShow:     limits.hasDrawShow,
       // Effective maximums accounting for extra purchased slots
       maxDivisions:    limits.maxDivisions === Infinity ? 9999 : limits.maxDivisions + (row.extraDivisionsPurchased ?? 0),
       maxTeams:        limits.maxTeams === Infinity ? 9999 : limits.maxTeams + (row.extraTeamsPurchased ?? 0),

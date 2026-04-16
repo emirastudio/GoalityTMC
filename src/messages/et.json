@@ -3472,6 +3472,8 @@
     },
     "drawByBaskets": "Loosing korrvidega",
     "drawAuto": "Automaatne loosimine",
+    "applyDraw": "Rakenda loosimine",
+    "showDraw": "Loosimise show",
     "dropToRemoveFromBasket": "Lase lahti, et eemaldada korvist",
     "allTeamsInBaskets": "Kõik võistkonnad on korvides",
     "dropToPool": "Lase lahti — tagasta basseini",
@@ -4254,5 +4256,20 @@
     "navFeatures": "Funktsioonid",
     "navPricing": "Hinnad",
     "navStart": "Alusta"
+  },
+  "drawShow": {
+    "stage": {
+      "eyebrow": "Turniiri loosimine",
+      "defaultTitle": "Loosimise show",
+      "close": "Sulge",
+      "enterFullscreen": "Täisekraan",
+      "exitFullscreen": "Välju täisekraanist",
+      "ready": "Valmis",
+      "placeholderTitle": "Loosimine on valmis alustamiseks",
+      "placeholderHint": "Järjekorras {count} sammu. Animeeritud show lisandub järgmise uuendusega.",
+      "errorTitle": "Showd ei saa käivitada",
+      "hintFullscreen": "Täisekraan",
+      "hintClose": "Sulge"
+    }
   }
 }

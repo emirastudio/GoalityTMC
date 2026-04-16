@@ -23,6 +23,8 @@ export type PlanLimits = {
   hasMatchHub: boolean;
   hasEliteFormats: boolean;
   hasMultiAdmin: boolean;
+  /** Beautiful fullscreen draw-reveal presentation. Pro/Elite only. */
+  hasDrawShow: boolean;
 };
 
 // ─── Feature Matrix (SINGLE SOURCE OF TRUTH) ────────────────
@@ -42,6 +44,7 @@ export const PLAN_LIMITS: Record<TournamentPlan, PlanLimits> = {
     hasMatchHub:         false,
     hasEliteFormats:     false,
     hasMultiAdmin:       false,
+    hasDrawShow:         false,
   },
   starter: {
     maxTournaments:      Infinity,
@@ -57,6 +60,7 @@ export const PLAN_LIMITS: Record<TournamentPlan, PlanLimits> = {
     hasMatchHub:         false,
     hasEliteFormats:     false,
     hasMultiAdmin:       false,
+    hasDrawShow:         false,
   },
   pro: {
     maxTournaments:      Infinity,
@@ -72,6 +76,7 @@ export const PLAN_LIMITS: Record<TournamentPlan, PlanLimits> = {
     hasMatchHub:         true,
     hasEliteFormats:     true,   // Elite & custom formats unlock in Pro
     hasMultiAdmin:       false,
+    hasDrawShow:         true,   // Draw Show presentation — Pro & Elite
   },
   elite: {
     maxTournaments:      Infinity,
@@ -87,6 +92,7 @@ export const PLAN_LIMITS: Record<TournamentPlan, PlanLimits> = {
     hasMatchHub:         true,
     hasEliteFormats:     true,
     hasMultiAdmin:       true,
+    hasDrawShow:         true,
   },
 };
 
@@ -157,7 +163,7 @@ export function hasFeature(
   feature: keyof Pick<PlanLimits,
     "hasCatalog" | "hasDocuments" | "hasMessaging" |
     "hasFinance" | "hasLiveTimeline" | "hasMatchHub" |
-    "hasEliteFormats" | "hasMultiAdmin">
+    "hasEliteFormats" | "hasMultiAdmin" | "hasDrawShow">
 ): boolean {
   return PLAN_LIMITS[plan][feature];
 }
@@ -194,7 +200,7 @@ export function calculateTotalPrice(
 type PlanFeature = keyof Pick<PlanLimits,
   "hasCatalog" | "hasDocuments" | "hasMessaging" |
   "hasFinance" | "hasLiveTimeline" | "hasMatchHub" |
-  "hasEliteFormats" | "hasMultiAdmin">;
+  "hasEliteFormats" | "hasMultiAdmin" | "hasDrawShow">;
 
 const FEATURE_REQUIRED_PLAN: Record<PlanFeature, TournamentPlan> = {
   hasCatalog:       "starter",
@@ -205,6 +211,7 @@ const FEATURE_REQUIRED_PLAN: Record<PlanFeature, TournamentPlan> = {
   hasMatchHub:      "pro",
   hasEliteFormats:  "pro",
   hasMultiAdmin:    "elite",
+  hasDrawShow:      "pro",
 };
 
 /**

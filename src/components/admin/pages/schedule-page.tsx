@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { TeamBadge } from "@/components/ui/team-badge";
+import { DrawShowLauncher } from "@/components/draw-show/DrawShowLauncher";
 
 // ─────────────────────────────────────────────
 //  Types
@@ -500,7 +501,7 @@ export function SchedulePage() {
       </div>
 
       {/* Tab content */}
-      {tab === "draw"     && <DrawTab     base={base} classId={classId} />}
+      {tab === "draw"     && <DrawTab     base={base} classId={classId} orgSlug={orgSlug} tournamentId={tournamentId} tournamentTitle={className ?? undefined} />}
       {tab === "schedule" && <ScheduleTab base={base} classId={classId} stageSettings={stageSettings} />}
     </div>
   );
@@ -1426,7 +1427,19 @@ const GROUP_COLORS = [
   { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)",  text: "#f97316" },
 ];
 
-function DrawTab({ base, classId }: { base: string; classId: number | null }) {
+function DrawTab({
+  base,
+  classId,
+  orgSlug,
+  tournamentId,
+  tournamentTitle,
+}: {
+  base: string;
+  classId: number | null;
+  orgSlug: string;
+  tournamentId: number;
+  tournamentTitle?: string;
+}) {
   const t = useTranslations("schedule");
   const [stages, setStages] = useState<Stage[]>([]);
   const [selectedStageId, setSelectedStageId] = useState<number | null>(null);
@@ -1765,9 +1778,24 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
                 <Trash2 className="w-3.5 h-3.5" /> {t("clear")}
               </Btn>
             )}
+            {selectedStageId && Object.values(assignMap).some(ids => ids.length > 0) && (
+              <DrawShowLauncher
+                orgSlug={orgSlug}
+                tournamentId={tournamentId}
+                stageId={selectedStageId}
+                groups={groups.map(g => ({ id: g.id, teamIds: assignMap[g.id] ?? [] }))}
+                allTeams={allTeams.map(tm => ({
+                  id: tm.id,
+                  name: tm.name,
+                  logoUrl: tm.clubBadgeUrl ?? null,
+                  clubName: tm.clubName ?? null,
+                }))}
+                title={tournamentTitle}
+              />
+            )}
             {selectedStageId && (
               <Btn variant="primary" size="sm" onClick={applyDraw} loading={applyingDraw}>
-                <Check className="w-3.5 h-3.5" /> Применить жеребьёвку
+                <Check className="w-3.5 h-3.5" /> {t("applyDraw")}
               </Btn>
             )}
             {stages.length > 1 && (
