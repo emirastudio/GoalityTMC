@@ -4264,12 +4264,24 @@
       "close": "Close",
       "enterFullscreen": "Enter fullscreen",
       "exitFullscreen": "Exit fullscreen",
-      "ready": "Ready",
-      "placeholderTitle": "Draw is ready to start",
-      "placeholderHint": "{count} reveal steps queued. The animated reveal lands in the next update.",
       "errorTitle": "Cannot start the show",
+      "hintPlayPause": "Play / Pause",
+      "hintStep": "Prev / Next",
       "hintFullscreen": "Fullscreen",
-      "hintClose": "Close"
+      "hintClose": "Close",
+      "groupLabel": "Group",
+      "toGroup": "to Group",
+      "startingIn": "Get ready…",
+      "doneTitle": "Draw complete",
+      "doneSubtitle": "All {count} teams are in their groups",
+      "modeComingSoon": "This draw mode is not yet animated."
+    },
+    "controls": {
+      "play": "Play",
+      "pause": "Pause",
+      "prev": "Previous",
+      "next": "Next",
+      "stepCounter": "{current} / {total}"
     }
   }
 }

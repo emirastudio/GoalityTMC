@@ -4264,12 +4264,24 @@
       "close": "Sulge",
       "enterFullscreen": "Täisekraan",
       "exitFullscreen": "Välju täisekraanist",
-      "ready": "Valmis",
-      "placeholderTitle": "Loosimine on valmis alustamiseks",
-      "placeholderHint": "Järjekorras {count} sammu. Animeeritud show lisandub järgmise uuendusega.",
       "errorTitle": "Showd ei saa käivitada",
+      "hintPlayPause": "Mängi / Paus",
+      "hintStep": "Eelmine / Järgmine",
       "hintFullscreen": "Täisekraan",
-      "hintClose": "Sulge"
+      "hintClose": "Sulge",
+      "groupLabel": "Grupp",
+      "toGroup": "gruppi",
+      "startingIn": "Valmistuge…",
+      "doneTitle": "Loosimine lõpetatud",
+      "doneSubtitle": "Kõik {count} võistkonda on gruppides",
+      "modeComingSoon": "Sellele loosimisviisile animatsioon veel puudub."
+    },
+    "controls": {
+      "play": "Mängi",
+      "pause": "Paus",
+      "prev": "Eelmine",
+      "next": "Järgmine",
+      "stepCounter": "{current} / {total}"
     }
   }
 }

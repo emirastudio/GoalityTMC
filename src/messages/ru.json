@@ -4264,12 +4264,24 @@
       "close": "Закрыть",
       "enterFullscreen": "На весь экран",
       "exitFullscreen": "Выйти из полноэкранного",
-      "ready": "Готово",
-      "placeholderTitle": "Жеребьёвка готова к запуску",
-      "placeholderHint": "Подготовлено {count} шагов. Анимированное шоу подключим в следующем обновлении.",
       "errorTitle": "Не удалось запустить шоу",
+      "hintPlayPause": "Пауза / Продолжить",
+      "hintStep": "Назад / Вперёд",
       "hintFullscreen": "На весь экран",
-      "hintClose": "Закрыть"
+      "hintClose": "Закрыть",
+      "groupLabel": "Группа",
+      "toGroup": "в группу",
+      "startingIn": "Приготовьтесь…",
+      "doneTitle": "Жеребьёвка завершена",
+      "doneSubtitle": "Все {count} команд распределены по группам",
+      "modeComingSoon": "Этот режим жеребьёвки пока без анимации."
+    },
+    "controls": {
+      "play": "Продолжить",
+      "pause": "Пауза",
+      "prev": "Назад",
+      "next": "Вперёд",
+      "stepCounter": "{current} / {total}"
     }
   }
 }
