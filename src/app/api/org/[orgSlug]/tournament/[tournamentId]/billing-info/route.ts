@@ -22,6 +22,7 @@ export async function GET(
     .select({
       id: tournaments.id,
       name: tournaments.name,
+      logoUrl: tournaments.logoUrl,
       plan: tournaments.plan,
       extraTeamsPurchased: tournaments.extraTeamsPurchased,
       extraDivisionsPurchased: tournaments.extraDivisionsPurchased,
@@ -113,6 +114,7 @@ export async function GET(
   return NextResponse.json({
     id: row.id,
     name: row.name,
+    logoUrl: row.logoUrl ?? null,
     plan: row.plan,
     effectivePlan,
     needsPlanUpgrade,

@@ -73,14 +73,18 @@ function initials(name: string): string {
 
 function Spotlight({ team, layoutId }: { team: DrawInputTeam; layoutId: string }) {
   const flag = flagFromCode(team.countryCode);
+  // Note on exit: we DON'T declare an exit variant here. The slot card
+  // that takes over uses the same layoutId, so framer-motion runs a
+  // shared-layout morph (center→slot). Adding an opacity/scale exit on
+  // top of that produces two conflicting animations and visually
+  // manifests as a "ghost" double-render. Shared layout alone is
+  // cleaner: the big card shrinks and flies into its slot in one tween.
   return (
     <motion.div
       layoutId={layoutId}
-      // Entrance: drop from slightly above with scale-up.
-      initial={{ opacity: 0, y: -30, scale: 0.85 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.25 } }}
-      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", stiffness: 220, damping: 24 }}
       className="relative flex items-center gap-5 rounded-3xl px-8 py-6"
       style={{
         background:

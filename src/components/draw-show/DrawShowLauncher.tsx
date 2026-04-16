@@ -49,15 +49,22 @@ type Props = {
   groups: LauncherGroup[];
   /** Full team pool (for name/logo lookup). */
   allTeams: LauncherTeam[];
-  /** Human title shown on the stage header (e.g. "PRO Cup · U14"). */
-  title?: string;
-  /** Club/tournament logo shown on the stage header. */
-  logoUrl?: string | null;
+  /**
+   * Division / age-class name shown as the subtitle on the stage header
+   * (e.g. "U14"). The tournament name itself is fetched by the launcher
+   * from the billing-info endpoint we already hit for the entitlement.
+   */
+  divisionName?: string;
 };
 
 type Entitlement =
   | { status: "loading" }
-  | { status: "ready"; hasDrawShow: boolean }
+  | {
+      status: "ready";
+      hasDrawShow: boolean;
+      tournamentName?: string;
+      tournamentLogoUrl?: string | null;
+    }
   | { status: "error" };
 
 export function DrawShowLauncher(props: Props) {
@@ -71,13 +78,21 @@ export function DrawShowLauncher(props: Props) {
     const url = `/api/org/${props.orgSlug}/tournament/${props.tournamentId}/billing-info`;
     fetch(url)
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((data: { features?: { hasDrawShow?: boolean } }) => {
-        if (cancelled) return;
-        setEnt({
-          status: "ready",
-          hasDrawShow: data.features?.hasDrawShow === true,
-        });
-      })
+      .then(
+        (data: {
+          name?: string;
+          logoUrl?: string | null;
+          features?: { hasDrawShow?: boolean };
+        }) => {
+          if (cancelled) return;
+          setEnt({
+            status: "ready",
+            hasDrawShow: data.features?.hasDrawShow === true,
+            tournamentName: data.name,
+            tournamentLogoUrl: data.logoUrl ?? null,
+          });
+        },
+      )
       .catch(() => {
         if (cancelled) return;
         // Fail closed: treat as locked so we don't leak a Pro feature on
@@ -214,8 +229,15 @@ export function DrawShowLauncher(props: Props) {
         <DrawStage
           teams={engineTeams}
           config={engineConfig}
-          title={props.title}
-          logoUrl={props.logoUrl}
+          title={
+            ent.status === "ready" && ent.tournamentName
+              ? ent.tournamentName
+              : undefined
+          }
+          subtitle={props.divisionName}
+          logoUrl={
+            ent.status === "ready" ? ent.tournamentLogoUrl ?? null : null
+          }
           onClose={handleClose}
           // Surface unassigned teams to the stage so the "draw complete"
           // summary can say "37 placed · 1 team not in a group" rather

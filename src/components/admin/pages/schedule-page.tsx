@@ -1941,7 +1941,7 @@ function DrawTab({
                   logoUrl: tm.clubBadgeUrl ?? null,
                   clubName: tm.clubName ?? null,
                 }))}
-                title={tournamentTitle}
+                divisionName={tournamentTitle}
               />
             )}
             {selectedStageId && (

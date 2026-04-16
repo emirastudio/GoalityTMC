@@ -41,8 +41,13 @@ import { PresentationControls } from "./PresentationControls";
 type Props = {
   teams: DrawInputTeam[];
   config: DrawConfig;
-  /** Tournament/event title shown in the stage header for context. */
+  /** Tournament name shown big in the stage header (e.g. "PRO Cup"). */
   title?: string;
+  /**
+   * Secondary line under the title — typically the division/age-class
+   * name ("U14") when running inside a specific division's draw.
+   */
+  subtitle?: string;
   /** Optional badge/logo URL shown next to the title. */
   logoUrl?: string | null;
   /** Called when the user exits the stage (Esc, X, or clicks backdrop). */
@@ -73,6 +78,7 @@ export function DrawStage({
   teams,
   config,
   title,
+  subtitle,
   logoUrl,
   onClose,
   unassignedTeams,
@@ -266,33 +272,46 @@ export function DrawStage({
 
       {/* ── Header ───────────────────────────────────────────── */}
       <div className="relative flex items-center justify-between px-8 py-5 z-10">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={logoUrl}
               alt=""
-              className="w-10 h-10 rounded-xl object-cover"
-              style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+              className="w-12 h-12 rounded-xl object-cover shrink-0"
+              style={{
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.04)",
+              }}
             />
           ) : (
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: "#2BFEBA", color: "#05080f" }}
             >
-              <Sparkles className="w-5 h-5" />
+              <Sparkles className="w-6 h-6" />
             </div>
           )}
-          <div>
+          <div className="min-w-0">
             <p
-              className="text-xs font-bold uppercase tracking-widest"
+              className="text-[10px] font-bold uppercase tracking-widest"
               style={{ color: "rgba(245,247,251,0.55)" }}
             >
               {t("stage.eyebrow")}
             </p>
-            <h2 className="text-lg font-black leading-tight">
+            {/* Tournament name is the big primary line; division/stage
+                name (if given) rides under it as a muted chip. */}
+            <h2 className="text-xl md:text-2xl font-black leading-tight truncate">
               {title ?? t("stage.defaultTitle")}
             </h2>
+            {subtitle && (
+              <p
+                className="text-sm font-semibold mt-0.5 truncate"
+                style={{ color: "rgba(245,247,251,0.65)" }}
+              >
+                {subtitle}
+              </p>
+            )}
           </div>
         </div>
 
@@ -454,18 +473,19 @@ function SpotlightWithTarget({
   targetLetter?: string;
   targetLabel: string;
 }) {
+  // The outer wrapper intentionally has no motion props: the inner
+  // TeamCard carries the layoutId that framer-motion uses for the
+  // shared-layout morph into the group slot. Wrapping it in another
+  // fading motion.div conflicts with that transition and produces the
+  // visible "ghost" double-render we saw during QA.
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="flex flex-col items-center gap-3"
-    >
+    <div className="flex flex-col items-center gap-3">
       <TeamCard team={team} variant="spotlight" layoutId={layoutId} />
       {targetLetter && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
           transition={{ delay: 0.35 }}
           className="flex items-center gap-2 px-4 py-1.5 rounded-full"
           style={{
@@ -482,7 +502,7 @@ function SpotlightWithTarget({
           </span>
         </motion.div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
