@@ -135,6 +135,14 @@ export function DrawShowLauncher(props: Props) {
     0,
   ) ?? 0;
 
+  // Set of team ids actually placed in a group — used to compute the
+  // "team not in any group" remainder we surface in the done summary.
+  const assignedIds = useMemo(() => {
+    const s = new Set<number>();
+    for (const g of props.groups) for (const id of g.teamIds) s.add(id);
+    return s;
+  }, [props.groups]);
+
   const handleOpen = useCallback(() => {
     if (assignedTeamCount < 2) return;
     setOpen(true);
@@ -209,6 +217,13 @@ export function DrawShowLauncher(props: Props) {
           title={props.title}
           logoUrl={props.logoUrl}
           onClose={handleClose}
+          // Surface unassigned teams to the stage so the "draw complete"
+          // summary can say "37 placed · 1 team not in a group" rather
+          // than implicitly claiming every team is in a group.
+          unassignedTeams={props.allTeams
+            .filter((tm) => !assignedIds.has(tm.id))
+            .map((tm) => tm.name)}
+          totalTeamsCount={props.allTeams.length}
         />
       )}
     </>

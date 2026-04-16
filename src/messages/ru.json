@@ -4303,6 +4303,8 @@
       "startingIn": "Приготовьтесь…",
       "doneTitle": "Жеребьёвка завершена",
       "doneSubtitle": "Все {count} команд распределены по группам",
+      "donePartialSubtitle": "Распределено {placed} из {total} команд — остальные не в жеребьёвке",
+      "unassignedTeams": "Не в группе",
       "modeComingSoon": "Этот режим жеребьёвки пока без анимации."
     },
     "controls": {

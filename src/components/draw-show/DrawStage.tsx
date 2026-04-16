@@ -47,6 +47,18 @@ type Props = {
   logoUrl?: string | null;
   /** Called when the user exits the stage (Esc, X, or clicks backdrop). */
   onClose: () => void;
+  /**
+   * Names of teams that belong to this tournament but are NOT in any
+   * group — the unassigned pool. Surfaced on the done screen so the
+   * organizer knows why the total doesn't match their expectation.
+   */
+  unassignedTeams?: string[];
+  /**
+   * Grand total of teams in the division (placed + unassigned). When
+   * provided, the done subtitle shows "N of M placed". When omitted,
+   * falls back to the all-teams-placed phrasing.
+   */
+  totalTeamsCount?: number;
 };
 
 // ── Timing ─────────────────────────────────────────────────────────────
@@ -57,7 +69,15 @@ const BETWEEN_REVEALS_MS = 350;
 const SPOTLIGHT_DURATION_MS = 1700;
 const CONTROLS_IDLE_MS = 1800;
 
-export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
+export function DrawStage({
+  teams,
+  config,
+  title,
+  logoUrl,
+  onClose,
+  unassignedTeams,
+  totalTeamsCount,
+}: Props) {
   // SSR guard: portal needs document.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -332,7 +352,21 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
                     <DonePanel
                       key="done"
                       title={t("stage.doneTitle")}
-                      subtitle={t("stage.doneSubtitle", { count: total })}
+                      // When unassigned teams exist, the subtitle
+                      // explicitly calls out the mismatch between
+                      // placed count and tournament total. Otherwise
+                      // fall back to the simple "all N placed" copy.
+                      subtitle={
+                        unassignedTeams && unassignedTeams.length > 0 &&
+                        totalTeamsCount != null
+                          ? t("stage.donePartialSubtitle", {
+                              placed: total,
+                              total: totalTeamsCount,
+                            })
+                          : t("stage.doneSubtitle", { count: total })
+                      }
+                      unassignedTeams={unassignedTeams}
+                      unassignedLabel={t("stage.unassignedTeams")}
                     />
                   ) : showSpotlight && currentStep ? (
                     <SpotlightWithTarget
@@ -452,7 +486,18 @@ function SpotlightWithTarget({
   );
 }
 
-function DonePanel({ title, subtitle }: { title: string; subtitle: string }) {
+function DonePanel({
+  title,
+  subtitle,
+  unassignedTeams,
+  unassignedLabel,
+}: {
+  title: string;
+  subtitle: string;
+  unassignedTeams?: string[];
+  unassignedLabel?: string;
+}) {
+  const hasUnassigned = (unassignedTeams?.length ?? 0) > 0;
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -484,6 +529,28 @@ function DonePanel({ title, subtitle }: { title: string; subtitle: string }) {
       >
         {subtitle}
       </p>
+      {hasUnassigned && unassignedLabel && (
+        <div
+          className="mt-2 rounded-2xl px-4 py-2.5 max-w-md"
+          style={{
+            background: "rgba(245,158,11,0.08)",
+            border: "1px solid rgba(245,158,11,0.3)",
+          }}
+        >
+          <p
+            className="text-[11px] font-bold uppercase tracking-widest mb-1"
+            style={{ color: "#f59e0b" }}
+          >
+            {unassignedLabel} ({unassignedTeams!.length})
+          </p>
+          <p
+            className="text-xs leading-relaxed"
+            style={{ color: "rgba(245,247,251,0.75)" }}
+          >
+            {unassignedTeams!.join(" · ")}
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }

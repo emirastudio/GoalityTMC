@@ -4303,6 +4303,8 @@
       "startingIn": "Valmistuge…",
       "doneTitle": "Loosimine lõpetatud",
       "doneSubtitle": "Kõik {count} võistkonda on gruppides",
+      "donePartialSubtitle": "Paigutatud {placed} võistkonda {total}-st — ülejäänud pole loosimises",
+      "unassignedTeams": "Grupis pole",
       "modeComingSoon": "Sellele loosimisviisile animatsioon veel puudub."
     },
     "controls": {

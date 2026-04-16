@@ -4303,6 +4303,8 @@
       "startingIn": "Get ready…",
       "doneTitle": "Draw complete",
       "doneSubtitle": "All {count} teams are in their groups",
+      "donePartialSubtitle": "{placed} of {total} teams placed — see below for teams outside the draw",
+      "unassignedTeams": "Not in any group",
       "modeComingSoon": "This draw mode is not yet animated."
     },
     "controls": {
