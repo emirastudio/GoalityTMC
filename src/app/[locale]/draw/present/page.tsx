@@ -16,22 +16,64 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { AlertCircle, Copy, Check, ArrowLeft } from "lucide-react";
+import { AlertCircle, Copy, Check, ArrowLeft, Loader2 } from "lucide-react";
 import { decodeDrawState } from "@/lib/draw-show/encode-state";
-import type { DrawConfig, DrawInputTeam } from "@/lib/draw-show/types";
+import { isShortId } from "@/lib/draw-show/short-id";
+import type {
+  DrawConfig,
+  DrawInputTeam,
+  ShareableDrawState,
+} from "@/lib/draw-show/types";
 import { DrawStage } from "@/components/draw-show/DrawStage";
+
+type LoadState =
+  | { status: "loading" }
+  | { status: "ready"; state: ShareableDrawState }
+  | { status: "invalid" };
 
 export default function DrawPresentPage() {
   const params = useSearchParams();
-  const encoded = params?.get("s") ?? "";
+  const sParam = params?.get("s") ?? "";
   const t = useTranslations("drawPresent");
 
-  // Decode the share state once. If it's malformed we fall through to
-  // the invalid-link UI below — never throw to the boundary.
-  const decoded = useMemo(() => decodeDrawState(encoded), [encoded]);
-
+  const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
   const [showShareToast, setShowShareToast] = useState(false);
   const [stageClosed, setStageClosed] = useState(false);
+
+  // Resolve the `s` query param in one of two modes:
+  //   • short id (6-char from our alphabet) → fetch from /api/draw/s/<id>
+  //   • anything else                       → try to decode as base64
+  // This keeps the legacy encoded links working while the short-URL
+  // flow is the default for new draws.
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!sParam) {
+      setLoadState({ status: "invalid" });
+      return;
+    }
+
+    if (isShortId(sParam)) {
+      fetch(`/api/draw/s/${sParam}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((data: { state: ShareableDrawState }) => {
+          if (cancelled) return;
+          setLoadState({ status: "ready", state: data.state });
+        })
+        .catch(() => {
+          if (!cancelled) setLoadState({ status: "invalid" });
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const decoded = decodeDrawState(sParam);
+    setLoadState(decoded ? { status: "ready", state: decoded } : { status: "invalid" });
+    return () => {
+      cancelled = true;
+    };
+  }, [sParam]);
 
   // Expose the full share URL for the "Copy link" button. Must run in
   // the browser because location is undefined during SSR.
@@ -53,15 +95,20 @@ export default function DrawPresentPage() {
     }
   }
 
-  if (!decoded) {
+  if (loadState.status === "loading") {
+    return <LoadingPanel />;
+  }
+  if (loadState.status === "invalid") {
     return <InvalidLinkPanel />;
   }
 
-  const teams: DrawInputTeam[] = decoded.teams.map((t) => ({
-    id: t.id,
-    name: t.name,
-    countryCode: t.countryCode ?? null,
-    pot: t.pot ?? null,
+  const decoded = loadState.state;
+  const teams: DrawInputTeam[] = decoded.teams.map((tm) => ({
+    id: tm.id,
+    name: tm.name,
+    countryCode: tm.countryCode ?? null,
+    logoUrl: tm.logoUrl ?? null,
+    pot: tm.pot ?? null,
   }));
   const config: DrawConfig = {
     mode: decoded.config.mode,
@@ -84,16 +131,36 @@ export default function DrawPresentPage() {
     );
   }
 
+  // Branding fallthrough: wizard-provided tournament name/division/logo
+  // win, otherwise we show the default "Tournament Draw" title.
+  const branding = decoded.branding;
+  const stageTitle = branding?.tournamentName?.trim() || t("defaultTitle");
+  const stageSubtitle = branding?.divisionName?.trim() || undefined;
+  const stageLogo = branding?.logoUrl?.trim() || null;
+
   return (
     <>
       <DrawStage
         teams={teams}
         config={config}
-        title={t("defaultTitle")}
+        title={stageTitle}
+        subtitle={stageSubtitle}
+        logoUrl={stageLogo}
         totalTeamsCount={teams.length}
         onClose={() => setStageClosed(true)}
       />
     </>
+  );
+}
+
+function LoadingPanel() {
+  return (
+    <main
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "var(--cat-bg)", color: "var(--cat-text-muted)" }}
+    >
+      <Loader2 className="w-6 h-6 animate-spin" />
+    </main>
   );
 }
 

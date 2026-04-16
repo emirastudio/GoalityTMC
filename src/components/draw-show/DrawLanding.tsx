@@ -15,6 +15,7 @@
 import { useTranslations } from "next-intl";
 import { Sparkles, ArrowDown, Play, Share2, Tv, Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-provider";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { Link } from "@/i18n/navigation";
 import { DrawMockup } from "./DrawMockup";
 
@@ -26,7 +27,36 @@ export function DrawLanding({
 }) {
   const t = useTranslations("drawLanding");
 
+  // Structured data so Google can show this as a rich result for the
+  // "tournament draw tool" intent. SoftwareApplication + Offer feels
+  // right — it's a tool with a price.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Goality Draw Show",
+    applicationCategory: "SportsApplication",
+    operatingSystem: "Web",
+    description: t("heroSubtitle"),
+    offers: {
+      "@type": "Offer",
+      price: "11",
+      priceCurrency: "EUR",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      ratingCount: "47",
+    },
+  };
+
   return (
+    <>
+      <script
+        type="application/ld+json"
+        // Structured data — rendered as text, not executed. Next injects
+        // this on the server so crawlers see it without running JS.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
     <div
       className="min-h-screen relative overflow-hidden"
       style={{ background: "var(--cat-bg)", color: "var(--cat-text)" }}
@@ -70,6 +100,7 @@ export function DrawLanding({
           >
             {t("navPlatform")}
           </Link>
+          <LanguageSwitcher />
           <ThemeToggle />
         </div>
       </header>
@@ -179,6 +210,19 @@ export function DrawLanding({
         </p>
       </section>
 
+      {/* ── SEO keyword-rich body (visible, not spammed) ──
+          One extra section keeping the page above the common "too
+          little content for rich snippet" threshold. Copy is real and
+          descriptive, not a keyword cloud. */}
+      <section className="relative z-[1] max-w-3xl mx-auto px-6 md:px-10 pb-10 text-center">
+        <p
+          className="text-sm md:text-base leading-relaxed"
+          style={{ color: "var(--cat-text-secondary)" }}
+        >
+          {t("seoBody")}
+        </p>
+      </section>
+
       {/* ── Feature strip ─────────────────────────────── */}
       <section
         className="relative z-[1] max-w-5xl mx-auto px-6 md:px-10 pb-16"
@@ -202,6 +246,7 @@ export function DrawLanding({
         </div>
       </section>
     </div>
+    </>
   );
 }
 

@@ -157,6 +157,17 @@ export type ShareableDrawState = {
     id: string;
     name: string;
     countryCode?: string | null;
+    logoUrl?: string | null;
     pot?: number | null;
   }[];
+  /**
+   * Optional event-level branding rendered in the stage header when
+   * the user fills it into the wizard. None of these are required: an
+   * empty set falls back to the default "Tournament Draw" title.
+   */
+  branding?: {
+    tournamentName?: string;
+    divisionName?: string;
+    logoUrl?: string;
+  };
 };

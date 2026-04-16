@@ -507,6 +507,30 @@ export function DrawStage({
         <KbdHint label={t("stage.hintFullscreen")}>F</KbdHint>
         <KbdHint label={t("stage.hintClose")}>Esc</KbdHint>
       </div>
+
+      {/* ── Brand credit ────────────────────────────────────────
+          Small but unmissable: every show carries a link back to
+          the platform. Positioned at the very top-edge footer so
+          it's visible whether the user is in fullscreen or not. */}
+      <a
+        href="/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-3 right-4 inline-flex items-center gap-1.5 text-[10px] font-semibold tracking-wide transition-opacity hover:opacity-100"
+        style={{ color: "rgba(245,247,251,0.35)", zIndex: 2 }}
+      >
+        <Sparkles
+          className="w-3 h-3"
+          style={{ color: "#2BFEBA" }}
+        />
+        <span>{t("stage.madeWith")}</span>
+        <span
+          className="font-black"
+          style={{ color: "rgba(245,247,251,0.6)" }}
+        >
+          Goality TMC
+        </span>
+      </a>
     </div>,
     document.body,
   );

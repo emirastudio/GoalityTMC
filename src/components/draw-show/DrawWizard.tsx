@@ -35,6 +35,7 @@ import {
   Trash2,
   Plus,
   Image as ImageIcon,
+  Trophy,
 } from "lucide-react";
 import { encodeDrawState } from "@/lib/draw-show/encode-state";
 import type { ShareableDrawState } from "@/lib/draw-show/types";
@@ -110,6 +111,12 @@ export function DrawWizard({ id }: { id?: string }) {
     freshRow(),
     freshRow(),
   ]);
+  // Optional tournament branding shown in the stage header. All three
+  // fields are free-form; an empty title just falls back to the default
+  // "Tournament Draw" label.
+  const [tournamentName, setTournamentName] = useState("");
+  const [divisionName, setDivisionName] = useState("");
+  const [tournamentLogoUrl, setTournamentLogoUrl] = useState("");
   const [mode, setMode] = useState<Mode>("groups");
   const [groupCount, setGroupCount] = useState(4);
   const [submitting, setSubmitting] = useState(false);
@@ -182,26 +189,63 @@ export function DrawWizard({ id }: { id?: string }) {
       rs.map((r) => (r.id === rowId ? { ...r, ...patch } : r)),
     );
 
-  // ── Submit: build state → encode → navigate ───────────────────────
-  function handleSubmit(e?: React.FormEvent) {
+  // ── Submit: POST to server → short id → navigate ─────────────────
+  // We persist the state server-side and navigate with a 6-char id so
+  // share URLs stay small enough for SMS / socials / QR codes. If the
+  // server round-trip fails (network, 5xx, etc.) we fall back to the
+  // legacy base64-in-URL path so the user can still run the show.
+  async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
+    setError(null);
+
+    const trimmedName = tournamentName.trim();
+    const trimmedDivision = divisionName.trim();
+    const trimmedLogo = tournamentLogoUrl.trim();
+    const branding =
+      trimmedName || trimmedDivision || trimmedLogo
+        ? {
+            tournamentName: trimmedName || undefined,
+            divisionName: trimmedDivision || undefined,
+            logoUrl: trimmedLogo || undefined,
+          }
+        : undefined;
+
+    const state: ShareableDrawState = {
+      v: 1,
+      config: {
+        mode,
+        groupCount: mode === "groups" ? groupCount : undefined,
+        seedingMode: "random",
+        seed: Date.now().toString(36),
+      },
+      teams: teams.map((tm, i) => ({
+        id: `t${i}`,
+        name: tm.name,
+        countryCode: tm.countryCode,
+        logoUrl: tm.logoUrl,
+      })),
+      ...(branding ? { branding } : {}),
+    };
+
     try {
-      const state: ShareableDrawState = {
-        v: 1,
-        config: {
-          mode,
-          groupCount: mode === "groups" ? groupCount : undefined,
-          seedingMode: "random",
-          seed: Date.now().toString(36),
-        },
-        teams: teams.map((tm, i) => ({
-          id: `t${i}`,
-          name: tm.name,
-          countryCode: tm.countryCode,
-        })),
-      };
+      const res = await fetch("/api/draw/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state),
+      });
+      if (res.ok) {
+        const { id } = (await res.json()) as { id: string };
+        router.push(`/draw/present?s=${id}`);
+        return;
+      }
+      // Server rejected the payload — fall through to base64 fallback.
+    } catch {
+      // Network error — fall through to base64 fallback.
+    }
+
+    try {
       const encoded = encodeDrawState(state);
       router.push(`/draw/present?s=${encoded}`);
     } catch (err) {
@@ -236,6 +280,63 @@ export function DrawWizard({ id }: { id?: string }) {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* ── Tournament branding (optional) ── */}
+          <div>
+            <LabelRow icon={<Trophy className="w-4 h-4" />}>
+              {t("brandingLabel")}
+              <span
+                className="text-[10px] font-semibold uppercase tracking-widest normal-case"
+                style={{ color: "var(--cat-text-muted)" }}
+              >
+                {t("brandingOptional")}
+              </span>
+            </LabelRow>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={tournamentName}
+                onChange={(e) => setTournamentName(e.target.value)}
+                placeholder={t("brandingNamePlaceholder")}
+                className="rounded-xl px-3 py-2 text-sm outline-none"
+                style={{
+                  background: "var(--cat-input-bg, var(--cat-card-bg))",
+                  border: "1px solid var(--cat-card-border)",
+                  color: "var(--cat-text)",
+                }}
+              />
+              <input
+                type="text"
+                value={divisionName}
+                onChange={(e) => setDivisionName(e.target.value)}
+                placeholder={t("brandingDivisionPlaceholder")}
+                className="rounded-xl px-3 py-2 text-sm outline-none"
+                style={{
+                  background: "var(--cat-input-bg, var(--cat-card-bg))",
+                  border: "1px solid var(--cat-card-border)",
+                  color: "var(--cat-text)",
+                }}
+              />
+            </div>
+            <input
+              type="url"
+              value={tournamentLogoUrl}
+              onChange={(e) => setTournamentLogoUrl(e.target.value)}
+              placeholder={t("brandingLogoPlaceholder")}
+              className="w-full mt-2 rounded-xl px-3 py-2 text-sm outline-none"
+              style={{
+                background: "var(--cat-input-bg, var(--cat-card-bg))",
+                border: "1px solid var(--cat-card-border)",
+                color: "var(--cat-text)",
+              }}
+            />
+            <p
+              className="text-xs mt-1.5"
+              style={{ color: "var(--cat-text-muted)" }}
+            >
+              {t("brandingHint")}
+            </p>
+          </div>
+
           {/* ── Input mode toggle ── */}
           <div>
             <LabelRow icon={<Users className="w-4 h-4" />}>

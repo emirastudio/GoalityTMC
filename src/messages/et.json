@@ -4286,6 +4286,11 @@
     "navPricing": "Hinnad",
     "navStart": "Alusta"
   },
+  "drawLandingSeo": {
+    "title": "Turniiri loosimine online — ilus premium show | Goality",
+    "description": "Loo ilus turniiri loosimine minutitega. Gruppide etapp, liiga või playoff — kinematograafiline esitlus, jagatav link, premium-ilme sinu üritusele. Tasuta proovida, €11 et alles hoida.",
+    "keywords": "turniiri loosimine, loosimine online, loo turniiri loosimine, ilus loosimine, turniiri loomine, jalgpalli loosimine, loosimise generaator, premium loosimine, loosimise show, gruppide loosimine, playoff loosimine, liiga loosimine, karika loosimine, draw show, turniir online"
+  },
   "drawLanding": {
     "metaTitle": "Draw Show — ilus turniiri loosimine minutitega",
     "metaDescription": "Loo esitluseks valmis gruppide loosimine või playoff-tabel oma turniirile. Ilma Exceli ja random-generaatoriteta — päris show võistkondadele ja publikule.",
@@ -4299,6 +4304,7 @@
     "priceBadge": "Super pakkumine · €11",
     "includedInPlan": "Korraldad turniiri Goality TMC kaudu? Loosimise show <plan>sisaldub Pro ja Elite pakettides</plan> — eraldi maksta pole vaja.",
     "mockupCaption": "Elav eelvaade — automaatselt mängiv demo-loosimine. Päris show'l on sinu võistkonnad, logod ja bränd.",
+    "seoBody": "Goality Draw Show on premium online turniiri loosimise tööriist, mis on tehtud korraldajatele, kellele on oluline, kuidas nende üritus välja näeb. Käivita gruppide etapi loosimine, täielik liiga-ringturniiri ajakava või väljalangemismäng — iga formaat muudab sinu võistkondade nimekirja kinematograafiliseks elavaks show'ks spotlight-avaldamisega, lippude, logode ja jagatava lingiga. Proovi tasuta, loodud Goality turniiride haldamise platvormi meeskonna poolt.",
     "feature1Title": "Valmis 60 sekundiga",
     "feature1Body": "Kleebi võistkondade nimekiri, vali grupid või playoff, vajuta «Käivita». Kogu seadistus.",
     "feature2Title": "Suurele ekraanile",
@@ -4313,6 +4319,12 @@
   "drawWizard": {
     "title": "Pane loosimine kokku",
     "subtitle": "Lisa võistkonnad alla ja vali formaat.",
+    "brandingLabel": "Turniir",
+    "brandingOptional": "valikuline",
+    "brandingNamePlaceholder": "Turniiri nimi",
+    "brandingDivisionPlaceholder": "Divisjon (nt U14)",
+    "brandingLogoPlaceholder": "Logo URL (valik.)",
+    "brandingHint": "Näidatakse lava päises. Jäta tühjaks — kasutatakse vaike-pealkirja.",
     "teamsLabel": "Võistkonnad",
     "inputBulk": "Kleebi nimekiri",
     "inputDetailed": "Täida rida-realt",
@@ -4381,7 +4393,8 @@
       "roundLabel": "Voor",
       "leagueStatus": "Liiga ajakava",
       "leagueDoneTitle": "Liiga ajakava valmis",
-      "leagueDoneSubtitle": "{rounds} vooru · {matches} mängu paigas"
+      "leagueDoneSubtitle": "{rounds} vooru · {matches} mängu paigas",
+      "madeWith": "Tehtud"
     },
     "controls": {
       "play": "Mängi",

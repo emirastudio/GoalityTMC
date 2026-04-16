@@ -102,6 +102,7 @@ function isShareableDrawState(value: unknown): value is ShareableDrawState {
   if (
     config.mode !== "groups" &&
     config.mode !== "playoff" &&
+    config.mode !== "league" &&
     config.mode !== "groups-playoff"
   ) {
     return false;
@@ -132,11 +133,27 @@ function isShareableDrawState(value: unknown): value is ShareableDrawState {
       return false;
     }
     if (
+      t.logoUrl !== undefined &&
+      t.logoUrl !== null &&
+      typeof t.logoUrl !== "string"
+    ) {
+      return false;
+    }
+    if (
       t.pot !== undefined &&
       t.pot !== null &&
       typeof t.pot !== "number"
     ) {
       return false;
+    }
+  }
+
+  // Branding block is optional; when present, each field is a string.
+  if (value.branding !== undefined) {
+    if (!isRecord(value.branding)) return false;
+    for (const key of ["tournamentName", "divisionName", "logoUrl"] as const) {
+      const v = (value.branding as Record<string, unknown>)[key];
+      if (v !== undefined && typeof v !== "string") return false;
     }
   }
 

@@ -4286,6 +4286,11 @@
     "navPricing": "Pricing",
     "navStart": "Get started"
   },
+  "drawLandingSeo": {
+    "title": "Tournament Draw — Online Draw Maker for Football & Sports | Goality",
+    "description": "Create a beautiful online tournament draw in minutes. Group stage, league or playoff — cinematic presentation, shareable link, premium look for your event. Free preview, €11 to keep.",
+    "keywords": "tournament draw, online tournament draw, create tournament draw, football draw, tournament draw generator, cup draw, group stage draw, playoff bracket, league schedule generator, premium tournament draw, beautiful draw presentation, draw show, goality draw"
+  },
   "drawLanding": {
     "metaTitle": "Draw Show — Beautiful tournament draws in minutes",
     "metaDescription": "Create a presentation-ready group draw or playoff bracket for your tournament. No spreadsheets, no random generators — a real show for your teams and audience.",
@@ -4299,6 +4304,7 @@
     "priceBadge": "Super deal · €11",
     "includedInPlan": "Running your tournament on Goality TMC? Draw Show is <plan>included in Pro and Elite</plan> — no extra charge.",
     "mockupCaption": "Live preview — auto-playing demo draw. Your real show will use your team names, logos and branding.",
+    "seoBody": "Goality Draw Show is a premium online tournament draw maker built for organizers who care about how their event looks. Run a group-stage draw, a full league round-robin schedule, or a knockout playoff bracket — each format turns your team list into a cinematic live show with spotlight reveals, flags, logos and a shareable link. Free to try, built by the same team behind the Goality tournament management platform.",
     "feature1Title": "Ready in 60 seconds",
     "feature1Body": "Paste your team list, pick groups or playoff, click Start. That's the whole setup.",
     "feature2Title": "Built for the big screen",
@@ -4313,6 +4319,12 @@
   "drawWizard": {
     "title": "Build your draw",
     "subtitle": "Drop your teams below and choose how they should be drawn.",
+    "brandingLabel": "Tournament",
+    "brandingOptional": "Optional",
+    "brandingNamePlaceholder": "Tournament name",
+    "brandingDivisionPlaceholder": "Division (e.g. U14)",
+    "brandingLogoPlaceholder": "Logo URL (optional)",
+    "brandingHint": "Shown in the stage header. Leave blank to use the default label.",
     "teamsLabel": "Teams",
     "inputBulk": "Paste a list",
     "inputDetailed": "Fill row by row",
@@ -4381,7 +4393,8 @@
       "roundLabel": "Round",
       "leagueStatus": "League schedule",
       "leagueDoneTitle": "League schedule drawn",
-      "leagueDoneSubtitle": "{rounds} rounds · {matches} matches locked in"
+      "leagueDoneSubtitle": "{rounds} rounds · {matches} matches locked in",
+      "madeWith": "Made with"
     },
     "controls": {
       "play": "Play",
