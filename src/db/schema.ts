@@ -132,6 +132,10 @@ export const tournaments = pgTable("tournaments", {
   extrasPaymentDue: date("extras_payment_due"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  // ── Schedule publish ────────────────────────────────────
+  // When set, the schedule is visible on public pages and in club admin.
+  // Before publishing, only the organizer can see it in the planner.
+  schedulePublishedAt: timestamp("schedule_published_at"),
   // ── Deletion flow ───────────────────────────────────────
   deleteRequestedAt: timestamp("delete_requested_at"),   // organizer requested → superadmin decides
   deleteRequestReason: text("delete_request_reason"),
@@ -913,6 +917,7 @@ export const matchEventTypeEnum = pgEnum("match_event_type", [
   "substitution_in",
   "substitution_out",
   "injury",
+  "var",
 ]);
 
 // ─── Этапы турнира ─────────────────────────────────────────

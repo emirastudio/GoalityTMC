@@ -15,6 +15,7 @@ export async function GET(
   const groupId = searchParams.get("groupId");
   const classId = searchParams.get("classId");
   const status = searchParams.get("status");
+  const teamId = searchParams.get("teamId");
 
   // Разрешаем org + tournament
   const org = await db.query.organizations.findFirst({
@@ -29,6 +30,7 @@ export async function GET(
     ),
   });
   if (!tournament) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!tournament.schedulePublishedAt) return NextResponse.json([]);
 
   const conditions = [
     eq(matches.tournamentId, tournament.id),
@@ -39,6 +41,15 @@ export async function GET(
   if (stageId) conditions.push(eq(matches.stageId, parseInt(stageId)));
   if (groupId) conditions.push(eq(matches.groupId, parseInt(groupId)));
   if (status) conditions.push(eq(matches.status, status as "scheduled" | "live" | "finished" | "postponed" | "cancelled" | "walkover"));
+
+  // Filter by teamId: show only matches where this team played
+  if (teamId) {
+    const tid = parseInt(teamId);
+    conditions.push(or(
+      eq(matches.homeTeamId, tid),
+      eq(matches.awayTeamId, tid)
+    )!);
+  }
 
   // Filter by classId: find teams in this class via tournamentRegistrations, then filter matches
   if (classId) {

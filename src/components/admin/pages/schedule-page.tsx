@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useTournament } from "@/lib/tournament-context";
 import {
@@ -12,6 +12,7 @@ import {
   GitBranch, BarChart3, Shuffle, Sparkles, Info, ArrowRight, MapPin, Check,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { TeamBadge } from "@/components/ui/team-badge";
 
 // ─────────────────────────────────────────────
 //  Types
@@ -774,7 +775,8 @@ function StructureTab({
 //  Standings Table Component
 // ─────────────────────────────────────────────
 function StandingsTable({ rows }: { rows: StandingsRow[] }) {
-  const cols = ["#", "Команда", "И", "В", "Н", "П", "ГЗ", "ГП", "РГ", "О"];
+  const t = useTranslations("tournament");
+  const cols = ["#", t("colTeam"), t("colPlayed"), t("colWon"), t("colDrawn"), t("colLost"), t("colGoalsFor"), t("colGoalsAgainst"), t("colGoalDiff"), t("colPoints")];
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
@@ -1520,7 +1522,7 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
   // Basket helpers
   function addBasket() {
     const id = `b${Date.now()}`;
-    setBaskets(prev => [...prev, { id, name: `Корзина ${prev.length + 1}`, teamIds: [] }]);
+    setBaskets(prev => [...prev, { id, name: t("basketName", { n: prev.length + 1 }), teamIds: [] }]);
     setShowBaskets(true);
   }
 
@@ -1710,12 +1712,12 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
       });
       const data = await res.json();
       if (res.ok) {
-        setApplyDrawResult(`✓ Жеребьёвка применена: ${data.updated} матчей обновлено`);
+        setApplyDrawResult(t("drawApplied", { count: data.updated }));
       } else {
-        setApplyDrawResult(`Ошибка: ${data.error ?? "неизвестная ошибка"}`);
+        setApplyDrawResult(t("drawApplyError", { error: data.error ?? "?" }));
       }
     } catch {
-      setApplyDrawResult("Ошибка сети");
+      setApplyDrawResult(t("drawApplyNetworkError"));
     } finally {
       setApplyingDraw(false);
     }
@@ -1755,12 +1757,12 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
             {allTeams.length > 0 && groups.length > 0 && (
               <Btn variant="outline" size="sm" onClick={autoDraw} loading={autoDrawing}>
                 <Shuffle className="w-3.5 h-3.5" />
-                {baskets.some(b => b.teamIds.length > 0) ? "Жеребьёвка по корзинам" : "Авто-жеребьёвка"}
+                {baskets.some(b => b.teamIds.length > 0) ? t("drawByBaskets") : t("drawAuto")}
               </Btn>
             )}
             {Object.values(assignMap).some(ids => ids.length > 0) && (
               <Btn variant="ghost" size="sm" onClick={clearDraw} loading={clearing}>
-                <Trash2 className="w-3.5 h-3.5" /> Очистить
+                <Trash2 className="w-3.5 h-3.5" /> {t("clear")}
               </Btn>
             )}
             {selectedStageId && (
@@ -1824,7 +1826,7 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
               }}
             />
             <span className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
-              Корзины посева
+              {t("basketsTitle")}
             </span>
             {baskets.length > 0 && (
               <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold"
@@ -1834,11 +1836,11 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
             )}
             <span className="text-xs opacity-0 group-hover:opacity-60 transition-opacity ml-1"
               style={{ color: "var(--cat-text-muted)" }}>
-              FIFA/UEFA стиль
+              {t("basketsStyle")}
             </span>
           </button>
           <Btn size="xs" variant="outline" onClick={addBasket}>
-            <Plus className="w-3 h-3" /> Добавить корзину
+            <Plus className="w-3 h-3" /> {t("addBasket")}
           </Btn>
         </div>
 
@@ -1846,10 +1848,7 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
           <div className="p-4 space-y-3">
             {baskets.length === 0 ? (
               <div className="text-center py-5" style={{ color: "var(--cat-text-muted)" }}>
-                <p className="text-xs">
-                  Корзины позволяют распределить команды по уровню (посеять)
-                  перед жеребьёвкой, чтобы сильные команды попали в разные группы.
-                </p>
+                <p className="text-xs">{t("basketsExplain")}</p>
               </div>
             ) : (
               baskets.map((basket, bi) => {
@@ -1989,8 +1988,8 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
                 onDrop={onDropToUnbasketed}
               >
                 <p className="text-[11px] font-semibold mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
-                  Не в корзинах: {unbasketedTeams.length}
-                  {dragOverUnbasketed && <span className="ml-2" style={{ color: "#94a3b8" }}>← вернуть сюда</span>}
+                  {t("notInBaskets", { count: unbasketedTeams.length })}
+                  {dragOverUnbasketed && <span className="ml-2" style={{ color: "#94a3b8" }}>{t("returnHere")}</span>}
                 </p>
                 <div className="flex flex-wrap gap-1.5 min-h-[24px]">
                   {unbasketedTeams.map(tm => (
@@ -2011,7 +2010,7 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
                   ))}
                   {unbasketedTeams.length === 0 && (
                     <span className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-                      {dragOverUnbasketed ? "Отпустите чтобы убрать из корзины" : "Все команды в корзинах"}
+                      {dragOverUnbasketed ? t("dropToRemoveFromBasket") : t("allTeamsInBaskets")}
                     </span>
                   )}
                 </div>
@@ -2094,7 +2093,7 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
         <div className="rounded-2xl px-4 py-2.5 flex items-center gap-2 text-xs font-semibold"
           style={{ background: "rgba(43,254,186,0.08)", borderColor: "rgba(43,254,186,0.25)", border: "1px solid" }}>
           <ArrowRight className="w-3.5 h-3.5" style={{ color: "#2BFEBA" }} />
-          <span style={{ color: "#2BFEBA" }}>Отпустите над группой</span>
+          <span style={{ color: "#2BFEBA" }}>{t("dropOverGroup")}</span>
         </div>
       )}
 
@@ -2153,7 +2152,7 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
                         border: isOver ? `2px dashed ${gc.border}` : "2px dashed transparent",
                       }}>
                       <Shield className="w-6 h-6 mb-1 opacity-25" />
-                      <p className="text-[11px]">{isOver ? "Отпустите здесь" : t("noTeams")}</p>
+                      <p className="text-[11px]">{isOver ? t("dropHere") : t("noTeams")}</p>
                     </div>
                   )}
                   {groupTeams.map(team => (
@@ -2246,7 +2245,7 @@ function DrawTab({ base, classId }: { base: string; classId: number | null }) {
         >
           <ArrowRight className="w-4 h-4" style={{ color: "#f59e0b", transform: "rotate(180deg)" }} />
           <span className="text-xs font-semibold" style={{ color: "#f59e0b" }}>
-            {dragOverPool ? "Отпустите — вернуть в пул" : "↩ Перетащите сюда чтобы убрать из группы"}
+            {dragOverPool ? t("dropToPool") : t("dragToPool")}
           </span>
         </div>
       )}
@@ -2338,7 +2337,7 @@ function AutoSchedulerPanel({
   const [addFieldError, setAddFieldError] = useState("");
 
   const handleAddField = async () => {
-    if (!addFieldName.trim()) { setAddFieldError("Введите название площадки"); return; }
+    if (!addFieldName.trim()) { setAddFieldError(t("fieldNameRequired")); return; }
     setAddFieldSaving(true);
     setAddFieldError("");
     try {
@@ -2353,7 +2352,7 @@ function AutoSchedulerPanel({
           credentials: "include",
           body: JSON.stringify({ name: addFieldNewStadium.trim() }),
         });
-        if (!sRes.ok) { setAddFieldError("Ошибка создания стадиона"); setAddFieldSaving(false); return; }
+        if (!sRes.ok) { setAddFieldError(t("stadiumCreateError")); setAddFieldSaving(false); return; }
         const stadium = await sRes.json();
         stadiumId = stadium.id;
       }
@@ -2364,9 +2363,9 @@ function AutoSchedulerPanel({
           credentials: "include",
           body: JSON.stringify({ name: addFieldName.trim() }),
         });
-        if (!fRes.ok) { setAddFieldError("Ошибка создания площадки"); setAddFieldSaving(false); return; }
+        if (!fRes.ok) { setAddFieldError(t("fieldCreateError")); setAddFieldSaving(false); return; }
       } else {
-        setAddFieldError("Выберите или создайте стадион"); setAddFieldSaving(false); return;
+        setAddFieldError(t("stadiumRequired")); setAddFieldSaving(false); return;
       }
       // Success → reset form, reload fields
       setAddFieldName("");
@@ -2375,7 +2374,7 @@ function AutoSchedulerPanel({
       setShowAddField(false);
       onFieldCreated();
     } catch {
-      setAddFieldError("Ошибка сети");
+      setAddFieldError(t("networkError"));
     } finally {
       setAddFieldSaving(false);
     }
@@ -2626,7 +2625,7 @@ function AutoSchedulerPanel({
               <select value={addFieldStadiumId} onChange={e => setAddFieldStadiumId(e.target.value)}
                 className="w-full rounded-lg px-3 py-2 text-xs outline-none"
                 style={{ background: "var(--cat-input-bg, #1a1f2e)", color: "var(--cat-text)", border: "1px solid var(--cat-card-border)" }}>
-                <option value="">— выберите стадион —</option>
+                <option value="">{t("selectStadiumOption")}</option>
                 {stadiums.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             )}
@@ -2634,7 +2633,7 @@ function AutoSchedulerPanel({
             {/* New stadium name */}
             {addFieldMode === "new" && (
               <input
-                placeholder="Название стадиона..."
+                placeholder={t("stadiumNamePlaceholder")}
                 value={addFieldNewStadium}
                 onChange={e => setAddFieldNewStadium(e.target.value)}
                 className="w-full rounded-lg px-3 py-2 text-xs outline-none"
@@ -2644,7 +2643,7 @@ function AutoSchedulerPanel({
 
             {/* Field name */}
             <input
-              placeholder="Название площадки (A, B, Поле 1...)"
+              placeholder={t("fieldNamePlaceholder")}
               value={addFieldName}
               onChange={e => setAddFieldName(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleAddField()}
@@ -2661,12 +2660,12 @@ function AutoSchedulerPanel({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all disabled:opacity-50"
                 style={{ background: "var(--cat-accent)", color: "#0A0E14" }}>
                 {addFieldSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                Создать
+                {t("create")}
               </button>
               <button onClick={() => { setShowAddField(false); setAddFieldError(""); }}
                 className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all hover:opacity-70"
                 style={{ color: "var(--cat-text-muted)", background: "var(--cat-tag-bg)" }}>
-                Отмена
+                {t("cancel")}
               </button>
             </div>
           </div>
@@ -2845,7 +2844,7 @@ function AutoSchedulerPanel({
           {t("runSchedule")} ({enabledFields.length} {t("fieldsSection").toLowerCase()} · {days.length} {t("days").toLowerCase()})
         </Btn>
         <Btn onClick={async () => {
-          if (!confirm("Очистить всё расписание? Матчи останутся, только время и поле будут сброшены.")) return;
+          if (!confirm(t("confirmClearSchedule"))) return;
           setClearing(true);
           try {
             await fetch(`${base}/matches/clear-schedule`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stageId }) });
@@ -2853,7 +2852,7 @@ function AutoSchedulerPanel({
             onScheduled();
           } finally { setClearing(false); }
         }} loading={clearing} variant="ghost" size="md">
-          <X className="w-4 h-4" /> Очистить расписание
+          <X className="w-4 h-4" /> {t("clearSchedule")}
         </Btn>
         {result && (
           result.ok ? (
@@ -2924,6 +2923,7 @@ function PlannerBanner({ base, classId }: { base: string; classId: number | null
 
 function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: number | null; stageSettings: Record<number, StageSettings> }) {
   const t = useTranslations("schedule");
+  const locale = useLocale();
   const [stages, setStages] = useState<Stage[]>([]);
   const [selectedStageId, setSelectedStageId] = useState<number | null>(null);
   const [dateFilter, setDateFilter] = useState("");
@@ -3063,7 +3063,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
         for (const [round, roundMatches] of sortedRounds) {
           sections.push({
             key: `g:${sid}:${round}`,
-            label: round > 0 ? `Тур ${round}` : (stage?.name ?? "Группа"),
+            label: round > 0 ? t("roundLabel", { n: round }) : (stage?.name ?? t("groupLabel")),
             subLabel: stage?.name,
             matches: roundMatches,
           });
@@ -3071,7 +3071,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
       } else {
         sections.push({
           key: `k:${sid}`,
-          label: stage?.name ?? "Плей-офф",
+          label: stage?.name ?? t("playoffLabel"),
           matches: stageMatches,
         });
       }
@@ -3131,7 +3131,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
           <div className="flex items-center gap-2">
             {scheduledCount > 0 && (
               <Btn variant="ghost" size="sm" loading={clearing} onClick={async () => {
-                if (!confirm("Очистить всё расписание? Матчи останутся, только время и поле будут сброшены.")) return;
+                if (!confirm(t("confirmClearSchedule"))) return;
                 setClearing(true);
                 try {
                   const body = classId ? { classId } : { all: true };
@@ -3144,7 +3144,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
                   await loadMatches();
                 } finally { setClearing(false); }
               }}>
-                <Trash2 className="w-3.5 h-3.5" /> Очистить
+                <Trash2 className="w-3.5 h-3.5" /> {t("clear")}
               </Btn>
             )}
             <Btn onClick={loadMatches} variant="ghost" size="sm">
@@ -3160,7 +3160,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
       {/* Stage filter pills (if multiple stages) */}
       {stages.length > 1 && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-semibold" style={{ color: "var(--cat-text-muted)" }}>Этап:</span>
+          <span className="text-[11px] font-semibold" style={{ color: "var(--cat-text-muted)" }}>{t("stageFilterLabel")}</span>
           {stages.map(s => (
             <button
               key={s.id}
@@ -3178,7 +3178,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
           {selectedStageId && (
             <button onClick={() => setSelectedStageId(null)} className="text-[11px] hover:opacity-70 underline"
               style={{ color: "var(--cat-text-muted)" }}>
-              Все этапы
+              {t("allStages")}
             </button>
           )}
         </div>
@@ -3198,11 +3198,11 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
                 : { background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }
             }
           >
-            Все дни
+            {t("allDays")}
           </button>
           {/* Day pills from actual match dates */}
           {availableDates.map(d => {
-            const label = new Date(d + "T12:00:00").toLocaleDateString("ru", { day: "numeric", month: "short", weekday: "short" });
+            const label = new Date(d + "T12:00:00").toLocaleDateString(locale, { day: "numeric", month: "short", weekday: "short" });
             const isActive = dateFilter === d;
             const dayScheduled = matches.filter(m => m.scheduledAt && new Date(m.scheduledAt).toISOString().slice(0, 10) === d).length;
             return (
@@ -3218,7 +3218,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
               >
                 <span>{label}</span>
                 {dayScheduled > 0 && (
-                  <span className="text-[9px] opacity-60 font-normal">{dayScheduled} матч.</span>
+                  <span className="text-[9px] opacity-60 font-normal">{t("matchCountAbbr", { count: dayScheduled })}</span>
                 )}
               </button>
             );
@@ -3226,7 +3226,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
           {/* If no matches scheduled yet, show tournament start date */}
           {availableDates.length === 0 && tournamentDates?.startDate && (
             <span className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-              Матчи без дат · Турнир с {new Date(tournamentDates.startDate + "T12:00:00").toLocaleDateString("ru", { day: "numeric", month: "long" })}
+              {t("noMatchesWithDates", { date: new Date(tournamentDates.startDate + "T12:00:00").toLocaleDateString(locale, { day: "numeric", month: "long" }) })}
             </span>
           )}
         </div>
@@ -3241,7 +3241,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
             className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
             style={!fieldFilter ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" } : { background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}
           >
-            Все поля
+            {t("allFields")}
           </button>
           {fields.map(f => (
             <button key={f.id}
@@ -3262,9 +3262,9 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
       {/* Stats row */}
       {matches.length > 0 && (
         <div className="flex items-center gap-2 text-xs" style={{ color: "var(--cat-text-muted)" }}>
-          <span>Всего: <strong style={{ color: "var(--cat-text)" }}>{filteredMatches.length}</strong></span>
-          {scheduledCount > 0 && <span style={{ color: "#2BFEBA" }} className="font-semibold">✓ {scheduledCount} запланировано</span>}
-          {unscheduledCount > 0 && <span style={{ color: "#f59e0b" }} className="font-semibold">⏰ {unscheduledCount} без времени</span>}
+          <span>{t("totalLabel")} <strong style={{ color: "var(--cat-text)" }}>{filteredMatches.length}</strong></span>
+          {scheduledCount > 0 && <span style={{ color: "#2BFEBA" }} className="font-semibold">✓ {scheduledCount} {t("scheduledLabel")}</span>}
+          {unscheduledCount > 0 && <span style={{ color: "#f59e0b" }} className="font-semibold">⏰ {unscheduledCount} {t("noDateLabel")}</span>}
         </div>
       )}
 
@@ -3301,7 +3301,7 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
                     </span>
                   )}
                   <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
-                    {section.matches.length} матч.
+                    {t("matchCountAbbr", { count: section.matches.length })}
                   </span>
                 </div>
                 <div className="flex-1 h-px" style={{ background: "var(--cat-card-border)" }} />
@@ -3337,15 +3337,8 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
                             style={{ color: match.homeTeam ? "var(--cat-text)" : "var(--cat-text-muted)" }}>
                             {match.homeTeam?.name ?? "TBD"}
                           </span>
-                          {match.homeTeam?.club?.badgeUrl
-                            ? <img src={match.homeTeam.club.badgeUrl} alt="" className="w-5 h-5 rounded object-cover shrink-0" />
-                            : match.homeTeam
-                              ? <div className="w-5 h-5 rounded-md shrink-0 flex items-center justify-center text-[9px] font-black"
-                                  style={{ background: gc?.bg ?? "var(--cat-tag-bg)", color: gc?.text ?? "var(--cat-text-muted)" }}>
-                                  {(match.homeTeam.name[0] ?? "?").toUpperCase()}
-                                </div>
-                              : <div className="w-5 h-5 rounded-md shrink-0" style={{ background: "var(--cat-tag-bg)", opacity: 0.5 }} />
-                          }
+                          <TeamBadge team={match.homeTeam} size={20}
+                            bg={gc?.bg} color={gc?.text} />
                         </div>
                         <span className="px-2 py-0.5 rounded text-[10px] font-black shrink-0 tabular-nums"
                           style={{ background: gc?.bg ?? "var(--cat-tag-bg)", color: gc?.text ?? "var(--cat-text-secondary)" }}>
@@ -3353,15 +3346,8 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
                         </span>
                         {/* Away team: badge + name (left-aligned) */}
                         <div className="flex-1 flex items-center gap-1.5 min-w-0">
-                          {match.awayTeam?.club?.badgeUrl
-                            ? <img src={match.awayTeam.club.badgeUrl} alt="" className="w-5 h-5 rounded object-cover shrink-0" />
-                            : match.awayTeam
-                              ? <div className="w-5 h-5 rounded-md shrink-0 flex items-center justify-center text-[9px] font-black"
-                                  style={{ background: gc?.bg ?? "var(--cat-tag-bg)", color: gc?.text ?? "var(--cat-text-muted)" }}>
-                                  {(match.awayTeam.name[0] ?? "?").toUpperCase()}
-                                </div>
-                              : <div className="w-5 h-5 rounded-md shrink-0" style={{ background: "var(--cat-tag-bg)", opacity: 0.5 }} />
-                          }
+                          <TeamBadge team={match.awayTeam} size={20}
+                            bg={gc?.bg} color={gc?.text} />
                           <span className="text-xs font-semibold truncate"
                             style={{ color: match.awayTeam ? "var(--cat-text)" : "var(--cat-text-muted)" }}>
                             {match.awayTeam?.name ?? "TBD"}

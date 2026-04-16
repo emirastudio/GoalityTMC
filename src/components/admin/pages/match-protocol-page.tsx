@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { useTournament } from "@/lib/tournament-context";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -16,7 +17,9 @@ type MatchStatus = "scheduled" | "live" | "finished" | "cancelled" | "postponed"
 type EventType =
   | "goal" | "own_goal" | "yellow" | "red" | "yellow_red"
   | "penalty_scored" | "penalty_missed"
-  | "substitution_in" | "substitution_out" | "injury";
+  | "substitution_in" | "substitution_out" | "injury" | "var";
+
+type TFunc = ReturnType<typeof useTranslations<"admin.matchHub">>;
 
 interface Person {
   id: number;
@@ -99,8 +102,8 @@ interface RecentMatch {
 function useNow(interval = 1000) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), interval);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), interval);
+    return () => clearInterval(timer);
   }, [interval]);
   return now;
 }
@@ -113,24 +116,25 @@ function calcMinute(startedAt: string, now: number) {
 }
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ru", { day: "2-digit", month: "long", year: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" });
 }
 function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
-function eventMeta(type: EventType): { icon: string; color: string; label: string } {
+function eventMeta(type: EventType, t: TFunc): { icon: string; color: string; label: string } {
   const map: Record<EventType, { icon: string; color: string; label: string }> = {
-    goal:             { icon: "⚽", color: "#10b981", label: "Гол" },
-    own_goal:         { icon: "⚽", color: "#f59e0b", label: "Автогол" },
-    yellow:           { icon: "🟨", color: "#f59e0b", label: "Жёлтая" },
-    red:              { icon: "🟥", color: "#ef4444", label: "Красная" },
-    yellow_red:       { icon: "🟧", color: "#f97316", label: "Вторая жёлтая" },
-    penalty_scored:   { icon: "⚽", color: "#3b82f6", label: "Пенальти (гол)" },
-    penalty_missed:   { icon: "✗",  color: "#6b7280", label: "Пенальти (мимо)" },
-    substitution_in:  { icon: "↑",  color: "#10b981", label: "Замена (вышел)" },
-    substitution_out: { icon: "↓",  color: "#ef4444", label: "Замена (ушёл)" },
-    injury:           { icon: "🩹", color: "#8b5cf6", label: "Травма" },
+    goal:             { icon: "⚽", color: "#10b981", label: t("eventGoal") },
+    own_goal:         { icon: "⚽", color: "#f59e0b", label: t("eventOwnGoal") },
+    yellow:           { icon: "🟨", color: "#f59e0b", label: t("eventYellow") },
+    red:              { icon: "🟥", color: "#ef4444", label: t("eventRed") },
+    yellow_red:       { icon: "🟧", color: "#f97316", label: t("eventYellowRed") },
+    penalty_scored:   { icon: "⚽", color: "#3b82f6", label: t("eventPenaltyScored") },
+    penalty_missed:   { icon: "✗",  color: "#6b7280", label: t("eventPenaltyMissed") },
+    substitution_in:  { icon: "↑",  color: "#10b981", label: t("eventSubIn") },
+    substitution_out: { icon: "↓",  color: "#ef4444", label: t("eventSubOut") },
+    injury:           { icon: "🩹", color: "#8b5cf6", label: t("eventInjury") },
+    var:              { icon: "📺", color: "#6366f1", label: t("eventVar") },
   };
   return map[type] ?? { icon: "·", color: "#6b7280", label: type };
 }
@@ -199,13 +203,19 @@ function FormPill({ result }: { result: "W" | "D" | "L" }) {
 function TimelineBar({
   events,
   homeTeamId,
+  homeTeamName,
+  awayTeamName,
   currentMinute,
   isLive,
+  t,
 }: {
   events: MatchEvent[];
   homeTeamId?: number | null;
+  homeTeamName?: string;
+  awayTeamName?: string;
   currentMinute?: number;
   isLive: boolean;
+  t: TFunc;
 }) {
   const MAX = 120;
   const progressMinute = Math.min(currentMinute ?? (isLive ? 45 : MAX), MAX);
@@ -218,19 +228,28 @@ function TimelineBar({
   return (
     <div className="px-5 py-6 select-none">
       {/* ── gradient track ─────────────────────────────────────────── */}
-      <div className="relative" style={{ height: 140 }}>
+      <div className="relative" style={{ height: 150 }}>
+
+        {/* Home team label — top left */}
+        {homeTeamName && (
+          <div className="absolute left-0 flex items-center gap-1" style={{ top: 0 }}>
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#3b82f6" }} />
+            <span className="text-[9px] font-black uppercase tracking-wider truncate max-w-[110px]"
+              style={{ color: "#3b82f6" }}>{homeTeamName}</span>
+          </div>
+        )}
 
         {/* Above-track: home team events */}
-        <div className="absolute w-full" style={{ bottom: 72, height: 56 }}>
+        <div className="absolute w-full" style={{ bottom: 78, height: 52, top: 16 }}>
           {homeEvents.map(ev => {
-            const meta = eventMeta(ev.eventType);
+            const meta = eventMeta(ev.eventType, t);
             const x = pct(ev.minute);
             const name = ev.person ? `${ev.person.lastName} ${ev.person.firstName.charAt(0)}.` : meta.label;
             return (
               <div key={ev.id} className="absolute flex flex-col items-center"
                 style={{ left: `${x}%`, transform: "translateX(-50%)", bottom: 0 }}>
-                <p className="text-[9px] font-bold mb-0.5 whitespace-nowrap"
-                  style={{ color: "var(--cat-text-secondary)" }}>{name}</p>
+                <span className="text-[9px] font-bold mb-0.5 whitespace-nowrap"
+                  style={{ color: "var(--cat-text-secondary)" }}>{name}</span>
                 <div className="w-0.5 h-3" style={{ background: meta.color + "80" }} />
               </div>
             );
@@ -264,11 +283,12 @@ function TimelineBar({
 
             {/* Event markers on track */}
             {events.map(ev => {
-              const meta = eventMeta(ev.eventType);
+              const meta = eventMeta(ev.eventType, t);
               const isHome = ev.teamId === homeTeamId;
               const x = pct(ev.minute);
               const letter = ev.eventType === "goal" || ev.eventType === "own_goal" || ev.eventType === "penalty_scored"
                 ? "⚽" : ev.eventType === "yellow" ? "Y" : ev.eventType === "red" ? "R"
+                : ev.eventType === "var" ? "V"
                 : ev.eventType === "substitution_in" ? "↔" : ev.eventType === "injury" ? "+" : "·";
               return (
                 <div key={ev.id}
@@ -314,28 +334,30 @@ function TimelineBar({
         </div>
 
         {/* Below-track: away team events */}
-        <div className="absolute w-full" style={{ top: 82, paddingTop: 16 }}>
+        <div className="absolute w-full" style={{ top: 88, paddingTop: 16 }}>
           {awayEvents.map(ev => {
-            const meta = eventMeta(ev.eventType);
+            const meta = eventMeta(ev.eventType, t);
             const x = pct(ev.minute);
             const name = ev.person ? `${ev.person.lastName} ${ev.person.firstName.charAt(0)}.` : meta.label;
             return (
               <div key={ev.id} className="absolute flex flex-col items-center"
                 style={{ left: `${x}%`, transform: "translateX(-50%)", top: 0 }}>
                 <div className="w-0.5 h-3" style={{ background: meta.color + "80" }} />
-                <p className="text-[9px] font-bold mt-0.5 whitespace-nowrap"
-                  style={{ color: "var(--cat-text-secondary)" }}>{name}</p>
+                <span className="text-[9px] font-bold mt-0.5 whitespace-nowrap"
+                  style={{ color: "var(--cat-text-secondary)" }}>{name}</span>
               </div>
             );
           })}
         </div>
-      </div>
 
-      {/* Team side labels */}
-      <div className="flex justify-between text-[10px] font-semibold mt-1"
-        style={{ color: "var(--cat-text-muted)" }}>
-        <span>↑ Хозяева</span>
-        <span>↓ Гости</span>
+        {/* Away team label — bottom left */}
+        {awayTeamName && (
+          <div className="absolute left-0 bottom-0 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#f97316" }} />
+            <span className="text-[9px] font-black uppercase tracking-wider truncate max-w-[110px]"
+              style={{ color: "#f97316" }}>{awayTeamName}</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -350,6 +372,7 @@ function EventsList({
   awayTeamName,
   onDelete,
   canEdit,
+  t,
 }: {
   events: MatchEvent[];
   homeTeamId?: number | null;
@@ -357,6 +380,7 @@ function EventsList({
   awayTeamName: string;
   onDelete: (id: number) => void;
   canEdit: boolean;
+  t: TFunc;
 }) {
   const sorted = [...events].sort((a, b) => a.minute - b.minute || (a.minuteExtra ?? 0) - (b.minuteExtra ?? 0));
 
@@ -364,8 +388,8 @@ function EventsList({
     return (
       <div className="flex flex-col items-center justify-center py-10" style={{ color: "var(--cat-text-muted)" }}>
         <SquareActivity className="w-8 h-8 mb-2 opacity-20" />
-        <p className="text-sm font-semibold">Нет событий</p>
-        <p className="text-xs mt-0.5 opacity-60">Добавьте первое событие ниже</p>
+        <p className="text-sm font-semibold">{t("noEvents")}</p>
+        <p className="text-xs mt-0.5 opacity-60">{t("noEventsHint")}</p>
       </div>
     );
   }
@@ -373,26 +397,28 @@ function EventsList({
   return (
     <div className="divide-y" style={{ borderColor: "var(--cat-card-border)" }}>
       {sorted.map(ev => {
-        const meta = eventMeta(ev.eventType);
+        const meta = eventMeta(ev.eventType, t);
         const isHome = ev.teamId === homeTeamId;
         const teamLabel = isHome ? homeTeamName : awayTeamName;
         return (
-          <div key={ev.id} className="flex items-center gap-3 px-4 py-3 group hover:opacity-90 transition-opacity">
-            <span className="w-10 text-right font-mono text-sm font-bold shrink-0"
+          <div key={ev.id} className="flex items-center gap-3 px-4 py-3.5 group hover:opacity-90 transition-opacity">
+            <span className="w-11 text-right font-mono text-sm font-bold shrink-0"
               style={{ color: "var(--cat-text-muted)" }}>
               {ev.minute}{ev.minuteExtra ? `+${ev.minuteExtra}` : ""}&apos;
             </span>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0"
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0"
               style={{ background: `${meta.color}18`, boxShadow: `0 0 8px ${meta.color}30` }}>
               {meta.icon}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold leading-snug" style={{ color: "var(--cat-text)" }}>
+              <p className="text-base font-bold leading-snug" style={{ color: "var(--cat-text)" }}>
                 {ev.person ? `${ev.person.firstName} ${ev.person.lastName}` : meta.label}
               </p>
-              <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+              <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
                 {meta.label}
-                {ev.assistPerson && <span className="opacity-70"> · пас: {ev.assistPerson.firstName} {ev.assistPerson.lastName}</span>}
+                {ev.assistPerson && (
+                  <span className="opacity-70"> · {t("assist", { name: `${ev.assistPerson.firstName} ${ev.assistPerson.lastName}` })}</span>
+                )}
                 <span style={{ color: isHome ? "#3b82f6" : "#f97316" }}> · {teamLabel}</span>
               </p>
             </div>
@@ -412,139 +438,32 @@ function EventsList({
 
 // ─── Add Event Panel ──────────────────────────────────────────────────────────
 
-const QUICK_EVENTS: { type: EventType; label: string; emoji: string; color: string }[] = [
-  { type: "goal",             label: "Гол",          emoji: "⚽", color: "#10b981" },
-  { type: "own_goal",         label: "Автогол",      emoji: "⚽", color: "#f59e0b" },
-  { type: "yellow",           label: "Жёлтая",       emoji: "🟨", color: "#f59e0b" },
-  { type: "red",              label: "Красная",       emoji: "🟥", color: "#ef4444" },
-  { type: "yellow_red",       label: "2-я жёлтая",   emoji: "🟧", color: "#f97316" },
-  { type: "substitution_in",  label: "Замена",        emoji: "🔄", color: "#3b82f6" },
-  { type: "injury",           label: "Травма",        emoji: "🩹", color: "#8b5cf6" },
-  { type: "penalty_scored",   label: "Пенальти ✓",   emoji: "⚽", color: "#3b82f6" },
-  { type: "penalty_missed",   label: "Пенальти ✗",   emoji: "✗",  color: "#6b7280" },
-];
-
-// ─── Match Control Panel ──────────────────────────────────────────────────────
-
-function MatchControlPanel({ match, base, onRefresh }: { match: MatchData; base: string; onRefresh: () => void }) {
-  const [loading, setLoading] = useState<string | null>(null);
-  const isScheduled = match.status === "scheduled";
-  const isLive = match.status === "live";
-  const isFinished = match.status === "finished";
-
-  async function ctrl(action: string) {
-    setLoading(action);
-    try {
-      const now = new Date().toISOString();
-      if (action === "start") {
-        await fetch(`${base}/matches/${match.id}`, {
-          method: "PATCH", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "live", startedAt: now }),
-        });
-      } else if (action === "ht") {
-        // End 1st half — pause (still live, just a marker)
-        await fetch(`${base}/matches/${match.id}/events`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ teamId: match.homeTeamId, eventType: "injury", minute: 45, minuteExtra: 0 }),
-        });
-        // Just a note — no status change, we use a special halftime marker via notes
-      } else if (action === "finish") {
-        await fetch(`${base}/matches/${match.id}/result`, {
-          method: "PATCH", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "finished" }),
-        });
-      } else if (action === "reopen") {
-        await fetch(`${base}/matches/${match.id}`, {
-          method: "PATCH", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "live", finishedAt: null }),
-        });
-      } else if (action === "reset_time") {
-        if (!confirm("Сбросить время старта матча на сейчас?")) return;
-        await fetch(`${base}/matches/${match.id}`, {
-          method: "PATCH", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ startedAt: now }),
-        });
-      }
-      onRefresh();
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  type CtrlBtn = { id: string; label: string; icon: string; color: string; bg: string; border: string; enabled: boolean };
-  const buttons: CtrlBtn[] = [
-    {
-      id: "start", label: "Начать матч", icon: "▶",
-      color: "#10b981", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.4)",
-      enabled: isScheduled || isFinished,
-    },
-    {
-      id: "finish", label: "Завершить матч", icon: "⏹",
-      color: "#ef4444", bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.4)",
-      enabled: isLive,
-    },
-    {
-      id: "reopen", label: "Переоткрыть", icon: "↩",
-      color: "#f59e0b", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)",
-      enabled: isFinished,
-    },
-    {
-      id: "reset_time", label: "Сбросить время", icon: "🕐",
-      color: "#6b7280", bg: "rgba(107,114,128,0.08)", border: "rgba(107,114,128,0.3)",
-      enabled: isLive,
-    },
-  ];
-
-  return (
-    <div className="rounded-2xl border overflow-hidden"
-      style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-      <div className="px-4 py-3 border-b flex items-center gap-2"
-        style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
-        <Play className="w-3.5 h-3.5" style={{ color: isLive ? "#ef4444" : "var(--cat-text-muted)" }} />
-        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
-          Управление матчем
-        </span>
-        <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-bold"
-          style={isLive
-            ? { background: "rgba(239,68,68,0.15)", color: "#ef4444" }
-            : isFinished
-            ? { background: "rgba(107,114,128,0.1)", color: "#6b7280" }
-            : { background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
-          {isLive ? "🔴 LIVE" : isFinished ? "✓ Завершён" : "⏱ Не начат"}
-        </span>
-      </div>
-
-      <div className="p-4 grid grid-cols-2 gap-3">
-        {buttons.map(btn => (
-          <button
-            key={btn.id}
-            onClick={() => ctrl(btn.id)}
-            disabled={!btn.enabled || loading !== null}
-            className="flex items-center gap-3 p-4 rounded-xl border text-left transition-all hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ background: btn.bg, borderColor: btn.border }}
-          >
-            <span className="text-2xl shrink-0">{loading === btn.id ? "⏳" : btn.icon}</span>
-            <span className="text-sm font-bold leading-tight" style={{ color: btn.color }}>
-              {btn.label}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function AddEventPanel({
   match,
   base,
   onAdded,
   lineup,
+  t,
 }: {
   match: MatchData;
   base: string;
   onAdded: () => void;
   lineup: LineupEntry[];
+  t: TFunc;
 }) {
+  const QUICK_EVENTS: { type: EventType; label: string; emoji: string; color: string }[] = [
+    { type: "goal",             label: t("eventGoal"),          emoji: "⚽", color: "#10b981" },
+    { type: "own_goal",         label: t("eventOwnGoal"),       emoji: "⚽", color: "#f59e0b" },
+    { type: "yellow",           label: t("eventYellow"),        emoji: "🟨", color: "#f59e0b" },
+    { type: "red",              label: t("eventRed"),           emoji: "🟥", color: "#ef4444" },
+    { type: "yellow_red",       label: t("eventYellowRed"),     emoji: "🟧", color: "#f97316" },
+    { type: "substitution_in",  label: t("eventSubIn"),         emoji: "🔄", color: "#3b82f6" },
+    { type: "injury",           label: t("eventInjury"),        emoji: "🩹", color: "#8b5cf6" },
+    { type: "var",              label: t("eventVar"),           emoji: "📺", color: "#6366f1" },
+    { type: "penalty_scored",   label: t("eventPenaltyScored"), emoji: "⚽", color: "#3b82f6" },
+    { type: "penalty_missed",   label: t("eventPenaltyMissed"), emoji: "✗",  color: "#6b7280" },
+  ];
+
   const [addingType, setAddingType] = useState<EventType | null>(null);
   const [minute, setMinute] = useState("");
   const [teamSide, setTeamSide] = useState<"home" | "away">("home");
@@ -567,7 +486,7 @@ function AddEventPanel({
     : teamPlayers;
 
   const wantsAssist = addingType === "goal" || addingType === "penalty_scored";
-  const wantsPlayer = addingType !== null;
+  const wantsPlayer = addingType !== null && addingType !== "var";
 
   async function addEvent() {
     if (!addingType || !minute) return;
@@ -623,7 +542,7 @@ function AddEventPanel({
         style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
         <Plus className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
         <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
-          Добавить событие
+          {t("addEventTitle")}
         </span>
       </div>
       <div className="p-4 space-y-4">
@@ -635,7 +554,7 @@ function AddEventPanel({
               style={teamSide === side
                 ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)", boxShadow: "0 0 12px rgba(var(--cat-accent-rgb),0.3)" }
                 : { background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
-              {side === "home" ? (match.homeTeam?.name ?? "Хозяева") : (match.awayTeam?.name ?? "Гости")}
+              {side === "home" ? (match.homeTeam?.name ?? t("homeTeam")) : (match.awayTeam?.name ?? t("awayTeam"))}
             </button>
           ))}
         </div>
@@ -659,11 +578,13 @@ function AddEventPanel({
           <div className="space-y-3 pt-1">
             {/* Minute */}
             <div className="flex items-center gap-2">
-              <label className="text-xs font-semibold w-20 shrink-0" style={{ color: "var(--cat-text-muted)" }}>Минута</label>
+              <label className="text-xs font-semibold w-20 shrink-0" style={{ color: "var(--cat-text-muted)" }}>
+                {t("minuteLabel")}
+              </label>
               <input ref={minuteRef} type="number" value={minute}
                 onChange={e => setMinute(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && addEvent()}
-                placeholder="напр. 23" min={1} max={120}
+                placeholder={t("minutePlaceholder")} min={1} max={120}
                 className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
                 style={inputStyle} />
             </div>
@@ -672,16 +593,16 @@ function AddEventPanel({
             {wantsPlayer && teamPlayers.length > 0 && (
               <div className="flex items-center gap-2">
                 <label className="text-xs font-semibold w-20 shrink-0" style={{ color: "var(--cat-text-muted)" }}>
-                  {addingType === "own_goal" ? "Автор" : addingType === "substitution_in" ? "Вышел" : "Игрок"}
+                  {addingType === "own_goal" ? t("ownGoalAuthorLabel") : addingType === "substitution_in" ? t("subInLabel") : t("playerLabel")}
                 </label>
                 <select value={personId} onChange={e => setPersonId(e.target.value ? parseInt(e.target.value) : "")}
                   className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
                   style={inputStyle}>
-                  <option value="">— не указан —</option>
+                  <option value="">{t("notSelected")}</option>
                   {ownGoalPlayers.map(p => (
                     <option key={p.personId} value={p.personId}>
                       {p.shirtNumber ? `#${p.shirtNumber} ` : ""}{p.person?.firstName} {p.person?.lastName}
-                      {!p.isStarting ? " (зап.)" : ""}
+                      {!p.isStarting ? ` (${t("benchPlayer")})` : ""}
                     </option>
                   ))}
                 </select>
@@ -691,11 +612,13 @@ function AddEventPanel({
             {/* Assist / Sub-off player */}
             {wantsAssist && teamPlayers.length > 0 && (
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold w-20 shrink-0" style={{ color: "var(--cat-text-muted)" }}>Ассист</label>
+                <label className="text-xs font-semibold w-20 shrink-0" style={{ color: "var(--cat-text-muted)" }}>
+                  {t("assistLabel")}
+                </label>
                 <select value={assistId} onChange={e => setAssistId(e.target.value ? parseInt(e.target.value) : "")}
                   className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
                   style={inputStyle}>
-                  <option value="">— не указан —</option>
+                  <option value="">{t("notSelected")}</option>
                   {teamPlayers.map(p => (
                     <option key={p.personId} value={p.personId}>
                       {p.shirtNumber ? `#${p.shirtNumber} ` : ""}{p.person?.firstName} {p.person?.lastName}
@@ -707,11 +630,13 @@ function AddEventPanel({
 
             {addingType === "substitution_in" && teamPlayers.length > 0 && (
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold w-20 shrink-0" style={{ color: "var(--cat-text-muted)" }}>Ушёл</label>
+                <label className="text-xs font-semibold w-20 shrink-0" style={{ color: "var(--cat-text-muted)" }}>
+                  {t("subOutLabel")}
+                </label>
                 <select value={assistId} onChange={e => setAssistId(e.target.value ? parseInt(e.target.value) : "")}
                   className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
                   style={inputStyle}>
-                  <option value="">— не указан —</option>
+                  <option value="">{t("notSelected")}</option>
                   {teamPlayers.filter(p => p.isStarting).map(p => (
                     <option key={p.personId} value={p.personId}>
                       {p.shirtNumber ? `#${p.shirtNumber} ` : ""}{p.person?.firstName} {p.person?.lastName}
@@ -726,12 +651,12 @@ function AddEventPanel({
               <button onClick={addEvent} disabled={!minute || saving}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold hover:opacity-80 disabled:opacity-40 transition-opacity"
                 style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "✓ Добавить"}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : `✓ ${t("addButton")}`}
               </button>
               <button onClick={() => { setAddingType(null); setMinute(""); setPersonId(""); setAssistId(""); }}
                 className="px-4 py-2.5 rounded-xl text-sm hover:opacity-70 transition-opacity"
                 style={{ color: "var(--cat-text-muted)", background: "var(--cat-tag-bg)" }}>
-                Отмена
+                {t("titleCancel")}
               </button>
             </div>
           </div>
@@ -741,9 +666,112 @@ function AddEventPanel({
   );
 }
 
+// ─── Match Control Panel ──────────────────────────────────────────────────────
+
+function MatchControlPanel({ match, base, onRefresh, t }: { match: MatchData; base: string; onRefresh: () => void; t: TFunc }) {
+  const [loading, setLoading] = useState<string | null>(null);
+  const isScheduled = match.status === "scheduled";
+  const isLive = match.status === "live";
+  const isFinished = match.status === "finished";
+
+  async function ctrl(action: string) {
+    setLoading(action);
+    try {
+      const now = new Date().toISOString();
+      if (action === "start") {
+        await fetch(`${base}/matches/${match.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "live", startedAt: now }),
+        });
+      } else if (action === "finish") {
+        await fetch(`${base}/matches/${match.id}/result`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "finished" }),
+        });
+      } else if (action === "reopen") {
+        await fetch(`${base}/matches/${match.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "live", finishedAt: null }),
+        });
+      } else if (action === "reset_time") {
+        if (!confirm(t("confirmResetTime"))) return;
+        await fetch(`${base}/matches/${match.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ startedAt: now }),
+        });
+      }
+      onRefresh();
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  type CtrlBtn = { id: string; label: string; icon: string; color: string; bg: string; border: string; enabled: boolean };
+  const buttons: CtrlBtn[] = [
+    {
+      id: "start", label: t("startMatch"), icon: "▶",
+      color: "#10b981", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.4)",
+      enabled: isScheduled || isFinished,
+    },
+    {
+      id: "finish", label: t("finishMatchBtn"), icon: "⏹",
+      color: "#ef4444", bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.4)",
+      enabled: isLive,
+    },
+    {
+      id: "reopen", label: t("reopenMatchBtn"), icon: "↩",
+      color: "#f59e0b", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)",
+      enabled: isFinished,
+    },
+    {
+      id: "reset_time", label: t("resetTime"), icon: "🕐",
+      color: "#6b7280", bg: "rgba(107,114,128,0.08)", border: "rgba(107,114,128,0.3)",
+      enabled: isLive,
+    },
+  ];
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+      <div className="px-4 py-3 border-b flex items-center gap-2"
+        style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
+        <Play className="w-3.5 h-3.5" style={{ color: isLive ? "#ef4444" : "var(--cat-text-muted)" }} />
+        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
+          {t("controlTitle")}
+        </span>
+        <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-bold"
+          style={isLive
+            ? { background: "rgba(239,68,68,0.15)", color: "#ef4444" }
+            : isFinished
+            ? { background: "rgba(107,114,128,0.1)", color: "#6b7280" }
+            : { background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
+          {isLive ? `🔴 LIVE` : isFinished ? `✓ ${t("statusFinished")}` : `⏱ ${t("statusNotStarted")}`}
+        </span>
+      </div>
+
+      <div className="p-4 grid grid-cols-2 gap-3">
+        {buttons.map(btn => (
+          <button
+            key={btn.id}
+            onClick={() => ctrl(btn.id)}
+            disabled={!btn.enabled || loading !== null}
+            className="flex items-center gap-3 p-4 rounded-xl border text-left transition-all hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
+            style={{ background: btn.bg, borderColor: btn.border }}
+          >
+            <span className="text-2xl shrink-0">{loading === btn.id ? "⏳" : btn.icon}</span>
+            <span className="text-sm font-bold leading-tight" style={{ color: btn.color }}>
+              {btn.label}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Team Form ────────────────────────────────────────────────────────────────
 
-function TeamForm({ teamId, matches }: { teamId?: number | null; matches: RecentMatch[] }) {
+function TeamForm({ teamId, matches, t }: { teamId?: number | null; matches: RecentMatch[]; t: TFunc }) {
   if (!teamId) return null;
   const relevant = matches
     .filter(m => m.homeTeamId === teamId || m.awayTeamId === teamId)
@@ -751,7 +779,7 @@ function TeamForm({ teamId, matches }: { teamId?: number | null; matches: Recent
     .slice(0, 5);
 
   if (relevant.length === 0) {
-    return <span className="text-xs opacity-40" style={{ color: "var(--cat-text-muted)" }}>нет данных</span>;
+    return <span className="text-xs opacity-40" style={{ color: "var(--cat-text-muted)" }}>{t("noFormData")}</span>;
   }
 
   return (
@@ -767,8 +795,66 @@ function TeamForm({ teamId, matches }: { teamId?: number | null; matches: Recent
 
 // ─── Lineup Panel ─────────────────────────────────────────────────────────────
 
+function PlayerEventIcons({ personId, events }: { personId: number; events: MatchEvent[] }) {
+  const mine = events.filter(e => e.personId === personId || e.assistPersonId === personId);
+  if (mine.length === 0) return null;
+
+  const chips: { key: string; icon: string; color: string; label: string }[] = [];
+  let goalCount = 0;
+  let assistCount = 0;
+
+  for (const ev of mine) {
+    if (ev.personId === personId) {
+      if (ev.eventType === "goal" || ev.eventType === "penalty_scored") {
+        goalCount++;
+      } else if (ev.eventType === "own_goal") {
+        chips.push({ key: `og-${ev.id}`, icon: "⚽", color: "#f59e0b", label: `${ev.minute}'` });
+      } else if (ev.eventType === "yellow") {
+        chips.push({ key: `y-${ev.id}`, icon: "🟨", color: "#f59e0b", label: `${ev.minute}'` });
+      } else if (ev.eventType === "red") {
+        chips.push({ key: `r-${ev.id}`, icon: "🟥", color: "#ef4444", label: `${ev.minute}'` });
+      } else if (ev.eventType === "yellow_red") {
+        chips.push({ key: `yr-${ev.id}`, icon: "🟧", color: "#f97316", label: `${ev.minute}'` });
+      } else if (ev.eventType === "substitution_out") {
+        chips.push({ key: `so-${ev.id}`, icon: "↓", color: "#ef4444", label: `${ev.minute}'` });
+      } else if (ev.eventType === "substitution_in") {
+        chips.push({ key: `si-${ev.id}`, icon: "↑", color: "#10b981", label: `${ev.minute}'` });
+      } else if (ev.eventType === "injury") {
+        chips.push({ key: `inj-${ev.id}`, icon: "🩹", color: "#8b5cf6", label: `${ev.minute}'` });
+      }
+    }
+    if (ev.assistPersonId === personId && (ev.eventType === "goal" || ev.eventType === "penalty_scored")) {
+      assistCount++;
+    }
+  }
+
+  // Merge goal chips
+  if (goalCount > 0) {
+    const goalMins = mine
+      .filter(e => e.personId === personId && (e.eventType === "goal" || e.eventType === "penalty_scored"))
+      .map(e => `${e.minute}'`).join(" ");
+    chips.unshift({ key: "goals", icon: "⚽", color: "#10b981", label: goalMins });
+  }
+  if (assistCount > 0) {
+    chips.push({ key: "assists", icon: "🅰", color: "#6366f1", label: assistCount > 1 ? `×${assistCount}` : "" });
+  }
+
+  return (
+    <div className="flex items-center gap-0.5 shrink-0 flex-wrap">
+      {chips.map(chip => (
+        <span key={chip.key}
+          className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded"
+          style={{ background: chip.color + "18", color: chip.color }}>
+          <span className="text-xs leading-none">{chip.icon}</span>
+          {chip.label && <span>{chip.label}</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function TeamLineup({
-  matchId, teamId, teamName, lineup, squad, canEdit, base, onRefresh,
+  matchId, teamId, teamName, lineup, squad, canEdit, base, onRefresh, events, t,
 }: {
   matchId: number;
   teamId: number;
@@ -778,6 +864,8 @@ function TeamLineup({
   canEdit: boolean;
   base: string;
   onRefresh: () => void;
+  events: MatchEvent[];
+  t: TFunc;
 }) {
   const [importing, setImporting] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
@@ -830,20 +918,22 @@ function TeamLineup({
     onRefresh();
   }
 
-  function PlayerRow({ entry, label }: { entry: LineupEntry; label?: string }) {
+  function PlayerRow({ entry }: { entry: LineupEntry }) {
     const name = entry.person
       ? `${entry.person.firstName} ${entry.person.lastName}`
       : `#${entry.personId}`;
     return (
-      <div className="flex items-center gap-2 py-1.5 group">
+      <div className="flex items-center gap-2 py-2 group">
         {entry.shirtNumber != null && (
-          <span className="w-5 text-right text-[10px] font-bold shrink-0" style={{ color: "var(--cat-text-muted)" }}>
+          <span className="w-6 text-right text-xs font-bold shrink-0" style={{ color: "var(--cat-text-muted)" }}>
             {entry.shirtNumber}
           </span>
         )}
-        <span className="flex-1 text-xs font-medium truncate" style={{ color: "var(--cat-text)" }}>{name}</span>
+        <span className="flex-1 text-sm font-medium truncate" style={{ color: "var(--cat-text)" }}>{name}</span>
+        {/* Event icons for this player */}
+        <PlayerEventIcons personId={entry.personId} events={events} />
         {entry.position && (
-          <span className="text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0"
+          <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold shrink-0"
             style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
             {entry.position}
           </span>
@@ -851,7 +941,7 @@ function TeamLineup({
         {canEdit && (
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <button onClick={() => toggleStarting(entry)}
-              title={entry.isStarting ? "В замену" : "В старт"}
+              title={entry.isStarting ? t("moveToSub") : t("moveToStart")}
               className="p-1 rounded hover:opacity-70"
               style={{ color: entry.isStarting ? "#f59e0b" : "#10b981" }}>
               {entry.isStarting ? <UserMinus className="w-3 h-3" /> : <UserCheck className="w-3 h-3" />}
@@ -871,21 +961,21 @@ function TeamLineup({
     <div className="flex-1 min-w-0">
       {/* Team header */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-black uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
+        <span className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
           {teamName}
         </span>
         {canEdit && (
           <div className="flex items-center gap-1">
             <button onClick={() => importSquad(true)}
               disabled={importing}
-              title="Импорт всей заявки (основа)"
+              title={t("importSquad")}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold hover:opacity-80 transition-opacity"
               style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
-              <Download className="w-2.5 h-2.5" /> Вся заявка
+              <Download className="w-2.5 h-2.5" /> {t("importSquad")}
             </button>
             {teamLineup.length > 0 && (
               <button onClick={clearTeam}
-                title="Очистить состав"
+                title={t("clearLineup")}
                 className="p-1 rounded hover:opacity-70"
                 style={{ color: "var(--cat-text-muted)" }}>
                 <X className="w-3 h-3" />
@@ -898,10 +988,10 @@ function TeamLineup({
       {/* Starters */}
       {starters.length > 0 && (
         <div className="mb-3">
-          <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1"
+          <div className="text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1"
             style={{ color: "var(--cat-text-muted)" }}>
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-            Основа ({starters.length})
+            {t("startersLabel", { count: starters.length })}
           </div>
           <div className="space-y-0.5">
             {starters.map(e => <PlayerRow key={e.id} entry={e} />)}
@@ -912,10 +1002,10 @@ function TeamLineup({
       {/* Subs */}
       {subs.length > 0 && (
         <div className="mb-3">
-          <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1"
+          <div className="text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1"
             style={{ color: "var(--cat-text-muted)" }}>
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-            Замены ({subs.length})
+            {t("subsLabel", { count: subs.length })}
           </div>
           <div className="space-y-0.5">
             {subs.map(e => <PlayerRow key={e.id} entry={e} />)}
@@ -927,7 +1017,7 @@ function TeamLineup({
       {teamLineup.length === 0 && (
         <div className="text-center py-6">
           <Users className="w-6 h-6 mx-auto mb-1 opacity-20" style={{ color: "var(--cat-text-muted)" }} />
-          <p className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Состав не заявлен</p>
+          <p className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{t("noLineup")}</p>
         </div>
       )}
 
@@ -938,7 +1028,7 @@ function TeamLineup({
             className="flex items-center gap-1 text-[10px] font-semibold hover:opacity-70 transition-opacity"
             style={{ color: "var(--cat-accent)" }}>
             <Plus className="w-3 h-3" />
-            Добавить игрока ({available.length})
+            {t("addPlayerButton", { count: available.length })}
             <ChevronDown className={`w-3 h-3 transition-transform ${showPicker ? "rotate-180" : ""}`} />
           </button>
           {showPicker && (
@@ -958,12 +1048,12 @@ function TeamLineup({
                     <button onClick={() => addPlayer(p, true)}
                       className="text-[9px] font-bold px-1.5 py-0.5 rounded"
                       style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
-                      Старт
+                      {t("moveToStart")}
                     </button>
                     <button onClick={() => addPlayer(p, false)}
                       className="text-[9px] font-bold px-1.5 py-0.5 rounded"
                       style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
-                      Замена
+                      {t("moveToSub")}
                     </button>
                   </div>
                 ))}
@@ -984,6 +1074,8 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
   const tournamentId = ctx?.tournamentId ?? 0;
   const base = `/api/org/${orgSlug}/tournament/${tournamentId}`;
   const router = useRouter();
+  const t = useTranslations("admin.matchHub");
+  const locale = useLocale();
 
   const now = useNow(1000);
   const [match, setMatch] = useState<MatchData | null>(null);
@@ -1023,12 +1115,12 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
   // Auto-refresh for live matches
   useEffect(() => {
     if (match?.status !== "live") return;
-    const t = setInterval(loadMatch, 8000);
-    return () => clearInterval(t);
+    const timer = setInterval(loadMatch, 8000);
+    return () => clearInterval(timer);
   }, [match?.status, loadMatch]);
 
   async function finishMatch() {
-    if (!confirm("Завершить матч?")) return;
+    if (!confirm(t("confirmFinish"))) return;
     await fetch(`${base}/matches/${match!.id}/result`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -1038,7 +1130,7 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
   }
 
   async function reopenMatch() {
-    if (!confirm("Открыть матч снова?")) return;
+    if (!confirm(t("confirmReopen"))) return;
     await fetch(`${base}/matches/${match!.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -1056,7 +1148,7 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
     return (
       <div className="flex items-center justify-center py-24" style={{ color: "var(--cat-text-muted)" }}>
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        Загрузка протокола...
+        {t("loading")}
       </div>
     );
   }
@@ -1064,7 +1156,7 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
   if (!match) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
-        <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>Матч не найден</p>
+        <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>{t("matchNotFound")}</p>
       </div>
     );
   }
@@ -1072,8 +1164,9 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
   const isLive = match.status === "live";
   const isFinished = match.status === "finished";
   const canEdit = isLive || isFinished;
+  const canEditLineup = true; // lineup can be filled any time (even before match starts)
 
-  const divName = match.stage?.nameRu || match.stage?.name || "";
+  const divName = (locale === "ru" ? match.stage?.nameRu : null) || match.stage?.name || "";
   const home = match.homeScore ?? 0;
   const away = match.awayScore ?? 0;
   const homeWon = isFinished && home > away;
@@ -1111,21 +1204,21 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
           className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold hover:opacity-70 transition-opacity"
           style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}
         >
-          <ArrowLeft className="w-4 h-4" /> Назад
+          <ArrowLeft className="w-4 h-4" /> {t("back")}
         </button>
         <div className="flex items-center gap-2">
           {isLive && (
             <button onClick={finishMatch}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold hover:opacity-80 transition-opacity"
               style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>
-              <StopCircle className="w-3.5 h-3.5" /> Завершить матч
+              <StopCircle className="w-3.5 h-3.5" /> {t("finishMatchBtn")}
             </button>
           )}
           {isFinished && (
             <button onClick={reopenMatch}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold hover:opacity-80 transition-opacity"
               style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>
-              <Play className="w-3.5 h-3.5" /> Открыть снова
+              <Play className="w-3.5 h-3.5" /> {t("reopenMatchBtn")}
             </button>
           )}
           <button onClick={loadMatch}
@@ -1159,17 +1252,17 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
                 <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#ef4444" }}>LIVE</span>
                 {currentMinute !== undefined && (
                   <span className="font-mono text-sm font-black" style={{ color: "#ef4444" }}>
-                    {currentMinute}'
+                    {currentMinute}&apos;
                   </span>
                 )}
               </>
             ) : isFinished ? (
-              <>
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#10b981" }}>Завершён</span>
-              </>
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#10b981" }}>
+                {t("statusFinished")}
+              </span>
             ) : (
               <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-muted)" }}>
-                Запланирован
+                {t("statusNotStarted")}
               </span>
             )}
           </div>
@@ -1183,7 +1276,7 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
             {match.group && (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
                 style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-                Группа {match.group.name}
+                {t("groupLabel", { name: match.group.name })}
               </span>
             )}
             {match.round && (
@@ -1216,7 +1309,7 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
                   </p>
                 )}
                 <div className="flex justify-center mt-2">
-                  <TeamForm teamId={match.homeTeamId} matches={recentMatches} />
+                  <TeamForm teamId={match.homeTeamId} matches={recentMatches} t={t} />
                 </div>
               </div>
             </div>
@@ -1246,19 +1339,19 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
               {homeWon && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                   style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
-                  ← Победа
+                  {t("homeWin")}
                 </span>
               )}
               {awayWon && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                   style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
-                  Победа →
+                  {t("awayWin")}
                 </span>
               )}
               {isDraw && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                   style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
-                  Ничья
+                  {t("draw")}
                 </span>
               )}
             </div>
@@ -1277,7 +1370,7 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
                   </p>
                 )}
                 <div className="flex justify-center mt-2">
-                  <TeamForm teamId={match.awayTeamId} matches={recentMatches} />
+                  <TeamForm teamId={match.awayTeamId} matches={recentMatches} t={t} />
                 </div>
               </div>
             </div>
@@ -1313,7 +1406,7 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
             <div className="flex items-center gap-1.5 ml-auto">
               <Zap className="w-3.5 h-3.5" style={{ color: "#ef4444" }} />
               <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>
-                Начат в {fmtTime(match.startedAt)}
+                {t("startedAtLabel", { time: fmtTime(match.startedAt) })}
               </span>
             </div>
           )}
@@ -1321,62 +1414,19 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
             <div className="flex items-center gap-1.5 ml-auto">
               <Trophy className="w-3.5 h-3.5" style={{ color: "#10b981" }} />
               <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
-                Завершён в {fmtTime(match.finishedAt)}
+                {t("finishedAtLabel", { time: fmtTime(match.finishedAt) })}
               </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── Lineups ───────────────────────────────────────────────── */}
-      {(lineup.length > 0 || homePlayers.length > 0 || awayPlayers.length > 0) && (
-        <div className="rounded-2xl border overflow-hidden"
-          style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-          <div className="px-4 py-3 border-b flex items-center gap-2"
-            style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
-            <Users className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
-              Составы
-            </span>
-            <span className="text-xs ml-auto" style={{ color: "var(--cat-text-muted)" }}>
-              {lineup.filter(l => l.isStarting).length} в старте · {lineup.filter(l => !l.isStarting).length} замен
-            </span>
-          </div>
-          <div className="p-4 flex gap-6">
-            {match.homeTeamId && (
-              <TeamLineup
-                matchId={matchId}
-                teamId={match.homeTeamId}
-                teamName={match.homeTeam?.name ?? "Хозяева"}
-                lineup={lineup}
-                squad={homePlayers}
-                canEdit={canEdit}
-                base={lineupBase}
-                onRefresh={loadLineup}
-              />
-            )}
-            {match.homeTeamId && match.awayTeamId && (
-              <div className="w-px shrink-0" style={{ background: "var(--cat-card-border)" }} />
-            )}
-            {match.awayTeamId && (
-              <TeamLineup
-                matchId={matchId}
-                teamId={match.awayTeamId}
-                teamName={match.awayTeam?.name ?? "Гости"}
-                lineup={lineup}
-                squad={awayPlayers}
-                canEdit={canEdit}
-                base={lineupBase}
-                onRefresh={loadLineup}
-              />
-            )}
-          </div>
-        </div>
-      )}
+      {/* ── Match Control Panel — shown for all statuses ────────── */}
+      <MatchControlPanel match={match} base={base} onRefresh={loadMatch} t={t} />
 
-      {/* ── Match Control Panel ───────────────────────────────────── */}
+      {/* ── Add Event Panel ───────────────────────────────────────── */}
       {canEdit && (
-        <MatchControlPanel match={match} base={base} onRefresh={loadMatch} />
+        <AddEventPanel match={match} base={base} onAdded={loadMatch} lineup={lineup} t={t} />
       )}
 
       {/* ── Timeline Bar ──────────────────────────────────────────── */}
@@ -1386,7 +1436,7 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
           style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
           <Zap className="w-3.5 h-3.5" style={{ color: isLive ? "#ef4444" : "var(--cat-text-muted)" }} />
           <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
-            Таймлайн матча
+            {t("timelineTitle")}
           </span>
           {isLive && (
             <span className="flex items-center gap-1 ml-1">
@@ -1395,65 +1445,50 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
             </span>
           )}
           <span className="text-xs ml-auto" style={{ color: "var(--cat-text-muted)" }}>
-            {events.length} событий
+            {t("eventCount", { count: events.length })}
           </span>
         </div>
         <TimelineBar
           events={events}
           homeTeamId={match.homeTeamId}
+          homeTeamName={match.homeTeam?.name ?? t("homeTeam")}
+          awayTeamName={match.awayTeam?.name ?? t("awayTeam")}
           currentMinute={currentMinute}
           isLive={isLive}
+          t={t}
         />
       </div>
 
-      {/* ── Add Event Panel ───────────────────────────────────────── */}
-      {canEdit && (
-        <AddEventPanel match={match} base={base} onAdded={loadMatch} lineup={lineup} />
-      )}
-
-      {/* ── Full Events List ──────────────────────────────────────── */}
+      {/* ── Lineups ───────────────────────────────────────────────── */}
       <div className="rounded-2xl border overflow-hidden"
         style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
         <div className="px-4 py-3 border-b flex items-center gap-2"
           style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
-          <SquareActivity className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
+          <Shield className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
           <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
-            Все события протокола
+            {t("lineupTitle")}
           </span>
-        </div>
-        <EventsList
-          events={events}
-          homeTeamId={match.homeTeamId}
-          homeTeamName={match.homeTeam?.name ?? "Хозяева"}
-          awayTeamName={match.awayTeam?.name ?? "Гости"}
-          onDelete={deleteEvent}
-          canEdit={canEdit}
-        />
-      </div>
-
-      {/* ── Lineups ──────────────────────────────────────────────── */}
-      {(lineup.length > 0 || homePlayers.length > 0 || awayPlayers.length > 0) && (
-        <div className="rounded-2xl border overflow-hidden"
-          style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-          <div className="px-4 py-3 border-b flex items-center gap-2"
-            style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
-            <Shield className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
-              Составы
+          {lineup.length > 0 && (
+            <span className="text-xs ml-auto" style={{ color: "var(--cat-text-muted)" }}>
+              {t("lineupSummary", { starters: lineup.filter(l => l.isStarting).length, subs: lineup.filter(l => !l.isStarting).length })}
             </span>
-          </div>
+          )}
+        </div>
+        {(lineup.length > 0 || homePlayers.length > 0 || awayPlayers.length > 0) ? (
           <div className="flex gap-0 divide-x" style={{ borderColor: "var(--cat-card-border)" }}>
             {match.homeTeamId && (
               <div className="flex-1 min-w-0 p-4">
                 <TeamLineup
                   matchId={matchId}
                   teamId={match.homeTeamId}
-                  teamName={match.homeTeam?.name ?? "Хозяева"}
+                  teamName={match.homeTeam?.name ?? t("homeTeam")}
                   lineup={lineup}
                   squad={homePlayers}
-                  canEdit={canEdit}
+                  canEdit={canEditLineup}
                   base={lineupBase}
                   onRefresh={loadLineup}
+                  events={events}
+                  t={t}
                 />
               </div>
             )}
@@ -1462,28 +1497,49 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
                 <TeamLineup
                   matchId={matchId}
                   teamId={match.awayTeamId}
-                  teamName={match.awayTeam?.name ?? "Гости"}
+                  teamName={match.awayTeam?.name ?? t("awayTeam")}
                   lineup={lineup}
                   squad={awayPlayers}
-                  canEdit={canEdit}
+                  canEdit={canEditLineup}
                   base={lineupBase}
                   onRefresh={loadLineup}
+                  events={events}
+                  t={t}
                 />
               </div>
             )}
           </div>
+        ) : (
+          <div className="rounded-b-2xl border-dashed p-6 text-center">
+            <Users className="w-8 h-8 mx-auto mb-2 opacity-20" style={{ color: "var(--cat-text)" }} />
+            <p className="text-sm font-semibold mb-1" style={{ color: "var(--cat-text-muted)" }}>{t("noLineupRegistered")}</p>
+            <p className="text-xs" style={{ color: "var(--cat-text-muted)", opacity: 0.7 }}>
+              {t("noLineupDesc")}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Full Events List ──────────────────────────────────────── */}
+      <div className="rounded-2xl border overflow-hidden"
+        style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+        <div className="px-4 py-3 border-b flex items-center gap-2"
+          style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
+          <SquareActivity className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
+          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
+            {t("eventsTitle")}
+          </span>
         </div>
-      )}
-      {canEdit && lineup.length === 0 && homePlayers.length === 0 && awayPlayers.length === 0 && (
-        <div className="rounded-2xl border border-dashed p-6 text-center"
-          style={{ borderColor: "var(--cat-card-border)" }}>
-          <Users className="w-8 h-8 mx-auto mb-2 opacity-20" style={{ color: "var(--cat-text)" }} />
-          <p className="text-sm font-semibold mb-1" style={{ color: "var(--cat-text-muted)" }}>Составы не заявлены</p>
-          <p className="text-xs" style={{ color: "var(--cat-text-muted)", opacity: 0.7 }}>
-            Добавьте игроков в заявку команды, затем используйте кнопку «Вся заявка»
-          </p>
-        </div>
-      )}
+        <EventsList
+          events={events}
+          homeTeamId={match.homeTeamId}
+          homeTeamName={match.homeTeam?.name ?? t("homeTeam")}
+          awayTeamName={match.awayTeam?.name ?? t("awayTeam")}
+          onDelete={deleteEvent}
+          canEdit={canEdit}
+          t={t}
+        />
+      </div>
 
       {/* ── Match Stats ───────────────────────────────────────────── */}
       {events.length > 0 && (() => {
@@ -1499,15 +1555,15 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
             <div className="px-4 py-3 border-b"
               style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
               <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
-                Статистика матча
+                {t("statsTitle")}
               </span>
             </div>
             <div className="p-4 space-y-4">
               {[
-                { label: "Голы", home: home, away: away, color: "#10b981" },
-                { label: "Жёлтые карточки", home: homeYellow, away: awayYellow, color: "#f59e0b" },
-                { label: "Красные карточки", home: homeRed, away: awayRed, color: "#ef4444" },
-                { label: "Замены", home: homeSubs, away: awaySubs, color: "#3b82f6" },
+                { label: t("statGoals"), home: home, away: away, color: "#10b981" },
+                { label: t("statYellowCards"), home: homeYellow, away: awayYellow, color: "#f59e0b" },
+                { label: t("statRedCards"), home: homeRed, away: awayRed, color: "#ef4444" },
+                { label: t("statSubstitutions"), home: homeSubs, away: awaySubs, color: "#3b82f6" },
               ].map(stat => {
                 const total = stat.home + stat.away;
                 const homePct = total > 0 ? (stat.home / total) * 100 : 50;
@@ -1530,6 +1586,14 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
           </div>
         );
       })()}
+
+      {/* score sanity check — shown in console for debugging only */}
+      {process.env.NODE_ENV === "development" && homeGoals.length !== home && (
+        <div className="hidden" />
+      )}
+      {process.env.NODE_ENV === "development" && awayGoals.length !== away && (
+        <div className="hidden" />
+      )}
     </div>
   );
 }

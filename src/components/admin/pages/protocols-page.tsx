@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { useTournament } from "@/lib/tournament-context";
 import {
-  ClipboardList, RefreshCw, Loader2, CheckCircle,
-  Circle, Clock, ChevronDown, ChevronRight, Eye, X,
+  RefreshCw, Loader2, CheckCircle2, Clock, ChevronDown,
+  ChevronUp, ExternalLink, Calendar, Trophy, FileText,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -20,8 +22,10 @@ interface MatchEvent {
   minute: number;
   minuteExtra?: number | null;
   teamId: number;
-  person?: { firstName: string; lastName: string } | null;
-  team?: { name: string } | null;
+  personId?: number | null;
+  person?: { id: number; firstName: string; lastName: string } | null;
+  assistPerson?: { id: number; firstName: string; lastName: string } | null;
+  team?: { id: number; name: string } | null;
 }
 
 interface Match {
@@ -31,244 +35,328 @@ interface Match {
   scheduledAt?: string | null;
   homeScore?: number | null;
   awayScore?: number | null;
+  homeTeamId?: number | null;
+  awayTeamId?: number | null;
   homeTeam?: { id: number; name: string } | null;
   awayTeam?: { id: number; name: string } | null;
   field?: { name: string } | null;
   group?: { name: string } | null;
   round?: { name: string } | null;
-  stage?: { name: string; nameRu?: string | null } | null;
+  stage?: { name: string; nameRu?: string | null; type?: string } | null;
   events?: MatchEvent[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function eventIcon(type: EventType) {
-  const map: Record<EventType, string> = {
-    goal: "⚽", own_goal: "⚽", yellow: "🟨", red: "🟥", yellow_red: "🟧",
-    penalty_scored: "⚽", penalty_missed: "✗", substitution_in: "↑", substitution_out: "↓", injury: "🩹",
-  };
-  return map[type] ?? "·";
-}
-
-function eventLabel(type: EventType) {
-  const map: Record<EventType, string> = {
-    goal: "Гол", own_goal: "Автогол", yellow: "Жёлтая", red: "Красная",
-    yellow_red: "2-я жёлтая", penalty_scored: "Пенальти ✓", penalty_missed: "Пенальти ✗",
-    substitution_in: "Замена ↑", substitution_out: "Замена ↓", injury: "Травма",
-  };
-  return map[type] ?? type;
-}
-
-function protocolStatus(match: Match): { label: string; color: string; bg: string; icon: React.ReactNode } {
-  if (match.status === "finished" && match.events && match.events.length > 0)
-    return { label: "Заполнен", color: "#10b981", bg: "rgba(16,185,129,0.1)", icon: <CheckCircle className="w-3.5 h-3.5" /> };
-  if (match.status === "finished")
-    return { label: "Без событий", color: "#f59e0b", bg: "rgba(245,158,11,0.1)", icon: <Circle className="w-3.5 h-3.5" /> };
-  if (match.status === "live")
-    return { label: "Live", color: "#ef4444", bg: "rgba(239,68,68,0.1)", icon: <span className="w-2 h-2 rounded-full animate-pulse inline-block" style={{ background: "#ef4444" }} /> };
-  return { label: "Не начат", color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", icon: <Clock className="w-3.5 h-3.5" /> };
+function fmtDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale === "ru" ? "ru-RU" : locale === "et" ? "et-EE" : "en-GB", {
+    weekday: "short", day: "numeric", month: "long",
+  });
 }
 
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" });
 }
 
-// ─── Protocol inline view ─────────────────────────────────────────────────────
+function localDateKey(iso: string) {
+  return iso.slice(0, 10); // YYYY-MM-DD
+}
 
-function ProtocolInline({
-  match, base, onClose, onRefresh,
-}: {
-  match: Match; base: string; onClose: () => void; onRefresh: () => void;
-}) {
-  const [events, setEvents] = useState<MatchEvent[]>(match.events ?? []);
-  const [addingType, setAddingType] = useState<EventType | null>(null);
-  const [teamSide, setTeamSide] = useState<"home" | "away">("home");
-  const [minute, setMinute] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  async function loadEvents() {
-    const r = await fetch(`${base}/matches/${match.id}/events`);
-    if (r.ok) setEvents(await r.json());
+function groupMatchesByDate(matches: Match[]): { date: string; matches: Match[] }[] {
+  const map = new Map<string, Match[]>();
+  for (const m of matches) {
+    const key = m.scheduledAt ? localDateKey(m.scheduledAt) : "unscheduled";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(m);
   }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, matches]) => ({ date, matches }));
+}
 
-  async function addEvent() {
-    if (!addingType || !minute) return;
-    setSaving(true);
-    const teamId = teamSide === "home" ? match.homeTeam?.id : match.awayTeam?.id;
-    await fetch(`${base}/matches/${match.id}/events`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ teamId, eventType: addingType, minute: parseInt(minute) }),
-    });
-    if (addingType === "goal" || addingType === "penalty_scored") {
-      const hs = (match.homeScore ?? 0) + (teamSide === "home" ? 1 : 0);
-      const as_ = (match.awayScore ?? 0) + (teamSide === "away" ? 1 : 0);
-      await fetch(`${base}/matches/${match.id}/result`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ homeScore: hs, awayScore: as_ }),
-      });
+// Summarize events for display chips in match row
+function summarizeEvents(events: MatchEvent[], homeTeamId?: number | null, awayTeamId?: number | null) {
+  const homeGoals: string[] = [];
+  const awayGoals: string[] = [];
+  const homeCards: { type: "yellow" | "red" | "yellow_red"; name: string }[] = [];
+  const awayCards: { type: "yellow" | "red" | "yellow_red"; name: string }[] = [];
+
+  for (const ev of events) {
+    const isHome = ev.teamId === homeTeamId;
+    const name = ev.person ? `${ev.person.lastName}` : "";
+    if (ev.eventType === "goal" || ev.eventType === "penalty_scored") {
+      const label = `${name} ${ev.minute}'`;
+      if (isHome) homeGoals.push(label.trim());
+      else awayGoals.push(label.trim());
+    } else if (ev.eventType === "own_goal") {
+      // own goal counts for opposite team
+      const label = `${name} ${ev.minute}' (og)`;
+      if (isHome) awayGoals.push(label.trim());
+      else homeGoals.push(label.trim());
+    } else if (ev.eventType === "yellow" || ev.eventType === "red" || ev.eventType === "yellow_red") {
+      const card = { type: ev.eventType, name: `${name} ${ev.minute}'`.trim() };
+      if (isHome) homeCards.push(card);
+      else awayCards.push(card);
     }
-    setSaving(false);
-    setAddingType(null);
-    setMinute("");
-    await loadEvents();
-    onRefresh();
   }
 
-  async function deleteEvent(id: number) {
-    await fetch(`${base}/matches/${match.id}/events?eventId=${id}`, { method: "DELETE" });
-    await loadEvents();
-  }
+  return { homeGoals, awayGoals, homeCards, awayCards };
+}
 
-  const quickEvents: { type: EventType; label: string; emoji: string }[] = [
-    { type: "goal", label: "Гол", emoji: "⚽" },
-    { type: "own_goal", label: "Автогол", emoji: "⚽" },
-    { type: "yellow", label: "Жёлтая", emoji: "🟨" },
-    { type: "red", label: "Красная", emoji: "🟥" },
-    { type: "substitution_in", label: "Замена", emoji: "🔄" },
-    { type: "injury", label: "Травма", emoji: "🩹" },
-  ];
+// ─── Status pill ──────────────────────────────────────────────────────────────
 
-  return (
-    <div className="mt-3 rounded-xl border p-4 space-y-3"
-      style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
-      {/* Team selector + quick events */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {(["home", "away"] as const).map(side => (
-          <button key={side} onClick={() => setTeamSide(side)}
-            className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
-            style={teamSide === side
-              ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" }
-              : { background: "var(--cat-card-bg)", color: "var(--cat-text-secondary)", border: "1px solid var(--cat-card-border)" }}>
-            {side === "home" ? (match.homeTeam?.name ?? "Хозяева") : (match.awayTeam?.name ?? "Гости")}
-          </button>
-        ))}
-        <div className="h-4 w-px" style={{ background: "var(--cat-card-border)" }} />
-        {quickEvents.map(ev => (
-          <button key={ev.type} onClick={() => setAddingType(p => p === ev.type ? null : ev.type)}
-            className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all"
-            style={addingType === ev.type
-              ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" }
-              : { background: "var(--cat-card-bg)", color: "var(--cat-text-secondary)", border: "1px solid var(--cat-card-border)" }}>
-            {ev.emoji} {ev.label}
-          </button>
-        ))}
-        {addingType && (
-          <div className="flex items-center gap-1.5">
-            <input type="number" value={minute} onChange={e => setMinute(e.target.value)}
-              placeholder="Мин" min={1} max={120}
-              className="w-16 rounded-lg px-2 py-1 text-xs outline-none"
-              style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", color: "var(--cat-text)" }} />
-            <button onClick={addEvent} disabled={!minute || saving}
-              className="px-3 py-1 rounded-lg text-xs font-bold disabled:opacity-40"
-              style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
-              {saving ? "..." : "✓"}
-            </button>
-          </div>
-        )}
-        <button onClick={onClose} className="ml-auto p-1 rounded hover:opacity-70"
-          style={{ color: "var(--cat-text-muted)" }}>
-          <X className="w-3.5 h-3.5" />
-        </button>
+function StatusPill({ match, t }: { match: Match; t: ReturnType<typeof useTranslations> }) {
+  if (match.status === "finished" && (match.events?.length ?? 0) > 0) {
+    return (
+      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0"
+        style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+        <CheckCircle2 className="w-3 h-3" />
+        <span>{t("protocols.statusFilled")}</span>
       </div>
-
-      {/* Events list */}
-      {events.length === 0 ? (
-        <p className="text-xs text-center py-2" style={{ color: "var(--cat-text-muted)" }}>Событий нет</p>
-      ) : (
-        <div className="space-y-1">
-          {[...events].sort((a, b) => a.minute - b.minute).map(ev => (
-            <div key={ev.id} className="flex items-center gap-2 group text-xs py-1">
-              <span className="font-mono w-7 text-right shrink-0" style={{ color: "var(--cat-text-muted)" }}>{ev.minute}'</span>
-              <span>{eventIcon(ev.eventType)}</span>
-              <span style={{ color: "var(--cat-text-secondary)" }}>
-                {ev.person ? `${ev.person.firstName} ${ev.person.lastName}` : eventLabel(ev.eventType)}
-                {" · "}{ev.teamId === match.homeTeam?.id ? match.homeTeam?.name : match.awayTeam?.name}
-              </span>
-              <button onClick={() => deleteEvent(ev.id)}
-                className="ml-auto opacity-0 group-hover:opacity-100 text-red-400 hover:opacity-70 transition-opacity">
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+    );
+  }
+  if (match.status === "finished") {
+    return (
+      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0"
+        style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
+        <FileText className="w-3 h-3" />
+        <span>{t("protocols.statusEmpty")}</span>
+      </div>
+    );
+  }
+  if (match.status === "live") {
+    return (
+      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0"
+        style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+        <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" style={{ background: "#ef4444" }} />
+        <span>Live</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0"
+      style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
+      <Clock className="w-3 h-3" />
+      <span>{t("protocols.statusNotStarted")}</span>
     </div>
   );
 }
 
 // ─── Match row ────────────────────────────────────────────────────────────────
 
-function MatchRow({ match, base, onRefresh }: { match: Match; base: string; onRefresh: () => void }) {
-  const [open, setOpen] = useState(false);
-  const ps = protocolStatus(match);
-  const stageName = match.stage?.nameRu || match.stage?.name || "";
+function MatchRow({
+  match, orgSlug, tournamentId, locale,
+}: {
+  match: Match; orgSlug: string; tournamentId: number; locale: string;
+}) {
+  const t = useTranslations("admin");
+  const router = useRouter();
+  const [expanded, setExpanded] = useState(false);
+
+  const isFinished = match.status === "finished" || match.status === "live";
+  const evs = match.events ?? [];
+  const summary = summarizeEvents(evs, match.homeTeamId, match.awayTeamId);
+  const hasGoalInfo = summary.homeGoals.length > 0 || summary.awayGoals.length > 0;
+  const hasCardInfo = summary.homeCards.length > 0 || summary.awayCards.length > 0;
+  const showExpand = evs.length > 0 && (hasGoalInfo || hasCardInfo);
+  const stageLabel = match.stage?.nameRu || match.stage?.name || "";
+  const groupLabel = match.group?.name ? `Гр. ${match.group.name}` : "";
+  const roundLabel = match.round?.name || "";
+
+  function openProtocol(e: React.MouseEvent) {
+    e.stopPropagation();
+    router.push(`/${locale}/org/${orgSlug}/admin/tournament/${tournamentId}/hub/match/${match.id}`);
+  }
 
   return (
-    <div className="rounded-xl border overflow-hidden"
+    <div className="rounded-xl border overflow-hidden transition-all"
       style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+
+      {/* Main row */}
       <div className="flex items-center gap-3 px-4 py-3">
+
         {/* Time */}
-        <div className="text-xs font-mono shrink-0 w-10 text-right" style={{ color: "var(--cat-text-muted)" }}>
+        <div className="text-xs font-mono shrink-0 w-10 text-right tabular-nums"
+          style={{ color: "var(--cat-text-muted)" }}>
           {match.scheduledAt ? fmtTime(match.scheduledAt) : "—"}
         </div>
 
-        {/* Teams + score */}
-        <div className="flex-1 min-w-0 flex items-center gap-2">
-          <span className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>
+        {/* Home team */}
+        <div className="flex-1 min-w-0 text-right">
+          <span className="text-sm font-semibold truncate block"
+            style={{ color: "var(--cat-text)" }}>
             {match.homeTeam?.name ?? "TBD"}
           </span>
-          {match.status === "finished" || match.status === "live" ? (
-            <span className="text-sm font-black tabular-nums shrink-0 px-2 py-0.5 rounded"
-              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)" }}>
-              {match.homeScore ?? 0} : {match.awayScore ?? 0}
-            </span>
+        </div>
+
+        {/* Score / vs */}
+        <div className="shrink-0">
+          {isFinished ? (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg tabular-nums"
+              style={{ background: "var(--cat-tag-bg)" }}>
+              <span className="text-base font-black leading-none" style={{ color: "var(--cat-text)" }}>
+                {match.homeScore ?? 0}
+              </span>
+              <span className="text-xs font-bold" style={{ color: "var(--cat-text-muted)" }}>:</span>
+              <span className="text-base font-black leading-none" style={{ color: "var(--cat-text)" }}>
+                {match.awayScore ?? 0}
+              </span>
+            </div>
           ) : (
-            <span className="text-xs shrink-0" style={{ color: "var(--cat-text-muted)" }}>vs</span>
+            <div className="px-3 py-1 rounded-lg text-xs font-semibold"
+              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
+              vs
+            </div>
           )}
-          <span className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>
+        </div>
+
+        {/* Away team */}
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-semibold truncate block"
+            style={{ color: "var(--cat-text)" }}>
             {match.awayTeam?.name ?? "TBD"}
           </span>
         </div>
 
-        {/* Meta */}
-        <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-          {stageName && <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
-            style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>{stageName}</span>}
-          {match.field && <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{match.field.name}</span>}
-          {match.group && <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Гр. {match.group.name}</span>}
-          {match.round && <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{match.round.name}</span>}
+        {/* Meta badges */}
+        <div className="hidden md:flex items-center gap-1.5 shrink-0">
+          {stageLabel && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
+              {stageLabel}
+            </span>
+          )}
+          {groupLabel && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
+              {groupLabel}
+            </span>
+          )}
+          {roundLabel && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
+              {roundLabel}
+            </span>
+          )}
+          {match.field && (
+            <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
+              {match.field.name}
+            </span>
+          )}
         </div>
 
-        {/* Protocol status */}
-        <div className="flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-full text-[11px] font-semibold"
-          style={{ background: ps.bg, color: ps.color }}>
-          {ps.icon}
-          <span className="hidden sm:inline">{ps.label}</span>
-        </div>
+        {/* Status */}
+        <StatusPill match={match} t={t} />
 
-        {/* Events count */}
-        {(match.events?.length ?? 0) > 0 && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0"
-            style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
-            {match.events!.length} событий
-          </span>
+        {/* Expand events */}
+        {showExpand && (
+          <button onClick={() => setExpanded(v => !v)}
+            className="p-1.5 rounded-lg hover:opacity-70 transition-opacity shrink-0"
+            style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
+            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
         )}
 
-        {/* Toggle */}
-        <button onClick={() => setOpen(v => !v)}
+        {/* Open protocol */}
+        <button onClick={openProtocol}
           className="p-1.5 rounded-lg hover:opacity-70 transition-opacity shrink-0"
+          title="Открыть протокол"
           style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-          {open ? <ChevronDown className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          <ExternalLink className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {open && (
-        <div className="px-4 pb-4">
-          <ProtocolInline match={match} base={base} onClose={() => setOpen(false)} onRefresh={onRefresh} />
+      {/* Expanded events summary */}
+      {expanded && showExpand && (
+        <div className="px-4 pb-3 pt-0 border-t"
+          style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
+          <div className="flex gap-6 pt-3">
+            {/* Home side */}
+            <div className="flex-1 space-y-1">
+              {summary.homeGoals.map((g, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-xs" style={{ color: "var(--cat-text-secondary)" }}>
+                  <span>⚽</span><span>{g}</span>
+                </div>
+              ))}
+              {summary.homeCards.map((c, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-xs" style={{ color: "var(--cat-text-secondary)" }}>
+                  <span>{c.type === "yellow" ? "🟨" : c.type === "red" ? "🟥" : "🟧"}</span>
+                  <span>{c.name}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Away side */}
+            <div className="flex-1 space-y-1 text-right">
+              {summary.awayGoals.map((g, i) => (
+                <div key={i} className="flex items-center justify-end gap-1.5 text-xs" style={{ color: "var(--cat-text-secondary)" }}>
+                  <span>{g}</span><span>⚽</span>
+                </div>
+              ))}
+              {summary.awayCards.map((c, i) => (
+                <div key={i} className="flex items-center justify-end gap-1.5 text-xs" style={{ color: "var(--cat-text-secondary)" }}>
+                  <span>{c.name}</span>
+                  <span>{c.type === "yellow" ? "🟨" : c.type === "red" ? "🟥" : "🟧"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Date group ───────────────────────────────────────────────────────────────
+
+function DateGroup({
+  date, matches, orgSlug, tournamentId, locale,
+}: {
+  date: string; matches: Match[]; orgSlug: string; tournamentId: number; locale: string;
+}) {
+  const filledCount = matches.filter(m => m.status === "finished" && (m.events?.length ?? 0) > 0).length;
+  const finishedCount = matches.filter(m => m.status === "finished").length;
+
+  return (
+    <div className="space-y-2">
+      {/* Date header */}
+      <div className="flex items-center gap-3 pt-2 pb-1">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
+          <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>
+            {date === "unscheduled" ? "Без даты" : fmtDate(date + "T12:00:00", locale)}
+          </span>
+        </div>
+        <div className="flex-1 h-px" style={{ background: "var(--cat-card-border)" }} />
+        <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--cat-text-muted)" }}>
+          {matches.length} {matches.length === 1 ? "match" : "matches"}
+          {finishedCount > 0 && ` · ${filledCount}/${finishedCount} protocols`}
+        </span>
+      </div>
+
+      {/* Matches */}
+      <div className="space-y-1.5">
+        {matches.map(m => (
+          <MatchRow key={m.id} match={m} orgSlug={orgSlug} tournamentId={tournamentId} locale={locale} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Stats card ───────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, color, icon }: { label: string; value: number; color: string; icon: React.ReactNode }) {
+  return (
+    <div className="flex-1 min-w-[100px] rounded-xl border px-4 py-3"
+      style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+      <div className="flex items-center gap-2 mb-1" style={{ color }}>
+        {icon}
+        <span className="text-[11px] font-semibold uppercase tracking-wide">{label}</span>
+      </div>
+      <div className="text-2xl font-black tabular-nums" style={{ color: "var(--cat-text)" }}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -276,6 +364,8 @@ function MatchRow({ match, base, onRefresh }: { match: Match; base: string; onRe
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function ProtocolsPage() {
+  const t = useTranslations("admin");
+  const locale = useLocale();
   const ctx = useTournament();
   const orgSlug = ctx?.orgSlug ?? "";
   const tournamentId = ctx?.tournamentId ?? 0;
@@ -287,37 +377,26 @@ export function ProtocolsPage() {
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filter, setFilter] = useState<"all" | "filled" | "empty" | "live" | "scheduled">("all");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // Load stages for this class, then load matches per stage
-      const stagesUrl = classId ? `${base}/stages?classId=${classId}` : `${base}/stages`;
-      const sr = await fetch(stagesUrl);
-      if (!sr.ok) return;
-      const stages: { id: number }[] = await sr.json();
+      const url = classId
+        ? `${base}/matches?classId=${classId}`
+        : `${base}/matches`;
+      const r = await fetch(url);
+      if (!r.ok) return;
+      const data: Match[] = await r.json();
 
-      const allMatches: Match[] = [];
-      await Promise.all(stages.map(async stage => {
-        const mr = await fetch(`${base}/matches?stageId=${stage.id}`);
-        if (!mr.ok) return;
-        const stageMatches: Match[] = await mr.json();
-        // Load events for each match
-        await Promise.all(stageMatches.map(async m => {
-          const er = await fetch(`${base}/matches/${m.id}/events`);
-          if (er.ok) m.events = await er.json();
-        }));
-        allMatches.push(...stageMatches);
-      }));
-
-      allMatches.sort((a, b) => {
+      // Sort by scheduledAt ascending
+      data.sort((a, b) => {
         if (a.scheduledAt && b.scheduledAt)
           return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
-        return (a.id - b.id);
+        return a.id - b.id;
       });
 
-      setMatches(allMatches);
+      setMatches(data);
     } finally {
       setLoading(false);
     }
@@ -325,81 +404,138 @@ export function ProtocolsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = filterStatus === "all" ? matches : matches.filter(m => {
-    if (filterStatus === "filled") return m.status === "finished" && (m.events?.length ?? 0) > 0;
-    if (filterStatus === "empty") return m.status === "finished" && (m.events?.length ?? 0) === 0;
-    return m.status === filterStatus;
-  });
-
   const stats = {
     total: matches.length,
-    live: matches.filter(m => m.status === "live").length,
-    filled: matches.filter(m => m.status === "finished" && (m.events?.length ?? 0) > 0).length,
     finished: matches.filter(m => m.status === "finished").length,
+    filled: matches.filter(m => m.status === "finished" && (m.events?.length ?? 0) > 0).length,
+    empty: matches.filter(m => m.status === "finished" && (m.events?.length ?? 0) === 0).length,
+    live: matches.filter(m => m.status === "live").length,
     pending: matches.filter(m => m.status === "scheduled").length,
   };
 
+  const filtered = (() => {
+    if (filter === "filled") return matches.filter(m => m.status === "finished" && (m.events?.length ?? 0) > 0);
+    if (filter === "empty") return matches.filter(m => m.status === "finished" && (m.events?.length ?? 0) === 0);
+    if (filter === "live") return matches.filter(m => m.status === "live");
+    if (filter === "scheduled") return matches.filter(m => m.status === "scheduled");
+    return matches;
+  })();
+
+  const groups = groupMatchesByDate(filtered);
+
+  type FilterKey = typeof filter;
+  const filters: { key: FilterKey; label: string; count: number; color: string }[] = [
+    { key: "all",       label: "Все",           count: stats.total,   color: "var(--cat-text-muted)" },
+    { key: "live",      label: "Live",          count: stats.live,    color: "#ef4444" },
+    { key: "filled",    label: "Заполнены",     count: stats.filled,  color: "#10b981" },
+    { key: "empty",     label: "Без событий",   count: stats.empty,   color: "#f59e0b" },
+    { key: "scheduled", label: "Не начались",   count: stats.pending, color: "var(--cat-text-muted)" },
+  ];
+
   return (
-    <div className="space-y-5 w-full">
+    <div className="space-y-6 w-full">
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--cat-text)" }}>
-            {className ? `Протоколы · ${className}` : "Протоколы матчей"}
+            {className ? `Протоколы · ${className}` : "Протоколы"}
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-            Статус заполнения и редактирование событий матчей
+            Архив матчей, статусы протоколов и ввод событий
           </p>
         </div>
         <button onClick={load}
-          className="p-2 rounded-lg hover:opacity-70 transition-opacity"
+          className="p-2 rounded-lg hover:opacity-70 transition-opacity shrink-0"
           style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
       {/* Stats */}
+      {!loading && stats.total > 0 && (
+        <div className="flex gap-3 flex-wrap">
+          <StatCard
+            label="Всего матчей"
+            value={stats.total}
+            color="var(--cat-text-muted)"
+            icon={<Trophy className="w-3.5 h-3.5" />}
+          />
+          <StatCard
+            label="Протоколов"
+            value={stats.filled}
+            color="#10b981"
+            icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+          />
+          <StatCard
+            label="Без событий"
+            value={stats.empty}
+            color="#f59e0b"
+            icon={<FileText className="w-3.5 h-3.5" />}
+          />
+          {stats.live > 0 && (
+            <StatCard
+              label="Сейчас Live"
+              value={stats.live}
+              color="#ef4444"
+              icon={<span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#ef4444" }} />}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Filter tabs */}
       {!loading && (
         <div className="flex flex-wrap gap-2">
-          {[
-            { key: "all",      label: `Все (${stats.total})`,                  color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)" },
-            { key: "live",     label: `🔴 Live (${stats.live})`,               color: "#ef4444",  bg: "rgba(239,68,68,0.1)" },
-            { key: "filled",   label: `✓ Заполнен (${stats.filled})`,          color: "#10b981",  bg: "rgba(16,185,129,0.1)" },
-            { key: "empty",    label: `○ Без событий (${stats.finished - stats.filled})`, color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
-            { key: "scheduled",label: `⏳ Не начат (${stats.pending})`,        color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)" },
-          ].map(f => (
+          {filters.map(f => (
             <button
               key={f.key}
-              onClick={() => setFilterStatus(f.key)}
-              className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-              style={filterStatus === f.key
-                ? { background: f.color === "var(--cat-text-muted)" ? "var(--cat-tag-bg)" : f.bg, color: f.color, border: `1px solid ${f.color}` }
-                : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}
-            >
+              onClick={() => setFilter(f.key)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+              style={filter === f.key
+                ? { background: f.color === "var(--cat-text-muted)" ? "var(--cat-tag-bg)" : f.color + "22",
+                    color: f.color, border: `1.5px solid ${f.color}` }
+                : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)",
+                    border: "1.5px solid transparent" }}>
+              {f.key === "live" && f.count > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#ef4444" }} />
+              )}
               {f.label}
+              <span className="font-black">{f.count}</span>
             </button>
           ))}
         </div>
       )}
 
-      {/* List */}
+      {/* Content */}
       {loading ? (
-        <div className="flex items-center gap-2 py-12 justify-center" style={{ color: "var(--cat-text-muted)" }}>
-          <Loader2 className="w-5 h-5 animate-spin" /> Загрузка...
+        <div className="flex items-center justify-center gap-2 py-16"
+          style={{ color: "var(--cat-text-muted)" }}>
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-sm">Загрузка...</span>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : groups.length === 0 ? (
         <div className="rounded-2xl border py-16 flex flex-col items-center gap-3"
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-          <ClipboardList className="w-12 h-12 opacity-20" style={{ color: "var(--cat-text)" }} />
-          <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>Матчей нет</p>
-          <p className="text-xs opacity-60" style={{ color: "var(--cat-text-muted)" }}>
+          <Trophy className="w-12 h-12 opacity-20" style={{ color: "var(--cat-text)" }} />
+          <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>
+            Матчей не найдено
+          </p>
+          <p className="text-xs opacity-60 text-center max-w-xs" style={{ color: "var(--cat-text-muted)" }}>
             Сгенерируйте матчи в разделе Расписание → Этапы
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map(m => (
-            <MatchRow key={m.id} match={m} base={base} onRefresh={load} />
+        <div className="space-y-5">
+          {groups.map(g => (
+            <DateGroup
+              key={g.date}
+              date={g.date}
+              matches={g.matches}
+              orgSlug={orgSlug}
+              tournamentId={tournamentId}
+              locale={locale}
+            />
           ))}
         </div>
       )}

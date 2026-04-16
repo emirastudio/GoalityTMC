@@ -1060,13 +1060,13 @@ function SlotPreviewStep({ state }: { state: WizardState }) {
           {(hasKnockout || isKO) && (
             <span className="text-xs px-2.5 py-1 rounded-lg font-semibold"
               style={{ background: "rgba(236,72,153,0.1)", color: "#ec4899" }}>
-              {aKoMatchTotal} А-КО
+              {aKoMatchTotal} {t("overviewAkoBadge")}
             </span>
           )}
           {bKoMatchTotal > 0 && (
             <span className="text-xs px-2.5 py-1 rounded-lg font-semibold"
               style={{ background: "rgba(139,92,246,0.1)", color: "#8b5cf6" }}>
-              {bKoMatchTotal} Б-КО
+              {bKoMatchTotal} {t("overviewBkoBadge")}
             </span>
           )}
           <span className="text-2xl font-black" style={{ color: ACCENT }}>{total}</span>
@@ -1480,7 +1480,7 @@ function FormatSummaryView({
               <span className="font-bold text-sm" style={{ color: "var(--cat-text)" }}>{groupStage.name}</span>
               <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-bold"
                 style={{ background: `${GROUP_COLORS[0]}18`, color: GROUP_COLORS[0] }}>
-                {groupCount} групп
+                {t("overviewGroupCount", { count: groupCount })}
               </span>
             </div>
             <div className="p-3 space-y-1.5">
@@ -1519,7 +1519,7 @@ function FormatSummaryView({
                       <button
                         onClick={() => { setEditingGroupId(g.id); setEditingName(displayName); }}
                         className="opacity-40 hover:opacity-100 transition-opacity"
-                        title="Переименовать">
+                        title={t("overviewRename")}>
                         {isSaving
                           ? <Loader2 className="w-3 h-3 animate-spin" style={{ color: gc }} />
                           : <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: gc }}>
@@ -1554,12 +1554,12 @@ function FormatSummaryView({
               })}
               {groupStage.groups.length === 0 && (
                 <p className="text-xs text-center py-2" style={{ color: "var(--cat-text-muted)" }}>
-                  Группы ещё не созданы
+                  {t("overviewNoGroups")}
                 </p>
               )}
               {groupMatchTotal > 0 && (
                 <div className="pt-1 text-xs text-right" style={{ color: "var(--cat-text-muted)" }}>
-                  ⚽ {groupMatchTotal} матчей · 👥 {maxTeams ?? "?"} команд
+                  {t("overviewGroupStats", { matches: groupMatchTotal, teams: maxTeams ?? "?" })}
                 </div>
               )}
             </div>
@@ -1575,8 +1575,8 @@ function FormatSummaryView({
                 style={{ background: "rgba(236,72,153,0.08)", color: "#ec4899", border: "1px solid rgba(236,72,153,0.2)" }}>
                 <Trophy className="w-3 h-3 shrink-0" />
                 {groupStage && qualifyPerGroup
-                  ? `Топ ${qualifyPerGroup} из каждой группы → ${aKoSize} команд в А-сетку`
-                  : `${aKoSize} команд`}
+                  ? t("overviewTopQualify", { perGroup: qualifyPerGroup, total: aKoSize })
+                  : t("overviewTeamsCount", { count: aKoSize })}
               </div>
               <div className="flex-1 h-px" style={{ background: "var(--cat-card-border)" }} />
             </div>
@@ -1588,7 +1588,7 @@ function FormatSummaryView({
                 <span className="font-bold text-sm" style={{ color: "var(--cat-text)" }}>{aKoStage.name}</span>
                 <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-bold"
                   style={{ background: "rgba(236,72,153,0.15)", color: "#ec4899" }}>
-                  {aKoSize} команд
+                  {t("overviewTeamsCount", { count: aKoSize })}
                 </span>
               </div>
               <div className="p-4">
@@ -1604,7 +1604,7 @@ function FormatSummaryView({
                   ))}
                 </div>
                 <div className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
-                  ⚽ {aMatchTotal} матчей А-сетки
+                  {t("overviewAMatchCount", { count: aMatchTotal })}
                 </div>
               </div>
             </div>
@@ -1619,7 +1619,7 @@ function FormatSummaryView({
               <div className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-lg whitespace-nowrap"
                 style={{ background: "rgba(139,92,246,0.08)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.2)" }}>
                 <GitBranch className="w-3 h-3 shrink-0" />
-                Неквалифицировавшиеся → Б-сетку
+                {t("overviewNonQualified")}
               </div>
               <div className="flex-1 h-px" style={{ background: "var(--cat-card-border)" }} />
             </div>
@@ -1631,7 +1631,7 @@ function FormatSummaryView({
                 <span className="font-bold text-sm" style={{ color: "var(--cat-text)" }}>{bKoStage.name}</span>
                 <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-bold"
                   style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>
-                  {bKoSize} команд
+                  {t("overviewTeamsCount", { count: bKoSize })}
                 </span>
               </div>
               <div className="p-4">
@@ -1644,7 +1644,7 @@ function FormatSummaryView({
                   ))}
                 </div>
                 <div className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
-                  ⚽ {bMatchTotal} матчей Б-сетки
+                  {t("overviewBMatchCount", { count: bMatchTotal })}
                 </div>
               </div>
             </div>
@@ -1663,19 +1663,19 @@ function FormatSummaryView({
           {groupMatchTotal > 0 && (
             <span className="text-xs px-2.5 py-1 rounded-lg font-semibold"
               style={{ background: "rgba(16,185,129,0.1)", color: GROUP_COLORS[0] }}>
-              {groupMatchTotal} группа
+              {t("overviewGroupMatchesBadge", { count: groupMatchTotal })}
             </span>
           )}
           {aMatchTotal > 0 && (
             <span className="text-xs px-2.5 py-1 rounded-lg font-semibold"
               style={{ background: "rgba(236,72,153,0.1)", color: "#ec4899" }}>
-              {aMatchTotal} А-КО
+              {aMatchTotal} {t("overviewAkoBadge")}
             </span>
           )}
           {bMatchTotal > 0 && (
             <span className="text-xs px-2.5 py-1 rounded-lg font-semibold"
               style={{ background: "rgba(139,92,246,0.1)", color: "#8b5cf6" }}>
-              {bMatchTotal} Б-КО
+              {bMatchTotal} {t("overviewBkoBadge")}
             </span>
           )}
           <span className="text-2xl font-black" style={{ color: ACCENT }}>{totalMatches || "—"}</span>
@@ -2146,6 +2146,8 @@ export function FormatBuilderPage() {
       const hasKnockout = state.format === "groups_knockout"
         || state.format === "knockout_only";
 
+      let groupStageId: number | null = null; // will store group stage id for qual rules
+
       // Создаём групповой этап (если нужен)
       if (hasGroups) {
         const stageRes = await fetch(
@@ -2163,6 +2165,7 @@ export function FormatBuilderPage() {
           }
         );
         const stage = await stageRes.json();
+        groupStageId = stage.id; // remember for qualification rules
 
         if (state.format === "round_robin") {
           // Круговой: одна группа
@@ -2247,6 +2250,29 @@ export function FormatBuilderPage() {
           }
         ).catch(() => {});
 
+        // Правила квалификации: групповой этап → A-плей-офф
+        if (groupStageId && hasGroups) {
+          await fetch(
+            `/api/org/${orgSlug}/tournament/${tournamentId}/qualification-rules`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                fromStageId: groupStageId,
+                targetStageId: koStage.id,
+                fromRank: 1,
+                toRank: qualifyTotal,
+                targetSlot: "a_playoff",
+                condition: {
+                  type: "groups_knockout",
+                  qualifyPerGroup: state.qualifyPerGroup,
+                  groupCount: state.groupCount,
+                },
+              }),
+            }
+          );
+        }
+
         // Б-плей-офф (утешительный) — если включён
         if (state.bBracket && hasGroups) {
           const bTeams = state.expectedTeams - qualifyTotal;
@@ -2283,6 +2309,29 @@ export function FormatBuilderPage() {
                 body: JSON.stringify({ stageId: bKoStage.id }),
               }
             ).catch(() => {});
+
+            // Правила квалификации: групповой этап → B-плей-офф
+            if (groupStageId) {
+              await fetch(
+                `/api/org/${orgSlug}/tournament/${tournamentId}/qualification-rules`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    fromStageId: groupStageId,
+                    targetStageId: bKoStage.id,
+                    fromRank: qualifyTotal + 1,
+                    toRank: state.expectedTeams,
+                    targetSlot: "b_playoff",
+                    condition: {
+                      type: "groups_knockout_b",
+                      groupCount: state.groupCount,
+                      bTeams,
+                    },
+                  }),
+                }
+              );
+            }
           }
         }
       }
@@ -2298,7 +2347,7 @@ export function FormatBuilderPage() {
   // Удалить все стадии дивизиона и перейти в виззер
   async function handleChangeFormat() {
     if (!existingStages) return;
-    if (!window.confirm("Удалить текущий формат? Все стадии и матчи будут удалены. Это действие нельзя отменить.")) return;
+    if (!window.confirm(t("confirmDeleteFormat"))) return;
     setChangingFormat(true);
     try {
       // Safety: only delete stages that belong to THIS division (classId guard)

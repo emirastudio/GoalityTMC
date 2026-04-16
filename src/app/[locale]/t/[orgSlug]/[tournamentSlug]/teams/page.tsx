@@ -2,6 +2,8 @@
 import { useTournamentPublic } from "@/lib/tournament-public-context";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { Link } from "@/i18n/navigation";
+import { ChevronRight } from "lucide-react";
 
 type TeamEntry = {
   id: number;
@@ -101,8 +103,9 @@ export default function TeamsPage() {
         ) : (
           <div className="space-y-1">
             {activeGroup.teams.map((team, idx) => (
-              <div key={team.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg border"
-                style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+              <Link key={team.id} href={`/t/${org.slug}/${tourney.slug}/teams/${team.id}`}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all hover:opacity-80"
+                style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)", display: "flex" }}>
                 <span className="text-xs font-mono w-5 shrink-0 text-right"
                   style={{ color: "var(--cat-text-muted)" }}>{idx + 1}</span>
 
@@ -133,7 +136,8 @@ export default function TeamsPage() {
                     {getFlag(team.club.country)}
                   </span>
                 )}
-              </div>
+                <ChevronRight className="w-4 h-4 shrink-0 opacity-40" style={{ color: "var(--cat-text-muted)" }} />
+              </Link>
             ))}
           </div>
         )}

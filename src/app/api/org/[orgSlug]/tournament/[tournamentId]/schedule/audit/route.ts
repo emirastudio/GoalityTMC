@@ -391,15 +391,26 @@ export async function GET(
           teamName: name,
           message: `Команда "${name}": отдых ${restMins} мин между матчами #${a.matchId} и #${b.matchId} < минимума ${minRest} мин`,
         });
-      } else if (restMins < 120) {
-        backToBackCount++;
-        violations.push({
-          type: "back_to_back",
-          severity: "warning",
-          matchIds: [a.matchId, b.matchId],
-          teamName: name,
-          message: `Команда "${name}": короткий отдых ${restMins} мин между матчами #${a.matchId} и #${b.matchId}`,
-        });
+      } else {
+        // "Back-to-back" soft warning: rest is above the hard minimum but still
+        // uncomfortably short. Threshold scales with match duration so short
+        // youth matches (U12 = 25 min) don't fire for perfectly normal gaps.
+        // Formula: comfortable rest = matchDuration × 3 (≥ 60 min floor).
+        // U12 (25 min): 75 min  — 115 min rest → no warning ✓
+        // U14 (55 min): 165 min — 115 min rest → warning ✓
+        // U18 (90 min): 270 min — 115 min rest → warning ✓
+        const matchDurMins = a.endMins - a.startMins;
+        const comfortableRest = Math.max(60, matchDurMins * 3);
+        if (restMins < comfortableRest) {
+          backToBackCount++;
+          violations.push({
+            type: "back_to_back",
+            severity: "warning",
+            matchIds: [a.matchId, b.matchId],
+            teamName: name,
+            message: `Команда "${name}": короткий отдых ${restMins} мин между матчами #${a.matchId} и #${b.matchId}`,
+          });
+        }
       }
     }
   }
@@ -647,9 +658,14 @@ export async function GET(
   const warnings = violations.filter(v => v.severity === "warning" && v.type !== "unscheduled").length;
 
   let score = 100;
+  // Hard violations (field/team overlap, blackout breach) — critical, -25 each.
   score -= hardViolations * 25;
+  // Rest rule violations (below configured minimum) — real infraction, -8 each.
   score -= restViolationCount * 8;
-  score -= backToBackCount * 3;
+  // Back-to-back comfort warnings — soft advisory only. Cap total deduction at 10
+  // so that large tournaments with many comfort gaps don't drop to F for no reason.
+  score -= Math.min(backToBackCount * 2, 10);
+  // Unscheduled matches — serious gap in the schedule, up to -40 total.
   if (totalMatches > 0) score -= (unscheduledCount / totalMatches) * 40;
   score = Math.max(0, score);
   const grade = gradeFromScore(score);

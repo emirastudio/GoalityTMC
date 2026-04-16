@@ -180,6 +180,19 @@ export function buildProblem(snap: DbSnapshot, opts: BuildProblemOptions = {}): 
   }
   if (opts.weights) weights = { ...weights, ...opts.weights };
 
+  // Auto-enable division field balance when solving the whole tournament (>1 division
+  // present). Single-division solves keep it at 0 (no cost, no interference).
+  // Only auto-enable if the caller hasn't explicitly set it.
+  const numDivisions = snap.divisions.length;
+  if (numDivisions > 1 && opts.weights?.divisionFieldBalance == null) {
+    // Scale the weight with the number of divisions: more divisions = stronger push.
+    // 2 div → 0.3, 4 div → 0.5, 7 div → 0.7, capped at 0.8.
+    weights = {
+      ...weights,
+      divisionFieldBalance: Math.min(0.8, 0.2 + numDivisions * 0.07),
+    };
+  }
+
   // Build match templates — compute duration per-match via its division + stage
   const stageById = new Map(snap.stages.map((s) => [s.id, s]));
   const divById = new Map(snap.divisions.map((d) => [d.classId, d.scheduleConfig]));

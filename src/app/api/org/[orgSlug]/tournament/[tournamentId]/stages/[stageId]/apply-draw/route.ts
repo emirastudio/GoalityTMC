@@ -103,13 +103,18 @@ export async function POST(
       const slotIndices = Array.from({ length: n }, (_, i) => i + 1);
       const rawPairings = generateRoundRobin(slotIndices, doubleRoundRobin);
       filteredPairings = rawPairings
-        .filter(p => p.homeTeamId != null && p.awayTeamId != null) // skip ghost/bye
+        .filter(p => p.homeTeamId != null && p.awayTeamId != null) // skip ghost/bye rows
         .map(p => ({
           round: p.round,
-          // Map 1-based slot index → registered teamId (or null = TBD)
+          // Map 1-based slot index → registered teamId (or null = TBD slot beyond roster)
           homeTeamId: teamIds[(p.homeTeamId as number) - 1] ?? null,
           awayTeamId: teamIds[(p.awayTeamId as number) - 1] ?? null,
-        }));
+        }))
+        // Drop pairings where either slot index exceeds the actual team count.
+        // Example: targetSize=5, only 4 teams registered → slot 5 maps to null.
+        // Without this filter those matches appear as "Team A vs TBD" which is wrong.
+        // The remaining match slots are left as (null,null) TBD by the clearing pass below.
+        .filter(p => p.homeTeamId != null && p.awayTeamId != null);
     } else {
       const pairings = generateRoundRobin(teamIds, doubleRoundRobin);
       filteredPairings = pairings.filter(p => p.homeTeamId != null && p.awayTeamId != null);
@@ -156,34 +161,27 @@ export async function POST(
       inserted = toInsert.length;
     }
 
-    // If fewer pairings than existing matches:
-    // - SLOT MODE: leave excess slots as TBD (null teams, preserve scheduledAt)
-    // - TEAM MODE: delete unneeded TBD placeholders
+    // If fewer pairings than existing matches — delete or clear excess.
+    // Rule: a group match with no real opponent is not a "TBD slot", it's a
+    // phantom. A bye round means the team simply doesn't play that round —
+    // the match record must not exist at all in the schedule.
+    // We delete in both SLOT MODE and TEAM MODE; the only exception is a
+    // match that already has a score (edge case: re-applying draw after games
+    // started) — those we just detach teams but keep the record.
     let cleared = 0;
-    if (!isSlotMode && existingMatches.length > filteredPairings.length) {
+    if (existingMatches.length > filteredPairings.length) {
       for (let i = filteredPairings.length; i < existingMatches.length; i++) {
         const excess = existingMatches[i];
-        if (excess.status === "scheduled" && excess.homeScore == null && excess.awayScore == null) {
+        if (excess.homeScore == null && excess.awayScore == null) {
           await db.delete(matches).where(eq(matches.id, excess.id));
         } else {
+          // Match has scores — can't delete, just remove teams
           await db
             .update(matches)
             .set({ homeTeamId: null, awayTeamId: null, updatedAt: new Date() })
             .where(eq(matches.id, excess.id));
         }
         cleared++;
-      }
-    } else if (isSlotMode && existingMatches.length > filteredPairings.length) {
-      // Slot mode: just clear team assignments on remaining slots (keep them as TBD)
-      for (let i = filteredPairings.length; i < existingMatches.length; i++) {
-        const excess = existingMatches[i];
-        if (excess.homeTeamId !== null || excess.awayTeamId !== null) {
-          await db
-            .update(matches)
-            .set({ homeTeamId: null, awayTeamId: null, updatedAt: new Date() })
-            .where(eq(matches.id, excess.id));
-          cleared++;
-        }
       }
     }
 

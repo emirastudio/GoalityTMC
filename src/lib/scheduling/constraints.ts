@@ -759,6 +759,7 @@ export function scoreSoft(
   by["groupFieldAffinity"] = w.groupFieldAffinity * scoreGroupFieldAffinity(problem, assignments);
   by["refereeWorkloadBalance"] = w.refereeWorkloadBalance * scoreRefereeBalance(assignments);
   by["dayLoadBalance"] = w.dayLoadBalance * scoreDayLoadBalance(problem, assignments);
+  by["divisionFieldBalance"] = w.divisionFieldBalance * scoreDivisionFieldBalance(problem, assignments);
   // Compactness: strongly penalise late starts — pushes all matches as early as possible,
   // eliminating gaps (idle field hours) without being a hard constraint.
   by["compactness"] = 1.2 * scoreCompactness(problem, assignments);
@@ -897,6 +898,63 @@ function scoreDayLoadBalance(problem: Problem, assignments: Assignment[]): numbe
   const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
   const variance = arr.reduce((a, b) => a + (b - mean) * (b - mean), 0) / arr.length;
   return Math.sqrt(variance);
+}
+
+/**
+ * Division field balance — penalty when one division monopolises a field.
+ *
+ * For each field we compute what fraction of its assigned matches belong to each
+ * division. The "fair share" would be 1/numActiveDivisions per division per field.
+ * We allow up to 1.5× fair share without penalty ("tolerance band"). Any excess
+ * is penalised proportionally to the number of matches involved, so a big
+ * imbalance on a busy field costs more than the same relative imbalance on an
+ * idle field.
+ *
+ * Example: 4 divisions, 3 fields, fair share = 25% per division per field.
+ * Tolerance = 37.5%. If U18 occupies 70% of Field 1 (32 of 46 matches):
+ *   excess = 70% - 37.5% = 32.5%,  penalty += 0.325 × 46 ≈ 15.
+ *
+ * Setting weight=0 (default) disables this entirely — single-division
+ * tournaments should never pay this cost.
+ */
+function scoreDivisionFieldBalance(problem: Problem, assignments: Assignment[]): number {
+  if (assignments.length === 0) return 0;
+
+  const matchById = new Map(problem.matchTemplates.map((m) => [m.id, m]));
+
+  // Count matches per (classId, fieldId) and per fieldId total.
+  const divField = new Map<string, number>(); // `${classId}:${fieldId}` → count
+  const byField = new Map<number, number>();  // fieldId → total
+
+  for (const a of assignments) {
+    const match = matchById.get(a.matchId);
+    if (!match) continue;
+    const key = `${match.classId}:${a.fieldId}`;
+    divField.set(key, (divField.get(key) ?? 0) + 1);
+    byField.set(a.fieldId, (byField.get(a.fieldId) ?? 0) + 1);
+  }
+
+  // Number of active divisions (those with at least one placed match).
+  const activeDivisions = new Set(
+    assignments.map((a) => matchById.get(a.matchId)?.classId).filter((c) => c != null),
+  ).size;
+  if (activeDivisions <= 1) return 0; // no balancing needed for a single division
+
+  const fairShare = 1 / activeDivisions;
+  const maxAllowed = fairShare * 1.5; // tolerance: 50% above fair share is ok
+
+  let penalty = 0;
+  for (const [key, count] of divField) {
+    const fieldId = Number(key.split(":")[1]);
+    const total = byField.get(fieldId) ?? 1;
+    const share = count / total;
+    if (share > maxAllowed) {
+      // Scale penalty by field size so a busy field's imbalance costs more.
+      penalty += (share - maxAllowed) * total;
+    }
+  }
+
+  return penalty;
 }
 
 function scoreCompactness(problem: Problem, assignments: Assignment[]): number {

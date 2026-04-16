@@ -164,6 +164,15 @@ export type Weights = {
   refereeWorkloadBalance: number;
   travelMinimization: number;
   dayLoadBalance: number;
+  /**
+   * Penalty when one division monopolises a disproportionate share of a field.
+   * Useful for tournaments with 5+ divisions on shared fields: pushes the solver
+   * to spread each division's matches across fields rather than concentrating
+   * the big divisions on the best/central field all day.
+   * 0 = disabled (default for single-division tournaments).
+   * 0.4–0.8 = recommended for 4+ divisions on ≥3 fields.
+   */
+  divisionFieldBalance: number;
 };
 
 export const DEFAULT_WEIGHTS: Weights = {
@@ -175,6 +184,7 @@ export const DEFAULT_WEIGHTS: Weights = {
   refereeWorkloadBalance: 0.5,
   travelMinimization: 0.2,
   dayLoadBalance: 0.3,
+  divisionFieldBalance: 0.0, // off by default; kicks in when > 1 division present
 };
 
 // ═════════════════════ Problem ═════════════════════

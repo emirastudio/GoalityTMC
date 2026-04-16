@@ -1,12 +1,13 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { clubs, clubUsers, teams, tournamentRegistrations, tournaments } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { clubs, clubUsers, teams, tournamentRegistrations, tournaments, tournamentClasses, organizations } from "@/db/schema";
+import { eq, sql, and, isNull } from "drizzle-orm";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import {
   Building2, Users, Trophy, Pencil, ExternalLink, Baby, User, Search,
+  CalendarDays, MapPin, ChevronRight,
 } from "lucide-react";
 import { InvitePanel } from "@/components/club/invite-panel";
 
@@ -105,6 +106,72 @@ export default async function ClubDashboardPage() {
   }
 
   const tournamentList = Array.from(tournamentMap.entries());
+
+  // 5. Open tournaments available for registration (not already registered, registrationOpen=true)
+  const alreadyRegisteredTournamentIds = new Set(tournamentList.map(([tid]) => tid));
+  const now = new Date();
+
+  const openTournaments = await db.query.tournaments.findMany({
+    where: and(
+      eq(tournaments.registrationOpen, true),
+      isNull(tournaments.deletedAt),
+    ),
+    orderBy: (t, { asc }) => [asc(t.startDate)],
+    limit: 6,
+  });
+
+  // Enrich with org + classes, filter out already registered
+  type OpenTournamentEntry = {
+    id: number;
+    name: string;
+    slug: string;
+    year: number;
+    startDate: Date | null;
+    endDate: Date | null;
+    registrationDeadline: Date | null;
+    logoUrl: string | null;
+    orgSlug: string;
+    orgName: string;
+    classes: string[];
+  };
+
+  const openTournamentsEnriched: OpenTournamentEntry[] = (
+    await Promise.all(
+      openTournaments
+        .filter(t => !alreadyRegisteredTournamentIds.has(t.id))
+        .filter(t => !t.registrationDeadline || t.registrationDeadline > now)
+        .map(async t => {
+          const org = await db.query.organizations.findFirst({
+            where: eq(organizations.id, t.organizationId),
+            columns: { slug: true, name: true },
+          });
+          if (!org) return null;
+          const cls = await db.query.tournamentClasses.findMany({
+            where: eq(tournamentClasses.tournamentId, t.id),
+            columns: { name: true },
+            orderBy: (c, { asc }) => [asc(c.minBirthYear)],
+          });
+          return {
+            id: t.id,
+            name: t.name,
+            slug: t.slug,
+            year: t.year,
+            startDate: t.startDate,
+            endDate: t.endDate,
+            registrationDeadline: t.registrationDeadline,
+            logoUrl: t.logoUrl,
+            orgSlug: org.slug,
+            orgName: org.name,
+            classes: cls.map(c => c.name),
+          } satisfies OpenTournamentEntry;
+        })
+    )
+  ).filter(Boolean) as OpenTournamentEntry[];
+
+  function fmtDate(d: Date | null): string {
+    if (!d) return "";
+    return d.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -398,6 +465,81 @@ export default async function ClubDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* ── Section 4: Open tournaments — available to join ── */}
+      {openTournamentsEnriched.length > 0 && (
+        <div className="rounded-2xl border overflow-hidden" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+          <div className="px-6 py-4 flex items-center justify-between border-b" style={{ borderColor: "var(--cat-divider)" }}>
+            <div>
+              <h2 className="text-base font-bold flex items-center gap-2" style={{ color: "var(--cat-text)" }}>
+                <Search className="w-4 h-4" style={{ color: "var(--cat-accent)" }} />
+                {t("openTournamentsTitle")}
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+                {t("openTournamentsDesc")}
+              </p>
+            </div>
+            <Link href="/catalog"
+              className="text-xs font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+              style={{ color: "var(--cat-accent)" }}>
+              {t("viewAll")}
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="divide-y" style={{ borderColor: "var(--cat-divider)" }}>
+            {openTournamentsEnriched.map(tourn => (
+              <div key={tourn.id} className="flex items-center gap-4 px-6 py-3.5">
+                {/* Logo / initials */}
+                <div className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center overflow-hidden"
+                  style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-card-border)" }}>
+                  {tourn.logoUrl
+                    ? <img src={tourn.logoUrl} alt={tourn.name} className="w-full h-full object-contain" />
+                    : <Trophy className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
+                  }
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>{tourn.name}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                    {tourn.startDate && (
+                      <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                        <CalendarDays className="w-3 h-3" />
+                        {fmtDate(tourn.startDate)}
+                        {tourn.endDate && tourn.endDate.toDateString() !== tourn.startDate.toDateString()
+                          ? ` — ${fmtDate(tourn.endDate)}` : ""}
+                      </span>
+                    )}
+                    {tourn.classes.length > 0 && (
+                      <span className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                        {tourn.classes.slice(0, 3).join(" · ")}
+                        {tourn.classes.length > 3 ? ` +${tourn.classes.length - 3}` : ""}
+                      </span>
+                    )}
+                    {tourn.registrationDeadline && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
+                        Deadline: {fmtDate(tourn.registrationDeadline)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Join button */}
+                <Link
+                  href={`/t/${tourn.orgSlug}/${tourn.slug}/register`}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold shrink-0 transition-all hover:opacity-90"
+                  style={{ background: "var(--cat-accent)", color: "#000" }}
+                >
+                  {t("joinTournament")}
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -14,7 +14,6 @@ import {
 } from "@/db/schema";
 import { eq, and, max, count, isNull } from "drizzle-orm";
 import { getSession, createToken, setSessionCookie } from "@/lib/auth";
-import { getEffectivePlan, PLAN_LIMITS, TournamentPlan } from "@/lib/plan-gates";
 import { sendRegistrationReceived } from "@/lib/email";
 
 // POST /api/clubs/[clubId]/tournament-register
@@ -153,41 +152,8 @@ export async function POST(
     }
   }
 
-  // 6. Enforce team limit
-  const org = await db.query.organizations.findFirst({
-    where: eq(organizations.id, tournament.organizationId),
-  });
-  const effectivePlan = getEffectivePlan(tournament.plan as TournamentPlan, org?.eliteSubStatus);
-  const extraTeamsPurchased = tournament.extraTeamsPurchased ?? 0;
-
-  const [currentCountRow] = await db
-    .select({ count: count() })
-    .from(tournamentRegistrations)
-    .where(eq(tournamentRegistrations.tournamentId, tournamentId));
-  const currentCount = Number(currentCountRow?.count ?? 0);
-
-  const totalAfter = currentCount + teamEntries.length;
-  const maxAllowed = PLAN_LIMITS[effectivePlan].maxTeams + extraTeamsPurchased;
-
-  if (PLAN_LIMITS[effectivePlan].extraTeamPriceEur === 0 && totalAfter > maxAllowed) {
-    return NextResponse.json({
-      error: `Team limit reached. Your plan allows ${maxAllowed} teams. Currently ${currentCount} registered.`,
-      code: "TEAM_LIMIT",
-      currentPlan: effectivePlan,
-      maxTeams: maxAllowed,
-      currentTeams: currentCount,
-    }, { status: 402 });
-  }
-  if (PLAN_LIMITS[effectivePlan].extraTeamPriceEur > 0 && totalAfter > maxAllowed) {
-    return NextResponse.json({
-      error: `Team limit reached. ${maxAllowed} teams allowed (${PLAN_LIMITS[effectivePlan].maxTeams} included + ${extraTeamsPurchased} extra). Purchase more extra team slots.`,
-      code: "TEAM_LIMIT",
-      currentPlan: effectivePlan,
-      maxTeams: maxAllowed,
-      currentTeams: currentCount,
-      upgradeUrl: "/billing",
-    }, { status: 402 });
-  }
+  // 6. (team limit is NOT enforced here — registrations are a waitlist/queue,
+  //     limit is only checked when organizer assigns teams to divisions/groups)
 
   // 7. Get next regNumber
   const [maxReg] = await db

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useTournament } from "@/lib/tournament-context";
 import {
   Trophy, RefreshCw, ChevronDown, ChevronRight,
@@ -66,7 +67,18 @@ function medalColor(pos: number) {
 // ─── Group Table ──────────────────────────────────────────────────────────────
 
 function GroupTable({ group, stageName }: { group: Group; stageName: string }) {
+  const t = useTranslations("admin");
   const rows = group.standings ?? [];
+
+  const statHeaders = [
+    t("results.colPlayed"),
+    t("results.colWon"),
+    t("results.colDrawn"),
+    t("results.colLost"),
+    t("results.colGoals"),
+    t("results.colGD"),
+    t("results.colPoints"),
+  ];
 
   return (
     <div className="rounded-xl border overflow-hidden"
@@ -75,13 +87,13 @@ function GroupTable({ group, stageName }: { group: Group; stageName: string }) {
         style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
         <Users className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
         <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-secondary)" }}>
-          {stageName} · Группа {group.name}
+          {stageName} · {t("results.groupLabel", { name: group.name })}
         </span>
       </div>
 
       {rows.length === 0 ? (
         <div className="py-8 text-center text-sm" style={{ color: "var(--cat-text-muted)" }}>
-          Таблица пуста — сыграйте матчи
+          {t("results.emptyTable")}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -91,8 +103,8 @@ function GroupTable({ group, stageName }: { group: Group; stageName: string }) {
                 <th className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider w-8"
                   style={{ color: "var(--cat-text-muted)" }}>#</th>
                 <th className="text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wider"
-                  style={{ color: "var(--cat-text-muted)" }}>Команда</th>
-                {["И", "В", "Н", "П", "Г", "±", "О"].map(h => (
+                  style={{ color: "var(--cat-text-muted)" }}>{t("results.colTeam")}</th>
+                {statHeaders.map(h => (
                   <th key={h} className="text-center px-2 py-2 text-[11px] font-bold uppercase tracking-wider w-8"
                     style={{ color: "var(--cat-text-muted)" }}>{h}</th>
                 ))}
@@ -171,8 +183,10 @@ function GroupTable({ group, stageName }: { group: Group; stageName: string }) {
 // ─── Knockout matches ─────────────────────────────────────────────────────────
 
 function KnockoutMatches({ matches, stageName }: { matches: Match[]; stageName: string }) {
+  const t = useTranslations("admin");
+
   const byRound = matches.reduce<Record<string, Match[]>>((acc, m) => {
-    const key = m.round?.name ?? "Матчи";
+    const key = m.round?.name ?? t("results.matchesFallback");
     if (!acc[key]) acc[key] = [];
     acc[key].push(m);
     return acc;
@@ -232,6 +246,7 @@ function KnockoutMatches({ matches, stageName }: { matches: Match[]; stageName: 
 // ─── Stage Section ────────────────────────────────────────────────────────────
 
 function StageSection({ stage, base }: { stage: Stage; base: string }) {
+  const t = useTranslations("admin");
   const [open, setOpen] = useState(true);
   const [matches, setMatches] = useState<Match[]>([]);
   const stageName = stage.nameRu || stage.name;
@@ -263,7 +278,7 @@ function StageSection({ stage, base }: { stage: Stage; base: string }) {
             background: stage.type === "group" ? "rgba(59,130,246,0.1)" : "rgba(245,158,11,0.1)",
             color: stage.type === "group" ? "#3b82f6" : "#f59e0b",
           }}>
-          {stage.type === "group" ? "Группы" : "Плей-офф"}
+          {stage.type === "group" ? t("results.stageTypeGroup") : t("results.stageTypeKnockout")}
         </span>
         {open
           ? <ChevronDown className="w-4 h-4 ml-auto" style={{ color: "var(--cat-text-muted)" }} />
@@ -281,7 +296,7 @@ function StageSection({ stage, base }: { stage: Stage; base: string }) {
           )}
           {stage.type === "group" && (stage.groups ?? []).length === 0 && (
             <div className="text-sm py-4 text-center" style={{ color: "var(--cat-text-muted)" }}>
-              Группы не созданы
+              {t("results.noGroups")}
             </div>
           )}
         </div>
@@ -293,6 +308,7 @@ function StageSection({ stage, base }: { stage: Stage; base: string }) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function ResultsPage() {
+  const t = useTranslations("admin");
   const ctx = useTournament();
   const orgSlug = ctx?.orgSlug ?? "";
   const tournamentId = ctx?.tournamentId ?? 0;
@@ -336,10 +352,10 @@ export function ResultsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--cat-text)" }}>
-            {className ? `Результаты · ${className}` : "Результаты турнира"}
+            {className ? t("results.title", { className }) : t("results.titleDefault")}
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-            Таблицы групп и сетки плей-офф
+            {t("results.subtitle")}
           </p>
         </div>
         <button onClick={load}
@@ -351,15 +367,15 @@ export function ResultsPage() {
 
       {loading ? (
         <div className="flex items-center gap-2 py-12 justify-center" style={{ color: "var(--cat-text-muted)" }}>
-          <Loader2 className="w-5 h-5 animate-spin" /> Загрузка...
+          <Loader2 className="w-5 h-5 animate-spin" /> {t("results.loading")}
         </div>
       ) : stages.length === 0 ? (
         <div className="rounded-2xl border py-16 flex flex-col items-center gap-3"
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
           <Trophy className="w-12 h-12 opacity-20" style={{ color: "var(--cat-text)" }} />
-          <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>Нет этапов</p>
+          <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>{t("results.noStages")}</p>
           <p className="text-xs opacity-60" style={{ color: "var(--cat-text-muted)" }}>
-            Создайте этапы в разделе Расписание
+            {t("results.noStagesHint")}
           </p>
         </div>
       ) : (

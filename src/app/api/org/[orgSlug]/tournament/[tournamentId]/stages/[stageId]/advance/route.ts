@@ -10,7 +10,7 @@ import {
   groupTeams,
 } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
-import { eq, and, asc, desc, inArray } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 
 type Params = { orgSlug: string; tournamentId: string; stageId: string };
 
@@ -184,10 +184,10 @@ export async function POST(
 
     // ── Knockout: заполняем матчи первого раунда
     if (targetStage.type === "knockout") {
-      // Берём раунд с наибольшим order = первый игровой раунд (R16, QF и т.д.)
+      // Берём раунд с наименьшим order = первый игровой раунд (R32, R16, QF и т.д.)
       const firstRound = await db.query.matchRounds.findFirst({
         where: eq(matchRounds.stageId, targetStage.id),
-        orderBy: [desc(matchRounds.order)],
+        orderBy: [asc(matchRounds.order)],
       });
       if (!firstRound) continue;
 

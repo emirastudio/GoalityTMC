@@ -58,6 +58,14 @@ export async function GET(
       stage: true,
       group: true,
       round: true,
+      events: {
+        with: {
+          person: { columns: { id: true, firstName: true, lastName: true } },
+          assistPerson: { columns: { id: true, firstName: true, lastName: true } },
+          team: { columns: { id: true, name: true } },
+        },
+        orderBy: (e, { asc }) => [asc(e.minute)],
+      },
     },
   });
 

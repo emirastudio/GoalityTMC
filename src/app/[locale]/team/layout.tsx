@@ -2,6 +2,7 @@ import { TeamSidebar } from "@/components/team/team-sidebar";
 import { MobileNav } from "@/components/team/mobile-nav";
 import { TeamHeader } from "@/components/team/team-header";
 import { TeamSwitcher } from "@/components/club/team-switcher";
+import { TournamentSwitcher, type TournamentOption } from "@/components/team/tournament-switcher";
 import { SidebarFooter } from "@/components/team/sidebar-footer";
 import { TeamProvider } from "@/lib/team-context";
 import { ImpersonationBanner } from "@/components/team/impersonation-banner";
@@ -9,9 +10,10 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { GlobalHeader, AdminHeaderActions } from "@/components/ui/global-header";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { clubs, teams, people, tournamentClasses, inboxMessages, teamMessageReads, messageRecipients, tournamentRegistrations } from "@/db/schema";
+import { clubs, teams, people, tournaments, tournamentClasses, inboxMessages, teamMessageReads, messageRecipients, tournamentRegistrations } from "@/db/schema";
 import { eq, and, count, sql, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 export default async function TeamLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -26,43 +28,64 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
 
   if (!club) redirect("/en/login");
 
-  // Get tournamentId from club's teams' registrations
-  const anyReg = await db.query.tournamentRegistrations.findFirst({
-    where: sql`${tournamentRegistrations.teamId} IN (SELECT id FROM teams WHERE club_id = ${club.id})`,
-  });
-  const clubTournamentId = anyReg?.tournamentId ?? null;
-
-  // Guard: no tournament registrations → redirect to club dashboard
-  if (!clubTournamentId) {
-    redirect("/en/club/dashboard");
-  }
-
-  const classes = clubTournamentId
-    ? await db.query.tournamentClasses.findMany({
-        where: eq(tournamentClasses.tournamentId, clubTournamentId),
-        orderBy: (c, { asc }) => [asc(c.minBirthYear)],
-      })
-    : [];
-
   const clubTeams = await db.query.teams.findMany({
     where: eq(teams.clubId, club.id),
     orderBy: (t, { asc }) => [asc(t.createdAt)],
   });
 
-  // Load registrations for club's teams to get regNumber, status, classId
+  // Load ALL registrations for club's teams (across all tournaments)
   const clubTeamIds = clubTeams.map((t) => t.id);
-  const registrations = clubTeamIds.length > 0
+  const allRegistrations = clubTeamIds.length > 0
     ? await db.query.tournamentRegistrations.findMany({
         where: sql`${tournamentRegistrations.teamId} = ANY(ARRAY[${sql.join(clubTeamIds.map(id => sql`${id}`), sql`, `)}]::int[])`,
+        orderBy: (r, { desc }) => [desc(r.createdAt)],
       })
     : [];
-  // Use most recent registration per team (in case a team is in multiple tournaments)
+
+  // Guard: no tournament registrations → redirect to club dashboard
+  if (allRegistrations.length === 0) {
+    redirect("/en/club/dashboard");
+  }
+
+  // Determine which tournaments this club is registered in
+  const allTournamentIds = [...new Set(allRegistrations.map(r => r.tournamentId))];
+
+  // Read active tournament preference from cookie
+  const cookieStore = await cookies();
+  const prefTournamentId = parseInt(cookieStore.get("active_tournament_id")?.value ?? "0") || null;
+  const clubTournamentId = (prefTournamentId && allTournamentIds.includes(prefTournamentId))
+    ? prefTournamentId
+    : allTournamentIds[0]!;
+
+  // Fetch all tournament metadata for the switcher
+  const allTournamentsData = await db.query.tournaments.findMany({
+    where: sql`${tournaments.id} = ANY(ARRAY[${sql.join(allTournamentIds.map(id => sql`${id}`), sql`, `)}]::int[])`,
+    columns: { id: true, name: true, logoUrl: true, year: true },
+  });
+
+  // Build tournament options for the switcher (count how many of MY teams are in each)
+  const tournamentOptions: TournamentOption[] = allTournamentsData.map(t => ({
+    id: t.id,
+    name: t.name,
+    logoUrl: t.logoUrl,
+    year: t.year,
+    teamsCount: allRegistrations.filter(r => r.tournamentId === t.id).length,
+  }));
+  const currentTournamentOption = tournamentOptions.find(t => t.id === clubTournamentId) ?? tournamentOptions[0]!;
+
+  // Use only registrations for the ACTIVE tournament
+  const registrations = allRegistrations.filter(r => r.tournamentId === clubTournamentId);
+
+  // Build regByTeamId map for active tournament
   const regByTeamId = new Map<number, typeof registrations[0]>();
   for (const reg of registrations) {
-    if (!regByTeamId.has(reg.teamId) || reg.createdAt > regByTeamId.get(reg.teamId)!.createdAt) {
-      regByTeamId.set(reg.teamId, reg);
-    }
+    regByTeamId.set(reg.teamId, reg);
   }
+
+  const classes = await db.query.tournamentClasses.findMany({
+    where: eq(tournamentClasses.tournamentId, clubTournamentId),
+    orderBy: (c, { asc }) => [asc(c.minBirthYear)],
+  });
 
   // Get classes for these registrations
   const classIds = [...new Set(registrations.map((r) => r.classId).filter(Boolean))] as number[];
@@ -71,8 +94,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
     : [];
   const classMap = new Map(classesData.map((c) => [c.id, c]));
 
-  // Also get tournamentId from the registration for inbox queries
-  const activeTournamentId = registrations.length > 0 ? registrations[0].tournamentId : null;
+  const activeTournamentId = clubTournamentId;
 
   const enrichedTeams = await Promise.all(
     clubTeams.map(async (team) => {
@@ -172,13 +194,20 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
         {/* ── Desktop Sidebar ───────────────────────────────── */}
         <aside className="hidden md:flex flex-col w-60 shrink-0 overflow-hidden border-r" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
 
-          {/* Club / team switcher */}
-          <div className="px-4 py-4 shrink-0 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
+          {/* Tournament + Club / team switcher */}
+          <div className="px-3 py-3 shrink-0 border-b space-y-2" style={{ borderColor: "var(--cat-card-border)" }}>
+            {/* Tournament context */}
+            <TournamentSwitcher
+              current={currentTournamentOption}
+              all={tournamentOptions}
+            />
+
+            {/* Club + team */}
             {isTeamManager ? (
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+              <div className="flex items-center gap-2.5 px-1">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
                   style={{ background: "var(--badge-success-bg)", borderColor: "var(--badge-success-border)" }}>
-                  <span className="text-[12px] font-bold" style={{ color: "var(--badge-success-color)" }}>{clubInitials}</span>
+                  <span className="text-[11px] font-bold" style={{ color: "var(--badge-success-color)" }}>{clubInitials}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-[13px] font-bold truncate th-text">{club.name}</p>

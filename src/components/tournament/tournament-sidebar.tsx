@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import {
   Info, Users, BookOpen, Hotel, Handshake,
   MapPin, Clock, ArrowRight, ChevronRight, Shield, Trophy, Calendar,
+  BarChart2,
 } from "lucide-react";
 
 type ClassInfo = {
@@ -63,6 +64,8 @@ export function TournamentSidebar({
   const navItems = [
     { key: "info",         label: t("navInfo"),         icon: Info,       href: base },
     { key: "teams",        label: t("navTeams"),        icon: Users,      href: `${base}/teams` },
+    { key: "schedule",     label: t("navSchedule"),     icon: Calendar,   href: `${base}/schedule` },
+    { key: "standings",    label: t("navStandings"),    icon: BarChart2,  href: `${base}/standings` },
     { key: "regulations",  label: t("navRegulations"),  icon: BookOpen,   href: `${base}/regulations` },
     { key: "participants", label: t("navParticipants"), icon: Hotel,      href: `${base}/participants` },
     { key: "partners",     label: t("navPartners"),     icon: Handshake,  href: `${base}/partners` },

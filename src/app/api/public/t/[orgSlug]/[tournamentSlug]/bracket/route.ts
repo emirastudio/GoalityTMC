@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organizations, tournaments, tournamentStages, matchRounds, matches, tournamentRegistrations } from "@/db/schema";
+import { organizations, tournaments, tournamentStages, matchRounds, matches, tournamentRegistrations, stageSlots } from "@/db/schema";
 import { eq, and, isNull, asc, desc, inArray, or } from "drizzle-orm";
 
 // GET /api/public/t/[orgSlug]/[tournamentSlug]/bracket
@@ -40,11 +40,12 @@ export async function GET(
     classTeamIds = regsForClass.map(r => r.teamId);
   }
 
-  // Knockout этапы
+  // Knockout этапы (фильтруем по classId если задан — у каждой стадии есть classId)
   const knockoutStages = await db.query.tournamentStages.findMany({
     where: and(
       eq(tournamentStages.tournamentId, tournament.id),
       eq(tournamentStages.type, "knockout"),
+      ...(classId ? [eq(tournamentStages.classId, parseInt(classId))] : []),
     ),
     orderBy: [asc(tournamentStages.order)],
   });
@@ -58,14 +59,13 @@ export async function GET(
       orderBy: [desc(matchRounds.order)], // R32 → R16 → QF → SF → F
     });
 
+    // Knockout stages are already filtered by classId at the stage level above.
+    // Do NOT filter by classTeamIds here — that would exclude undrawn placeholder
+    // matches (homeTeamId IS NULL), hiding real scheduled bracket slots.
     const matchConditions = [
       eq(matches.stageId, stage.id),
       eq(matches.isPublic, true),
       isNull(matches.deletedAt),
-      ...(classTeamIds ? [or(
-        inArray(matches.homeTeamId, classTeamIds),
-        inArray(matches.awayTeamId, classTeamIds),
-      )!] : []),
     ];
 
     const stageMatches = await db.query.matches.findMany({
@@ -74,7 +74,7 @@ export async function GET(
       with: {
         homeTeam: { with: { club: true } },
         awayTeam: { with: { club: true } },
-        field: true,
+        field: { with: { stadium: true } },
       },
     });
 
@@ -86,6 +86,24 @@ export async function GET(
       matchesByRound[match.roundId].push(match);
     }
 
+    // Слоты для раундов (откуда приходят команды, пока они TBD)
+    const allRoundIds = rounds.map(r => r.id);
+    const slotRows = allRoundIds.length > 0
+      ? await db.query.stageSlots.findMany({
+          where: inArray(stageSlots.roundId, allRoundIds),
+          orderBy: [asc(stageSlots.order)],
+        })
+      : [];
+
+    // Группируем слоты по roundId → {home: [...], away: [...]}
+    const slotsByRound: Record<number, { home: typeof slotRows; away: typeof slotRows }> = {};
+    for (const slot of slotRows) {
+      if (!slot.roundId) continue;
+      if (!slotsByRound[slot.roundId]) slotsByRound[slot.roundId] = { home: [], away: [] };
+      if (slot.slotPosition === "home") slotsByRound[slot.roundId].home.push(slot);
+      else slotsByRound[slot.roundId].away.push(slot);
+    }
+
     result.push({
       stage: {
         id: stage.id,
@@ -94,18 +112,53 @@ export async function GET(
         nameEt: stage.nameEt,
         status: stage.status,
       },
-      rounds: rounds.map((round) => ({
-        id: round.id,
-        name: round.name,
-        nameRu: round.nameRu,
-        nameEt: round.nameEt,
-        shortName: round.shortName,
-        order: round.order,
-        matchCount: round.matchCount,
-        isTwoLegged: round.isTwoLegged,
-        hasThirdPlace: round.hasThirdPlace,
-        matches: matchesByRound[round.id] ?? [],
-      })),
+      rounds: rounds.map((round) => {
+        const roundMatches = matchesByRound[round.id] ?? [];
+        const slots = slotsByRound[round.id] ?? { home: [], away: [] };
+
+        // Добавляем слот-лейбл к каждому матчу по позиции
+        const matchesWithSlots = roundMatches.map((m, mi) => ({
+          ...m,
+          homeSlotLabel:   slots.home[mi]?.slotLabel   ?? null,
+          homeSlotLabelRu: slots.home[mi]?.slotLabelRu ?? null,
+          awaySlotLabel:   slots.away[mi]?.slotLabel   ?? null,
+          awaySlotLabelRu: slots.away[mi]?.slotLabelRu ?? null,
+        }));
+
+        // Для TBD-слотов (матчей ещё нет) — виртуальные заглушки
+        const emptySlots = Math.max(0, round.matchCount - roundMatches.length);
+        const emptyMatches = Array.from({ length: emptySlots }, (_, ei) => {
+          const mi = roundMatches.length + ei;
+          return {
+            id: -(round.id * 1000 + mi),
+            matchNumber: null,
+            status: "pending",
+            scheduledAt: null,
+            homeScore: null,
+            awayScore: null,
+            homeTeam: null,
+            awayTeam: null,
+            field: null,
+            homeSlotLabel:   slots.home[mi]?.slotLabel   ?? null,
+            homeSlotLabelRu: slots.home[mi]?.slotLabelRu ?? null,
+            awaySlotLabel:   slots.away[mi]?.slotLabel   ?? null,
+            awaySlotLabelRu: slots.away[mi]?.slotLabelRu ?? null,
+          };
+        });
+
+        return {
+          id: round.id,
+          name: round.name,
+          nameRu: round.nameRu,
+          nameEt: round.nameEt,
+          shortName: round.shortName,
+          order: round.order,
+          matchCount: round.matchCount,
+          isTwoLegged: round.isTwoLegged,
+          hasThirdPlace: round.hasThirdPlace,
+          matches: [...matchesWithSlots, ...emptyMatches],
+        };
+      }),
     });
   }
 

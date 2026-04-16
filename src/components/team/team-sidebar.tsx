@@ -16,6 +16,7 @@ import {
   Building2,
   FileText,
   UserCircle,
+  ArrowLeft,
 } from "lucide-react";
 import { useTeam } from "@/lib/team-context";
 
@@ -66,7 +67,7 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
   ];
 
   return (
-    <aside className={cn("w-full shrink-0", className)}>
+    <aside className={cn("w-full shrink-0 flex flex-col gap-4", className)}>
       <nav className="space-y-4">
         {groups.map((group, gi) => (
           <div key={gi}>
@@ -102,6 +103,18 @@ export function TeamSidebar({ className }: TeamSidebarProps) {
           </div>
         ))}
       </nav>
+
+      {/* ── Back to Club Dashboard ── */}
+      <div className="pt-2 border-t" style={{ borderColor: "var(--cat-card-border)" }}>
+        <Link
+          href="/club/dashboard"
+          className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] transition-colors hover:opacity-80"
+          style={{ color: "var(--cat-text-muted)", borderLeft: "2px solid transparent", paddingLeft: "10px" }}
+        >
+          <ArrowLeft className="w-4 h-4 shrink-0" />
+          <span>{t("clubDashboard")}</span>
+        </Link>
+      </div>
     </aside>
   );
 }

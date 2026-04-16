@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 import { Clock, MapPin, Zap, CheckCircle, CalendarDays, Loader2, ExternalLink, Navigation } from "lucide-react";
+import { TeamBadge } from "@/components/ui/team-badge";
 
 // ─── Types ────────────────────────────────────────────────
 
@@ -17,8 +18,8 @@ interface PublicMatch {
   scheduledAt?: string | null;
   homeScore?: number | null;
   awayScore?: number | null;
-  homeTeam?: { name: string; club?: { badgeUrl?: string | null } | null } | null;
-  awayTeam?: { name: string; club?: { badgeUrl?: string | null } | null } | null;
+  homeTeam?: { name?: string | null; club?: { name?: string | null; badgeUrl?: string | null } | null } | null;
+  awayTeam?: { name?: string | null; club?: { name?: string | null; badgeUrl?: string | null } | null } | null;
   field?: {
     name: string;
     stadiumId?: number | null;
@@ -160,11 +161,9 @@ function MatchCard({ match, locale, tFinished, tGroup }: {
         <div className="flex-1 flex items-center gap-2 justify-end">
           <span className="text-sm font-bold text-right leading-tight"
             style={{ color: isFinished && (match.homeScore ?? 0) > (match.awayScore ?? 0) ? "var(--cat-text)" : "var(--cat-text-secondary)" }}>
-            {match.homeTeam?.name ?? "TBD"}
+            {match.homeTeam?.name ?? match.homeTeam?.club?.name ?? "TBD"}
           </span>
-          {match.homeTeam?.club?.badgeUrl && (
-            <img src={match.homeTeam.club.badgeUrl} alt="" className="w-7 h-7 rounded object-contain shrink-0" />
-          )}
+          <TeamBadge team={match.homeTeam} size={28} />
         </div>
         <div className="shrink-0 flex items-center gap-1.5">
           {isFinished || isLive ? (
@@ -179,12 +178,10 @@ function MatchCard({ match, locale, tFinished, tGroup }: {
           )}
         </div>
         <div className="flex-1 flex items-center gap-2">
-          {match.awayTeam?.club?.badgeUrl && (
-            <img src={match.awayTeam.club.badgeUrl} alt="" className="w-7 h-7 rounded object-contain shrink-0" />
-          )}
+          <TeamBadge team={match.awayTeam} size={28} />
           <span className="text-sm font-bold leading-tight"
             style={{ color: isFinished && (match.awayScore ?? 0) > (match.homeScore ?? 0) ? "var(--cat-text)" : "var(--cat-text-secondary)" }}>
-            {match.awayTeam?.name ?? "TBD"}
+            {match.awayTeam?.name ?? match.awayTeam?.club?.name ?? "TBD"}
           </span>
         </div>
       </div>
@@ -290,7 +287,7 @@ export default function PublicSchedulePage() {
               borderColor: "var(--cat-card-border)",
               color: "var(--cat-text-secondary)",
             }}>
-            Все дивизионы
+            {t("allDivisions")}
           </button>
 
           {classes.map(cls => {

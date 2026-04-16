@@ -1,6 +1,8 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { TeamBadge } from "@/components/ui/team-badge";
 import { useTournament } from "@/lib/tournament-context";
 import { useSearchParams } from "next/navigation";
 import {
@@ -105,12 +107,12 @@ function parseTime(s: string) { return s.substring(11, 16); }
  * NOTE: DB uses ascending order (1=earliest round, highest=Final), so we
  * cannot rely on order===1 to detect the Final.
  */
-function knockoutLabel(round: { order?: number | null; matchCount?: number | null; shortName?: string | null; name?: string } | null | undefined): string | null {
+function knockoutLabel(round: { order?: number | null; matchCount?: number | null; shortName?: string | null; name?: string } | null | undefined, t: (key: string) => string): string | null {
   if (!round) return null;
   // Prefer shortName — it's the canonical source from the format builder
   const sn = (round.shortName ?? "").toUpperCase().trim();
-  if (sn === "F" || sn === "FINAL" || sn === "FIN") return "Финал";
-  if (sn === "3P" || sn === "3RD" || sn === "BRONZE" || sn === "THIRD") return "3-е место";
+  if (sn === "F" || sn === "FINAL" || sn === "FIN") return t("planner.final");
+  if (sn === "3P" || sn === "3RD" || sn === "BRONZE" || sn === "THIRD") return t("planner.thirdPlace");
   if (sn === "SF") return "1/2";
   if (sn === "QF") return "1/4";
   if (sn === "R16") return "1/8";
@@ -118,7 +120,7 @@ function knockoutLabel(round: { order?: number | null; matchCount?: number | nul
   if (sn === "R64" || sn === "R128") return "1/32";
   // Fallback: derive from matchCount when shortName is absent/unknown
   const mc = round.matchCount;
-  if (mc === 1) return "Финал";   // best guess when shortName absent
+  if (mc === 1) return t("planner.final");  // best guess when shortName absent
   if (mc === 2) return "1/2";
   if (mc === 4) return "1/4";
   if (mc === 8) return "1/8";
@@ -312,6 +314,7 @@ function MatchCard({
   onClick?: () => void; onUnschedule?: (e: React.MouseEvent) => void;
   saving?: boolean;
 }) {
+  const t = useTranslations("admin");
   const home = match.homeTeam?.name ?? "TBD";
   const away = match.awayTeam?.name ?? "TBD";
   const hasBoth = !!(match.homeTeamId && match.awayTeamId);
@@ -320,7 +323,7 @@ function MatchCard({
   const isB2B = conflict === "back2back";
   const isFinal = isFinalMatch(match);
   const isKnockout = match.stage?.type === "knockout";
-  const roundLabel = isKnockout ? knockoutLabel(match.round) : null;
+  const roundLabel = isKnockout ? knockoutLabel(match.round, t) : null;
 
   const borderColor = isErr ? "#ef4444" : isWarn ? "#f59e0b" : isB2B ? "#f97316"
     : isFinal ? "#fbbf24"
@@ -334,9 +337,6 @@ function MatchCard({
     : isFinal
     ? `rgba(251,191,36,0.10)`
     : selected ? `${color}18` : compact ? `${color}06` : "var(--cat-card-bg)";
-
-  const homeBadge = match.homeTeam?.club?.badgeUrl;
-  const awayBadge = match.awayTeam?.club?.badgeUrl;
 
   return (
     <div
@@ -377,15 +377,15 @@ function MatchCard({
       {/* Top-right indicators: conflict / back-to-back / final crown */}
       <div className="absolute top-0.5 right-1 z-10 flex items-center gap-0.5">
         {match.lockedAt && (
-          <span title="Матч заблокирован" style={{ fontSize: 9, lineHeight: 1 }}>🔒</span>
+          <span title={t("planner.matchLocked")} style={{ fontSize: 9, lineHeight: 1 }}>🔒</span>
         )}
         {isFinal && (
-          <span style={{ fontSize: 10, lineHeight: 1 }} title="Финал">👑</span>
+          <span style={{ fontSize: 10, lineHeight: 1 }} title={t("planner.final")}>👑</span>
         )}
         {isErr && <AlertCircle className="w-3 h-3" style={{ color: "#ef4444" }} />}
         {isWarn && !isErr && <AlertCircle className="w-3 h-3" style={{ color: "#f59e0b" }} />}
         {isB2B && !isErr && !isWarn && (
-          <span title="Мало времени между матчами"><Clock className="w-3 h-3" style={{ color: "#f97316" }} /></span>
+          <span title={t("planner.lowRest")}><Clock className="w-3 h-3" style={{ color: "#f97316" }} /></span>
         )}
       </div>
 
@@ -442,21 +442,13 @@ function MatchCard({
         {compact ? (
           <>
             <div className="flex items-center gap-1">
-              {(homeBadge || awayBadge) && (
-                homeBadge
-                  ? <img src={homeBadge} alt="" onError={e => { e.currentTarget.style.display = "none"; }} style={{ width: 14, height: 14, objectFit: "contain", borderRadius: 2, flexShrink: 0 }} />
-                  : <div style={{ width: 14, height: 14, flexShrink: 0 }} />
-              )}
+              <TeamBadge team={match.homeTeam ?? null} size={14} />
               <div className="text-[13px] font-bold leading-tight truncate" style={{ color: "var(--cat-text)" }}>
                 {match.homeTeamId ? teamShort(home) : <span className="opacity-40 italic text-xs">TBD</span>}
               </div>
             </div>
             <div className="flex items-center gap-1">
-              {(homeBadge || awayBadge) && (
-                awayBadge
-                  ? <img src={awayBadge} alt="" onError={e => { e.currentTarget.style.display = "none"; }} style={{ width: 14, height: 14, objectFit: "contain", borderRadius: 2, flexShrink: 0 }} />
-                  : <div style={{ width: 14, height: 14, flexShrink: 0 }} />
-              )}
+              <TeamBadge team={match.awayTeam ?? null} size={14} />
               <div className="text-[13px] font-semibold leading-tight truncate" style={{ color: "var(--cat-text)", opacity: 0.65 }}>
                 {match.awayTeamId ? teamShort(away) : <span className="opacity-40 italic text-xs">TBD</span>}
               </div>
@@ -465,21 +457,13 @@ function MatchCard({
         ) : (
           <>
             <div className="flex items-center gap-1.5 mt-0.5">
-              {(homeBadge || awayBadge) && (
-                homeBadge
-                  ? <img src={homeBadge} alt="" onError={e => { e.currentTarget.style.display = "none"; }} style={{ width: 18, height: 18, objectFit: "contain", borderRadius: 3, flexShrink: 0 }} />
-                  : <div style={{ width: 18, height: 18, flexShrink: 0 }} />
-              )}
+              <TeamBadge team={match.homeTeam ?? null} size={18} />
               <div className="font-bold text-[15px] leading-tight truncate" style={{ color: "var(--cat-text)" }}>
                 {match.homeTeamId ? home : <span className="opacity-50 italic text-sm">TBD</span>}
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              {(homeBadge || awayBadge) && (
-                awayBadge
-                  ? <img src={awayBadge} alt="" onError={e => { e.currentTarget.style.display = "none"; }} style={{ width: 18, height: 18, objectFit: "contain", borderRadius: 3, flexShrink: 0 }} />
-                  : <div style={{ width: 18, height: 18, flexShrink: 0 }} />
-              )}
+              <TeamBadge team={match.awayTeam ?? null} size={18} />
               <div className="text-sm leading-tight opacity-65 truncate" style={{ color: "var(--cat-text)" }}>
                 {match.awayTeamId ? away : <span className="opacity-50 italic">TBD</span>}
               </div>
@@ -519,6 +503,7 @@ function GridCell({
   onContextMenu: (m: Match, e: React.MouseEvent) => void;
   saving: number | null; cellHeight: number;
 }) {
+  const t = useTranslations("admin");
   const isEmpty = !match;
   const canPlace = !!selectedMatch && isEmpty;
   const isHovered = dragOverCell?.fieldId === fieldId && dragOverCell?.slot === slot;
@@ -538,13 +523,13 @@ function GridCell({
       bg = "rgba(43,254,186,0.10)";
       borderColor = "#2BFEBA";
       borderStyle = "dashed";
-      dropLabel = <span className="text-[9px] font-bold" style={{ color: "#2BFEBA" }}>↓ Поставить</span>;
+      dropLabel = <span className="text-[9px] font-bold" style={{ color: "#2BFEBA" }}>{t("planner.dropHere")}</span>;
       cursor = "copy";
     } else if (validity === "conflict") {
       bg = "rgba(239,68,68,0.10)";
       borderColor = "#ef4444";
       borderStyle = "dashed";
-      dropLabel = <span className="text-[9px] font-bold" style={{ color: "#ef4444" }}>⚡ Конфликт</span>;
+      dropLabel = <span className="text-[9px] font-bold" style={{ color: "#ef4444" }}>{t("planner.dropConflict")}</span>;
       cursor = "no-drop";
     } else if (validity === "occupied") {
       bg = "rgba(255,255,255,0.03)";
@@ -602,7 +587,7 @@ function GridCell({
           {dropLabel}
           {canPlace && !dropLabel && (
             <span className="text-[9px] font-semibold" style={{ color: "var(--cat-accent)" }}>
-              + Поставить
+              {t("planner.placeHere")}
             </span>
           )}
         </div>
@@ -621,6 +606,7 @@ function ContextMenuPanel({
   onClose: () => void; onUnschedule: () => void;
   onSwap: () => void; onEdit: () => void;
 }) {
+  const t = useTranslations("admin");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -662,12 +648,12 @@ function ContextMenuPanel({
     >
       <div className="px-3 py-1.5 border-b text-[10px] font-black tracking-wide"
         style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-muted)" }}>
-        МАТЧ #{match.matchNumber}
+        {t("planner.matchNumber", { num: match.matchNumber ?? "—" })}
       </div>
-      {item(<Edit2 className="w-3.5 h-3.5" />, "Изменить время / поле", onEdit)}
+      {item(<Edit2 className="w-3.5 h-3.5" />, t("planner.editTimeField"), onEdit)}
       {match.homeTeamId && match.awayTeamId &&
-        item(<ArrowLeftRight className="w-3.5 h-3.5" />, "Поменять команды", onSwap)}
-      {item(<CalendarOff className="w-3.5 h-3.5" />, "Убрать из расписания", onUnschedule, true)}
+        item(<ArrowLeftRight className="w-3.5 h-3.5" />, t("planner.swapTeams"), onSwap)}
+      {item(<CalendarOff className="w-3.5 h-3.5" />, t("planner.unschedule"), onUnschedule, true)}
     </div>
   );
 }
@@ -681,6 +667,7 @@ function EditPopover({
   onSave: (date: string, time: string, fieldId: number) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("admin");
   const [date, setDate] = useState(edit.date);
   const [time, setTime] = useState(edit.time);
   const [fieldId, setFieldId] = useState(edit.fieldId);
@@ -707,7 +694,7 @@ function EditPopover({
         style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", minWidth: 300 }}>
         <div className="flex items-center justify-between">
           <p className="font-bold text-sm" style={{ color: "var(--cat-text)" }}>
-            Редактировать матч #{edit.match.matchNumber}
+            {t("planner.editMatch", { num: edit.match.matchNumber ?? "—" })}
           </p>
           <button onClick={onClose} style={{ color: "var(--cat-text-muted)" }}>
             <X className="w-4 h-4" />
@@ -715,15 +702,15 @@ function EditPopover({
         </div>
         <div className="space-y-3">
           <label className="block">
-            <span className="text-[11px] font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Дата</span>
+            <span className="text-[11px] font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("planner.date")}</span>
             <input type="date" value={date} onChange={e => setDate(e.target.value)} style={iStyle} className="w-full outline-none" />
           </label>
           <label className="block">
-            <span className="text-[11px] font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Время</span>
+            <span className="text-[11px] font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("planner.time")}</span>
             <input type="time" value={time} onChange={e => setTime(e.target.value)} style={iStyle} className="w-full outline-none" />
           </label>
           <label className="block">
-            <span className="text-[11px] font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Поле</span>
+            <span className="text-[11px] font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("planner.field")}</span>
             <select value={fieldId} onChange={e => setFieldId(+e.target.value)} style={{ ...iStyle, width: "100%" }} className="outline-none">
               {fields.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
             </select>
@@ -734,12 +721,12 @@ function EditPopover({
             onClick={() => { onSave(date, time, fieldId); onClose(); }}
             className="flex-1 py-2 rounded-xl text-sm font-bold transition-all"
             style={{ background: "var(--cat-accent)", color: "#0A0E14" }}>
-            Сохранить
+            {t("planner.save")}
           </button>
           <button onClick={onClose}
             className="px-4 py-2 rounded-xl text-sm font-semibold"
             style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-            Отмена
+            {t("planner.cancel")}
           </button>
         </div>
       </div>
@@ -806,6 +793,7 @@ function StadiumScheduleModal({
     return m;
   }, [stadiums, tournamentDays, schedules]);
 
+  const t = useTranslations("admin");
   const [localState, setLocalState] = useState(() => buildLocalState());
   const [saving, setSaving] = useState(false);
   const [copyFromStadium, setCopyFromStadium] = useState<number | null>(null);
@@ -893,10 +881,10 @@ function StadiumScheduleModal({
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
         <div className="rounded-2xl border p-6" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", minWidth: 320 }}>
           <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-            Стадионы не найдены. Добавьте стадионы в разделе «Поля».
+            {t("planner.noStadiums")}
           </p>
           <button onClick={onClose} className="mt-4 px-4 py-2 rounded-xl text-sm font-semibold"
-            style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>Закрыть</button>
+            style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>{t("planner.close")}</button>
         </div>
       </div>
     );
@@ -913,11 +901,11 @@ function StadiumScheduleModal({
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
           <div className="flex items-center gap-2.5">
             <Building2 className="w-4 h-4" style={{ color: "#2BFEBA" }} />
-            <span className="font-black text-sm" style={{ color: "var(--cat-text)" }}>Расписание стадионов</span>
+            <span className="font-black text-sm" style={{ color: "var(--cat-text)" }}>{t("planner.stadiumScheduleTitle")}</span>
             {tournamentDays.length > 0 && (
               <span className="text-[11px] px-2 py-0.5 rounded-lg"
                 style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-                {tournamentDays.length} {tournamentDays.length === 1 ? "день" : tournamentDays.length < 5 ? "дня" : "дней"}
+                {t("planner.dayCount", { count: tournamentDays.length })}
               </span>
             )}
           </div>
@@ -928,14 +916,14 @@ function StadiumScheduleModal({
                   onClick={() => setCopyFromStadium(prev => prev === -1 ? null : -1)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
                   style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-card-border)" }}>
-                  Скопировать со стадиона
+                  {t("planner.copyFromStadium")}
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 {copyFromStadium === -1 && (
                   <div className="absolute right-0 top-full mt-1 rounded-xl border shadow-xl z-10 min-w-[200px]"
                     style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
                     <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
-                      Выберите источник
+                      {t("planner.chooseSource")}
                     </p>
                     {stadiums.map((s, si) => (
                       <button key={s.id}
@@ -951,7 +939,7 @@ function StadiumScheduleModal({
                   <div className="absolute right-0 top-full mt-1 rounded-xl border shadow-xl z-10 min-w-[220px]"
                     style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
                     <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
-                      Скопировать в стадион
+                      {t("planner.copyToStadium")}
                     </p>
                     {stadiums.filter(s => s.id !== copyFromStadium).map((s, si) => (
                       <button key={s.id}
@@ -964,7 +952,7 @@ function StadiumScheduleModal({
                     <button onClick={() => setCopyFromStadium(null)}
                       className="w-full text-left px-3 py-2 text-[11px] border-t"
                       style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-muted)" }}>
-                      Отмена
+                      {t("planner.cancel")}
                     </button>
                   </div>
                 )}
@@ -981,7 +969,7 @@ function StadiumScheduleModal({
         <div className="p-5 space-y-5 overflow-y-auto" style={{ maxHeight: "65vh" }}>
           {tournamentDays.length === 0 && (
             <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
-              Нет матчей с датами. Задайте даты дивизионов и сгенерируйте расписание.
+              {t("planner.noMatchesWithDatesBody")}
             </p>
           )}
 
@@ -1024,13 +1012,13 @@ function StadiumScheduleModal({
                       background: allOpen ? "rgba(43,254,186,0.15)" : noneOpen ? "rgba(239,68,68,0.12)" : "rgba(245,158,11,0.12)",
                       color: allOpen ? "#2BFEBA" : noneOpen ? "#ef4444" : "#f59e0b",
                     }}>
-                    {allOpen ? "● Открыт все дни" : noneOpen ? "● Закрыт все дни" : `● Открыт ${openDays}/${tournamentDays.length} дней`}
+                    {allOpen ? t("planner.stadiumAllOpen") : noneOpen ? t("planner.stadiumAllClosed") : t("planner.stadiumPartOpen", { open: openDays, total: tournamentDays.length })}
                   </span>
 
                   {/* Hours summary */}
                   {openDays > 0 && (
                     <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
-                      {openDays} {openDays === 1 ? "день" : openDays < 5 ? "дня" : "дней"} · {totalHours.toFixed(0)} ч доступно
+                      {t("planner.dayCount", { count: openDays })} · {t("planner.hourCount", { count: totalHours.toFixed(0) })}
                     </span>
                   )}
 
@@ -1044,13 +1032,13 @@ function StadiumScheduleModal({
                       }}
                       className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
                       style={{ background: `${color.accent}18`, color: color.accent, border: `1px solid ${color.border}` }}>
-                      Открыть все
+                      {t("planner.openAll")}
                     </button>
                     <button
                       onClick={() => applyToAllDays(stadium.id, "09:00", "18:00", false)}
                       className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
                       style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
-                      Закрыть все
+                      {t("planner.closeAll")}
                     </button>
                   </div>
                 </div>
@@ -1100,8 +1088,8 @@ function StadiumScheduleModal({
                                 border: "1px solid rgba(239,68,68,0.25)",
                               }}>
                               {entry.open
-                                ? <><CheckCircle className="w-3 h-3" /> Открыт</>
-                                : <><X className="w-3 h-3" /> Закрыт</>}
+                                ? <><CheckCircle className="w-3 h-3" /> {t("planner.stadiumOpen")}</>
+                                : <><X className="w-3 h-3" /> {t("planner.stadiumClosed")}</>}
                             </button>
 
                             {/* Time inputs */}
@@ -1168,7 +1156,7 @@ function StadiumScheduleModal({
         <div className="flex justify-end gap-2 px-5 py-4 border-t" style={{ borderColor: "var(--cat-card-border)" }}>
           <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold"
             style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-            Отмена
+            {t("planner.cancel")}
           </button>
           <button
             onClick={handleSave}
@@ -1176,7 +1164,7 @@ function StadiumScheduleModal({
             className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-black transition-all disabled:opacity-50"
             style={{ background: "linear-gradient(135deg, #2BFEBA, #06b6d4)", color: "#0A0E14" }}>
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            Сохранить расписание
+            {t("planner.saveSchedule")}
           </button>
         </div>
       </div>
@@ -1214,6 +1202,7 @@ function FieldAllocationOverview({
   classes: TournamentClass[];
   divConfigs: Record<number, ScheduleConfig>;
 }) {
+  const t = useTranslations("admin");
   // Build map: fieldId → list of (classId, name, startTime, endTime, matchSlot, color)
   type DivWindow = {
     classId: number;
@@ -1272,12 +1261,12 @@ function FieldAllocationOverview({
     <div className="rounded-xl border p-3 mb-2" style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
       <div className="flex items-center justify-between mb-2">
         <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
-          📊 Распределение полей по дивизионам
+          {t("planner.fieldAllocationTitle")}
         </p>
         {sharedFields.length > 0 && (
           <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
             style={{ background: "rgba(99,102,241,0.2)", color: "#6366f1" }}>
-            {sharedFields.length} общих {sharedFields.length === 1 ? "поле" : "полей"}
+            {t("planner.sharedFields", { count: sharedFields.length })}
           </span>
         )}
       </div>
@@ -1308,7 +1297,7 @@ function FieldAllocationOverview({
               <div className="flex-1 relative rounded overflow-hidden" style={{ height: 18, background: "rgba(255,255,255,0.04)", border: "1px solid var(--cat-card-border)" }}>
                 {windows.length === 0 ? (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[9px]" style={{ color: "var(--cat-text-muted)" }}>не назначено</span>
+                    <span className="text-[9px]" style={{ color: "var(--cat-text-muted)" }}>{t("planner.fieldUnassigned")}</span>
                   </div>
                 ) : (
                   windows.map((w, i) => {
@@ -1316,7 +1305,7 @@ function FieldAllocationOverview({
                     const endPct   = toPercent(parseMin(w.endTime));
                     const width = Math.max(2, endPct - startPct);
                     return (
-                      <div key={i} title={`${w.name}: ${w.startTime}–${w.endTime} (слот ${w.matchSlotMin}мин)`}
+                      <div key={i} title={`${w.name}: ${w.startTime}–${w.endTime} (${t("planner.min")} ${w.matchSlotMin})`}
                         className="absolute top-0 bottom-0 rounded-sm"
                         style={{
                           left: `${startPct}%`,
@@ -1348,10 +1337,10 @@ function FieldAllocationOverview({
               {/* Warnings / info */}
               <div className="flex items-center gap-1 shrink-0">
                 {overlapWarning && (
-                  <span title="Два дивизиона с одинаковым временем на этом поле — слоты поделятся"
+                  <span title={t("planner.sharedFieldWarning")}
                     className="text-[9px] font-bold px-1 rounded"
                     style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b" }}>
-                    ⚡ пересечение
+                    {t("planner.fieldOverlap")}
                   </span>
                 )}
                 {windows.length === 0 && (
@@ -1379,7 +1368,7 @@ function FieldAllocationOverview({
                 <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: DIV_COLORS[idx % DIV_COLORS.length] }} />
                 <span className="text-[10px]" style={{ color: "var(--cat-text-secondary)" }}>
                   {cls.name}
-                  {slot > 0 && <span className="ml-1 opacity-60">{slot}мин/матч</span>}
+                  {slot > 0 && <span className="ml-1 opacity-60">{slot}{t("planner.min")}</span>}
                 </span>
               </div>
             );
@@ -1391,17 +1380,17 @@ function FieldAllocationOverview({
       <div className="mt-2 space-y-1">
         {unassignedFields.length > 0 && (
           <p className="text-[10px]" style={{ color: "#f59e0b" }}>
-            ⚠ {unassignedFields.length} {unassignedFields.length === 1 ? "поле" : "полей"} не назначено ни одному дивизиону. Назначьте в настройках ниже.
+            {t("planner.fieldUnassignedWarning", { count: unassignedFields.length })}
           </p>
         )}
         {sharedFields.length > 0 && (
           <p className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
-            💡 На общих полях солвер чередует матчи разных дивизионов автоматически. Разные длины матчей поддерживаются.
+            {t("planner.sharedFieldsHint")}
           </p>
         )}
         {classes.filter(c => !(divConfigs[c.id]?.fieldIds?.length ?? 0)).length > 0 && (
           <p className="text-[10px]" style={{ color: "#ef4444" }}>
-            ✗ Не все дивизионы имеют назначенные поля. Откройте настройки дивизиона ниже.
+            {t("planner.noFieldsForDiv")}
           </p>
         )}
       </div>
@@ -1471,6 +1460,7 @@ function DivisionConfigPanel({
   onClear: () => void;
   onDatesChange: (startDate: string | null, endDate: string | null) => void;
 }) {
+  const t = useTranslations("admin");
   const [expanded, setExpanded] = useState(false);
   const [showWeights, setShowWeights] = useState(false);
   const [fieldStagePopover, setFieldStagePopover] = useState<number | null>(null); // fieldId with open popover
@@ -1584,10 +1574,10 @@ function DivisionConfigPanel({
           : <ChevronRight className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />}
         <span className="font-bold text-base" style={{ color: "var(--cat-text)" }}>{cls.name}</span>
         <span className="text-sm ml-1" style={{ color: "var(--cat-text-muted)" }}>
-          {config.fieldIds.length} пол. · {numDays} дн. · {matchSlot}мин/матч
+          {t("planner.divisionSummary", { fields: config.fieldIds.length, days: numDays, slot: matchSlot })}
         </span>
         <span className="ml-auto text-sm font-semibold" style={{ color: "var(--cat-accent)" }}>
-          ~{matchCount} слотов
+          {t("planner.divisionSlots", { count: matchCount })}
         </span>
       </button>
 
@@ -1597,7 +1587,7 @@ function DivisionConfigPanel({
           {/* Fields + Stage Assignment */}
           <div>
             <p className="text-sm font-bold uppercase tracking-wide mb-2" style={{ color: "var(--cat-text-muted)" }}>
-              🏟️ Поля
+              {t("planner.fieldsSection")}
             </p>
             <div className="flex flex-wrap gap-2">
               {fields.map(f => {
@@ -1621,7 +1611,7 @@ function DivisionConfigPanel({
                       {active && stages.length > 1 && (
                         <button
                           onClick={() => setFieldStagePopover(fieldStagePopover === f.id ? null : f.id)}
-                          title="Назначить на этапы"
+                          title={t("planner.stagesForField", { field: f.name })}
                           className="flex items-center px-1.5 border-l transition-all hover:opacity-80"
                           style={{
                             background: hasAssignment ? "rgba(99,102,241,0.2)" : "var(--cat-tag-bg)",
@@ -1637,10 +1627,10 @@ function DivisionConfigPanel({
                       <div className="absolute top-full left-0 z-50 mt-1 rounded-xl border shadow-xl p-3 min-w-[200px]"
                         style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
                         <p className="text-sm font-bold uppercase tracking-wide mb-2" style={{ color: "var(--cat-text-muted)" }}>
-                          Этапы для {f.name}
+                          {t("planner.stagesForField", { field: f.name })}
                         </p>
                         <p className="text-sm mb-2" style={{ color: "var(--cat-text-muted)" }}>
-                          {assignedStages.length === 0 ? "Все этапы" : `${assignedStages.length} этап(а)`}
+                          {assignedStages.length === 0 ? t("planner.allStagesOption") : t("planner.stagesCount", { count: assignedStages.length })}
                         </p>
                         <div className="space-y-1">
                           <button
@@ -1650,7 +1640,7 @@ function DivisionConfigPanel({
                               background: assignedStages.length === 0 ? "rgba(43,254,186,0.15)" : "var(--cat-tag-bg)",
                               color: assignedStages.length === 0 ? "#2BFEBA" : "var(--cat-text-secondary)",
                             }}>
-                            ✓ Все этапы
+                            ✓ {t("planner.allStagesOption")}
                           </button>
                           {stages.map(s => {
                             const isAssigned = assignedStages.includes(s.id);
@@ -1675,7 +1665,7 @@ function DivisionConfigPanel({
                         <button onClick={() => setFieldStagePopover(null)}
                           className="mt-2 w-full text-sm text-center hover:opacity-70"
                           style={{ color: "var(--cat-text-muted)" }}>
-                          Закрыть
+                          {t("planner.close")}
                         </button>
                       </div>
                     )}
@@ -1685,7 +1675,7 @@ function DivisionConfigPanel({
             </div>
             {Object.keys(config.fieldStageIds ?? {}).length > 0 && (
               <p className="text-sm mt-1.5" style={{ color: "#6366f1" }}>
-                ⚠ Некоторые поля назначены только для определённых этапов
+                {t("planner.fieldSomeStagesOnly")}
               </p>
             )}
           </div>
@@ -1693,7 +1683,7 @@ function DivisionConfigPanel({
           {/* Division dates — editable, saved with "Сохранить настройки" */}
           <div>
             <p className="text-sm font-bold uppercase tracking-wide mb-2" style={{ color: "var(--cat-text-muted)" }}>
-              📅 Даты дивизиона
+              {t("planner.divDatesSection")}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
               <input type="date" value={localStart}
@@ -1706,13 +1696,13 @@ function DivisionConfigPanel({
               {localStart && localEnd && (
                 <span className="text-sm px-2 py-0.5 rounded-lg"
                   style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-                  {numDays} {numDays === 1 ? "день" : numDays < 5 ? "дня" : "дней"}
+                  {t("planner.dayCount", { count: numDays })}
                 </span>
               )}
             </div>
             {(!localStart || !localEnd) && (
               <p className="text-sm mt-1" style={{ color: "#f59e0b" }}>
-                ⚠ Задайте даты дивизиона — нужны для генерации расписания
+                {t("planner.divDatesRequired")}
               </p>
             )}
           </div>
@@ -1720,12 +1710,12 @@ function DivisionConfigPanel({
           {/* Match params */}
           <div>
             <p className="text-sm font-bold uppercase tracking-wide mb-2" style={{ color: "var(--cat-text-muted)" }}>
-              ⚽ Формат матча
+              {t("planner.matchFormatSection")}
             </p>
             <div className="flex items-center gap-3 flex-wrap">
               {/* Halves count toggle */}
               <label className="flex items-center gap-2 text-sm" style={{ color: "var(--cat-text-secondary)" }}>
-                <span>Таймов</span>
+                <span>{t("planner.halvesCount")}</span>
                 <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid var(--cat-card-border)" }}>
                   {([1, 2] as const).map(n => (
                     <button key={n} type="button"
@@ -1743,36 +1733,36 @@ function DivisionConfigPanel({
 
               {/* Half duration */}
               <label className="flex items-center gap-2 text-sm" style={{ color: "var(--cat-text-secondary)" }}>
-                <span>Длит. тайма</span>
+                <span>{t("planner.halfDuration")}</span>
                 <input type="number" min={5} max={90} value={config.halfDurationMinutes ?? 20}
                   onChange={e => onChange({ ...config, halfDurationMinutes: +e.target.value })}
                   style={{ ...iStyle, width: 55 }} className="outline-none" />
-                <span>мин</span>
+                <span>{t("planner.min")}</span>
               </label>
 
               {/* Break between halves (only if 2 halves) */}
               {(config.halvesCount ?? 2) === 2 && (
                 <label className="flex items-center gap-2 text-sm" style={{ color: "var(--cat-text-secondary)" }}>
-                  <span>Перерыв между таймами</span>
+                  <span>{t("planner.halfBreak")}</span>
                   <input type="number" min={0} max={30} value={config.breakBetweenHalvesMinutes ?? 5}
                     onChange={e => onChange({ ...config, breakBetweenHalvesMinutes: +e.target.value })}
                     style={{ ...iStyle, width: 50 }} className="outline-none" />
-                  <span>мин</span>
+                  <span>{t("planner.min")}</span>
                 </label>
               )}
 
               {/* Break between games */}
               <label className="flex items-center gap-2 text-sm" style={{ color: "var(--cat-text-secondary)" }}>
-                <span>Перерыв между играми</span>
+                <span>{t("planner.gameBreak")}</span>
                 <input type="number" min={0} max={60} value={config.breakBetweenMatchesMinutes}
                   onChange={e => onChange({ ...config, breakBetweenMatchesMinutes: +e.target.value })}
                   style={{ ...iStyle, width: 50 }} className="outline-none" />
-                <span>мин</span>
+                <span>{t("planner.min")}</span>
               </label>
 
               {/* Max games per team */}
               <label className="flex items-center gap-2 text-sm" style={{ color: "var(--cat-text-secondary)" }}>
-                <span>Макс. игр/команда/день</span>
+                <span>{t("planner.maxGamesPerDay")}</span>
                 <input type="number" min={1} max={10} value={config.maxMatchesPerTeamPerDay}
                   onChange={e => onChange({ ...config, maxMatchesPerTeamPerDay: +e.target.value })}
                   style={{ ...iStyle, width: 50 }} className="outline-none" />
@@ -1781,14 +1771,14 @@ function DivisionConfigPanel({
 
             {/* Summary */}
             <p className="text-sm mt-1.5" style={{ color: "var(--cat-text-muted)" }}>
-              Итого: {matchSlot} мин/матч + {config.breakBetweenMatchesMinutes} мин перерыв = {matchSlot + config.breakBetweenMatchesMinutes} мин/слот · ~{slotsPerDay} слот{slotsPerDay === 1 ? "" : slotsPerDay < 5 ? "а" : "ов"}/поле/день
+              {t("planner.slotSummary", { match: matchSlot, break: config.breakBetweenMatchesMinutes, total: matchSlot + config.breakBetweenMatchesMinutes, slots: slotsPerDay })}
             </p>
 
             {/* Отдых команды */}
             <div className="rounded-xl border p-3 mt-2" style={{ borderColor: "rgba(99,102,241,0.2)", background: "rgba(99,102,241,0.04)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-3.5 h-3.5" style={{ color: "#6366f1" }} />
-                <span className="text-sm font-bold" style={{ color: "#6366f1" }}>Правила отдыха команд</span>
+                <span className="text-sm font-bold" style={{ color: "#6366f1" }}>{t("planner.restRulesTitle")}</span>
                 {/* Toggle */}
                 <button
                   onClick={() => onChange({ ...config, enableTeamRestRule: !(config.enableTeamRestRule ?? true) })}
@@ -1798,20 +1788,20 @@ function DivisionConfigPanel({
                     color: (config.enableTeamRestRule ?? true) ? "#6366f1" : "var(--cat-text-muted)",
                     border: `1px solid ${(config.enableTeamRestRule ?? true) ? "rgba(99,102,241,0.4)" : "transparent"}`,
                   }}>
-                  {(config.enableTeamRestRule ?? true) ? "✓ Включено" : "○ Выключено"}
+                  {(config.enableTeamRestRule ?? true) ? t("planner.restRulesEnabled") : t("planner.restRulesDisabled")}
                 </button>
               </div>
               {(config.enableTeamRestRule ?? true) && (
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm" style={{ color: "var(--cat-text-muted)" }}>Мин. отдых между матчами</span>
+                    <span className="text-sm" style={{ color: "var(--cat-text-muted)" }}>{t("planner.minRestBetween")}</span>
                     <input type="number" min={0} max={300} step={5}
                       value={config.minRestBetweenTeamMatchesMinutes ?? 60}
                       onChange={e => onChange({ ...config, minRestBetweenTeamMatchesMinutes: +e.target.value })}
                       className="w-16 rounded-lg px-2 py-1 text-sm text-center outline-none"
                       style={{ background: "var(--cat-input-bg, var(--cat-card-bg))", border: "1px solid var(--cat-card-border)", color: "var(--cat-text)" }}
                     />
-                    <span className="text-sm" style={{ color: "var(--cat-text-muted)" }}>мин</span>
+                    <span className="text-sm" style={{ color: "var(--cat-text-muted)" }}>{t("planner.min")}</span>
                   </div>
                   {[30, 60, 90, 120].map(v => (
                     <button key={v}
@@ -1822,15 +1812,15 @@ function DivisionConfigPanel({
                         color: (config.minRestBetweenTeamMatchesMinutes ?? 60) === v ? "#6366f1" : "var(--cat-text-muted)",
                         border: `1px solid ${(config.minRestBetweenTeamMatchesMinutes ?? 60) === v ? "rgba(99,102,241,0.4)" : "transparent"}`,
                       }}>
-                      {v}мин
+                      {v}{t("planner.min")}
                     </button>
                   ))}
                 </div>
               )}
               <p className="text-sm mt-2" style={{ color: "var(--cat-text-muted)" }}>
                 {(config.enableTeamRestRule ?? true)
-                  ? `Команда не может сыграть следующий матч раньше чем через ${config.minRestBetweenTeamMatchesMinutes ?? 60} мин после предыдущего`
-                  : "Команды могут играть несколько матчей подряд без ограничений"}
+                  ? t("planner.restRuleDesc", { min: config.minRestBetweenTeamMatchesMinutes ?? 60 })
+                  : t("planner.noRestLimit")}
               </p>
             </div>
 
@@ -1844,20 +1834,20 @@ function DivisionConfigPanel({
               style={{ color: "var(--cat-text-muted)" }}
             >
               {showWeights ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              ⚖️ Веса оптимизации ИИ
+              {t("planner.aiWeightsTitle")}
               <span className="text-sm font-normal normal-case ml-1" style={{ color: "var(--cat-text-muted)", opacity: 0.6 }}>
-                влияют на качество расписания
+                {t("planner.aiWeightsHint")}
               </span>
             </button>
             {showWeights && (
               <div className="mt-2 space-y-2 pl-1">
                 {([
-                  { key: "fieldUtilization" as const, label: "Загрузка полей", hint: "Максимизировать использование полей" },
-                  { key: "teamRestComfort" as const, label: "Комфорт команд", hint: "Больше времени на отдых между матчами" },
-                  { key: "homeAwayBalance" as const, label: "Баланс дом/выезд", hint: "Равномерно чередовать домашние и гостевые матчи" },
-                  { key: "primetimeForBigMatches" as const, label: "Прайм-тайм для финалов", hint: "Финалы и 1/2 в вечернее время" },
-                  { key: "groupFieldAffinity" as const, label: "Группа на одном поле", hint: "Матчи одной группы на одном поле" },
-                  { key: "dayLoadBalance" as const, label: "Равномерность по дням", hint: "Распределить матчи равномерно по дням" },
+                  { key: "fieldUtilization" as const, label: t("planner.weightFieldUtil"), hint: t("planner.weightFieldUtilHint") },
+                  { key: "teamRestComfort" as const, label: t("planner.weightTeamRest"), hint: t("planner.weightTeamRestHint") },
+                  { key: "homeAwayBalance" as const, label: t("planner.weightHomeAway"), hint: t("planner.weightHomeAwayHint") },
+                  { key: "primetimeForBigMatches" as const, label: t("planner.weightPrimetime"), hint: t("planner.weightPrimetimeHint") },
+                  { key: "groupFieldAffinity" as const, label: t("planner.weightGroupField"), hint: t("planner.weightGroupFieldHint") },
+                  { key: "dayLoadBalance" as const, label: t("planner.weightDayBalance"), hint: t("planner.weightDayBalanceHint") },
                 ] as const).map(({ key, label, hint }) => {
                   const val = (config.weights as Record<string, number> | undefined)?.[key] ?? getDefaultWeight(key);
                   return (
@@ -1892,19 +1882,19 @@ function DivisionConfigPanel({
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[14px] font-bold transition-all disabled:opacity-50"
               style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-card-border)" }}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Сохранить настройки
+              {t("planner.saveSettings")}
             </button>
             <button onClick={onGenerate} disabled={generating || clearing || config.fieldIds.length === 0}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[14px] font-bold transition-all disabled:opacity-50"
               style={{ background: "rgba(43,254,186,0.15)", color: "#2BFEBA", border: "1px solid rgba(43,254,186,0.3)" }}>
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              Сгенерировать для {cls.name}
+              {t("planner.generateFor", { name: cls.name })}
             </button>
             <button onClick={onClear} disabled={generating || clearing}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[14px] font-bold transition-all disabled:opacity-50"
               style={{ background: "rgba(239,68,68,0.10)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
               {clearing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-              Очистить
+              {t("planner.clearDiv")}
             </button>
           </div>
         </div>
@@ -1926,6 +1916,7 @@ function AddMatchModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const t = useTranslations("admin");
   const [teams, setTeams] = useState<TeamOption[]>([]);
   const [loadingTeams, setLoadingTeams] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1957,7 +1948,7 @@ function AddMatchModal({
   const filteredTeams = teams;
 
   async function handleCreate() {
-    if (!stageId) { setError("Выберите этап"); return; }
+    if (!stageId) { setError(t("planner.selectStageError")); return; }
     setSaving(true);
     setError(null);
     try {
@@ -1976,13 +1967,13 @@ function AddMatchModal({
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setError(d.error ?? "Ошибка создания матча");
+        setError(d.error ?? t("planner.matchCreateError"));
         return;
       }
       onCreated();
       onClose();
     } catch {
-      setError("Ошибка сети");
+      setError(t("planner.matchCreateNetworkError"));
     } finally {
       setSaving(false);
     }
@@ -2007,10 +1998,10 @@ function AddMatchModal({
           style={{ borderColor: "var(--cat-card-border)" }}>
           <div>
             <h2 className="font-black text-base" style={{ color: "var(--cat-text)" }}>
-              ➕ Добавить матч
+              {t("planner.addMatchTitle")}
             </h2>
             <p className="text-[11px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-              Товарищеский, золотой матч, дополнительная игра
+              {t("planner.addMatchSubtitle")}
             </p>
           </div>
           <button onClick={onClose} className="hover:opacity-70" style={{ color: "var(--cat-text-muted)" }}>
@@ -2024,7 +2015,7 @@ function AddMatchModal({
           {/* Stage */}
           <div>
             <label className="block text-xs font-bold mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
-              Этап *
+              {t("planner.stageRequired")}
             </label>
             <select value={stageId} onChange={e => { setStageId(+e.target.value); setHomeTeamId(""); setAwayTeamId(""); }}
               style={iStyle} className="outline-none">
@@ -2043,13 +2034,13 @@ function AddMatchModal({
           {loadingTeams ? (
             <div className="flex items-center gap-2 py-2" style={{ color: "var(--cat-text-muted)" }}>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm">Загрузка команд…</span>
+              <span className="text-sm">{t("planner.loadingTeams")}</span>
             </div>
           ) : (
             <>
               <div>
                 <label className="block text-xs font-bold mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
-                  Хозяева <span className="font-normal opacity-60">(можно оставить пустым — TBD)</span>
+                  {t("planner.homeTeam")} <span className="font-normal opacity-60">{t("planner.tbdOptional")}</span>
                 </label>
                 <select value={homeTeamId} onChange={e => setHomeTeamId(e.target.value ? +e.target.value : "")}
                   style={iStyle} className="outline-none">
@@ -2064,7 +2055,7 @@ function AddMatchModal({
 
               <div>
                 <label className="block text-xs font-bold mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
-                  Гости <span className="font-normal opacity-60">(можно оставить пустым — TBD)</span>
+                  {t("planner.awayTeam")} <span className="font-normal opacity-60">{t("planner.tbdOptional")}</span>
                 </label>
                 <select value={awayTeamId} onChange={e => setAwayTeamId(e.target.value ? +e.target.value : "")}
                   style={iStyle} className="outline-none">
@@ -2082,11 +2073,11 @@ function AddMatchModal({
           {/* Optional label */}
           <div>
             <label className="block text-xs font-bold mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
-              Пометка <span className="font-normal opacity-60">(необязательно)</span>
+              {t("planner.matchNote")} <span className="font-normal opacity-60">{t("planner.matchNoteOptional")}</span>
             </label>
             <input
               type="text"
-              placeholder="Товарищеский · Золотой матч · Утешительный…"
+              placeholder={t("planner.matchNoteAdd")}
               value={label}
               onChange={e => setLabel(e.target.value)}
               style={iStyle}
@@ -2106,7 +2097,7 @@ function AddMatchModal({
           style={{ borderColor: "var(--cat-card-border)" }}>
           <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
             style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-            Отмена
+            {t("planner.cancel")}
           </button>
           <button
             onClick={handleCreate}
@@ -2114,7 +2105,7 @@ function AddMatchModal({
             className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-black transition-all disabled:opacity-50"
             style={{ background: "rgba(43,254,186,0.15)", color: "#2BFEBA", border: "1px solid rgba(43,254,186,0.35)" }}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Создать матч
+            {t("planner.createMatch")}
           </button>
         </div>
       </div>
@@ -2125,6 +2116,7 @@ function AddMatchModal({
 // ─── PlannerPage ──────────────────────────────────────────────────────────────
 
 export function PlannerPage() {
+  const t = useTranslations("admin");
   const ctx = useTournament();
   const orgSlug = ctx?.orgSlug ?? "";
   const tournamentId = ctx?.tournamentId ?? 0;
@@ -2182,6 +2174,8 @@ export function PlannerPage() {
   const [generatingDiv, setGeneratingDiv] = useState<number | "all" | null>(null);
   const [clearingDiv,   setClearingDiv]   = useState<number | "all" | null>(null);
   const [schedResult, setSchedResult] = useState<{ updated: number; unassigned: number; msg: string } | null>(null);
+  const [schedulePublishedAt, setSchedulePublishedAt] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
   const [partialRegen, setPartialRegen] = useState(false); // preserve already-scheduled matches
   const [showAddMatch, setShowAddMatch] = useState(false);
   const [filterClass, setFilterClass] = useState<number | null>(urlClassId);
@@ -2215,13 +2209,18 @@ export function PlannerPage() {
     if (!tournamentId) return;
     setLoading(true);
     try {
-      const [mR, fR, clR, stR, ssR] = await Promise.all([
+      const [mR, fR, clR, stR, ssR, pubR] = await Promise.all([
         fetch(`${base}/matches`),
         fetch(`/api/admin/tournament-fields?tournamentId=${tournamentId}`),
         fetch(`${base}/classes`),
         fetch(`${base}/stadiums`),
         fetch(`${base}/stadium-schedule`),
+        fetch(`${base}/schedule/publish`),
       ]);
+      if (pubR.ok) {
+        const pubData = await pubR.json();
+        setSchedulePublishedAt(pubData.publishedAt ?? null);
+      }
       const mArr: Match[] = (await mR.json().then(d => Array.isArray(d) ? d : d.matches ?? []));
       const fArr: Field[] = (await fR.json().then(d => Array.isArray(d) ? d : d.fields ?? []));
       const clArr: TournamentClass[] = (await clR.json().then(d => Array.isArray(d) ? d : []));
@@ -2467,10 +2466,10 @@ export function PlannerPage() {
       if (!res.ok) throw new Error("err");
       const updated = await res.json();
       setMatches(prev => prev.map(m => m.id === matchId ? { ...m, ...updated } : m));
-      showToast("Сохранено", "ok");
+      showToast(t("planner.saved"), "ok");
     } catch {
       // Rollback
-      showToast("Ошибка сохранения", "err");
+      showToast(t("planner.saveError"), "err");
       await load();
     } finally {
       setSaving(null);
@@ -2577,7 +2576,7 @@ export function PlannerPage() {
     const duration = getMatchDurationMins(dragMatch);
     const validity = getCalDropValidity(fieldId, slot, dragMatch, duration);
     if (validity !== "valid") {
-      if (validity === "conflict") showToast("⚡ Конфликт — команда играет в это же время!", "err");
+      if (validity === "conflict") showToast(t("planner.conflictDrop"), "err");
       setDragState(null);
       return;
     }
@@ -2602,7 +2601,7 @@ export function PlannerPage() {
 
     const validity = getDropValidity(fieldId, slot, activeDay, dragMatch, gridIndex, slotMins);
     if (validity !== "valid") {
-      if (validity === "conflict") showToast("⚡ Конфликт — команда играет в это же время!", "err");
+      if (validity === "conflict") showToast(t("planner.conflictDrop"), "err");
       setDragState(null);
       return;
     }
@@ -2673,9 +2672,9 @@ export function PlannerPage() {
           endDate:   cls?.endDate   ?? null,
         }),
       });
-      showToast("Конфигурация сохранена", "ok");
+      showToast(t("planner.configSaved"), "ok");
     } catch {
-      showToast("Ошибка сохранения", "err");
+      showToast(t("planner.saveError"), "err");
     } finally {
       setSavingConfig(null);
     }
@@ -2793,7 +2792,7 @@ export function PlannerPage() {
       });
 
     if (divisions.length === 0) {
-      showToast("Нет настроенных дивизионов", "err");
+      showToast(t("planner.noConfigs"), "err");
       return;
     }
 
@@ -2807,10 +2806,10 @@ export function PlannerPage() {
       });
       const data = await res.json();
       setSchedResult({ updated: data.updated, unassigned: data.unassigned, msg: data.message ?? "" });
-      showToast(`✅ ${data.updated} матчей расставлено`, "ok");
+      showToast(t("planner.scheduledToast", { count: data.updated }), "ok");
       await load();
     } catch {
-      showToast("Ошибка генерации расписания", "err");
+      showToast(t("planner.generateError"), "err");
     } finally {
       setGeneratingDiv(null);
     }
@@ -2818,9 +2817,9 @@ export function PlannerPage() {
 
   async function clearSchedule(classId?: number) {
     const label = classId
-      ? classes.find(c => c.id === classId)?.name ?? "дивизиона"
-      : "всего турнира";
-    if (!confirm(`Очистить расписание ${label}? Все даты и поля матчей будут сброшены.`)) return;
+      ? classes.find(c => c.id === classId)?.name ?? ""
+      : t("planner.clearAllLabel");
+    if (!confirm(t("planner.clearConfirm", { label }))) return;
 
     setClearingDiv(classId ?? "all");
     try {
@@ -2831,11 +2830,11 @@ export function PlannerPage() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      showToast(`🗑 Очищено ${data.cleared} матчей`, "ok");
+      showToast(t("planner.cleared", { count: data.cleared }), "ok");
       setSchedResult(null);
       await load();
     } catch {
-      showToast("Ошибка очистки расписания", "err");
+      showToast(t("planner.clearError"), "err");
     } finally {
       setClearingDiv(null);
     }
@@ -2850,7 +2849,7 @@ export function PlannerPage() {
     return (
       <div className="flex items-center justify-center h-64 gap-3" style={{ color: "var(--cat-text-muted)" }}>
         <Loader2 className="w-5 h-5 animate-spin" />
-        <span className="text-sm">Загрузка данных…</span>
+        <span className="text-sm">{t("planner.loadingData")}</span>
       </div>
     );
   }
@@ -2876,9 +2875,9 @@ export function PlannerPage() {
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between mb-4 shrink-0 gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--cat-text)" }}>Планировщик расписания</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--cat-text)" }}>{t("planner.plannerTitle")}</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-            Перетащите матч на поле · правый клик = меню · Escape = отменить выбор
+            {t("planner.plannerHint")}
           </p>
         </div>
 
@@ -2888,28 +2887,28 @@ export function PlannerPage() {
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold"
               style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>
               <AlertCircle className="w-3.5 h-3.5" />
-              {conflictCount.errors} конфликт{conflictCount.errors > 1 ? "а" : ""}
+              {t("planner.conflictsCount", { count: conflictCount.errors })}
             </div>
           )}
           {conflictCount.warnings > 0 && (
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold"
               style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>
               <AlertCircle className="w-3.5 h-3.5" />
-              {conflictCount.warnings} много/день
+              {t("planner.manyPerDay", { count: conflictCount.warnings })}
             </div>
           )}
           {conflictCount.back2back > 0 && (
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold"
               style={{ background: "rgba(249,115,22,0.1)", color: "#f97316", border: "1px solid rgba(249,115,22,0.3)" }}>
               <Clock className="w-3.5 h-3.5" />
-              {conflictCount.back2back} подряд
+              {t("planner.backToBack", { count: conflictCount.back2back })}
             </div>
           )}
 
           {/* Stats */}
           <div className="flex items-center gap-3 text-xs" style={{ color: "var(--cat-text-muted)" }}>
-            <span><b style={{ color: "var(--cat-text)" }}>{statsScheduled}</b> запланировано</span>
-            <span><b style={{ color: statsUnscheduled > 0 ? "#f59e0b" : "var(--cat-text)" }}>{statsUnscheduled}</b> без времени</span>
+            <span><b style={{ color: "var(--cat-text)" }}>{statsScheduled}</b> {t("planner.statsScheduled")}</span>
+            <span><b style={{ color: statsUnscheduled > 0 ? "#f59e0b" : "var(--cat-text)" }}>{statsUnscheduled}</b> {t("planner.statsUnscheduled")}</span>
           </div>
 
           <button onClick={load} className="p-1.5 rounded-lg transition-all hover:opacity-70"
@@ -2921,23 +2920,52 @@ export function PlannerPage() {
               onClick={() => setShowStadiumSchedule(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
               style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
-              <Building2 className="w-3.5 h-3.5" /> Стадионы
+              <Building2 className="w-3.5 h-3.5" /> {t("planner.stadiumsButton")}
             </button>
           )}
           <button onClick={() => setShowSettings(s => !s)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
             style={{ background: showSettings ? "var(--cat-accent)" : "var(--cat-tag-bg)", color: showSettings ? "#0A0E14" : "var(--cat-text-secondary)" }}>
-            <Settings2 className="w-3.5 h-3.5" /> Настройки
+            <Settings2 className="w-3.5 h-3.5" /> {t("planner.settingsButton")}
           </button>
           <button onClick={() => setShowAudit(a => !a)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
             style={{ background: showAudit ? "rgba(43,254,186,0.2)" : "var(--cat-tag-bg)", color: showAudit ? "#2BFEBA" : "var(--cat-text-secondary)", border: showAudit ? "1px solid rgba(43,254,186,0.4)" : "1px solid transparent" }}>
-            <Activity className="w-3.5 h-3.5" /> Аудит
+            <Activity className="w-3.5 h-3.5" /> {t("planner.auditButton")}
+          </button>
+          {/* ── Publish / Unpublish schedule ── */}
+          <button
+            disabled={publishing}
+            onClick={async () => {
+              setPublishing(true);
+              try {
+                const method = schedulePublishedAt ? "DELETE" : "POST";
+                const res = await fetch(`${base}/schedule/publish`, { method });
+                if (res.ok) {
+                  const data = await res.json();
+                  setSchedulePublishedAt(data.publishedAt ?? null);
+                  showToast(data.published ? t("planner.publishedToast") : t("planner.hiddenToast"), "ok");
+                }
+              } finally {
+                setPublishing(false);
+              }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+            style={schedulePublishedAt
+              ? { background: "rgba(43,254,186,0.15)", color: "#2BFEBA", border: "1px solid rgba(43,254,186,0.4)" }
+              : { background: "rgba(251,191,36,0.15)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.4)" }
+            }>
+            {publishing
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : schedulePublishedAt
+                ? <CheckCircle className="w-3.5 h-3.5" />
+                : <Shield className="w-3.5 h-3.5" />}
+            {schedulePublishedAt ? t("planner.published") : t("planner.publish")}
           </button>
           <button onClick={() => setShowTeamView(v => !v)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
             style={{ background: showTeamView ? "rgba(99,102,241,0.2)" : "var(--cat-tag-bg)", color: showTeamView ? "#6366f1" : "var(--cat-text-secondary)", border: showTeamView ? "1px solid rgba(99,102,241,0.4)" : "1px solid transparent" }}>
-            <Users className="w-3.5 h-3.5" /> По командам
+            <Users className="w-3.5 h-3.5" /> {t("planner.byTeams")}
           </button>
         </div>
       </div>
@@ -2948,8 +2976,8 @@ export function PlannerPage() {
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
           <div className="flex items-center gap-6 flex-wrap">
             {[
-              { label: "Начало", val: startHour, set: setStartHour, opts: Array.from({length:16},(_,i)=>i+6), fmt: (h:number)=>`${h}:00` },
-              { label: "Конец", val: endHour, set: setEndHour, opts: Array.from({length:16},(_,i)=>i+10), fmt: (h:number)=>`${h}:00` },
+              { label: t("planner.start"), val: startHour, set: setStartHour, opts: Array.from({length:16},(_,i)=>i+6), fmt: (h:number)=>`${h}:00` },
+              { label: t("planner.end"), val: endHour, set: setEndHour, opts: Array.from({length:16},(_,i)=>i+10), fmt: (h:number)=>`${h}:00` },
             ].map(({ label, val, set, opts, fmt }) => (
               <label key={label} className="flex items-center gap-2 text-xs" style={{ color: "var(--cat-text-secondary)" }}>
                 <span>{label}</span>
@@ -2960,11 +2988,11 @@ export function PlannerPage() {
               </label>
             ))}
             <label className="flex items-center gap-2 text-xs" style={{ color: "var(--cat-text-secondary)" }}>
-              <span>Интервал</span>
+              <span>{t("planner.interval")}</span>
               <select value={slotMins} onChange={e => { setSlotMins(+e.target.value); setCellHeightOverride(null); }}
                 className="rounded px-2 py-1 text-xs outline-none"
                 style={{ background: "var(--cat-input-bg, var(--cat-card-bg))", border: "1px solid var(--cat-card-border)", color: "var(--cat-text)" }}>
-                {[5, 10, 15, 20, 25, 30, 40, 45, 50, 55, 60, 70, 80, 90].map(m => <option key={m} value={m}>{m} мин</option>)}
+                {[5, 10, 15, 20, 25, 30, 40, 45, 50, 55, 60, 70, 80, 90].map(m => <option key={m} value={m}>{m} {t("planner.min")}</option>)}
               </select>
             </label>
             {/* Sync grid from division config */}
@@ -2983,15 +3011,15 @@ export function PlannerPage() {
               }}
               className="px-2 py-1 rounded-lg text-xs font-semibold transition-all"
               style={{ background: "rgba(43,254,186,0.15)", color: "#2BFEBA", border: "1px solid rgba(43,254,186,0.3)" }}
-              title="Синхронизировать сетку с настройками дивизиона">
-              ↺ Из дивизиона
+              title={t("planner.syncGrid")}>
+              {t("planner.fromDivision")}
             </button>
             <label className="flex items-center gap-2 text-xs" style={{ color: "var(--cat-text-secondary)" }}>
-              <span>Высота ячейки</span>
+              <span>{t("planner.cellHeight")}</span>
               <select value={cellHeightOverride ?? ""} onChange={e => setCellHeightOverride(e.target.value ? +e.target.value : null)}
                 className="rounded px-2 py-1 text-xs outline-none"
                 style={{ background: "var(--cat-input-bg, var(--cat-card-bg))", border: "1px solid var(--cat-card-border)", color: "var(--cat-text)" }}>
-                <option value="">Авто ({cellHeight}px)</option>
+                <option value="">{t("planner.autoHeight", { height: cellHeight })}</option>
                 {[12, 16, 20, 28, 40, 52, 64, 72, 84, 96].map(h => <option key={h} value={h}>{h}px</option>)}
               </select>
             </label>
@@ -3064,25 +3092,27 @@ export function PlannerPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-black text-sm" style={{ color: isFree ? "var(--cat-text-muted)" : "var(--cat-text)" }}>
-                    {isFree ? "Авто-расписание" : "Авто-расписание"}
+                    {t("planner.autoSchedule")}
                   </span>
                   {/* Plan badge */}
                   <span className="text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest"
                     style={{ background: `${planColor}18`, color: planColor, border: `1px solid ${planColor}35` }}>
-                    {isFree ? "FREE · недоступно" : planLabel}
+                    {isFree ? t("planner.freePlanBadge") : planLabel}
                   </span>
                   {/* Result badge */}
                   {!isFree && schedResult && (
                     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                       style={{ background: schedResult.unassigned > 0 ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)", color: schedResult.unassigned > 0 ? "#f59e0b" : "#22c55e" }}>
-                      ✓ {schedResult.updated} расставлено{schedResult.unassigned > 0 ? ` · ${schedResult.unassigned} не вошло` : ""}
+                      {schedResult.unassigned > 0
+                        ? t("planner.scheduleResultBadgePartial", { updated: schedResult.updated, unassigned: schedResult.unassigned })
+                        : t("planner.scheduleResultBadge", { updated: schedResult.updated })}
                     </span>
                   )}
                 </div>
                 <p className="text-[11px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
                   {isFree
-                    ? "Умная генерация расписания — доступна со Starter и выше"
-                    : `Умная генерация по ${classes.length} дивизион${classes.length > 1 ? (classes.length < 5 ? "а" : "ов") : "у"} · без конфликтов`}
+                    ? t("planner.autoScheduleUpsell")
+                    : t("planner.autoScheduleHint", { count: classes.length })}
                 </p>
               </div>
 
@@ -3104,14 +3134,14 @@ export function PlannerPage() {
                         {/* Partial regen toggle */}
                         <button
                           onClick={e => { e.stopPropagation(); setPartialRegen(v => !v); }}
-                          title={partialRegen ? "Режим дополнения: уже расставленные матчи сохраняются" : "Режим перезаписи: все матчи будут переставлены"}
+                          title={partialRegen ? t("planner.appendMode") : t("planner.overwriteMode")}
                           className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
                           style={{
                             background: partialRegen ? "rgba(99,102,241,0.15)" : "var(--cat-tag-bg)",
                             color: partialRegen ? "#6366f1" : "var(--cat-text-muted)",
                             border: `1px solid ${partialRegen ? "rgba(99,102,241,0.35)" : "var(--cat-card-border)"}`,
                           }}>
-                          {partialRegen ? "🔒 Сохранить" : "♻️ Перезапись"}
+                          {partialRegen ? t("planner.preserveMode") : t("planner.overwriteMode2")}
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); runScheduleAll(); }}
@@ -3125,7 +3155,7 @@ export function PlannerPage() {
                           {generatingDiv === "all"
                             ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             : <Zap className="w-3.5 h-3.5" />}
-                          Сгенерировать все
+                          {t("planner.generateAll")}
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); clearSchedule(); }}
@@ -3135,7 +3165,7 @@ export function PlannerPage() {
                           {clearingDiv === "all"
                             ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             : <Trash2 className="w-3.5 h-3.5" />}
-                          Очистить все
+                          {t("planner.clearAll")}
                         </button>
                       </div>
                     )}
@@ -3190,15 +3220,15 @@ export function PlannerPage() {
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#f59e0b" }} />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold mb-1" style={{ color: "#f59e0b" }}>
-                {schedResult.unassigned} матч{schedResult.unassigned === 1 ? "" : schedResult.unassigned < 5 ? "а" : "ей"} не удалось расставить
+                {t("planner.unscheduledHintsTitle", { count: schedResult.unassigned })}
               </p>
               <div className="text-[11px] space-y-1" style={{ color: "var(--cat-text-muted)" }}>
-                <p>Возможные причины и советы:</p>
+                <p>{t("planner.hintsReasons")}</p>
                 <ul className="list-disc list-inside space-y-0.5 pl-1">
-                  <li>Не хватает слотов — <b>расширьте время работы стадиона</b> или добавьте поля</li>
-                  <li>Слишком строгий отдых команд — уменьшите <b>мин. отдых</b> или <b>макс. игр/день</b></li>
-                  <li>Матчи плей-офф до группового этапа — включите <b>больше дней</b> в конце</li>
-                  <li>Включите режим <b>🔒 Сохранить</b> чтобы добавить незаполненные матчи без сброса</li>
+                  <li>{t("planner.hintSlots")}</li>
+                  <li>{t("planner.hintRest")}</li>
+                  <li>{t("planner.hintPlayoff")}</li>
+                  <li>{t("planner.hintAppend")}</li>
                 </ul>
                 {schedResult.msg && schedResult.msg !== "" && (
                   <p className="mt-1 font-mono text-[10px] opacity-60">{schedResult.msg}</p>
@@ -3218,7 +3248,7 @@ export function PlannerPage() {
 
         <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "var(--cat-tag-bg)" }}>
           {days.length === 0 ? (
-            <span className="px-4 py-1.5 text-xs" style={{ color: "var(--cat-text-muted)" }}>Нет матчей с датами</span>
+            <span className="px-4 py-1.5 text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("planner.noMatchesWithDatesTabs")}</span>
           ) : days.map(day => (
             <button key={day} onClick={() => setActiveDay(day)}
               className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all"
@@ -3233,7 +3263,7 @@ export function PlannerPage() {
             <button onClick={() => setStadiumFilter(null)}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
               style={stadiumFilter === null ? { background: "var(--cat-accent)", color: "#0A0E14" } : { color: "var(--cat-text-secondary)" }}>
-              Все
+              {t("planner.allFilter")}
             </button>
             {stadiums.map(st => (
               <button key={st} onClick={() => setStadiumFilter(prev => prev === st ? null : st)}
@@ -3248,7 +3278,7 @@ export function PlannerPage() {
         {filterClass && (
           <span className="flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-bold ml-2"
             style={{ background: "rgba(6,182,212,0.12)", color: "#06b6d4", border: "1px solid rgba(6,182,212,0.3)" }}>
-            {classes.find(c => c.id === filterClass)?.name ?? `Класс ${filterClass}`}
+            {classes.find(c => c.id === filterClass)?.name ?? `#${filterClass}`}
             <button onClick={() => setFilterClass(null)} className="opacity-60 hover:opacity-100">×</button>
           </span>
         )}
@@ -3257,7 +3287,7 @@ export function PlannerPage() {
           <div className="ml-2 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold animate-pulse"
             style={{ background: "var(--cat-accent)", color: "#0A0E14" }}>
             <Move className="w-3.5 h-3.5" />
-            Выбран #{selectedMatch.matchNumber} — кликните ячейку или перетащите
+            {t("planner.selectedMatchHint", { num: selectedMatch.matchNumber ?? "—" })}
             <button onClick={() => setSelectedMatch(null)}><X className="w-3.5 h-3.5" /></button>
           </div>
         )}
@@ -3266,7 +3296,7 @@ export function PlannerPage() {
           <div className="ml-2 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold"
             style={{ background: "rgba(43,254,186,0.1)", color: "#2BFEBA", border: "1px solid rgba(43,254,186,0.3)" }}>
             <Zap className="w-3.5 h-3.5" />
-            Тяните на нужную ячейку
+            {t("planner.draggingHint")}
           </div>
         )}
       </div>
@@ -3281,7 +3311,7 @@ export function PlannerPage() {
           <div className="flex items-center justify-between mb-1 sticky top-0 pb-2 z-10"
             style={{ background: "var(--cat-bg, #0f1117)" }}>
             <span className="text-[10px] font-black uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
-              БЕЗ ВРЕМЕНИ
+              {t("planner.withoutTime")}
               <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px]"
                 style={{ background: unscheduled.length > 0 ? "rgba(245,158,11,0.2)" : "rgba(34,197,94,0.2)", color: unscheduled.length > 0 ? "#f59e0b" : "#22c55e" }}>
                 {unscheduled.length}
@@ -3290,7 +3320,7 @@ export function PlannerPage() {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowAddMatch(true)}
-                title="Добавить матч вручную"
+                title={t("planner.addMatch")}
                 className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[10px] font-bold transition-all hover:opacity-80"
                 style={{ background: "rgba(43,254,186,0.12)", color: "#2BFEBA", border: "1px solid rgba(43,254,186,0.25)" }}>
                 <Plus className="w-3 h-3" />
@@ -3298,7 +3328,7 @@ export function PlannerPage() {
               <select value={filterStage ?? ""} onChange={e => setFilterStage(e.target.value ? +e.target.value : null)}
                 className="rounded px-1 py-0.5 text-[10px] outline-none"
                 style={{ background: "var(--cat-input-bg, var(--cat-card-bg))", border: "1px solid var(--cat-card-border)", color: "var(--cat-text)" }}>
-                <option value="">Все</option>
+                <option value="">{t("planner.allFilter")}</option>
                 {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
@@ -3308,7 +3338,7 @@ export function PlannerPage() {
             <div className="flex flex-col items-center justify-center py-8 gap-2 rounded-xl border border-dashed"
               style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-muted)" }}>
               <CheckCircle className="w-6 h-6 opacity-40" />
-              <span className="text-xs text-center px-2">Все матчи запланированы!</span>
+              <span className="text-xs text-center px-2">{t("planner.allScheduled")}</span>
             </div>
           ) : (() => {
             // Group by stageId + groupRound
@@ -3339,12 +3369,12 @@ export function PlannerPage() {
                 : `k:${sid}`;
 
               if (!sections.has(key)) {
-                const stageName = m.stage?.name ?? "Этап";
+                const stageName = m.stage?.name ?? "";
                 let label: string;
                 let subLabel: string | undefined;
                 if (isGroup) {
                   if (roundNum > 0) {
-                    label = `Тур ${roundNum}`;
+                    label = t("planner.tourNumber", { num: roundNum });
                     subLabel = stageName; // e.g. "Group Stage"
                   } else {
                     label = stageName; // no round info yet
@@ -3426,7 +3456,7 @@ export function PlannerPage() {
 
           {activeFields.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-sm" style={{ color: "var(--cat-text-muted)" }}>
-              Добавьте поля в настройках турнира
+              {t("planner.addFieldsHint")}
             </div>
           ) : (
             <div style={{ minWidth: activeFields.length * 200 + 56 }}>
@@ -3486,7 +3516,7 @@ export function PlannerPage() {
                           {matchCount > 0 && (
                             <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
                               style={{ background: `${utilColor}20`, color: utilColor, border: `1px solid ${utilColor}40` }}>
-                              {matchCount} матч · {utilPct}%
+                              {t("planner.matchUtilization", { count: matchCount, pct: utilPct })}
                             </span>
                           )}
                         </div>
@@ -3627,7 +3657,7 @@ export function PlannerPage() {
       {/* ── Legend ───────────────────────────────────────────────────────── */}
       {stages.length > 0 && (
         <div className="flex items-center gap-3 mt-3 flex-wrap shrink-0">
-          <span className="text-[10px] font-bold" style={{ color: "var(--cat-text-muted)" }}>ЭТАПЫ:</span>
+          <span className="text-[10px] font-bold" style={{ color: "var(--cat-text-muted)" }}>{t("planner.stagesLabel")}</span>
           {stages.map((s, i) => (
             <button key={s.id}
               onClick={() => setFilterStage(prev => prev === s.id ? null : s.id)}
@@ -3641,19 +3671,19 @@ export function PlannerPage() {
           <div className="flex items-center gap-3 ml-4 pl-4" style={{ borderLeft: "1px solid var(--cat-card-border)" }}>
             <div className="flex items-center gap-1.5">
               <span style={{ fontSize: 10 }}>👑</span>
-              <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Финал</span>
+              <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{t("planner.legendFinal")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Clock className="w-2.5 h-2.5" style={{ color: "#f97316" }} />
-              <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Мало отдыха</span>
+              <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{t("planner.legendLowRest")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#ef4444" }} />
-              <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Конфликт команды</span>
+              <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{t("planner.legendConflict")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#f59e0b" }} />
-              <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Много игр в день</span>
+              <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{t("planner.legendManyPerDay")}</span>
             </div>
           </div>
         </div>
@@ -3692,7 +3722,7 @@ export function PlannerPage() {
           onClose={() => setShowStadiumSchedule(false)}
           onSaved={(entries) => {
             setStadiumSchedules(entries);
-            showToast("Расписание стадионов сохранено", "ok");
+            showToast(t("planner.stadiumsSaved"), "ok");
           }}
         />
       )}
@@ -3704,7 +3734,7 @@ export function PlannerPage() {
           stages={stages}
           classes={classes}
           onClose={() => setShowAddMatch(false)}
-          onCreated={() => { load(); showToast("✅ Матч создан — перетащите его на поле", "ok"); }}
+          onCreated={() => { load(); showToast(t("planner.matchCreated"), "ok"); }}
         />
       )}
     </div>

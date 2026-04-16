@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organizations, tournaments, tournamentStages, qualificationRules, tournamentRegistrations } from "@/db/schema";
+import { organizations, tournaments, tournamentStages, tournamentClasses, qualificationRules, tournamentRegistrations } from "@/db/schema";
 import { eq, and, asc, inArray } from "drizzle-orm";
 import { getEffectivePlan, PLAN_LIMITS } from "@/lib/plan-gates";
 import { computeLiveGroupStandings, type StoredStandingRow } from "@/lib/live-standings";
@@ -29,6 +29,7 @@ export async function GET(
     ),
   });
   if (!tournament) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!tournament.schedulePublishedAt) return NextResponse.json({ liveEnabled: false, hasLive: false, stages: [] });
 
   // Check if live standings are enabled for this tournament's plan
   const effectivePlan = getEffectivePlan(
@@ -74,6 +75,16 @@ export async function GET(
       },
     },
   });
+
+  // Загрузим имена дивизионов для каждого этапа
+  const classIds = [...new Set(stages.map(s => s.classId).filter(Boolean) as number[])];
+  const classRows = classIds.length > 0
+    ? await db.query.tournamentClasses.findMany({
+        where: inArray(tournamentClasses.id, classIds),
+        columns: { id: true, name: true },
+      })
+    : [];
+  const classMap = new Map(classRows.map(c => [c.id, c.name]));
 
   // Для каждого этапа грузим qualificationRules
   const allStageIds = stages.map(s => s.id);
@@ -199,6 +210,7 @@ export async function GET(
         zones:      zonesByStage.get(stage.id) ?? [],
         groups:     filteredGroups,
         hasLive:    stageHasLive,
+        className:  stage.classId ? (classMap.get(stage.classId) ?? null) : null,
       };
     })
   );
