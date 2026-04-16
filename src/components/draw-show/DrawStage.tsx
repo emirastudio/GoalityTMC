@@ -95,6 +95,11 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
   const isError = "error" in plan;
 
   return createPortal(
+    // Stage always renders in its own "cinema mode" palette: deep navy
+    // background with a mint spotlight glow — regardless of whether the
+    // underlying admin page is in light or dark theme. This matches how real
+    // draw broadcasts work (lights dim, stage lights up) and guarantees the
+    // overlay is visually distinct from the page behind it.
     <div
       ref={rootRef}
       // Avoid role="dialog" since we want keyboard defaults (arrow keys)
@@ -102,8 +107,8 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
       className="fixed inset-0 z-[100] flex flex-col"
       style={{
         background:
-          "linear-gradient(135deg, var(--cat-bg) 0%, color-mix(in srgb, var(--cat-accent) 8%, var(--cat-bg)) 100%)",
-        color: "var(--cat-text)",
+          "linear-gradient(135deg, #05080f 0%, #0b1122 50%, #05080f 100%)",
+        color: "#f5f7fb",
       }}
     >
       {/* Decorative glow — pure CSS, no animation cost */}
@@ -114,7 +119,7 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
           inset: 0,
           pointerEvents: "none",
           background:
-            "radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--cat-accent) 18%, transparent) 0%, transparent 60%)",
+            "radial-gradient(circle at 50% 0%, rgba(43, 254, 186, 0.22) 0%, transparent 60%)",
         }}
       />
 
@@ -127,14 +132,14 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
               src={logoUrl}
               alt=""
               className="w-10 h-10 rounded-xl object-cover"
-              style={{ border: "1px solid var(--cat-card-border)" }}
+              style={{ border: "1px solid rgba(255,255,255,0.12)" }}
             />
           ) : (
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{
-                background: "var(--cat-accent)",
-                color: "var(--cat-accent-text)",
+                background: "#2BFEBA",
+                color: "#05080f",
               }}
             >
               <Sparkles className="w-5 h-5" />
@@ -143,7 +148,7 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
           <div>
             <p
               className="text-xs font-bold uppercase tracking-widest"
-              style={{ color: "var(--cat-text-muted)" }}
+              style={{ color: "rgba(245,247,251,0.55)" }}
             >
               {t("stage.eyebrow")}
             </p>
@@ -159,8 +164,8 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
             title={t(isFullscreen ? "stage.exitFullscreen" : "stage.enterFullscreen")}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-70"
             style={{
-              background: "var(--cat-tag-bg)",
-              color: "var(--cat-text-muted)",
+              background: "rgba(255,255,255,0.08)",
+              color: "rgba(245,247,251,0.7)",
             }}
           >
             {isFullscreen ? (
@@ -174,8 +179,8 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
             title={t("stage.close")}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity hover:opacity-70"
             style={{
-              background: "var(--cat-tag-bg)",
-              color: "var(--cat-text-muted)",
+              background: "rgba(255,255,255,0.08)",
+              color: "rgba(245,247,251,0.7)",
             }}
           >
             <X className="w-4 h-4" />
@@ -189,17 +194,17 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
           <div
             className="max-w-md text-center rounded-2xl px-6 py-8"
             style={{
-              background: "var(--cat-card-bg)",
-              border: "1px solid var(--badge-error-text)",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid #ef4444",
             }}
           >
             <p
               className="text-xs font-bold uppercase tracking-widest mb-2"
-              style={{ color: "var(--badge-error-text)" }}
+              style={{ color: "#ef4444" }}
             >
               {t("stage.errorTitle")}
             </p>
-            <p className="text-sm" style={{ color: "var(--cat-text)" }}>
+            <p className="text-sm" style={{ color: "#f5f7fb" }}>
               {plan.error}
             </p>
           </div>
@@ -207,19 +212,19 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
           <div className="text-center">
             <p
               className="text-xs font-bold uppercase tracking-widest mb-3"
-              style={{ color: "var(--cat-text-muted)" }}
+              style={{ color: "rgba(245,247,251,0.55)" }}
             >
               {t("stage.ready")}
             </p>
             <p
               className="text-3xl font-black mb-2"
-              style={{ color: "var(--cat-text)" }}
+              style={{ color: "#f5f7fb" }}
             >
               {t("stage.placeholderTitle")}
             </p>
             <p
               className="text-sm max-w-md mx-auto"
-              style={{ color: "var(--cat-text-muted)" }}
+              style={{ color: "rgba(245,247,251,0.6)" }}
             >
               {t("stage.placeholderHint", { count: plan.steps.length })}
             </p>
@@ -230,14 +235,14 @@ export function DrawStage({ teams, config, title, logoUrl, onClose }: Props) {
       {/* ── Footer hints ──────────────────────────────────── */}
       <div
         className="relative flex items-center justify-center gap-6 px-8 py-4 text-xs"
-        style={{ color: "var(--cat-text-muted)" }}
+        style={{ color: "rgba(245,247,251,0.5)" }}
       >
         <span>
-          <kbd className="px-1.5 py-0.5 rounded mr-1" style={{ background: "var(--cat-tag-bg)" }}>F</kbd>
+          <kbd className="px-1.5 py-0.5 rounded mr-1" style={{ background: "rgba(255,255,255,0.08)", color: "#f5f7fb" }}>F</kbd>
           {t("stage.hintFullscreen")}
         </span>
         <span>
-          <kbd className="px-1.5 py-0.5 rounded mr-1" style={{ background: "var(--cat-tag-bg)" }}>Esc</kbd>
+          <kbd className="px-1.5 py-0.5 rounded mr-1" style={{ background: "rgba(255,255,255,0.08)", color: "#f5f7fb" }}>Esc</kbd>
           {t("stage.hintClose")}
         </span>
       </div>
