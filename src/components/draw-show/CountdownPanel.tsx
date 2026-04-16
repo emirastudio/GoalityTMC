@@ -23,6 +23,13 @@ import { Sparkles, Calendar, Eye } from "lucide-react";
 
 type Props = {
   scheduledAt: string; // ISO timestamp
+  /**
+   * IANA time zone of the organizer when they set the schedule.
+   * Shown as a secondary line under the primary (viewer-local) clock
+   * so a visitor in Helsinki knows the organizer in Riga meant this
+   * exact moment.
+   */
+  scheduledAtTz?: string;
   /** Tournament name → big title. Falls back to a generic label. */
   title?: string;
   /** Division / age class → subtitle. Rendered under the title. */
@@ -44,6 +51,7 @@ type Props = {
 
 export function CountdownPanel({
   scheduledAt,
+  scheduledAtTz,
   title,
   subtitle,
   logoUrl,
@@ -78,14 +86,48 @@ export function CountdownPanel({
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
 
-  const targetDateLabel = useMemo(
+  // Primary line: viewer's local time including the short time-zone
+  // name (e.g. "EET" / "CEST"). We switch to explicit fields because
+  // dateStyle/timeStyle cannot be combined with timeZoneName.
+  const viewerDateLabel = useMemo(
     () =>
       new Intl.DateTimeFormat(locale, {
-        dateStyle: "full",
-        timeStyle: "short",
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short",
       }).format(new Date(scheduledAt)),
     [scheduledAt, locale],
   );
+
+  // Secondary line: organizer's local time in their stored IANA zone,
+  // so a viewer in Helsinki sees "Organizer: 14:30 Riga · Europe/Riga"
+  // even if it's 15:30 for them. Suppressed when the organizer's zone
+  // matches the viewer's zone (no new information to add).
+  const viewerTz = useMemo(() => {
+    if (typeof Intl === "undefined") return undefined;
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return undefined;
+    }
+  }, []);
+  const organizerDateLabel = useMemo(() => {
+    if (!scheduledAtTz || scheduledAtTz === viewerTz) return null;
+    try {
+      return new Intl.DateTimeFormat(locale, {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: scheduledAtTz,
+      }).format(new Date(scheduledAt));
+    } catch {
+      return null;
+    }
+  }, [scheduledAt, scheduledAtTz, viewerTz, locale]);
 
   return (
     <div
@@ -151,13 +193,35 @@ export function CountdownPanel({
 
       {/* The clock. */}
       <div className="relative z-[1] flex-1 flex flex-col items-center justify-center px-6 pb-16">
-        <p
-          className="text-xs md:text-sm font-bold uppercase tracking-widest mb-6 flex items-center gap-2"
-          style={{ color: "rgba(245,247,251,0.55)" }}
-        >
-          <Calendar className="w-3.5 h-3.5" />
-          {t("startsAt", { when: targetDateLabel })}
-        </p>
+        <div className="mb-6 flex flex-col items-center gap-1.5">
+          <p
+            className="text-xs md:text-sm font-bold uppercase tracking-widest flex items-center gap-2"
+            style={{ color: "rgba(245,247,251,0.55)" }}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            {t("startsAt", { when: viewerDateLabel })}
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+              style={{
+                background: "rgba(43,254,186,0.12)",
+                color: "#2BFEBA",
+              }}
+            >
+              {t("yourTime")}
+            </span>
+          </p>
+          {organizerDateLabel && scheduledAtTz && (
+            <p
+              className="text-[11px]"
+              style={{ color: "rgba(245,247,251,0.4)" }}
+            >
+              {t("organizerTime", {
+                when: organizerDateLabel,
+                tz: scheduledAtTz,
+              })}
+            </p>
+          )}
+        </div>
 
         <div className="flex items-start gap-3 md:gap-6">
           <DigitBlock value={days} label={t("unitDays")} />

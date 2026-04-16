@@ -177,4 +177,13 @@ export type ShareableDrawState = {
    * after it) plays the premiere; subsequent visits play replays.
    */
   scheduledAt?: string;
+  /**
+   * IANA time zone identifier of the organizer when they set
+   * `scheduledAt` (e.g. "Europe/Tallinn"). Purely informational —
+   * the actual premiere moment is absolute (UTC). The viewer page
+   * shows both "your local time" and "organizer's time" so a visitor
+   * in Helsinki and the organizer in Berlin are never confused about
+   * which one is the reference.
+   */
+  scheduledAtTz?: string;
 };

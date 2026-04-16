@@ -147,6 +147,27 @@ export function DrawWizard({ id }: { id?: string }) {
   // type="datetime-local"> string (YYYY-MM-DDTHH:MM) and converted to
   // ISO on submit so the consumer always sees a normalized timestamp.
   const [scheduledAt, setScheduledAt] = useState("");
+
+  // Browser's IANA time zone + signed UTC offset string. Shown under
+  // the datetime input as a hint and persisted alongside scheduledAt
+  // so the viewer's countdown can also display the organizer's
+  // intended local time (not just the viewer's).
+  const userTz = useMemo(() => {
+    if (typeof Intl === "undefined") return null;
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const offsetMinutes = new Date().getTimezoneOffset();
+      const offsetHours = -offsetMinutes / 60;
+      const sign = offsetHours >= 0 ? "+" : "−";
+      const abs = Math.abs(offsetHours);
+      const whole = Math.floor(abs);
+      const frac = abs - whole;
+      const offset = `UTC${sign}${whole}${frac === 0 ? "" : ":" + String(Math.round(frac * 60)).padStart(2, "0")}`;
+      return { tz, offset };
+    } catch {
+      return null;
+    }
+  }, []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -265,6 +286,9 @@ export function DrawWizard({ id }: { id?: string }) {
       })),
       ...(branding ? { branding } : {}),
       ...(scheduledAtIso ? { scheduledAt: scheduledAtIso } : {}),
+      ...(scheduledAtIso && userTz?.tz
+        ? { scheduledAtTz: userTz.tz }
+        : {}),
     };
 
     try {
@@ -618,11 +642,22 @@ export function DrawWizard({ id }: { id?: string }) {
                 </button>
               )}
             </div>
+            {/* Always-visible timezone hint: the datetime-local input
+                has no UI for timezone, so we surface the browser's
+                IANA zone + UTC offset here so the organizer is never
+                surprised when a viewer in Helsinki sees a different
+                clock. */}
             <p
-              className="text-xs mt-1.5"
+              className="text-xs mt-1.5 flex flex-wrap items-baseline gap-1"
               style={{ color: "var(--cat-text-muted)" }}
             >
-              {t("scheduleHint")}
+              <span style={{ color: "var(--cat-accent)" }}>
+                {t("scheduleYourTz", {
+                  tz: userTz?.tz ?? "UTC",
+                  offset: userTz?.offset ?? "±0",
+                })}
+              </span>
+              <span>{t("scheduleHint")}</span>
             </p>
           </div>
 

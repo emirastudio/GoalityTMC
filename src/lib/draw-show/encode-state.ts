@@ -163,6 +163,12 @@ function isShareableDrawState(value: unknown): value is ShareableDrawState {
   ) {
     return false;
   }
+  if (
+    value.scheduledAtTz !== undefined &&
+    typeof value.scheduledAtTz !== "string"
+  ) {
+    return false;
+  }
 
   return true;
 }

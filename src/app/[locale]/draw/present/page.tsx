@@ -155,6 +155,7 @@ export default function DrawPresentPage() {
     return (
       <CountdownPanel
         scheduledAt={decoded.scheduledAt}
+        scheduledAtTz={decoded.scheduledAtTz}
         title={stageTitle}
         subtitle={stageSubtitle}
         logoUrl={stageLogo}

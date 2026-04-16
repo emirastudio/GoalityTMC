@@ -103,6 +103,12 @@ function isShareableDrawStateShape(value: unknown): value is object {
   ) {
     return false;
   }
+  if (
+    value.scheduledAtTz !== undefined &&
+    typeof value.scheduledAtTz !== "string"
+  ) {
+    return false;
+  }
 
   return true;
 }
