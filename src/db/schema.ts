@@ -1746,3 +1746,41 @@ export const publicDraws = pgTable("public_draws", {
   // Opaque viewer counter — cheap engagement metric, non-authoritative.
   viewCount: integer("view_count").default(0).notNull(),
 });
+
+// ─── Lead capture for the public /draw product ──────────────────
+//
+// Mandatory email-gate before generating a share link. Each lead is
+// one consent event; the same email can appear repeatedly if it
+// creates multiple draws (each row carries the corresponding draw_id).
+export const publicDrawLeads = pgTable("public_draw_leads", {
+  id: serial("id").primaryKey(),
+  drawId: text("draw_id").references(() => publicDraws.id, { onDelete: "set null" }),
+  email: text("email").notNull(),
+  organization: text("organization"),
+  consentedAt: timestamp("consented_at").defaultNow().notNull(),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  referrer: text("referrer"),
+  locale: text("locale"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Audit journal for superadmin ───────────────────────────────
+//
+// Append-only log: visited (landing loaded), created (wizard
+// submitted), activated (stage actually played). `status` separates
+// the monetization mode so superadmin can see conversion at a glance.
+export const drawShowEvents = pgTable("draw_show_events", {
+  id: serial("id").primaryKey(),
+  eventType: text("event_type").notNull(), // visited | created | activated
+  status: text("status").notNull().default("free_standalone"), // free_standalone | free_plan | paid | promo
+  drawId: text("draw_id").references(() => publicDraws.id, { onDelete: "set null" }),
+  email: text("email"),
+  promoCode: text("promo_code"),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  referrer: text("referrer"),
+  locale: text("locale"),
+  meta: jsonb("meta").default({}).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

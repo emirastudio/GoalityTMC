@@ -4360,7 +4360,18 @@
     "errorPlayoffOdd": "Playoff vajab paarisarv võistkondi — igaühel peab olema vastane.",
     "errorFewerTeamsThanGroups": "Sul on {teams} võistkonda {groups} grupi jaoks. Vali vähem gruppe või lisa võistkondi.",
     "errorGroupCountRange": "Gruppide arv peab olema {min} kuni {max}.",
-    "errorDuplicates": "Topeltnimed: {names}. Nimeta ümber, et järjekord oleks selge."
+    "errorDuplicates": "Topeltnimed: {names}. Nimeta ümber, et järjekord oleks selge.",
+    "leadEyebrow": "Peaaegu valmis",
+    "leadTitle": "Kuhu saata sinu loosimise link?",
+    "leadBody": "Saadame jagatava lingi ja arve võimalike tasuliste funktsioonide eest. Andmeid ei müü.",
+    "leadEmailPlaceholder": "sina@klubi.ee",
+    "leadOrgPlaceholder": "Organisatsioon (valikuline)",
+    "leadConsent": "Nõustun andmete töötlemisega vastavalt <privacy>Privaatsuspoliitikale</privacy>.",
+    "leadCancel": "Tagasi",
+    "leadSubmit": "Saa link",
+    "leadSubmitting": "Salvestan…",
+    "leadError_invalid_email": "Sisesta kehtiv e-posti aadress.",
+    "leadError_consent_required": "Märgi nõusoleku ruut, et jätkata."
   },
   "countdown": {
     "eyebrow": "Esilinastus",

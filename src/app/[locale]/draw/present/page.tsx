@@ -165,6 +165,11 @@ export default function DrawPresentPage() {
     );
   }
 
+  // Activate-event tracking only makes sense for server-persisted
+  // (short-id) draws. Long base64 links don't have a corresponding
+  // public_draws row to attribute the activation to.
+  const stageDrawId = isShortId(sParam) ? sParam : undefined;
+
   return (
     <>
       <DrawStage
@@ -175,6 +180,7 @@ export default function DrawPresentPage() {
         logoUrl={stageLogo}
         totalTeamsCount={teams.length}
         onClose={() => setStageClosed(true)}
+        publicDrawId={stageDrawId}
       />
     </>
   );

@@ -16,12 +16,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { publicDraws } from "@/db/schema";
+import { publicDraws, publicDrawLeads, drawShowEvents } from "@/db/schema";
 import { generateShortId } from "@/lib/draw-show/short-id";
 
 // Conservative cap so an abusive client can't stuff the table with
 // megabyte payloads. The wizard produces a few KB at most.
 const MAX_BODY_BYTES = 32 * 1024;
+
+// Loose RFC-5322-ish: just enough to reject obviously bad inputs.
+// Strict deliverability check is the user's problem at activation time.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type SharePayload = {
+  state: unknown;
+  email: string;
+  consent: boolean;
+  organization?: string;
+};
 
 export async function POST(req: NextRequest) {
   // Reject oversized bodies before we even parse JSON.
@@ -37,12 +48,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  if (!isShareableDrawStateShape(raw)) {
+  // Two accepted shapes for backwards-compat:
+  //   • new wizard sends { state, email, consent, organization? }
+  //   • legacy direct ShareableDrawState (no lead capture)
+  // The new shape is required once the wizard is updated; we detect
+  // by presence of the `email` key.
+  const looksWrapped =
+    typeof raw === "object" &&
+    raw !== null &&
+    "email" in (raw as Record<string, unknown>);
+
+  let state: unknown;
+  let email: string | null = null;
+  let consent = false;
+  let organization: string | undefined;
+
+  if (looksWrapped) {
+    const payload = raw as SharePayload;
+    state = payload.state;
+    if (typeof payload.email !== "string" || !EMAIL_RE.test(payload.email.trim())) {
+      return NextResponse.json({ error: "invalid_email" }, { status: 400 });
+    }
+    if (payload.consent !== true) {
+      return NextResponse.json({ error: "consent_required" }, { status: 400 });
+    }
+    email = payload.email.trim().toLowerCase();
+    consent = true;
+    if (typeof payload.organization === "string") {
+      organization = payload.organization.trim() || undefined;
+    }
+  } else {
+    state = raw;
+  }
+
+  if (!isShareableDrawStateShape(state)) {
     return NextResponse.json({ error: "invalid_state_shape" }, { status: 400 });
   }
 
-  // Collision-retry a few times. With 31^6 ≈ 887M keys and current
-  // volume this is paranoia, but it costs nothing.
+  // Persist the draw with collision-retried short id, then record the
+  // lead + audit event. The two side-tables are best-effort — if they
+  // fail we still return the id so the user can run their show.
   let lastError: unknown = null;
   for (let attempt = 0; attempt < 4; attempt++) {
     const id = generateShortId();
@@ -53,7 +98,46 @@ export async function POST(req: NextRequest) {
         .where(eq(publicDraws.id, id))
         .limit(1);
       if (existing.length > 0) continue;
-      await db.insert(publicDraws).values({ id, state: raw });
+      await db.insert(publicDraws).values({ id, state });
+
+      const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+      const userAgent = req.headers.get("user-agent") ?? null;
+      const referrer = req.headers.get("referer") ?? null;
+      const locale =
+        req.headers.get("accept-language")?.split(",")[0]?.trim() ?? null;
+
+      if (email && consent) {
+        try {
+          await db.insert(publicDrawLeads).values({
+            drawId: id,
+            email,
+            organization,
+            ip,
+            userAgent,
+            referrer,
+            locale,
+          });
+        } catch (e) {
+          console.error("public_draw_leads insert failed", e);
+        }
+      }
+
+      try {
+        await db.insert(drawShowEvents).values({
+          eventType: "created",
+          status: "free_standalone",
+          drawId: id,
+          email,
+          ip,
+          userAgent,
+          referrer,
+          locale,
+          meta: { organization },
+        });
+      } catch (e) {
+        console.error("draw_show_events insert (created) failed", e);
+      }
+
       return NextResponse.json({ id }, { status: 201 });
     } catch (e) {
       lastError = e;

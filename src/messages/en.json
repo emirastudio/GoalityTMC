@@ -4360,7 +4360,18 @@
     "errorPlayoffOdd": "Playoff needs an even number of teams so everyone has an opponent.",
     "errorFewerTeamsThanGroups": "You have {teams} teams but picked {groups} groups. Pick fewer groups or add more teams.",
     "errorGroupCountRange": "Group count must be between {min} and {max}.",
-    "errorDuplicates": "Duplicate team names: {names}. Rename so the reveal order is clear."
+    "errorDuplicates": "Duplicate team names: {names}. Rename so the reveal order is clear.",
+    "leadEyebrow": "Almost there",
+    "leadTitle": "Where should we send your draw link?",
+    "leadBody": "We'll email your shareable link and the receipt for any future paid features. We never sell your data.",
+    "leadEmailPlaceholder": "you@club.com",
+    "leadOrgPlaceholder": "Organization (optional)",
+    "leadConsent": "I agree to the processing of my data per the <privacy>Privacy policy</privacy>.",
+    "leadCancel": "Back",
+    "leadSubmit": "Get my draw link",
+    "leadSubmitting": "Saving…",
+    "leadError_invalid_email": "Please enter a valid email address.",
+    "leadError_consent_required": "Please tick the consent checkbox to continue."
   },
   "countdown": {
     "eyebrow": "Premiere",

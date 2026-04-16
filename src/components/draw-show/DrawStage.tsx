@@ -22,7 +22,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import {
   Maximize2,
@@ -53,6 +53,13 @@ type Props = {
   logoUrl?: string | null;
   /** Called when the user exits the stage (Esc, X, or clicks backdrop). */
   onClose: () => void;
+  /**
+   * Standalone-only: short id of the persisted public draw. When set,
+   * the stage POSTs to /api/draw/s/<id>/activate the moment the show
+   * actually begins so superadmin can track conversion. Embedded
+   * (in-tournament) flow leaves this undefined.
+   */
+  publicDrawId?: string;
   /**
    * Names of teams that belong to this tournament but are NOT in any
    * group — the unassigned pool. Surfaced on the done screen so the
@@ -88,6 +95,7 @@ export function DrawStage({
   onClose,
   unassignedTeams,
   totalTeamsCount,
+  publicDrawId,
 }: Props) {
   // SSR guard: portal needs document.
   const [mounted, setMounted] = useState(false);
@@ -127,6 +135,20 @@ export function DrawStage({
   // proceed with reveals". We render a dedicated panel while this is
   // non-null and suppress the reveal loop during it.
   const [introStep, setIntroStep] = useState<number | "go" | null>(5);
+
+  // Fire the audit-log "activated" event the first time the show
+  // actually starts (i.e. the intro hands off to the reveal loop).
+  // Runs once per stage mount; failures are silent.
+  const activatedRef = useRef(false);
+  useEffect(() => {
+    if (!publicDrawId) return;
+    if (introStep !== null) return;
+    if (activatedRef.current) return;
+    activatedRef.current = true;
+    fetch(`/api/draw/s/${publicDrawId}/activate`, { method: "POST" }).catch(
+      () => {},
+    );
+  }, [publicDrawId, introStep]);
 
   // Drive the intro countdown. Each tick lasts INTRO_STEP_MS; the
   // final "GO" flashes for a beat before we hand off to the reveal
@@ -422,14 +444,25 @@ export function DrawStage({
       </AnimatePresence>
 
       {/* ── Body ──────────────────────────────────────────────── */}
-      <div className="relative flex-1 flex items-stretch justify-center px-6 pb-16 z-[1]">
+      {/* IMPORTANT: `min-h-0` on the flex child is required for the
+          inner overflow-y-auto to actually scroll; without it the
+          browser gives the child its content height (≥viewport) and
+          the scrollbar never appears.
+
+          Spotlight is rendered as an absolutely-positioned overlay
+          centred on the body so it stays visible regardless of where
+          the user has scrolled the (potentially long) board. */}
+      <div className="relative flex-1 flex items-stretch justify-center min-h-0 z-[1]">
         {isError ? (
-          <ErrorPanel message={plan.error} title={t("stage.errorTitle")} />
+          <div className="flex-1 flex items-center justify-center px-6 pb-16">
+            <ErrorPanel
+              message={plan.error}
+              title={t("stage.errorTitle")}
+            />
+          </div>
         ) : isGroupsMode ? (
-          // LayoutGroup is required so framer-motion coordinates layoutId
-          // transitions between Spotlight and Slot positions.
-          <LayoutGroup id="draw-show">
-            <div className="w-full flex flex-col items-center justify-start gap-6 pt-2">
+          <>
+            <div className="flex-1 overflow-y-auto px-6 pb-44 pt-2 w-full">
               <GroupBoard
                 groups={plan.groups ?? []}
                 revealedTeamIds={revealedTeamIds}
@@ -437,71 +470,56 @@ export function DrawStage({
                 groupLabel={t("stage.groupLabel")}
                 activeGroupIndex={activeGroupIndex}
               />
-
-              {/* Spotlight / Done summary */}
-              <div className="flex-1 flex items-center justify-center min-h-[180px] w-full">
-                <AnimatePresence mode="wait">
-                  {isDone ? (
-                    <DonePanel
-                      key="done"
-                      title={t("stage.doneTitle")}
-                      // When unassigned teams exist, the subtitle
-                      // explicitly calls out the mismatch between
-                      // placed count and tournament total. Otherwise
-                      // fall back to the simple "all N placed" copy.
-                      subtitle={
-                        unassignedTeams && unassignedTeams.length > 0 &&
-                        totalTeamsCount != null
-                          ? t("stage.donePartialSubtitle", {
-                              placed: total,
-                              total: totalTeamsCount,
-                            })
-                          : t("stage.doneSubtitle", { count: total })
-                      }
-                      unassignedTeams={unassignedTeams}
-                      unassignedLabel={t("stage.unassignedTeams")}
-                    />
-                  ) : showSpotlight &&
-                    currentStep &&
-                    currentStep.kind === "place-group" ? (
-                    <SpotlightWithTarget
-                      key={`spot-${placedCount}`}
-                      team={currentStep.team}
-                      layoutId={layoutIdFor(currentStep.team.id)}
-                      targetLetter={String.fromCharCode(
-                        65 + currentStep.groupIndex,
-                      )}
-                      targetLabel={t("stage.toGroup")}
-                      exitDirection={exitDirection}
-                    />
-                  ) : (
-                    <motion.div
-                      key="gap"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 0.3 }}
-                      exit={{ opacity: 0 }}
-                      className="text-xs font-semibold uppercase tracking-widest"
-                      style={{ color: "rgba(245,247,251,0.45)" }}
-                    >
-                      {placedCount === 0 ? t("stage.startingIn") : ""}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
             </div>
-          </LayoutGroup>
+            <BodyOverlay>
+              <AnimatePresence mode="wait">
+                {isDone ? (
+                  <DonePanel
+                    key="done"
+                    title={t("stage.doneTitle")}
+                    subtitle={
+                      unassignedTeams && unassignedTeams.length > 0 &&
+                      totalTeamsCount != null
+                        ? t("stage.donePartialSubtitle", {
+                            placed: total,
+                            total: totalTeamsCount,
+                          })
+                        : t("stage.doneSubtitle", { count: total })
+                    }
+                    unassignedTeams={unassignedTeams}
+                    unassignedLabel={t("stage.unassignedTeams")}
+                  />
+                ) : showSpotlight &&
+                  currentStep &&
+                  currentStep.kind === "place-group" ? (
+                  <SpotlightWithTarget
+                    key={`spot-${placedCount}`}
+                    team={currentStep.team}
+                    layoutId={layoutIdFor(currentStep.team.id)}
+                    targetLetter={String.fromCharCode(
+                      65 + currentStep.groupIndex,
+                    )}
+                    targetLabel={t("stage.toGroup")}
+                    exitDirection={exitDirection}
+                  />
+                ) : null}
+              </AnimatePresence>
+            </BodyOverlay>
+          </>
         ) : isLeagueMode ? (
-          <div className="w-full flex flex-col items-center justify-start gap-6 pt-2 overflow-y-auto">
-            <LeagueBoard
-              rounds={plan.leagueRounds ?? []}
-              revealedKeys={revealedLeagueKeys}
-              roundLabel={t("stage.roundLabel")}
-              totalRounds={plan.leagueRounds?.length ?? 0}
-              placedCount={placedCount}
-              totalMatches={total}
-              statusLabel={t("stage.leagueStatus")}
-            />
-            <div className="flex-1 flex items-center justify-center min-h-[140px] w-full">
+          <>
+            <div className="flex-1 overflow-y-auto px-6 pb-56 pt-2 w-full">
+              <LeagueBoard
+                rounds={plan.leagueRounds ?? []}
+                revealedKeys={revealedLeagueKeys}
+                roundLabel={t("stage.roundLabel")}
+                totalRounds={plan.leagueRounds?.length ?? 0}
+                placedCount={placedCount}
+                totalMatches={total}
+                statusLabel={t("stage.leagueStatus")}
+              />
+            </div>
+            <BodyOverlay>
               <AnimatePresence mode="wait">
                 {isDone ? (
                   <DonePanel
@@ -512,7 +530,9 @@ export function DrawStage({
                       rounds: plan.leagueRounds?.length ?? 0,
                     })}
                   />
-                ) : showSpotlight && currentStep && currentStep.kind === "league-match" ? (
+                ) : showSpotlight &&
+                  currentStep &&
+                  currentStep.kind === "league-match" ? (
                   <LeagueSpotlight
                     key={`lspot-${placedCount}`}
                     home={currentStep.home}
@@ -522,11 +542,11 @@ export function DrawStage({
                   />
                 ) : null}
               </AnimatePresence>
-            </div>
-          </div>
+            </BodyOverlay>
+          </>
         ) : (
           // Other modes (playoff pairs etc.) — phase 3.5 fills these in.
-          <div className="flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center px-6 pb-16">
             <p className="text-sm" style={{ color: "rgba(245,247,251,0.6)" }}>
               {t("stage.modeComingSoon")}
             </p>
@@ -941,6 +961,23 @@ function LeagueBoard({
   );
 }
 
+/**
+ * BodyOverlay — fixed-position centred wrapper for the spotlight /
+ * done panel. The board scrolls behind it; the overlay stays put.
+ * `pointer-events-none` lets scroll/click pass through except where
+ * children opt in.
+ */
+function BodyOverlay({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="absolute inset-x-0 top-0 bottom-0 flex items-center justify-center pointer-events-none px-6"
+      style={{ zIndex: 5 }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function LeagueSpotlight({
   home,
   away,
@@ -952,49 +989,96 @@ function LeagueSpotlight({
   round: number;
   roundLabel: string;
 }) {
+  // WOW-sized league pair card matching the groups Spotlight scale:
+  // big pulse halo, ring sweep on enter, large typography. The
+  // round badge sits above as a chip.
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ type: "spring", stiffness: 220, damping: 22 }}
-      className="flex flex-col items-center gap-3"
+      initial={{ opacity: 0, scale: 0.7, y: 30 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{
+        opacity: 0,
+        scale: 0.6,
+        y: -50,
+        transition: { duration: 0.45, ease: [0.6, 0, 0.4, 1] },
+      }}
+      transition={{ type: "spring", stiffness: 180, damping: 22 }}
+      className="flex flex-col items-center gap-4 relative"
     >
-      <span
-        className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full"
+      <motion.div
+        aria-hidden
+        className="absolute -inset-12 rounded-[3rem] pointer-events-none"
         style={{
-          background: "rgba(43,254,186,0.12)",
+          background:
+            "radial-gradient(circle, rgba(43,254,186,0.32) 0%, transparent 70%)",
+        }}
+        animate={{
+          opacity: [0.55, 1, 0.55],
+          scale: [0.95, 1.05, 0.95],
+        }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <motion.span
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="relative text-sm font-bold uppercase tracking-widest px-4 py-1.5 rounded-full"
+        style={{
+          background: "rgba(43,254,186,0.16)",
           color: "#2BFEBA",
-          border: "1px solid rgba(43,254,186,0.35)",
+          border: "1px solid rgba(43,254,186,0.45)",
         }}
       >
         {roundLabel} {round}
-      </span>
+      </motion.span>
+
       <div
-        className="flex items-center gap-4 md:gap-6 rounded-3xl px-6 md:px-10 py-5"
+        className="relative flex items-center gap-6 md:gap-10 rounded-[2rem] px-8 md:px-14 py-7 md:py-9"
         style={{
           background:
-            "linear-gradient(135deg, rgba(43,254,186,0.14), rgba(43,254,186,0.04))",
-          border: "1px solid rgba(43,254,186,0.45)",
+            "linear-gradient(135deg, rgba(43,254,186,0.22), rgba(43,254,186,0.04))",
+          border: "1px solid rgba(43,254,186,0.55)",
           boxShadow:
-            "0 16px 50px -10px rgba(43,254,186,0.35), 0 0 100px -20px rgba(43,254,186,0.5)",
+            "0 28px 80px -12px rgba(43,254,186,0.5), 0 0 160px -30px rgba(43,254,186,0.6)",
+          backdropFilter: "blur(12px)",
         }}
       >
+        <motion.div
+          aria-hidden
+          className="absolute inset-0 rounded-[2rem] pointer-events-none"
+          initial={{ boxShadow: "0 0 0 0 rgba(43,254,186,0.55)" }}
+          animate={{
+            boxShadow: [
+              "0 0 0 0 rgba(43,254,186,0.55)",
+              "0 0 0 40px rgba(43,254,186,0)",
+            ],
+          }}
+          transition={{ duration: 1.4, ease: "easeOut" }}
+        />
         <p
-          className="text-xl md:text-2xl font-black truncate"
-          style={{ color: "#f5f7fb" }}
+          className="text-3xl md:text-5xl font-black truncate max-w-[40vw]"
+          style={{
+            color: "#f5f7fb",
+            letterSpacing: "-0.02em",
+            textShadow: "0 0 40px rgba(43,254,186,0.35)",
+          }}
         >
           {home.name}
         </p>
         <span
-          className="text-sm md:text-base font-black uppercase tracking-widest"
+          className="text-base md:text-lg font-black uppercase tracking-widest shrink-0"
           style={{ color: "#2BFEBA" }}
         >
           vs
         </span>
         <p
-          className="text-xl md:text-2xl font-black truncate"
-          style={{ color: "#f5f7fb" }}
+          className="text-3xl md:text-5xl font-black truncate max-w-[40vw]"
+          style={{
+            color: "#f5f7fb",
+            letterSpacing: "-0.02em",
+            textShadow: "0 0 40px rgba(43,254,186,0.35)",
+          }}
         >
           {away.name}
         </p>

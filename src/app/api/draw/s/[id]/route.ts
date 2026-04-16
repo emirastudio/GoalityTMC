@@ -13,13 +13,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { publicDraws } from "@/db/schema";
+import { publicDraws, drawShowEvents } from "@/db/schema";
 import { isShortId } from "@/lib/draw-show/short-id";
 
 type Params = { id: string };
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<Params> },
 ) {
   const { id } = await params;
@@ -43,6 +43,27 @@ export async function GET(
     .set({ viewCount: sql`${publicDraws.viewCount} + 1` })
     .where(eq(publicDraws.id, id))
     .catch((e) => console.error("view_count bump failed", e));
+
+  // Record the visit so superadmin can track funnel conversion
+  // (visited → activated). Best-effort; failures don't block.
+  try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+    const userAgent = req.headers.get("user-agent") ?? null;
+    const referrer = req.headers.get("referer") ?? null;
+    const locale =
+      req.headers.get("accept-language")?.split(",")[0]?.trim() ?? null;
+    await db.insert(drawShowEvents).values({
+      eventType: "visited",
+      status: "free_standalone",
+      drawId: id,
+      ip,
+      userAgent,
+      referrer,
+      locale,
+    });
+  } catch (e) {
+    console.error("draw_show_events insert (visited) failed", e);
+  }
 
   return NextResponse.json({ id, state: row.state, viewCount: row.viewCount });
 }

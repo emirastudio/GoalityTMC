@@ -4360,7 +4360,18 @@
     "errorPlayoffOdd": "Плей-офф требует чётного числа команд — каждой нужен соперник.",
     "errorFewerTeamsThanGroups": "У вас {teams} команд на {groups} групп. Уменьшите количество групп или добавьте команды.",
     "errorGroupCountRange": "Количество групп должно быть от {min} до {max}.",
-    "errorDuplicates": "Дубликаты имён: {names}. Переименуйте чтобы порядок появления был однозначным."
+    "errorDuplicates": "Дубликаты имён: {names}. Переименуйте чтобы порядок появления был однозначным.",
+    "leadEyebrow": "Почти готово",
+    "leadTitle": "Куда отправить вашу ссылку на жеребьёвку?",
+    "leadBody": "Пришлём ссылку на письмо и чек о покупке (если будете брать платные фичи). Данные не продаём.",
+    "leadEmailPlaceholder": "you@club.com",
+    "leadOrgPlaceholder": "Организация (необязательно)",
+    "leadConsent": "Я согласен на обработку данных согласно <privacy>Политике конфиденциальности</privacy>.",
+    "leadCancel": "Назад",
+    "leadSubmit": "Получить ссылку",
+    "leadSubmitting": "Сохраняем…",
+    "leadError_invalid_email": "Укажите корректный email.",
+    "leadError_consent_required": "Поставьте галочку согласия чтобы продолжить."
   },
   "countdown": {
     "eyebrow": "Премьера",

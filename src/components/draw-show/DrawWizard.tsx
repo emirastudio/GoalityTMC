@@ -39,7 +39,10 @@ import {
   Upload,
   Loader2,
   Clock,
+  Mail,
+  Lock,
 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { encodeDrawState } from "@/lib/draw-show/encode-state";
 import type { ShareableDrawState } from "@/lib/draw-show/types";
 
@@ -171,6 +174,14 @@ export function DrawWizard({ id }: { id?: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Email gate state. Surfaced only after the user clicks "Start the
+  // draw show" — the modal blocks submission until they provide a
+  // valid email and tick the consent checkbox.
+  const [showLeadGate, setShowLeadGate] = useState(false);
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadOrg, setLeadOrg] = useState("");
+  const [leadConsent, setLeadConsent] = useState(false);
+
   // Unified team list regardless of input mode. Detailed rows are
   // filtered to those with a non-empty name so a half-filled row
   // doesn't ruin validation. Bulk paste stays whitespace-split.
@@ -238,14 +249,28 @@ export function DrawWizard({ id }: { id?: string }) {
       rs.map((r) => (r.id === rowId ? { ...r, ...patch } : r)),
     );
 
-  // ── Submit: POST to server → short id → navigate ─────────────────
-  // We persist the state server-side and navigate with a 6-char id so
-  // share URLs stay small enough for SMS / socials / QR codes. If the
-  // server round-trip fails (network, 5xx, etc.) we fall back to the
-  // legacy base64-in-URL path so the user can still run the show.
-  async function handleSubmit(e?: React.FormEvent) {
+  // ── Submit funnel ─────────────────────────────────────────────
+  // Click on "Start" → open email gate → user fills email + ticks
+  // consent → finalizeSubmit() actually POSTs the state. The form's
+  // own submit handler stops at the gate; finalizeSubmit lives one
+  // call deeper.
+  function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
     if (!canSubmit) return;
+    setError(null);
+    setShowLeadGate(true);
+  }
+
+  async function finalizeSubmit() {
+    if (!canSubmit) return;
+    if (!isValidEmail(leadEmail)) {
+      setError("invalid_email");
+      return;
+    }
+    if (!leadConsent) {
+      setError("consent_required");
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -295,7 +320,12 @@ export function DrawWizard({ id }: { id?: string }) {
       const res = await fetch("/api/draw/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(state),
+        body: JSON.stringify({
+          state,
+          email: leadEmail.trim().toLowerCase(),
+          organization: leadOrg.trim() || undefined,
+          consent: leadConsent,
+        }),
       });
       if (res.ok) {
         const { id } = (await res.json()) as { id: string };
@@ -698,6 +728,28 @@ export function DrawWizard({ id }: { id?: string }) {
             </div>
           )}
 
+          {/* Email gate — modal that captures the lead before we
+              actually create the share link. Required step for every
+              standalone wizard submit. */}
+          {showLeadGate && (
+            <LeadGateModal
+              email={leadEmail}
+              setEmail={setLeadEmail}
+              organization={leadOrg}
+              setOrganization={setLeadOrg}
+              consent={leadConsent}
+              setConsent={setLeadConsent}
+              submitting={submitting}
+              error={error}
+              onCancel={() => {
+                if (submitting) return;
+                setShowLeadGate(false);
+              }}
+              onSubmit={finalizeSubmit}
+              t={t}
+            />
+          )}
+
           {/* ── Submit ── */}
           <button
             type="submit"
@@ -1032,4 +1084,202 @@ function leagueRoundsOf(n: number): number {
 /** Total match count for a round-robin with n teams: C(n,2). */
 function leagueMatchesOf(n: number): number {
   return n < 2 ? 0 : (n * (n - 1)) / 2;
+}
+
+/** Loose email check — server-side does its own. */
+function isValidEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
+
+// ─── Lead-capture modal ──────────────────────────────────────────────
+// Mandatory step before the wizard's submit reaches the API. We collect
+// email (for the receipt + share-link follow-up) and org name (handy
+// for sales follow-up), and require a single GDPR consent checkbox.
+
+function LeadGateModal({
+  email,
+  setEmail,
+  organization,
+  setOrganization,
+  consent,
+  setConsent,
+  submitting,
+  error,
+  onCancel,
+  onSubmit,
+  t,
+}: {
+  email: string;
+  setEmail: (v: string) => void;
+  organization: string;
+  setOrganization: (v: string) => void;
+  consent: boolean;
+  setConsent: (v: boolean) => void;
+  submitting: boolean;
+  error: string | null;
+  onCancel: () => void;
+  onSubmit: () => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const canProceed = isValidEmail(email) && consent;
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center px-4"
+      style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
+      <div
+        className="w-full max-w-md rounded-3xl p-6 md:p-7"
+        style={{
+          background: "var(--cat-card-bg)",
+          border: "1px solid var(--cat-card-border)",
+          boxShadow: "0 32px 80px -16px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center"
+            style={{
+              background: "rgba(43,254,186,0.12)",
+              color: "var(--cat-accent)",
+            }}
+          >
+            <Mail className="w-5 h-5" />
+          </div>
+          <div>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: "var(--cat-text-muted)" }}
+            >
+              {t("leadEyebrow")}
+            </p>
+            <h3
+              className="text-lg font-black"
+              style={{ color: "var(--cat-text)" }}
+            >
+              {t("leadTitle")}
+            </h3>
+          </div>
+        </div>
+
+        <p
+          className="text-sm mb-5 leading-relaxed"
+          style={{ color: "var(--cat-text-secondary)" }}
+        >
+          {t("leadBody")}
+        </p>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (canProceed && !submitting) onSubmit();
+          }}
+          className="space-y-3"
+        >
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t("leadEmailPlaceholder")}
+            autoFocus
+            className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+            style={{
+              background: "var(--cat-input-bg, var(--cat-card-bg))",
+              border: "1px solid var(--cat-card-border)",
+              color: "var(--cat-text)",
+            }}
+          />
+          <input
+            type="text"
+            value={organization}
+            onChange={(e) => setOrganization(e.target.value)}
+            placeholder={t("leadOrgPlaceholder")}
+            className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+            style={{
+              background: "var(--cat-input-bg, var(--cat-card-bg))",
+              border: "1px solid var(--cat-card-border)",
+              color: "var(--cat-text)",
+            }}
+          />
+
+          <label
+            className="flex items-start gap-2 cursor-pointer mt-3"
+            style={{ color: "var(--cat-text-secondary)" }}
+          >
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-0.5 shrink-0 cursor-pointer"
+              style={{ accentColor: "var(--cat-accent)" }}
+            />
+            <span className="text-xs leading-relaxed">
+              {t.rich("leadConsent", {
+                privacy: (chunks) => (
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="font-semibold underline-offset-2 hover:underline"
+                    style={{ color: "var(--cat-accent)" }}
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </span>
+          </label>
+
+          {error && (
+            <div
+              className="rounded-xl px-3 py-2 text-xs font-semibold"
+              style={{
+                background: "rgba(239,68,68,0.06)",
+                color: "#ef4444",
+                border: "1px solid rgba(239,68,68,0.3)",
+              }}
+            >
+              {t.has(`leadError_${error}` as never)
+                ? t(`leadError_${error}` as never)
+                : error}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={submitting}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+              style={{
+                background: "var(--cat-tag-bg)",
+                color: "var(--cat-text)",
+              }}
+            >
+              {t("leadCancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={!canProceed || submitting}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold inline-flex items-center justify-center gap-1.5 disabled:opacity-40"
+              style={{
+                background: "var(--cat-accent)",
+                color: "var(--cat-accent-text)",
+              }}
+            >
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Lock className="w-3.5 h-3.5" />
+              )}
+              {submitting ? t("leadSubmitting") : t("leadSubmit")}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
