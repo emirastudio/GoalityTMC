@@ -5,7 +5,7 @@ import { CreditCard, FlaskConical, Globe, Loader2, CheckCircle } from "lucide-re
 
 type Mode = "live" | "test";
 
-export function StripeModeToggle() {
+export function StripeModeToggle({ onChange }: { onChange?: () => void } = {}) {
   const [mode, setMode] = useState<Mode | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,6 +34,7 @@ export function StripeModeToggle() {
         setMode(next);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+        onChange?.();
       }
     } finally {
       setSaving(false);

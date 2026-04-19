@@ -75,7 +75,7 @@ export const PLAN_LIMITS: Record<TournamentPlan, PlanLimits> = {
     hasLiveTimeline:     true,
     hasMatchHub:         true,
     hasEliteFormats:     true,   // Elite & custom formats unlock in Pro
-    hasMultiAdmin:       false,
+    hasMultiAdmin:       true,   // Multi-admin team access — Pro & Elite
     hasDrawShow:         true,   // Draw Show presentation — Pro & Elite
   },
   elite: {
@@ -210,7 +210,7 @@ const FEATURE_REQUIRED_PLAN: Record<PlanFeature, TournamentPlan> = {
   hasLiveTimeline:  "pro",
   hasMatchHub:      "pro",
   hasEliteFormats:  "pro",
-  hasMultiAdmin:    "elite",
+  hasMultiAdmin:    "pro",
   hasDrawShow:      "pro",
 };
 

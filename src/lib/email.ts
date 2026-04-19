@@ -17,6 +17,12 @@ const transporter = nodemailer.createTransport({
 const FROM    = process.env.SMTP_FROM ?? "Goality <goal@goality.app>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goality.app";
 
+// Recipient for GDPR / privacy-related notices. Defaults to the SMTP_USER
+// mailbox so delivery always works out of the box; can be overridden to a
+// dedicated inbox (e.g. privacy@goality.app) once the alias is set up on
+// the incoming mail provider.
+const PRIVACY_TO = process.env.PRIVACY_EMAIL ?? process.env.SMTP_USER ?? "goal@goality.app";
+
 // ─── Premium Base Template ────────────────────────────────────────────────────
 function base({
   preheader,
@@ -286,6 +292,42 @@ export async function sendClubInvite({
   });
 }
 
+// ─── Org admin invite (Pro+Elite multi-admin) ─────────────────────────────────
+export async function sendOrgAdminInvite({
+  to, orgName, inviteLink, inviterName,
+}: {
+  to: string;
+  orgName: string;
+  inviteLink: string;
+  inviterName?: string | null;
+}) {
+  const inviter = inviterName ? `<strong>${inviterName}</strong>` : "An administrator";
+  await transporter.sendMail({
+    from: FROM,
+    to,
+    subject: `You've been invited to administer ${orgName} on Goality`,
+    text: `${inviter} has invited you to become an administrator of ${orgName} on Goality.\n\nAccept invitation: ${inviteLink}\n\nLink valid for 7 days.\n\nGoality Team`,
+    html: base({
+      preheader: `${inviter} invited you to administer ${orgName} on Goality.`,
+      body: `
+        <div style="text-align:center;margin-bottom:8px;">
+          <div style="display:inline-block;width:56px;height:56px;background:#eef2ff;border-radius:16px;
+                      text-align:center;line-height:56px;font-size:26px;">🛡️</div>
+        </div>
+        ${h1("Administrator invitation")}
+        ${p(`${inviter} has invited you to administer <strong>${orgName}</strong> on Goality.`)}
+        ${p("You'll be able to manage tournaments, teams, schedules and billing on behalf of the organisation.")}
+        ${infoTable(
+          infoRow("Organisation", orgName) +
+          infoRow("Role", "Administrator") +
+          infoRow("Link expires", "7 days from now")
+        )}
+      `,
+      cta: { label: "Accept invitation →", url: inviteLink },
+    }),
+  });
+}
+
 // ─── 4. Tournament Registration Received ─────────────────────────────────────
 export async function sendRegistrationReceived({
   to, clubName, teamName, tournamentName, tournamentOrganizer,
@@ -523,7 +565,7 @@ export async function sendDeletionRequest({
 }) {
   await transporter.sendMail({
     from: FROM,
-    to: FROM,
+    to: PRIVACY_TO,
     subject: `Account deletion request — ${clubName}`,
     html: base({
       preheader: `Deletion request from ${clubName}`,
@@ -535,6 +577,37 @@ export async function sendDeletionRequest({
           infoRow("Teams", teamNames.join(", ") || "None")
         )}
         ${p("Please process this deletion request manually in the admin panel.")}
+      `,
+    }),
+  });
+}
+
+export async function sendOrgDeletionRequest({
+  orgName, orgSlug, contactName, contactEmail, tournamentCount, activeTournaments,
+}: {
+  orgName: string;
+  orgSlug: string;
+  contactName: string;
+  contactEmail: string;
+  tournamentCount: number;
+  activeTournaments: string[];
+}) {
+  await transporter.sendMail({
+    from: FROM,
+    to: PRIVACY_TO,
+    replyTo: contactEmail,
+    subject: `Organisation deletion request — ${orgName}`,
+    html: base({
+      preheader: `Deletion request from ${orgName} (${orgSlug})`,
+      body: `
+        ${h1("Organisation Deletion Request")}
+        ${infoTable(
+          infoRow("Organisation", `${orgName} (/${orgSlug})`) +
+          infoRow("Requested by", `${contactName} (${contactEmail})`) +
+          infoRow("Tournaments total", String(tournamentCount)) +
+          infoRow("Active tournaments", activeTournaments.join(", ") || "None")
+        )}
+        ${p("Verify the requester's identity before proceeding. Accounting records (invoices, Stripe history) must be retained for 7 years per Estonian Accounting Act § 12 — delete only personal data and operational records.")}
       `,
     }),
   });
