@@ -7,31 +7,58 @@ import { PlayerInlineTable } from "@/components/team/player-inline-table";
 import { HealthDisclaimer } from "@/components/team/health-disclaimer";
 import { useTeam } from "@/lib/team-context";
 
+type RosterPlayer = {
+  personId: number;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string | null;
+  position: string | null;
+  personType: "player" | "staff" | "accompanying";
+  includedInRoster: boolean;
+  needsHotel: boolean;
+  shirtNumber: number | null;
+  allergies: string | null;
+  dietaryRequirements: string | null;
+  medicalNotes: string | null;
+};
+
 export default function PlayersPage() {
   const t = useTranslations("players");
   const tp = useTranslations("people");
   const { teamId } = useTeam();
-  const [players, setPlayers] = useState<any[]>([]);
+  const [registrationId, setRegistrationId] = useState<number | null>(null);
+  const [players, setPlayers] = useState<RosterPlayer[]>([]);
   const [minBirthYear, setMinBirthYear] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchPlayers = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!teamId) return;
-    setPlayers([]);
     setLoading(true);
-    const [playersRes, overviewRes] = await Promise.all([
-      fetch(`/api/teams/${teamId}/people?type=player`),
-      fetch(`/api/teams/${teamId}/overview`),
-    ]);
-    if (playersRes.ok) setPlayers(await playersRes.json());
-    if (overviewRes.ok) {
-      const data = await overviewRes.json();
-      setMinBirthYear(data.minBirthYear ?? null);
+    setPlayers([]);
+
+    // 1. overview даёт registration.id + minBirthYear
+    const overviewRes = await fetch(`/api/teams/${teamId}/overview`);
+    if (!overviewRes.ok) { setLoading(false); return; }
+    const overview = await overviewRes.json();
+    const regId = overview.registration?.id ?? null;
+    setRegistrationId(regId);
+    setMinBirthYear(overview.minBirthYear ?? null);
+
+    // 2. ростер с турнирными полями (номер, отель, аллергии, медицина)
+    if (regId) {
+      const rosterRes = await fetch(`/api/registrations/${regId}/roster`);
+      if (rosterRes.ok) {
+        const data = await rosterRes.json();
+        const playersOnly: RosterPlayer[] = (data.people ?? []).filter(
+          (p: RosterPlayer) => p.personType === "player"
+        );
+        setPlayers(playersOnly);
+      }
     }
     setLoading(false);
   }, [teamId]);
 
-  useEffect(() => { fetchPlayers(); }, [fetchPlayers]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const positionOptions = [
     { value: "goalkeeper", label: t("positions.goalkeeper") },
@@ -60,8 +87,9 @@ export default function PlayersPage() {
       <PlayerInlineTable
         players={players}
         teamId={teamId!}
+        registrationId={registrationId}
         positionOptions={positionOptions}
-        onRefresh={fetchPlayers}
+        onRefresh={fetchData}
       />
 
       <HealthDisclaimer />

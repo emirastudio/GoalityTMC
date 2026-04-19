@@ -8,7 +8,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useTournament } from "@/lib/tournament-context";
 import {
-  MapPin, Plus, Trash2, Edit2, Save, X, Loader2,
+  MapPin, Plus, Trash2, Edit2, Save, X, Loader2, ImagePlus,
   Phone, Navigation, ExternalLink, ChevronDown, ChevronUp,
   CheckCircle,
 } from "lucide-react";
@@ -38,6 +38,7 @@ interface Stadium {
   mapsUrl: string | null;
   wazeUrl: string | null;
   notes: string | null;
+  photoUrl: string | null;
   sortOrder: number;
   fields: Field[];
 }
@@ -223,7 +224,54 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
     mapsUrl: stadium.mapsUrl ?? "",
     wazeUrl: stadium.wazeUrl ?? "",
     notes: stadium.notes ?? "",
+    photoUrl: stadium.photoUrl ?? "",
   });
+  const [uploading, setUploading] = useState(false);
+
+  // Upload → stash the URL in the draft + immediately PATCH so the photo
+  // survives even if the organiser cancels the rest of the edits.
+  async function uploadPhoto(file: File) {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/admin/upload?tournamentId=${stadium.tournamentId}`, {
+        method: "POST",
+        credentials: "include",
+        body: fd,
+      });
+      if (!res.ok) return;
+      const d = await res.json();
+      const url: string = d.url;
+      setDraft((x) => ({ ...x, photoUrl: url }));
+      const patch = await fetch(`${apiBase}/stadiums/${stadium.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ photoUrl: url }),
+      });
+      if (patch.ok) {
+        const updated = await patch.json();
+        onUpdated({ ...stadium, ...updated });
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removePhoto() {
+    setDraft((x) => ({ ...x, photoUrl: "" }));
+    const patch = await fetch(`${apiBase}/stadiums/${stadium.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ photoUrl: "" }),
+    });
+    if (patch.ok) {
+      const updated = await patch.json();
+      onUpdated({ ...stadium, ...updated });
+    }
+  }
 
   async function saveEdit() {
     if (!draft.name.trim()) return;
@@ -278,6 +326,69 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
   return (
     <div className="rounded-2xl border overflow-hidden transition-all"
       style={{ background: "var(--cat-card-bg)", borderColor: `${ACCENT}30`, boxShadow: `0 0 20px ${ACCENT}08` }}>
+
+      {/* Photo banner — cover image with remove handle, or a dashed
+          drop-zone when empty. Either way a single place to manage the
+          stadium's banner image. */}
+      {(draft.photoUrl || stadium.photoUrl) ? (
+        <div className="relative w-full" style={{ aspectRatio: "21 / 9" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={draft.photoUrl || stadium.photoUrl || ""}
+            alt={stadium.name}
+            className="w-full h-full object-cover"
+          />
+          <button
+            onClick={removePhoto}
+            title="Remove photo"
+            className="absolute top-2 right-2 w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-90"
+            style={{
+              background: "rgba(0,0,0,0.55)",
+              color: "#fff",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <label
+          className="flex items-center justify-center gap-2 w-full h-20 border-b border-dashed cursor-pointer transition-colors hover:opacity-80"
+          style={{
+            borderColor: "var(--cat-card-border)",
+            background: "var(--cat-bg)",
+            color: "var(--cat-text-muted)",
+          }}
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm font-semibold">Uploading…</span>
+            </>
+          ) : (
+            <>
+              <ImagePlus className="w-4 h-4" />
+              <span className="text-sm font-semibold">Добавить фото стадиона</span>
+            </>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            style={{
+              position: "absolute",
+              width: 1, height: 1, padding: 0, margin: -1,
+              overflow: "hidden", clip: "rect(0,0,0,0)",
+              whiteSpace: "nowrap", border: 0,
+            }}
+            disabled={uploading}
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (f) await uploadPhoto(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      )}
 
       {/* Stadium header */}
       <div className="p-4">
@@ -383,7 +494,7 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                     Сохранить
                   </button>
-                  <button type="button" onClick={() => { setEditing(false); setDraft({ name: stadium.name, address: stadium.address ?? "", contactName: stadium.contactName ?? "", contactPhone: stadium.contactPhone ?? "", mapsUrl: stadium.mapsUrl ?? "", wazeUrl: stadium.wazeUrl ?? "", notes: stadium.notes ?? "" }); }}
+                  <button type="button" onClick={() => { setEditing(false); setDraft({ name: stadium.name, address: stadium.address ?? "", contactName: stadium.contactName ?? "", contactPhone: stadium.contactPhone ?? "", mapsUrl: stadium.mapsUrl ?? "", wazeUrl: stadium.wazeUrl ?? "", notes: stadium.notes ?? "", photoUrl: stadium.photoUrl ?? "" }); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all hover:opacity-70"
                     style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
                     <X className="w-3.5 h-3.5" /> Отмена

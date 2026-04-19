@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       contactPhone: body.contactPhone ?? null,
       contactEmail: body.contactEmail ?? null,
       notes: body.notes ?? null,
+      photoUrl: body.photoUrl ?? null,
       sortOrder: body.sortOrder ?? 0,
     })
     .returning();
@@ -56,6 +57,7 @@ export async function PATCH(req: NextRequest) {
       contactPhone: values.contactPhone ?? null,
       contactEmail: values.contactEmail ?? null,
       notes: values.notes ?? null,
+      photoUrl: values.photoUrl ?? null,
       sortOrder: values.sortOrder ?? 0,
     })
     .where(eq(tournamentHotels.id, id))

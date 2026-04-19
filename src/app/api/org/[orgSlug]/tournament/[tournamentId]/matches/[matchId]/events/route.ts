@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { matchEvents, matches, tournamentStages } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
+import { assertFeature } from "@/lib/plan-gates";
 import { recalculateGroupStandings } from "@/lib/standings-calculator";
 import { eq, and, isNull, asc } from "drizzle-orm";
 
@@ -57,6 +58,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Param
   const p = await params;
   const ctx = await requireGameAdmin(req, p);
   if (isError(ctx)) return ctx;
+  const gate = assertFeature(ctx.effectivePlan, "hasMatchHub");
+  if (gate) return gate;
 
   const mid = parseInt(p.matchId);
   const body = await req.json();
@@ -103,6 +106,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<Par
   const p = await params;
   const ctx = await requireGameAdmin(req, p);
   if (isError(ctx)) return ctx;
+  const gate = assertFeature(ctx.effectivePlan, "hasMatchHub");
+  if (gate) return gate;
 
   const { searchParams } = new URL(req.url);
   const eventId = searchParams.get("eventId");

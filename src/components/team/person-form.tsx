@@ -20,6 +20,11 @@ interface PersonFormProps {
   showBirthYear?: boolean;
 }
 
+// Person form — справочник клуба. После рефакторинга 0018 здесь ТОЛЬКО
+// постоянные данные: ФИ, ДР, амплуа/роль. Контакты (email/phone) — только
+// для staff/accompanying, для детей запрещены на уровне БД.
+// Всё поездочное (номер футболки, отель, аллергии, ответственный) теперь
+// живёт в registration_people и редактируется на странице ростера турнира.
 export function PersonForm({
   type,
   title,
@@ -33,6 +38,8 @@ export function PersonForm({
   const tc = useTranslations("common");
   const [saving, setSaving] = useState(false);
 
+  const isAdult = type === "staff" || type === "accompanying";
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true);
@@ -43,18 +50,11 @@ export function PersonForm({
       personType: type,
       firstName: form.get("firstName"),
       lastName: form.get("lastName"),
-      email: form.get("email"),
-      phone: form.get("phone"),
+      email: isAdult ? form.get("email") : null,
+      phone: isAdult ? form.get("phone") : null,
       dateOfBirth: form.get("dateOfBirth") || null,
-      shirtNumber: form.get("shirtNumber") || null,
       position: form.get("position") || null,
       role: form.get("role") || null,
-      isResponsibleOnSite: form.get("isResponsibleOnSite") === "on",
-      needsHotel: form.get("needsHotel") === "on",
-      needsTransfer: form.get("needsTransfer") === "on",
-      allergies: form.get("allergies"),
-      dietaryRequirements: form.get("dietaryRequirements"),
-      medicalNotes: form.get("medicalNotes"),
       showPublicly: form.get("showPublicly") === "on",
     };
 
@@ -81,17 +81,18 @@ export function PersonForm({
           <Input id="lastName" name="lastName" label={t("lastName")} required />
         </div>
 
-        {/* Contact row */}
-        <div className="grid grid-cols-2 gap-4">
-          <Input id="email" name="email" type="email" label={t("email")} />
-          <Input id="phone" name="phone" type="tel" label={t("phone")} />
-        </div>
+        {/* Contact row — только для взрослых (staff/accompanying) */}
+        {isAdult && (
+          <div className="grid grid-cols-2 gap-4">
+            <Input id="email" name="email" type="email" label={t("email")} />
+            <Input id="phone" name="phone" type="tel" label={t("phone")} />
+          </div>
+        )}
 
-        {/* Player fields */}
+        {/* Player fields — только ДР и амплуа (номер живёт на турнире) */}
         {type === "player" && (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <Input id="dateOfBirth" name="dateOfBirth" type="date" label={t("dateOfBirth")} required />
-            <Input id="shirtNumber" name="shirtNumber" type="number" label={t("shirtNumber")} />
             {positionOptions && (
               <Select id="position" name="position" label={t("position")} options={positionOptions} placeholder="—" />
             )}
@@ -100,36 +101,13 @@ export function PersonForm({
 
         {/* Staff fields */}
         {type === "staff" && roleOptions && (
-          <>
-            <Select id="role" name="role" label={t("role")} options={roleOptions} placeholder="—" />
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" name="isResponsibleOnSite" className="accent-navy w-4 h-4" />
-              {t("responsibleOnSite")}
-            </label>
-          </>
+          <Select id="role" name="role" label={t("role")} options={roleOptions} placeholder="—" />
         )}
 
-        {/* Hotel & Transfer */}
-        <div className="grid grid-cols-2 gap-4">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" name="needsHotel" className="accent-navy w-4 h-4" />
-            {t("needsHotel")}
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" name="needsTransfer" className="accent-navy w-4 h-4" />
-            {t("needsTransfer")}
-          </label>
-        </div>
-
-        {/* Medical section */}
-        <div className="border-t th-border pt-4 space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary/60">
-            {t("medicalDietary")}
-          </p>
-          <Input id="allergies" name="allergies" label={t("allergies")} placeholder={t("allergiesHint")} />
-          <Input id="dietaryRequirements" name="dietaryRequirements" label={t("dietaryRequirements")} placeholder={t("dietaryHint")} />
-          <Input id="medicalNotes" name="medicalNotes" label={t("medicalNotes")} placeholder={t("medicalHint")} />
-        </div>
+        {/* Accompanying — ДР необязательно */}
+        {type === "accompanying" && (
+          <Input id="dateOfBirth" name="dateOfBirth" type="date" label={t("dateOfBirth")} />
+        )}
 
         {/* GDPR */}
         <label className="flex items-start gap-2 text-sm">

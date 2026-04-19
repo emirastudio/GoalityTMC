@@ -17,6 +17,17 @@ async function authorizeTeamAccess(teamId: string) {
   return { tid, team, session };
 }
 
+// Приватность детей: email/phone только для staff/accompanying.
+// Дублирует CHECK constraint в БД (people_contacts_adults_only),
+// но даёт человеческую ошибку ещё до попытки INSERT.
+function stripChildContacts(personType: string | undefined, body: Record<string, unknown>) {
+  if (personType === "player") {
+    body.email = null;
+    body.phone = null;
+  }
+  return body;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ teamId: string }> }
@@ -49,6 +60,7 @@ export async function POST(
   if ("error" in auth) return auth.error;
 
   const body = await req.json();
+  stripChildContacts(body.personType, body);
 
   const [person] = await db
     .insert(people)
@@ -60,15 +72,8 @@ export async function POST(
       email: body.email || null,
       phone: body.phone || null,
       dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : null,
-      shirtNumber: body.shirtNumber ? parseInt(body.shirtNumber) : null,
       position: body.position || null,
       role: body.role || null,
-      isResponsibleOnSite: body.isResponsibleOnSite ?? false,
-      allergies: body.allergies || null,
-      dietaryRequirements: body.dietaryRequirements || null,
-      medicalNotes: body.medicalNotes || null,
-      needsHotel: body.needsHotel ?? false,
-      needsTransfer: body.needsTransfer ?? false,
       showPublicly: body.showPublicly ?? false,
     })
     .returning();
@@ -90,17 +95,27 @@ export async function PATCH(
   }
 
   const body = await req.json();
+
+  // Если в запросе обновляется personType, стрипаем контакты под новый тип.
+  // Иначе берём текущий personType из БД для валидации.
+  let effectiveType = body.personType as string | undefined;
+  if (!effectiveType) {
+    const current = await db.query.people.findFirst({
+      where: and(eq(people.id, parseInt(personId)), eq(people.teamId, parseInt(teamId))),
+      columns: { personType: true },
+    });
+    effectiveType = current?.personType;
+  }
+  stripChildContacts(effectiveType, body);
+
   const updates: Record<string, unknown> = {};
 
-  const textFields = ["firstName", "lastName", "email", "phone", "position", "role", "allergies", "dietaryRequirements", "medicalNotes"] as const;
+  const textFields = ["firstName", "lastName", "email", "phone", "position", "role"] as const;
   for (const f of textFields) {
     if (f in body) updates[f] = body[f] || null;
   }
-  if ("shirtNumber" in body) updates.shirtNumber = body.shirtNumber ? parseInt(body.shirtNumber) : null;
   if ("dateOfBirth" in body) updates.dateOfBirth = body.dateOfBirth ? new Date(body.dateOfBirth) : null;
-  if ("needsHotel" in body) updates.needsHotel = !!body.needsHotel;
-  if ("needsTransfer" in body) updates.needsTransfer = !!body.needsTransfer;
-  if ("isResponsibleOnSite" in body) updates.isResponsibleOnSite = !!body.isResponsibleOnSite;
+  if ("showPublicly" in body) updates.showPublicly = !!body.showPublicly;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

@@ -7,25 +7,49 @@ import { StaffInlineTable } from "@/components/team/staff-inline-table";
 import { HealthDisclaimer } from "@/components/team/health-disclaimer";
 import { useTeam } from "@/lib/team-context";
 
+type RosterStaff = {
+  personId: number;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+  personType: "player" | "staff" | "accompanying";
+  isResponsibleOnSite: boolean;
+  needsHotel: boolean;
+};
+
 export default function StaffPage() {
   const t = useTranslations("staff");
-  const tp = useTranslations("people");
   const { teamId } = useTeam();
-  const [staff, setStaff] = useState<any[]>([]);
+  const [registrationId, setRegistrationId] = useState<number | null>(null);
+  const [staff, setStaff] = useState<RosterStaff[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchStaff = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!teamId) return;
-    setStaff([]);
     setLoading(true);
-    const res = await fetch(`/api/teams/${teamId}/people?type=staff`);
-    if (res.ok) setStaff(await res.json());
+    setStaff([]);
+
+    const overviewRes = await fetch(`/api/teams/${teamId}/overview`);
+    if (!overviewRes.ok) { setLoading(false); return; }
+    const overview = await overviewRes.json();
+    const regId = overview.registration?.id ?? null;
+    setRegistrationId(regId);
+
+    if (regId) {
+      const rosterRes = await fetch(`/api/registrations/${regId}/roster`);
+      if (rosterRes.ok) {
+        const data = await rosterRes.json();
+        setStaff((data.people ?? []).filter((p: RosterStaff) => p.personType === "staff"));
+      }
+    }
     setLoading(false);
   }, [teamId]);
 
-  useEffect(() => { fetchStaff(); }, [fetchStaff]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const hasResponsible = staff.some((s: any) => s.isResponsibleOnSite);
+  const hasResponsible = staff.some((s) => s.isResponsibleOnSite);
 
   const roleOptions = [
     { value: "headCoach", label: t("roles.headCoach") },
@@ -51,8 +75,9 @@ export default function StaffPage() {
       <StaffInlineTable
         staff={staff}
         teamId={teamId!}
+        registrationId={registrationId}
         roleOptions={roleOptions}
-        onRefresh={fetchStaff}
+        onRefresh={fetchData}
       />
 
       <HealthDisclaimer />

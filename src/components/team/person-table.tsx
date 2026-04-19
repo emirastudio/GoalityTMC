@@ -3,8 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Trash2, Hotel, Bus, AlertCircle, Plus } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 
 type Person = {
   id: number;
@@ -12,12 +11,8 @@ type Person = {
   lastName: string;
   email?: string;
   dateOfBirth?: string;
-  shirtNumber?: number;
   position?: string;
   role?: string;
-  needsHotel: boolean;
-  needsTransfer: boolean;
-  allergies?: string;
 };
 
 interface PersonTableProps {
@@ -30,8 +25,12 @@ interface PersonTableProps {
   onDelete?: (id: number) => void;
 }
 
+// Упрощённый просмотр справочника. Поездочная информация — на странице
+// /club/tournaments/[id]/roster для конкретного турнира.
 export function PersonTable({ persons, columns, emptyText, addLabel, onAdd, onDelete }: PersonTableProps) {
-  const tc = useTranslations("common");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _t = useTranslations("common");
+
   if (persons.length === 0) {
     return (
       <Card className="text-center py-10">
@@ -55,15 +54,6 @@ export function PersonTable({ persons, columns, emptyText, addLabel, onAdd, onDe
                   {col.label}
                 </th>
               ))}
-              <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center w-20">
-                <Hotel className="w-3.5 h-3.5 inline" />
-              </th>
-              <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center w-20">
-                <Bus className="w-3.5 h-3.5 inline" />
-              </th>
-              <th className="px-4 py-3 text-xs font-medium th-text-2 uppercase text-center w-16">
-                <AlertCircle className="w-3.5 h-3.5 inline" />
-              </th>
               <th className="px-4 py-3 w-10"></th>
             </tr>
           </thead>
@@ -83,17 +73,6 @@ export function PersonTable({ persons, columns, emptyText, addLabel, onAdd, onDe
                     <td key={col.key} className="px-4 py-3 text-sm">{value}</td>
                   );
                 })}
-                <td className="px-4 py-3 text-center">
-                  {p.needsHotel && <Badge variant="info">{tc("yes")}</Badge>}
-                </td>
-                <td className="px-4 py-3 text-center">
-                  {p.needsTransfer && <Badge variant="info">{tc("yes")}</Badge>}
-                </td>
-                <td className="px-4 py-3 text-center">
-                  {p.allergies && (
-                    <span className="text-warning text-xs font-bold" title={p.allergies}>!</span>
-                  )}
-                </td>
                 <td className="px-4 py-3">
                   {onDelete && (
                     <button

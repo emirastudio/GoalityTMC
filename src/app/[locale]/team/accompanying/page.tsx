@@ -6,22 +6,48 @@ import { AccompanyingInlineTable } from "@/components/team/accompanying-inline-t
 import { HealthDisclaimer } from "@/components/team/health-disclaimer";
 import { useTeam } from "@/lib/team-context";
 
+type RosterAccompanying = {
+  personId: number;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  personType: "player" | "staff" | "accompanying";
+  needsHotel: boolean;
+  allergies: string | null;
+  dietaryRequirements: string | null;
+  medicalNotes: string | null;
+};
+
 export default function AccompanyingPage() {
   const t = useTranslations("accompanying");
   const { teamId } = useTeam();
-  const [persons, setPersons] = useState<any[]>([]);
+  const [registrationId, setRegistrationId] = useState<number | null>(null);
+  const [persons, setPersons] = useState<RosterAccompanying[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchPersons = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!teamId) return;
-    setPersons([]);
     setLoading(true);
-    const res = await fetch(`/api/teams/${teamId}/people?type=accompanying`);
-    if (res.ok) setPersons(await res.json());
+    setPersons([]);
+
+    const overviewRes = await fetch(`/api/teams/${teamId}/overview`);
+    if (!overviewRes.ok) { setLoading(false); return; }
+    const overview = await overviewRes.json();
+    const regId = overview.registration?.id ?? null;
+    setRegistrationId(regId);
+
+    if (regId) {
+      const rosterRes = await fetch(`/api/registrations/${regId}/roster`);
+      if (rosterRes.ok) {
+        const data = await rosterRes.json();
+        setPersons((data.people ?? []).filter((p: RosterAccompanying) => p.personType === "accompanying"));
+      }
+    }
     setLoading(false);
   }, [teamId]);
 
-  useEffect(() => { fetchPersons(); }, [fetchPersons]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   if (loading) return null;
 
@@ -35,7 +61,8 @@ export default function AccompanyingPage() {
       <AccompanyingInlineTable
         persons={persons}
         teamId={teamId!}
-        onRefresh={fetchPersons}
+        registrationId={registrationId}
+        onRefresh={fetchData}
       />
 
       <HealthDisclaimer />

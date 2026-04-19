@@ -6,7 +6,24 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTeam } from "@/lib/team-context";
-import { Clock, CheckCircle, ChevronRight } from "lucide-react";
+import { Clock, CheckCircle, ChevronRight, Package as PackageIcon, Gift } from "lucide-react";
+import { OfferingIcon } from "@/lib/offerings/icons";
+import { formatMoney, type DealBreakdown } from "@/lib/offerings/types";
+import { AccommodationQuestCard } from "@/app/[locale]/team/overview/page";
+
+// DTO для /api/teams/[teamId]/accommodation (demand-поля + computed counts).
+// Нужно здесь чтобы до показа «Pricing has not been assigned yet» клуб
+// мог быстро заявить проживание (те же инпуты, что и в Overview).
+type AccomDTO = {
+  accomPlayers: number;
+  accomStaff: number;
+  accomAccompanying: number;
+  accomCheckIn: string | null;
+  accomCheckOut: string | null;
+  accomNotes: string | null;
+  accomConfirmed: boolean;
+  accomDeclined: boolean;
+};
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -60,19 +77,29 @@ type ServiceOverride = {
   isDisabled: boolean;
 };
 
-type BookingData = {
-  available: false;
-} | {
-  available: true;
-  accommodation: AccommodationOption[];
-  meals: ExtraMealOption[];
-  transfers: TransferOption[];
-  registration: RegistrationFee | null;
-  bookings: SavedBooking[];
-  overrides: ServiceOverride[];
-  freeSlots: { players: number; staff: number; accompanying: number; mealsOverride: number | null };
-  questData: { players: number; staff: number; accompanying: number; checkIn: string | null; checkOut: string | null; confirmed: boolean };
-};
+type BookingData =
+  | { available: false; v3?: boolean }
+  | {
+      available: true;
+      v3: true;
+      deals: (DealBreakdown & { offering: { id: number; title: string; kind: "single" | "package"; icon: string | null } })[];
+      currency: string;
+      grandTotalCents: number;
+      paidCents: number;
+      outstandingCents: number;
+    }
+  | {
+      available: true;
+      v3?: false;
+      accommodation: AccommodationOption[];
+      meals: ExtraMealOption[];
+      transfers: TransferOption[];
+      registration: RegistrationFee | null;
+      bookings: SavedBooking[];
+      overrides: ServiceOverride[];
+      freeSlots: { players: number; staff: number; accompanying: number; mealsOverride: number | null };
+      questData: { players: number; staff: number; accompanying: number; checkIn: string | null; checkOut: string | null; confirmed: boolean };
+    };
 
 type SavedBooking = {
   id: number;
@@ -253,9 +280,21 @@ export default function BookingPage() {
   const { teamId } = useTeam();
 
   const [data, setData] = useState<BookingData | null>(null);
+  const [accom, setAccom] = useState<AccomDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Подгружаем accom-данные параллельно: пригодятся если pricing ещё не
+  // назначен — покажем ту же карточку заявки проживания, что на Overview.
+  const loadAccom = useCallback(() => {
+    if (!teamId) return;
+    fetch(`/api/teams/${teamId}/accommodation`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json: AccomDTO | null) => { if (json) setAccom(json); });
+  }, [teamId]);
+
+  useEffect(() => { loadAccom(); }, [loadAccom]);
 
   // Booking state
   const [accommodation, setAccommodation] = useState<AccommodationBooking>({
@@ -281,7 +320,10 @@ export default function BookingPage() {
         if (!json) return;
         setData(json);
 
-        if (json.available && json.bookings.length > 0) {
+        // v3 payload is read-only — no local booking state to hydrate.
+        if (json.available && json.v3) return;
+
+        if (json.available && !json.v3 && json.bookings.length > 0) {
           // Restore existing bookings
           // Accommodation: multiple rows per option (players, staff, accompanying)
           // Notes: "players", "staff", "accompanying" (paid) or "players_free", "staff_free", "accompanying_free" (complimentary)
@@ -317,7 +359,7 @@ export default function BookingPage() {
           if (xferRow) {
             setTransfer({ optionId: xferRow.serviceId, persons: xferRow.quantity || 1 });
           }
-        } else if (json.available) {
+        } else if (json.available && !json.v3) {
           // Бронирований ещё нет — автозаполнить из данных квеста проживания
           const q = json.questData;
           if (q.confirmed && (q.players > 0 || q.staff > 0 || q.accompanying > 0)) {
@@ -348,7 +390,7 @@ export default function BookingPage() {
   // ─── Computed totals ──────────────────────────────────────────────────────
 
   const computeAccommodationTotal = useCallback((): number => {
-    if (!data?.available || accommodation.optionId === null) return 0;
+    if (!data?.available || data.v3 || accommodation.optionId === null) return 0;
     const opt = data.accommodation.find((a) => a.id === accommodation.optionId);
     if (!opt) return 0;
     const playerPrice = parseFloat(
@@ -372,7 +414,7 @@ export default function BookingPage() {
   }, [data, accommodation]);
 
   const computeMealTotal = useCallback((): number => {
-    if (!data?.available) return 0;
+    if (!data?.available || data.v3) return 0;
     let total = 0;
     for (const [id, booking] of meals) {
       const opt = data.meals.find((m) => m.id === id);
@@ -386,7 +428,7 @@ export default function BookingPage() {
   }, [data, meals]);
 
   const computeTransferTotal = useCallback((): number => {
-    if (!data?.available || transfer.optionId === null) return 0;
+    if (!data?.available || data.v3 || transfer.optionId === null) return 0;
     const opt = data.transfers.find((tr) => tr.id === transfer.optionId);
     if (!opt) return 0;
     const price = parseFloat(
@@ -396,7 +438,7 @@ export default function BookingPage() {
   }, [data, transfer]);
 
   const registrationTotal = useCallback((): number => {
-    if (!data?.available || !data.registration) return 0;
+    if (!data?.available || data.v3 || !data.registration) return 0;
     return parseFloat(
       effectivePrice("registration", data.registration.id, data.registration.price, data.overrides)
     );
@@ -411,7 +453,7 @@ export default function BookingPage() {
   // ─── Save ─────────────────────────────────────────────────────────────────
 
   async function handleSave() {
-    if (!teamId || !data?.available) return;
+    if (!teamId || !data?.available || data.v3) return;
     setSaving(true);
     setSaved(false);
 
@@ -523,8 +565,26 @@ export default function BookingPage() {
   if (!data) return null;
 
   if (!data.available) {
+    // Если клуб ещё не заявил проживание — показываем ту же карточку-мастер,
+    // что на /team/overview. Это делает страницу полезной даже пока пакет
+    // не назначен организатором: клуб заполняет заезд/отъезд/количество.
+    const accomUnanswered = accom && !accom.accomConfirmed && !accom.accomDeclined;
     return (
-      <div className="max-w-2xl">
+      <div className="max-w-2xl space-y-5">
+        {accom && accomUnanswered && teamId && (
+          <AccommodationQuestCard
+            teamId={String(teamId)}
+            accomConfirmed={accom.accomConfirmed}
+            accomDeclined={accom.accomDeclined}
+            accomPlayers={accom.accomPlayers}
+            accomStaff={accom.accomStaff}
+            accomAccompanying={accom.accomAccompanying}
+            accomCheckIn={accom.accomCheckIn}
+            accomCheckOut={accom.accomCheckOut}
+            accomNotes={accom.accomNotes}
+            onUpdate={loadAccom}
+          />
+        )}
         <Card>
           <div className="flex flex-col items-center text-center py-8 gap-4">
             <div className="w-14 h-14 rounded-full th-bg flex items-center justify-center">
@@ -540,6 +600,11 @@ export default function BookingPage() {
         </Card>
       </div>
     );
+  }
+
+  // ─── Offerings v3: read-only deal list ─────────────────────
+  if (data.v3) {
+    return <V3BookingView data={data} locale={locale} t={t} />;
   }
 
   const steps = [
@@ -1070,7 +1135,7 @@ function SummaryTable({
   t,
   locale,
 }: {
-  data: Extract<BookingData, { available: true }>;
+  data: Extract<BookingData, { available: true; v3?: false }>;
   accommodation: AccommodationBooking;
   meals: Map<number, MealBooking>;
   transfer: TransferBooking;
@@ -1214,6 +1279,317 @@ function SummaryTable({
           </tr>
         </tfoot>
       </table>
+    </div>
+  );
+}
+
+// ─── V3 read-only booking view ────────────────────────────────
+// Premium step-structured layout matching the legacy wizard's rhythm:
+//   Step 1 — Your package (primary deal expanded into lines)
+//   Step 2 — Extra services (add-on deals)
+//   Step 3 — Summary (flat table of every billable line + Grand Total)
+// Styling uses existing th-* / --cat-* tokens — no new colors introduced.
+
+type V3Data = Extract<BookingData, { v3: true; available: true }>;
+
+function V3BookingView({
+  data,
+  t,
+}: {
+  data: V3Data;
+  locale: string;
+  t: ReturnType<typeof useTranslations<"booking">>;
+}) {
+  const primary = data.deals.find(d => d.offering.kind === "package") ?? data.deals[0] ?? null;
+  const extras = data.deals.filter(d => d !== primary);
+
+  // Sidebar steps — visible only to anchor the layout rhythm.
+  const steps: { num: number; label: string; visible: boolean }[] = [
+    { num: 1, label: t("v3Package"), visible: !!primary },
+    { num: 2, label: t("v3Extra"), visible: extras.length > 0 },
+    { num: 3, label: t("summary"), visible: true },
+  ].filter(s => s.visible).map((s, i) => ({ ...s, num: i + 1 }));
+
+  return (
+    <div className="max-w-5xl">
+      {/* Page intro */}
+      <div className="mb-5">
+        <h1 className="text-2xl font-bold th-text">{t("title")}</h1>
+        <p className="text-sm th-text-2 mt-1">{t("v3Intro")}</p>
+      </div>
+
+      <div className="flex gap-6 items-start">
+        {/* Vertical stepper — desktop only, anchors the rhythm */}
+        <aside className="hidden lg:block w-56 shrink-0 sticky top-6">
+          <div className="rounded-2xl border th-border th-card shadow-sm p-3">
+            {steps.map((s) => (
+              <div key={s.num}
+                className="flex items-center gap-3 py-3 px-3 rounded-lg"
+                style={{ background: "transparent" }}>
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                  style={{
+                    background: "var(--cat-badge-open-bg)",
+                    color: "var(--cat-accent)",
+                    border: "1px solid var(--cat-card-border)",
+                  }}
+                >
+                  {s.num}
+                </div>
+                <span className="text-sm font-semibold th-text">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        {/* Main column */}
+        <main className="flex-1 min-w-0 space-y-5">
+          {/* Step 1: package */}
+          {primary && (
+            <V3StepCard stepNum={steps.find(s => s.label === t("v3Package"))?.num ?? 1} title={primary.offering.title} badge="PKG" subtotalCents={primary.totalCents} currency={data.currency}>
+              <V3DealLines deal={primary} />
+            </V3StepCard>
+          )}
+
+          {/* Step 2: extras */}
+          {extras.length > 0 && (
+            <V3StepCard stepNum={steps.find(s => s.label === t("v3Extra"))?.num ?? 2} title={t("v3Extra")} subtotalCents={extras.reduce((s, d) => s + d.totalCents, 0)} currency={data.currency}>
+              <div className="space-y-4">
+                {extras.map((d) => (
+                  <div key={d.dealId} className="rounded-xl border th-border overflow-hidden"
+                    style={{ background: "var(--cat-bg)" }}>
+                    <div className="flex items-center gap-3 px-4 py-3 border-b th-border">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
+                        <OfferingIcon iconKey={d.offering.icon} size={16} />
+                      </div>
+                      <p className="text-base font-bold th-text truncate">{d.offering.title}</p>
+                    </div>
+                    <V3DealLines deal={d} />
+                  </div>
+                ))}
+              </div>
+            </V3StepCard>
+          )}
+
+          {/* Step 3: Summary */}
+          <V3StepCard stepNum={steps.find(s => s.label === t("summary"))?.num ?? 3} title={t("summary")} hideSubtotal>
+            <V3SummaryTable data={data} t={t} />
+          </V3StepCard>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function V3StepCard({
+  stepNum,
+  title,
+  badge,
+  subtotalCents,
+  currency,
+  hideSubtotal,
+  children,
+}: {
+  stepNum: number;
+  title: string;
+  badge?: string;
+  subtotalCents?: number;
+  currency?: string;
+  hideSubtotal?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border th-border th-card shadow-sm overflow-hidden"
+      style={{
+        background: "linear-gradient(180deg, var(--cat-card-bg) 0%, var(--cat-card-bg) 100%)",
+      }}>
+      {/* Step header with number badge + subtotal pill */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b th-border">
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black shrink-0"
+          style={{
+            background: "var(--cat-accent)",
+            color: "var(--cat-accent-text)",
+            boxShadow: "0 0 14px var(--cat-accent-glow)",
+          }}
+        >
+          {stepNum}
+        </div>
+        <h3 className="text-base font-bold th-text flex-1 flex items-center gap-2">
+          {title}
+          {badge && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+              style={{ background: "rgba(99,102,241,0.12)", color: "#6366f1" }}>
+              {badge}
+            </span>
+          )}
+        </h3>
+        {!hideSubtotal && typeof subtotalCents === "number" && subtotalCents > 0 && (
+          <span className="px-2.5 py-1 rounded-full text-xs font-bold tabular-nums"
+            style={{
+              background: "var(--cat-tag-bg)",
+              color: "var(--cat-text)",
+              border: "1px solid var(--cat-card-border)",
+            }}>
+            {formatMoney(subtotalCents, currency ?? "EUR")}
+          </span>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function V3DealLines({ deal }: { deal: V3Data["deals"][number] }) {
+  return (
+    <div className="divide-y th-border">
+      {deal.lines.map((l) => (
+        <div key={l.offeringId} className="grid grid-cols-[1fr_minmax(0,1.1fr)_auto] gap-3 items-center px-5 py-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="shrink-0 th-text-2">
+              <OfferingIcon iconKey={l.icon} size={18} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-base font-semibold th-text truncate">{l.title}</p>
+            </div>
+          </div>
+          <p className="text-[13px] th-text-2 truncate">{l.conditionsText}</p>
+          <div className="text-right">
+            {l.isGift ? (
+              <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg"
+                style={{ background: "rgba(16,185,129,0.10)" }}>
+                <Gift className="w-4 h-4" style={{ color: "#10b981" }} />
+                <span className="text-base font-bold tabular-nums" style={{ color: "#10b981" }}>
+                  {formatMoney(0, deal.currency)}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-end">
+                {l.originalUnitPriceCents != null && l.originalUnitPriceCents !== l.unitPriceCents && (
+                  <span className="text-[11px] line-through th-text-2 tabular-nums">
+                    {formatMoney(l.originalUnitPriceCents, deal.currency)}
+                  </span>
+                )}
+                <span className="text-lg font-bold th-text tabular-nums">
+                  {formatMoney(l.unitPriceCents, deal.currency)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function V3SummaryTable({
+  data,
+  t,
+}: {
+  data: V3Data;
+  t: ReturnType<typeof useTranslations<"booking">>;
+}) {
+  // Flatten every deal's lines into a single ledger (what the organiser
+  // wants the club to pay, grouped by origin deal). Gifts show €0 on their
+  // own row — matches the old legacy summary's clarity.
+  const rows: { label: string; qty: string; unitPrice: number; totalCents: number; isGift: boolean }[] = [];
+  for (const deal of data.deals) {
+    for (const l of deal.lines) {
+      const qtyStr =
+        l.quantityPaid !== l.quantity
+          ? `${l.quantityPaid} / ${l.quantity}`
+          : String(l.quantityPaid);
+      rows.push({
+        label: deal.offering.kind === "package" && deal.lines.length > 1
+          ? `${deal.offering.title} — ${l.title}`
+          : l.title,
+        qty: qtyStr,
+        unitPrice: l.unitPriceCents,
+        totalCents: l.isGift ? 0 : l.unitPriceCents * l.quantityPaid,
+        isGift: l.isGift,
+      });
+    }
+  }
+
+  return (
+    <div>
+      <div className="overflow-x-auto px-5 py-4">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b th-border">
+              <th className="pb-3 text-left text-[11px] font-bold th-text-2 uppercase tracking-wider">
+                {t("item")}
+              </th>
+              <th className="pb-3 text-center text-[11px] font-bold th-text-2 uppercase tracking-wider">
+                {t("quantity")}
+              </th>
+              <th className="pb-3 text-right text-[11px] font-bold th-text-2 uppercase tracking-wider">
+                {t("unitPrice")}
+              </th>
+              <th className="pb-3 text-right text-[11px] font-bold th-text-2 uppercase tracking-wider">
+                {t("total")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={i} className="border-b th-border last:border-0">
+                <td className="py-3 pr-4">
+                  <span className="font-semibold th-text">{row.label}</span>
+                  {row.isGift && <Gift className="inline-block ml-1.5 w-3.5 h-3.5" style={{ color: "#10b981" }} />}
+                </td>
+                <td className="py-3 text-center th-text-2 tabular-nums">{row.qty}</td>
+                <td className="py-3 text-right th-text-2 tabular-nums">
+                  {formatMoney(row.unitPrice, data.currency)}
+                </td>
+                <td className="py-3 text-right font-bold tabular-nums"
+                  style={{ color: row.isGift ? "#10b981" : "var(--cat-text)" }}>
+                  {formatMoney(row.totalCents, data.currency)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Grand total strip */}
+      <div className="px-5 py-4 border-t th-border flex flex-wrap items-center justify-between gap-4"
+        style={{
+          background: "linear-gradient(90deg, var(--cat-card-bg) 0%, var(--cat-bg) 100%)",
+        }}>
+        <div className="flex flex-wrap gap-5 items-baseline">
+          {data.paidCents > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider th-text-2">
+                {t("paid")}
+              </p>
+              <p className="text-base font-bold tabular-nums" style={{ color: "#10b981" }}>
+                {formatMoney(data.paidCents, data.currency)}
+              </p>
+            </div>
+          )}
+          {data.outstandingCents > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider th-text-2">
+                {t("outstanding")}
+              </p>
+              <p className="text-base font-bold tabular-nums" style={{ color: "#f59e0b" }}>
+                {formatMoney(data.outstandingCents, data.currency)}
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="text-right">
+          <p className="text-[11px] font-bold uppercase tracking-wider th-text-2">
+            {t("grandTotal")}
+          </p>
+          <p className="text-3xl font-black th-text tabular-nums"
+            style={{ textShadow: "0 0 20px var(--cat-accent-glow)" }}>
+            {formatMoney(data.grandTotalCents, data.currency)}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

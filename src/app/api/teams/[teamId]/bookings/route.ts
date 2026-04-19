@@ -11,9 +11,14 @@ import {
   registrationFees,
   teamServiceOverrides,
   teamBookings,
+  registrationPeople,
+  people,
+  tournaments,
+  teamOfferingDeals,
 } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
+import { buildManyDealBreakdowns } from "@/lib/offerings/calculator";
 
 async function authorizeTeam(teamId: number, clubId: number) {
   const team = await db.query.teams.findFirst({
@@ -55,6 +60,43 @@ export async function GET(
   }
 
   const tournamentId = registration.tournamentId;
+
+  // ─── Offerings v3 path ─────────────────────────────────────
+  // If the tournament runs on v3, the club sees the organiser's published
+  // deals as a read-only catalogue (no step-wizard). Fall through to the
+  // legacy path only when v3 is OFF.
+  const [tourRow] = await db
+    .select({ v3: tournaments.offeringsV3Enabled })
+    .from(tournaments)
+    .where(eq(tournaments.id, tournamentId))
+    .limit(1);
+
+  if (tourRow?.v3) {
+    const dealRows = await db
+      .select({ id: teamOfferingDeals.id, isPublished: teamOfferingDeals.isPublished })
+      .from(teamOfferingDeals)
+      .where(eq(teamOfferingDeals.registrationId, registration.id));
+    const publishedIds = dealRows.filter(d => d.isPublished).map(d => d.id);
+    if (publishedIds.length === 0) {
+      return NextResponse.json({ available: false, v3: true });
+    }
+    const breakdowns = await buildManyDealBreakdowns(publishedIds);
+    const orderedDeals = publishedIds
+      .map(id => breakdowns[id])
+      .filter(Boolean);
+    const currency = orderedDeals[0]?.currency ?? "EUR";
+    const grandTotalCents = orderedDeals.reduce((s, b) => s + b.totalCents, 0);
+    const paidCents = orderedDeals.reduce((s, b) => s + b.paidCents, 0);
+    return NextResponse.json({
+      available: true,
+      v3: true,
+      deals: orderedDeals,
+      currency,
+      grandTotalCents,
+      paidCents,
+      outstandingCents: Math.max(0, grandTotalCents - paidCents),
+    });
+  }
 
   // Check if package has been assigned AND published
   const assignment = await db.query.packageAssignments.findFirst({
@@ -127,15 +169,28 @@ export async function GET(
       accompanying: assignment.freeAccompanyingCount ?? 0,
       mealsOverride: assignment.mealsCountOverride ?? null,
     },
-    // Данные из квеста проживания (для автозаполнения)
-    questData: {
-      players: registration.accomPlayers ?? 0,
-      staff: registration.accomStaff ?? 0,
-      accompanying: registration.accomAccompanying ?? 0,
-      checkIn: registration.accomCheckIn ?? null,
-      checkOut: registration.accomCheckOut ?? null,
-      confirmed: registration.accomConfirmed ?? false,
-    },
+    // Данные из квеста проживания (для автозаполнения).
+    // Счётчики теперь — из registrationPeople.needsHotel, а не из ручного ввода.
+    questData: await (async () => {
+      const counts = await db
+        .select({
+          personType: people.personType,
+          cnt: sql<number>`COUNT(*)::int`,
+        })
+        .from(registrationPeople)
+        .innerJoin(people, eq(people.id, registrationPeople.personId))
+        .where(and(eq(registrationPeople.registrationId, registration.id), eq(registrationPeople.needsHotel, true)))
+        .groupBy(people.personType);
+      const by = Object.fromEntries(counts.map((r) => [r.personType, Number(r.cnt)]));
+      return {
+        players: by.player ?? 0,
+        staff: by.staff ?? 0,
+        accompanying: by.accompanying ?? 0,
+        checkIn: registration.accomCheckIn ?? null,
+        checkOut: registration.accomCheckOut ?? null,
+        confirmed: registration.accomConfirmed ?? false,
+      };
+    })(),
   });
 }
 

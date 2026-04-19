@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<Para
 
   const stadiumId = parseInt(p.stadiumId);
   const body = await req.json();
-  const { name, address, contactName, contactPhone, mapsUrl, wazeUrl, notes } = body;
+  const { name, address, contactName, contactPhone, mapsUrl, wazeUrl, notes, photoUrl } = body;
 
   const updateData: Record<string, string | null> = {};
   if (name !== undefined) updateData.name = name?.trim() || null;
@@ -24,6 +24,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<Para
   if (mapsUrl !== undefined) updateData.mapsUrl = mapsUrl?.trim() || null;
   if (wazeUrl !== undefined) updateData.wazeUrl = wazeUrl?.trim() || null;
   if (notes !== undefined) updateData.notes = notes?.trim() || null;
+  if (photoUrl !== undefined) {
+    updateData.photoUrl = typeof photoUrl === "string" && photoUrl.trim() ? photoUrl : null;
+  }
 
   if (updateData.name === null) {
     return NextResponse.json({ error: "name cannot be empty" }, { status: 400 });

@@ -12,6 +12,7 @@ import {
   matches,
 } from "@/db/schema";
 import { eq, and, asc, or, isNull } from "drizzle-orm";
+import { resolveTeamDisplayNames } from "@/lib/team-display-names";
 
 // GET /api/public/t/[orgSlug]/[tournamentSlug]/teams/[teamId]
 // Public team detail — no auth required
@@ -147,6 +148,20 @@ export async function GET(
     }
   }
 
+  // 4b. Resolve tournament-scoped displayName for every team that appears
+  //     in standings. `teams.name` is often NULL — the real label lives in
+  //     `tournamentRegistrations.displayName`.
+  const standingsTeamIds = groupStandings ? groupStandings.standings.map(s => s.teamId) : [];
+  const displayNameByTeamId = await resolveTeamDisplayNames(tournament.id, standingsTeamIds);
+
+  if (groupStandings) {
+    for (const s of groupStandings.standings) {
+      const dn = displayNameByTeamId.get(s.teamId);
+      if (dn && s.team) s.team.name = s.team.name ?? dn;
+      else if (dn && !s.team) s.team = { name: dn, club: null };
+    }
+  }
+
   // 5. Fetch all matches for this team in this tournament
   const teamMatches = await db.query.matches.findMany({
     where: and(
@@ -166,16 +181,69 @@ export async function GET(
     },
   });
 
+  // 5b. Apply displayName fallback for home/away team names in matches.
+  const matchTeamIds = new Set<number>();
+  for (const m of teamMatches) {
+    if (m.homeTeam && !displayNameByTeamId.has(m.homeTeam.id)) matchTeamIds.add(m.homeTeam.id);
+    if (m.awayTeam && !displayNameByTeamId.has(m.awayTeam.id)) matchTeamIds.add(m.awayTeam.id);
+  }
+  if (matchTeamIds.size > 0) {
+    const extra = await resolveTeamDisplayNames(tournament.id, Array.from(matchTeamIds));
+    for (const [id, name] of extra) displayNameByTeamId.set(id, name);
+  }
+  for (const m of teamMatches) {
+    if (m.homeTeam) {
+      const dn = displayNameByTeamId.get(m.homeTeam.id);
+      if (dn && !m.homeTeam.name) m.homeTeam.name = dn;
+    }
+    if (m.awayTeam) {
+      const dn = displayNameByTeamId.get(m.awayTeam.id);
+      if (dn && !m.awayTeam.name) m.awayTeam.name = dn;
+    }
+  }
+
+  // 5c. Mark 3rd-place matches. In a knockout round with hasThirdPlace=true,
+  //     the extra match(es) beyond matchCount are the bronze match. Detect by
+  //     asking the DB for each round's full match list ordered by matchNumber.
+  const thirdPlaceMatchIds = new Set<number>();
+  {
+    const roundsWithBronze = new Map<number, { matchCount: number }>();
+    for (const m of teamMatches) {
+      if (m.round?.hasThirdPlace && m.round?.id && !roundsWithBronze.has(m.round.id)) {
+        roundsWithBronze.set(m.round.id, { matchCount: m.round.matchCount });
+      }
+    }
+    for (const [roundId, info] of roundsWithBronze) {
+      const all = await db.query.matches.findMany({
+        where: and(
+          eq(matches.roundId, roundId),
+          isNull(matches.deletedAt),
+        ),
+        orderBy: [asc(matches.matchNumber)],
+        columns: { id: true },
+      });
+      all.slice(info.matchCount).forEach(r => thirdPlaceMatchIds.add(r.id));
+    }
+  }
+
+  const matchesWithFlags = teamMatches.map(m => ({
+    ...m,
+    isThirdPlace: thirdPlaceMatchIds.has(m.id),
+  }));
+
+  // Also resolve the main team's own display name for the hero card.
+  const mainDisplayName = registration?.displayName ?? team.name ?? null;
+
   return NextResponse.json({
     team: {
       id: team.id,
-      name: team.name,
+      name: mainDisplayName,
       club: team.club
         ? { name: team.club.name, badgeUrl: team.club.badgeUrl, city: team.club.city }
         : null,
     },
     registration: registration ?? null,
     groupStandings,
-    matches: teamMatches,
+    matches: matchesWithFlags,
   });
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import {
-  teams, people, teamBookings, orders, teamTravel, payments,
+  teams, people, registrationPeople, teamBookings, orders, teamTravel, payments,
   tournamentClasses, tournamentInfo, tournaments, tournamentHotels,
   teamServiceOverrides, accommodationOptions, extraMealOptions,
   transferOptions, registrationFees, tournamentRegistrations,
@@ -64,10 +64,25 @@ export async function GET(
   const [accompanyingCount] = await db.select({ count: count() }).from(people)
     .where(and(eq(people.teamId, tid), eq(people.personType, "accompanying")));
 
-  // Responsible staff
-  const responsibleStaff = await db.query.people.findFirst({
-    where: and(eq(people.teamId, tid), eq(people.personType, "staff"), eq(people.isResponsibleOnSite, true)),
-  });
+  // Responsible staff — теперь per-registration (через pivot).
+  const responsibleStaffRow = await db
+    .select({
+      firstName: people.firstName,
+      lastName: people.lastName,
+      email: people.email,
+      phone: people.phone,
+    })
+    .from(registrationPeople)
+    .innerJoin(people, eq(people.id, registrationPeople.personId))
+    .where(
+      and(
+        eq(registrationPeople.registrationId, regId),
+        eq(registrationPeople.isResponsibleOnSite, true),
+        eq(people.personType, "staff"),
+      )
+    )
+    .limit(1);
+  const responsibleStaff = responsibleStaffRow[0] ?? null;
 
   // Travel — now keyed by registrationId
   const travel = await db.query.teamTravel.findFirst({ where: eq(teamTravel.registrationId, regId) });
@@ -129,14 +144,30 @@ export async function GET(
       : Promise.resolve(null),
   ]);
 
-  // Allergies & dietary list (anyone with allergies OR dietary requirements)
-  const allergies = await db.query.people.findMany({
-    where: and(
-      eq(people.teamId, tid),
-      sql`(COALESCE(${people.allergies}, '') != '' OR COALESCE(${people.dietaryRequirements}, '') != '')`
-    ),
-    columns: { firstName: true, lastName: true, allergies: true, dietaryRequirements: true },
-  });
+  // Allergies & dietary list — per-registration (через pivot).
+  const allergies = await db
+    .select({
+      firstName: people.firstName,
+      lastName: people.lastName,
+      allergies: registrationPeople.allergies,
+      dietaryRequirements: registrationPeople.dietaryRequirements,
+    })
+    .from(registrationPeople)
+    .innerJoin(people, eq(people.id, registrationPeople.personId))
+    .where(
+      and(
+        eq(registrationPeople.registrationId, regId),
+        sql`(COALESCE(${registrationPeople.allergies}, '') != '' OR COALESCE(${registrationPeople.dietaryRequirements}, '') != '')`
+      )
+    );
+
+  // Accommodation «declared» counts — stored on tournament_registrations
+  // (restored in 0020). This is the number the club commits to when filling
+  // the accom quest form on /team/overview. Pricing uses these when
+  // accomConfirmed; otherwise the calculator falls back to roster pivot.
+  const accomPlayers = registration.accomPlayers ?? 0;
+  const accomStaff = registration.accomStaff ?? 0;
+  const accomAccompanying = registration.accomAccompanying ?? 0;
 
   // Calculate completion
   const checks = {
@@ -153,9 +184,9 @@ export async function GET(
   return NextResponse.json({
     team,
     registration,
-    accomPlayers: registration.accomPlayers ?? 0,
-    accomStaff: registration.accomStaff ?? 0,
-    accomAccompanying: registration.accomAccompanying ?? 0,
+    accomPlayers,
+    accomStaff,
+    accomAccompanying,
     accomCheckIn: registration.accomCheckIn ?? null,
     accomCheckOut: registration.accomCheckOut ?? null,
     accomNotes: registration.accomNotes ?? null,
@@ -185,6 +216,7 @@ export async function GET(
       contactName: assignedHotel.contactName,
       contactPhone: assignedHotel.contactPhone,
       notes: assignedHotel.notes,
+      photoUrl: assignedHotel.photoUrl,
     } : null,
   });
 }

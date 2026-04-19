@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTeam } from "@/lib/team-context";
 import { Link } from "@/i18n/navigation";
 import {
-  Users, Shield, UserPlus, Plane, ShoppingCart, CheckCircle, AlertTriangle,
+  Users, Shield, Plane, ShoppingCart, CheckCircle, AlertTriangle,
   Hotel, Bus, AlertCircle, MapPin, Utensils, Phone, Calendar, ExternalLink, ArrowRight,
 } from "lucide-react";
 
@@ -54,8 +54,11 @@ type OverviewData = {
 };
 
 // ─── Accommodation Quest Card ─────────────────────────────────────────────────
-
-function AccommodationQuestCard({
+// Экспортируется — переиспользуется на /team/booking когда клуб ещё не
+// заявил проживание (иначе booking-страница показывает «Pricing has not been
+// assigned yet» без возможности что-то ввести).
+// eslint-disable-next-line react-refresh/only-export-components
+export function AccommodationQuestCard({
   teamId,
   accomConfirmed,
   accomDeclined,
@@ -85,7 +88,10 @@ function AccommodationQuestCard({
   const [confirmDecline, setConfirmDecline] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Поля формы — сбрасываются при смене команды (teamId)
+  // Accommodation demand — club-declared counts + dates + notes.
+  // Счётчики редактируются именно здесь (быстрый ввод «13 / 2 / 0»); галки
+  // «в отель» на вкладках ростера сохраняются параллельно для справки, но
+  // не являются source-of-truth для pricing'а (см. 0020).
   const [players, setPlayers] = useState(String(accomPlayers ?? 0));
   const [staff, setStaff] = useState(String(accomStaff ?? 0));
   const [accompanying, setAccompanying] = useState(String(accomAccompanying ?? 0));
@@ -225,7 +231,9 @@ function AccommodationQuestCard({
           </div>
         </div>
 
-        {/* Counts row */}
+        {/* Counts row — editable declared demand. Stored on
+            tournament_registrations.accom_players/staff/accompanying and used
+            downstream by the v3 pricing calculator when accomConfirmed=true. */}
         <div className="grid grid-cols-3 gap-3">
           {(
             [

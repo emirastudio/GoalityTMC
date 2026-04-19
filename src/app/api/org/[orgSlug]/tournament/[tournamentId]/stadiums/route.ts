@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Param
   if (isError(ctx)) return ctx;
 
   const body = await req.json();
-  const { name, address, contactName, contactPhone, mapsUrl, wazeUrl, notes } = body;
+  const { name, address, contactName, contactPhone, mapsUrl, wazeUrl, notes, photoUrl } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Param
       mapsUrl: mapsUrl?.trim() || null,
       wazeUrl: wazeUrl?.trim() || null,
       notes: notes?.trim() || null,
+      photoUrl: typeof photoUrl === "string" && photoUrl.trim() ? photoUrl : null,
     })
     .returning();
 

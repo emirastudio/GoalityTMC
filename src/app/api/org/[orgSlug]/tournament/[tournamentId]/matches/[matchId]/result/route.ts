@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { matches, matchResultLog, tournamentStages, matchRounds } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
+import { assertFeature } from "@/lib/plan-gates";
 import { recalculateGroupStandings } from "@/lib/standings-calculator";
 import { maybeAutoAdvanceGroup } from "@/lib/playoff-advance";
 import { eq, and, isNull, asc } from "drizzle-orm";
@@ -123,6 +124,8 @@ export async function PATCH(
   const p = await params;
   const ctx = await requireGameAdmin(req, p);
   if (isError(ctx)) return ctx;
+  const gate = assertFeature(ctx.effectivePlan, "hasMatchHub");
+  if (gate) return gate;
 
   const body = await req.json();
   const mid = parseInt(p.matchId);

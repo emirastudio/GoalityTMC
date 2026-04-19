@@ -11,8 +11,10 @@ import {
   inboxMessages,
   messageRecipients,
   clubs,
+  people,
+  registrationPeople,
 } from "@/db/schema";
-import { eq, and, max, count, isNull } from "drizzle-orm";
+import { eq, and, max, isNull } from "drizzle-orm";
 import { getSession, createToken, setSessionCookie } from "@/lib/auth";
 import { sendRegistrationReceived } from "@/lib/email";
 
@@ -152,8 +154,10 @@ export async function POST(
     }
   }
 
-  // 6. (team limit is NOT enforced here — registrations are a waitlist/queue,
-  //     limit is only checked when organizer assigns teams to divisions/groups)
+  // 6. Team limit is NOT enforced here by design. Registrations are a
+  //    waitlist/queue: clubs can apply in any quantity. The organizer later
+  //    picks which teams to accept into divisions/groups, and THAT is where
+  //    the plan limit bites (see /stages/[stageId]/groups/[groupId]/teams).
 
   // 7. Get next regNumber
   const [maxReg] = await db
@@ -216,6 +220,25 @@ export async function POST(
         displayName,
       })
       .returning();
+
+    // Backfill registration_people из текущего справочника команды.
+    // Если команда существует и в ней уже есть игроки — сразу готовый ростер
+    // (клуб может поправить галки потом). Для новой команды — просто пусто.
+    const teamPeople = await db
+      .select({ id: people.id })
+      .from(people)
+      .where(eq(people.teamId, teamId));
+    if (teamPeople.length > 0) {
+      await db
+        .insert(registrationPeople)
+        .values(
+          teamPeople.map((p) => ({
+            registrationId: registration.id,
+            personId: p.id,
+          }))
+        )
+        .onConflictDoNothing();
+    }
 
     registrations.push({
       teamId,

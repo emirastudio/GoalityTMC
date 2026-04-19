@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useAdminFetch } from "@/lib/tournament-context";
+import { useAdminFetch, useTournament } from "@/lib/tournament-context";
+import { TeamDealBlock } from "@/components/admin/offerings/team-deal-block";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,7 @@ interface AssignedHotel {
   contactPhone: string | null;
   contactEmail: string | null;
   notes: string | null;
+  photoUrl?: string | null;
 }
 
 interface Person {
@@ -1007,11 +1009,23 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
   const locale = useLocale();
   const t = useTranslations("orgAdmin.teamDetail");
   const adminFetch = useAdminFetch();
+  const tourneyCtx = useTournament();
 
   const [report, setReport] = useState<TeamReport | null>(null);
   const [packages, setPackages] = useState<ServicePackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Offerings v3 feature-flag lookup. Non-fatal: if the endpoint 404s or
+  // the caller isn't an org admin, we just keep the legacy v2 UI visible.
+  const [v3Enabled, setV3Enabled] = useState(false);
+  useEffect(() => {
+    if (!tourneyCtx?.orgSlug || !tourneyCtx?.tournamentId) return;
+    fetch(`/api/org/${tourneyCtx.orgSlug}/tournament/${tourneyCtx.tournamentId}/offerings/settings`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setV3Enabled(!!d?.offeringsV3Enabled))
+      .catch(() => {});
+  }, [tourneyCtx?.orgSlug, tourneyCtx?.tournamentId]);
 
   // Notes
   const [notes, setNotes] = useState("");
@@ -1777,32 +1791,45 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
 
       {/* ══════════════════════════════════════════════════════════════════
           ROW 3: Package & Pricing + Hotel & Logistics
+          When offerings v3 is enabled for the tournament, the unified
+          TeamDealBlock replaces the legacy two-card (Package + Overrides)
+          layout. Old cards stay live for non-v3 tournaments.
       ══════════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        {/* Package & Pricing */}
-        <PackagePricingCard
-          pkg={report.package}
-          packages={packages}
-          services={services}
-          overrides={overrides}
-          selectedPackageId={selectedPackageId}
-          assigningPackage={assigningPackage}
-          togglingPublish={togglingPublish}
-          teamId={teamId}
-          onAssign={handleAssignPackage}
-          onRemove={handleRemovePackage}
-          onTogglePublish={handleTogglePublish}
-          onSelectPackage={setSelectedPackageId}
-          onRefresh={fetchReport}
-        />
-
-        {/* Package Item Overrides */}
-        {report.package && (
-          <PackageItemOverridesCard
-            teamId={teamId}
-            packageId={report.package.id}
+        {v3Enabled && tourneyCtx ? (
+          <TeamDealBlock
+            orgSlug={tourneyCtx.orgSlug}
+            tournamentId={tourneyCtx.tournamentId}
+            teamId={Number(teamId)}
           />
+        ) : (
+          <>
+            {/* Legacy: Package & Pricing */}
+            <PackagePricingCard
+              pkg={report.package}
+              packages={packages}
+              services={services}
+              overrides={overrides}
+              selectedPackageId={selectedPackageId}
+              assigningPackage={assigningPackage}
+              togglingPublish={togglingPublish}
+              teamId={teamId}
+              onAssign={handleAssignPackage}
+              onRemove={handleRemovePackage}
+              onTogglePublish={handleTogglePublish}
+              onSelectPackage={setSelectedPackageId}
+              onRefresh={fetchReport}
+            />
+
+            {/* Legacy: Package Item Overrides */}
+            {report.package && (
+              <PackageItemOverridesCard
+                teamId={teamId}
+                packageId={report.package.id}
+              />
+            )}
+          </>
         )}
 
         {/* Hotel & Logistics */}
@@ -1829,8 +1856,17 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                 {availableHotels.length === 0 ? (
                   <p className="text-sm th-text-2 italic">
                     {t("noHotels")}{" "}
-                    <button onClick={() => router.push(`/${locale}/admin/tournaments`)}
-                      className="text-[var(--cat-accent)] hover:underline cursor-pointer">{t("addInTournament")}</button>
+                    <button
+                      onClick={() => {
+                        if (tourneyCtx?.orgSlug && tourneyCtx?.tournamentId) {
+                          router.push(`/${locale}/org/${tourneyCtx.orgSlug}/admin/tournament/${tourneyCtx.tournamentId}/hotels`);
+                        } else {
+                          router.push(`/${locale}/admin/tournaments`);
+                        }
+                      }}
+                      className="text-[var(--cat-accent)] hover:underline cursor-pointer">
+                      {t("addInTournament")}
+                    </button>
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -1853,14 +1889,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                       ))}
                     </select>
                     {assignedHotel && (
-                      <div className="rounded-lg bg-[var(--cat-accent)]/5 border border-[var(--cat-accent)]/20 p-3 space-y-1.5">
-                        <p className="text-sm font-semibold text-[var(--cat-accent)]">{assignedHotel.name}</p>
-                        {assignedHotel.address && <p className="text-xs th-text-2">{assignedHotel.address}</p>}
-                        {assignedHotel.contactName && <p className="text-xs th-text-2">{t("hotelContact")} {assignedHotel.contactName}</p>}
-                        {assignedHotel.contactPhone && <a href={`tel:${assignedHotel.contactPhone}`} className="text-xs text-[var(--cat-accent)] hover:underline block">{assignedHotel.contactPhone}</a>}
-                        {assignedHotel.contactEmail && <p className="text-xs th-text-2">{assignedHotel.contactEmail}</p>}
-                        {assignedHotel.notes && <p className="text-xs th-text-2 italic">{assignedHotel.notes}</p>}
-                      </div>
+                      <AssignedHotelCard hotel={assignedHotel} t={t} />
                     )}
                   </div>
                 )}
@@ -2388,6 +2417,98 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Assigned hotel card with Google/Apple/Waze navigation buttons ──
+// Kept local to team-detail for now; could graduate to shared when we
+// start rendering the same block on the club dashboard.
+
+function AssignedHotelCard({
+  hotel,
+  t,
+}: {
+  hotel: AssignedHotel;
+  t: (k: string) => string;
+}) {
+  const mapQuery = hotel.address ? encodeURIComponent(hotel.address) : encodeURIComponent(hotel.name);
+  const googleUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+  const appleUrl = `https://maps.apple.com/?q=${mapQuery}`;
+  const wazeUrl = `https://waze.com/ul?q=${mapQuery}&navigate=yes`;
+
+  return (
+    <div className="rounded-xl overflow-hidden border"
+      style={{
+        background: "linear-gradient(135deg, var(--cat-badge-open-bg) 0%, rgba(16,185,129,0.04) 100%)",
+        borderColor: "rgba(16,185,129,0.25)",
+      }}>
+      {hotel.photoUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={hotel.photoUrl}
+          alt={hotel.name}
+          className="w-full object-cover"
+          style={{ aspectRatio: "21 / 9" }}
+        />
+      )}
+      <div className="p-4 space-y-3">
+        <div>
+          <p className="text-base font-bold" style={{ color: "var(--cat-accent)" }}>
+            {hotel.name}
+          </p>
+          {hotel.address && <p className="text-xs th-text-2 mt-0.5">{hotel.address}</p>}
+        </div>
+
+        {(hotel.contactName || hotel.contactPhone || hotel.contactEmail) && (
+          <div className="space-y-1 text-xs th-text-2">
+            {hotel.contactName && <p>{t("hotelContact")} {hotel.contactName}</p>}
+            {hotel.contactPhone && (
+              <a href={`tel:${hotel.contactPhone}`} className="block text-[var(--cat-accent)] hover:underline">
+                {hotel.contactPhone}
+              </a>
+            )}
+            {hotel.contactEmail && (
+              <a href={`mailto:${hotel.contactEmail}`} className="block hover:underline">
+                {hotel.contactEmail}
+              </a>
+            )}
+          </div>
+        )}
+
+        {hotel.notes && <p className="text-xs th-text-2 italic">{hotel.notes}</p>}
+
+        {/* Navigation buttons — always visible (Apple/Waze/Google accept queries). */}
+        <div className="grid grid-cols-3 gap-2 pt-1">
+          <a href={googleUrl} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-bold transition-colors hover:opacity-80"
+            style={{
+              background: "var(--cat-card-bg)",
+              color: "var(--cat-text)",
+              border: "1px solid var(--cat-card-border)",
+            }}>
+            Google
+          </a>
+          <a href={appleUrl} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-bold transition-colors hover:opacity-80"
+            style={{
+              background: "var(--cat-card-bg)",
+              color: "var(--cat-text)",
+              border: "1px solid var(--cat-card-border)",
+            }}>
+            Apple
+          </a>
+          <a href={wazeUrl} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-bold transition-colors hover:opacity-80"
+            style={{
+              background: "var(--cat-card-bg)",
+              color: "var(--cat-text)",
+              border: "1px solid var(--cat-card-border)",
+            }}>
+            Waze
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

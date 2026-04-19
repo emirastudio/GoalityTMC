@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { matchLineup, matches, people, teams } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
+import { assertFeature } from "@/lib/plan-gates";
 import { eq, and, isNull, inArray } from "drizzle-orm";
 
 type Params = { orgSlug: string; tournamentId: string; matchId: string };
@@ -44,7 +45,7 @@ export async function GET(
             inArray(people.teamId, teamIds),
             eq(people.personType, "player"),
           ),
-          orderBy: (p, { asc }) => [asc(p.shirtNumber), asc(p.lastName)],
+          orderBy: (p, { asc }) => [asc(p.lastName)],
         })
       : [];
 
@@ -65,6 +66,8 @@ export async function POST(
   const p = await params;
   const ctx = await requireGameAdmin(req, p);
   if (isError(ctx)) return ctx;
+  const gate = assertFeature(ctx.effectivePlan, "hasMatchHub");
+  if (gate) return gate;
 
   const mid = parseInt(p.matchId);
   const body = await req.json();
@@ -78,7 +81,7 @@ export async function POST(
   if (body.importSquad && body.teamId) {
     const squad = await db.query.people.findMany({
       where: and(eq(people.teamId, body.teamId), eq(people.personType, "player")),
-      orderBy: (p, { asc }) => [asc(p.shirtNumber)],
+      orderBy: (p, { asc }) => [asc(p.lastName)],
     });
 
     if (squad.length === 0) {
@@ -90,12 +93,16 @@ export async function POST(
       and(eq(matchLineup.matchId, mid), eq(matchLineup.teamId, body.teamId))
     );
 
-    const entries = squad.map((player, idx) => ({
+    // Номер футболки: после 0018 живёт в registration_people (per-tournament).
+    // Если команда зарегистрирована в турнире матча — подтягиваем номер из pivot.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _idxUnused = null;
+    const entries = squad.map((player) => ({
       matchId: mid,
       teamId: body.teamId,
       personId: player.id,
       isStarting: body.isStarting !== undefined ? body.isStarting : true,
-      shirtNumber: player.shirtNumber ?? null,
+      shirtNumber: null as number | null,
       position: player.position ?? null,
     }));
 
@@ -141,6 +148,8 @@ export async function PATCH(
   const p = await params;
   const ctx = await requireGameAdmin(req, p);
   if (isError(ctx)) return ctx;
+  const gate = assertFeature(ctx.effectivePlan, "hasMatchHub");
+  if (gate) return gate;
 
   const mid = parseInt(p.matchId);
   const personId = parseInt(req.nextUrl.searchParams.get("personId") ?? "0");
@@ -171,6 +180,8 @@ export async function DELETE(
   const p = await params;
   const ctx = await requireGameAdmin(req, p);
   if (isError(ctx)) return ctx;
+  const gate = assertFeature(ctx.effectivePlan, "hasMatchHub");
+  if (gate) return gate;
 
   const mid = parseInt(p.matchId);
   const personId = req.nextUrl.searchParams.get("personId");
