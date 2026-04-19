@@ -6,7 +6,7 @@ rsync -avz --exclude='node_modules' --exclude='.next' --exclude='.git' --exclude
 echo "→ Building (clean)..."
 ssh root@goality.ee "cd /home/goality/app && rm -rf .next && pnpm build"
 
-echo "→ Restarting PM2..."
-ssh root@goality.ee "fuser -k 3001/tcp 2>/dev/null || true; sleep 1; pm2 restart goality --update-env"
+echo "→ Reloading PM2..."
+ssh root@goality.ee "pm2 reload goality --update-env"
 
 echo "✓ Done"
