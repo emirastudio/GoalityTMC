@@ -4,30 +4,12 @@ import { tournaments, organizations, teams, tournamentClasses, tournamentRegistr
 import { eq, count, and, sql } from "drizzle-orm";
 
 export async function GET() {
-  // Get all tournaments with registration open
-  const rawTournaments = await db.query.tournaments.findMany({
+  // Catalog is open to ALL tournaments with registration open, regardless of plan.
+  // Free tournaments get the same exposure as paid ones — this is a deliberate
+  // product decision (free is a growth channel, not a gated feature).
+  const allTournaments = await db.query.tournaments.findMany({
     where: eq(tournaments.registrationOpen, true),
     orderBy: (t, { asc }) => [asc(t.startDate)],
-  });
-
-  // Filter out free-plan tournaments that need an upgrade.
-  // For each org, only the oldest active free tournament is eligible; paid plans always eligible.
-  const orgOldestFreeId: Record<number, number> = {};
-  for (const t of rawTournaments) {
-    if ((t.plan as string) !== "free") continue;
-    const existing = orgOldestFreeId[t.organizationId];
-    if (existing === undefined) {
-      orgOldestFreeId[t.organizationId] = t.id;
-    } else {
-      const existingT = rawTournaments.find(x => x.id === existing)!;
-      if (new Date(t.createdAt).getTime() < new Date(existingT.createdAt).getTime()) {
-        orgOldestFreeId[t.organizationId] = t.id;
-      }
-    }
-  }
-  const allTournaments = rawTournaments.filter(t => {
-    if ((t.plan as string) !== "free") return true;
-    return t.id === orgOldestFreeId[t.organizationId];
   });
 
   const enriched = await Promise.all(
