@@ -24,7 +24,7 @@ export default function TermsPage() {
             <h1 style={{ fontSize: "30px", fontWeight: 800, color: "var(--cat-text)", margin: 0 }}>Terms of Service</h1>
           </div>
           <p style={{ fontSize: "13px", marginBottom: "32px", color: "var(--cat-text-muted)" }}>
-            Last updated: 2025-01-01 · Goality Sport Group OÜ (17232252), Tallinn, Estonia
+            Last updated: 2026-04-17 · Goality Sport Group OÜ (17232252), Tallinn, Estonia
           </p>
 
           <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "12px", padding: "16px", marginBottom: "32px" }}>
@@ -60,6 +60,8 @@ export default function TermsPage() {
                 <li>Compliance with all applicable laws in your jurisdiction, including data protection, sports regulations, and consumer protection laws</li>
                 <li>How you configure, manage, and conduct tournaments using the platform — Goality has no involvement in the actual conduct of any tournament</li>
                 <li>Ensuring that all participants in any tournament managed through the platform have given necessary consents for data processing</li>
+                <li><strong style={{ color: "var(--cat-text)" }}>Minors (GDPR Art. 8):</strong> if you register players under 18, you confirm that you have obtained verifiable parental or legal-guardian consent for each minor before entering their name, surname and date of birth into the platform. Goality relies on this confirmation and does not independently collect parental consent.</li>
+                <li><strong style={{ color: "var(--cat-text)" }}>No special category data:</strong> you will not enter health, medical, allergy, religious, political or other GDPR Art. 9 special category data into free-text fields. The platform is not designed for such data and Goality provides no corresponding safeguards.</li>
               </ul>
             </section>
 
@@ -99,12 +101,20 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>7. Payments and No-Refund Policy</h2>
-              <p style={{ marginBottom: "12px" }}>Goality TMC is a digital subscription service. All payments are processed electronically.</p>
-              <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "12px", padding: "16px" }}>
-                <p style={{ fontWeight: 700, color: "var(--cat-text)", marginBottom: "8px" }}>No Refunds for Digital Products</p>
-                <p style={{ margin: 0 }}>In accordance with the EU Consumer Rights Directive (2011/83/EU) Article 16(m), the right of withdrawal does not apply to digital content that has been fully performed with your prior express consent. By activating a paid plan on Goality TMC, you expressly consent to immediate performance and acknowledge that you lose your right of withdrawal. <strong style={{ color: "var(--cat-text)" }}>All payments are non-refundable.</strong> If you believe there is an error in billing, contact us within 14 days of the charge at <a href="mailto:legal@goality.app" style={{ color: "var(--cat-accent)" }}>legal@goality.app</a>.</p>
+              <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>7. Pricing, Payments and Refunds</h2>
+              <p style={{ marginBottom: "12px" }}>Goality TMC is a digital service. Current prices are shown at <Link href="/pricing" style={{ color: "var(--cat-accent)" }}>/pricing</Link> and apply at the time of purchase. Payments are processed by Stripe Payments Europe, Ltd. We do not store full card details.</p>
+              <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
+                <p style={{ fontWeight: 700, color: "var(--cat-text)", marginBottom: "8px" }}>Waiver of the Right of Withdrawal (Digital Content)</p>
+                <p style={{ margin: 0 }}>Under Article 16(m) of the EU Consumer Rights Directive (2011/83/EU), the statutory 14-day right of withdrawal does <strong>not</strong> apply to digital content that has been supplied with your prior express consent and your acknowledgement that you thereby lose your right of withdrawal. When you activate a paid plan on Goality TMC, you <strong>explicitly consent to immediate performance</strong> of the service and <strong>acknowledge that you thereby lose the right of withdrawal</strong>. Your consent is recorded at checkout.</p>
               </div>
+              <p style={{ margin: 0 }}>
+                <strong style={{ color: "var(--cat-text)" }}>All payments are non-refundable</strong> except where required by mandatory law. If you believe there is a billing error or a charge was made in error, contact <a href="mailto:legal@goality.app" style={{ color: "var(--cat-accent)" }}>legal@goality.app</a> within 14 days of the charge and we will investigate in good faith.
+              </p>
+            </section>
+
+            <section>
+              <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>7a. Service Availability</h2>
+              <p>We provide the platform on a <strong>best-effort</strong> basis. We do not guarantee uninterrupted availability and offer no formal uptime SLA. Scheduled maintenance, third-party outages (hosting, Stripe, OAuth providers) and force-majeure events may cause temporary downtime. We will make reasonable efforts to restore service promptly.</p>
             </section>
 
             <section>
@@ -113,12 +123,17 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>9. Governing Law</h2>
+              <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>9. Changes to these Terms</h2>
+              <p>We may update these Terms from time to time. When we make material changes, we will update the &quot;Last updated&quot; date at the top of this page and notify you by email or via an in-app notice at least 14 days before the changes take effect. Continued use of the platform after the effective date constitutes acceptance of the revised Terms. If you do not agree to the changes, you must stop using the platform and may request deletion of your account.</p>
+            </section>
+
+            <section>
+              <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>10. Governing Law</h2>
               <p>These Terms are governed by and construed in accordance with the laws of the Republic of Estonia. Any disputes arising under these Terms shall be subject to the exclusive jurisdiction of the courts of Estonia. If you are a consumer in the EU, you may also submit a complaint to the EU Online Dispute Resolution platform at ec.europa.eu/consumers/odr.</p>
             </section>
 
             <section>
-              <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>10. Contact</h2>
+              <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>11. Contact</h2>
               <div style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", borderRadius: "12px", padding: "16px" }}>
                 <p style={{ fontWeight: 700, color: "var(--cat-text)", margin: "0 0 2px 0" }}>Goality Sport Group OÜ (17232252)</p>
                 <p style={{ color: "var(--cat-text-muted)", margin: "0 0 2px 0" }}>Tallinn, Estonia</p>

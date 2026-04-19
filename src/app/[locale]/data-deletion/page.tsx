@@ -24,7 +24,7 @@ export default function DataDeletionPage() {
             <h1 style={{ fontSize: "30px", fontWeight: 800, color: "var(--cat-text)", margin: 0 }}>Data Deletion</h1>
           </div>
           <p style={{ fontSize: "13px", marginBottom: "32px", color: "var(--cat-text-muted)" }}>
-            Goality Sport Group OÜ (17232252) · Tallinn, Estonia
+            Last updated: 2026-04-17 · Goality Sport Group OÜ (17232252) · Tallinn, Estonia
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "32px", fontSize: "14px", lineHeight: "1.7", color: "var(--cat-text-secondary)" }}>
@@ -41,37 +41,44 @@ export default function DataDeletionPage() {
                 <li>Any preferences and settings associated with your account</li>
               </ul>
               <p style={{ marginTop: "12px", fontSize: "12px", color: "var(--cat-text-muted)" }}>
-                Note: some financial records may be retained for up to 7 years as required by Estonian accounting law.
+                Note: accounting records (invoices, payment receipts) are retained for 7 years under the Estonian Accounting Act (Raamatupidamise seadus § 12). These are kept in line-item form; personal data is minimised to what is strictly required for tax and audit purposes.
               </p>
             </section>
 
             <section>
               <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>How to request deletion</h2>
-              <div style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", borderRadius: "12px", padding: "20px" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <p style={{ marginBottom: "12px" }}>You can request deletion in two ways — use whichever is more convenient.</p>
+
+              <div style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
+                <p style={{ fontWeight: 700, color: "var(--cat-text)", marginTop: 0, marginBottom: "10px" }}>Option A — from your account (recommended)</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
                     <span style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text, #fff)", borderRadius: "9999px", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800, flexShrink: 0, marginTop: "2px" }}>1</span>
-                    <p style={{ margin: 0 }}>If you signed in via Google or Facebook, revoke the Goality app access in your social account settings.</p>
+                    <p style={{ margin: 0 }}>Sign in to your Goality account.</p>
                   </div>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
                     <span style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text, #fff)", borderRadius: "9999px", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800, flexShrink: 0, marginTop: "2px" }}>2</span>
-                    <p style={{ margin: 0 }}>
-                      Send a deletion request to{" "}
-                      <a href="mailto:privacy@goality.app" style={{ color: "var(--cat-accent)", fontWeight: 600 }}>privacy@goality.app</a>{" "}
-                      with the subject line <strong style={{ color: "var(--cat-text)" }}>&quot;Data Deletion Request&quot;</strong> and your account email address.
-                    </p>
+                    <p style={{ margin: 0 }}>Open your profile and use the <strong style={{ color: "var(--cat-text)" }}>&quot;Request account deletion&quot;</strong> action. This sends a verified request automatically.</p>
                   </div>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
                     <span style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text, #fff)", borderRadius: "9999px", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800, flexShrink: 0, marginTop: "2px" }}>3</span>
-                    <p style={{ margin: 0 }}>We will confirm receipt and process your request within 30 days.</p>
+                    <p style={{ margin: 0 }}>If you signed in via Google or Facebook, also revoke Goality&apos;s access in your social account settings.</p>
                   </div>
                 </div>
               </div>
-            </section>
 
-            <section>
-              <h2 style={{ fontSize: "17px", fontWeight: 700, marginBottom: "10px", color: "var(--cat-text)" }}>Processing time</h2>
-              <p>We will process all deletion requests within 30 days of receipt. You will receive a confirmation email when the process is complete.</p>
+              <div style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", borderRadius: "12px", padding: "20px" }}>
+                <p style={{ fontWeight: 700, color: "var(--cat-text)", marginTop: 0, marginBottom: "10px" }}>Option B — by email</p>
+                <p style={{ margin: 0 }}>
+                  Send a deletion request to{" "}
+                  <a href="mailto:privacy@goality.app" style={{ color: "var(--cat-accent)", fontWeight: 600 }}>privacy@goality.app</a>{" "}
+                  with the subject line <strong style={{ color: "var(--cat-text)" }}>&quot;Data Deletion Request&quot;</strong> and the email address associated with your account. We may contact you to verify your identity before acting on the request.
+                </p>
+              </div>
+
+              <p style={{ marginTop: "16px", fontSize: "13px", color: "var(--cat-text-muted)" }}>
+                We will confirm receipt and complete the request without undue delay, in any case within 30 days. You will receive a confirmation email when the process is complete.
+              </p>
             </section>
 
             <section>
