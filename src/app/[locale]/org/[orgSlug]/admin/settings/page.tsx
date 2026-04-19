@@ -7,6 +7,8 @@ import { organizations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { Settings } from "lucide-react";
+import { OrgLegalActions } from "./legal-actions";
+import { OrgAdminTeam } from "./admin-team";
 
 type Props = {
   params: Promise<{ locale: string; orgSlug: string }>;
@@ -126,6 +128,9 @@ export default async function OrgSettingsPage({ params }: Props) {
           {t("save")}
         </button>
       </form>
+
+      <OrgAdminTeam orgSlug={orgSlug} />
+      <OrgLegalActions orgSlug={orgSlug} orgName={organization.name} />
     </div>
   );
 }
