@@ -41,6 +41,19 @@ export default function TournamentInfoPage() {
   const t = useTranslations("tournament");
   const locale = useLocale();
   const [clubs, setClubs] = useState<ClubEntry[]>([]);
+  const [canSeeContacts, setCanSeeContacts] = useState(false);
+
+  useEffect(() => {
+    // Contacts are visible only to logged-in clubs and organizers.
+    // Public anonymous visitors must not see them.
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me: { role?: string } | null) => {
+        if (!me) return;
+        if (me.role === "admin" || me.role === "club") setCanSeeContacts(true);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch(`/api/public/t/${org.slug}/${tourney.slug}/teams`)
@@ -157,31 +170,34 @@ export default function TournamentInfoPage() {
               <p className="text-[11px] font-black uppercase tracking-widest"
                 style={{ color: "var(--cat-text-muted)" }}>{t("keyDates")}</p>
             </div>
-            <div className="space-y-3">
+            <div className="flex flex-wrap items-stretch gap-3">
               {tourney.registrationDeadline && (
-                <div className="flex items-center gap-3">
-                  <Clock className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
-                  <div>
-                    <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>{t("registrationDeadline")}</p>
-                    <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{fmt(tourney.registrationDeadline, locale)}</p>
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border flex-1 min-w-[180px]"
+                  style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+                  <Clock className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("registrationDeadline")}</p>
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{fmt(tourney.registrationDeadline, locale)}</p>
                   </div>
                 </div>
               )}
               {tourney.startDate && (
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
-                  <div>
-                    <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentStart")}</p>
-                    <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{fmt(tourney.startDate, locale)}</p>
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border flex-1 min-w-[180px]"
+                  style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+                  <Calendar className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentStart")}</p>
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{fmt(tourney.startDate, locale)}</p>
                   </div>
                 </div>
               )}
               {tourney.endDate && (
-                <div className="flex items-center gap-3">
-                  <Trophy className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
-                  <div>
-                    <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentEnd")}</p>
-                    <p className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>{fmt(tourney.endDate, locale)}</p>
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border flex-1 min-w-[180px]"
+                  style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+                  <Trophy className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentEnd")}</p>
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{fmt(tourney.endDate, locale)}</p>
                   </div>
                 </div>
               )}
@@ -267,8 +283,8 @@ export default function TournamentInfoPage() {
         </div>
       )}
 
-      {/* Contacts */}
-      {(org.contactEmail || org.website || org.city) && (
+      {/* Contacts — only visible to logged-in clubs / admins */}
+      {canSeeContacts && (org.contactEmail || org.website || org.city) && (
         <div className="rounded-2xl p-5 border"
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
           <div className="flex items-center gap-2 mb-4">

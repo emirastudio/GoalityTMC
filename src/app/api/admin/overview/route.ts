@@ -5,7 +5,7 @@ import {
   servicePackages, teamBookings, teamServiceOverrides, payments,
   tournaments, tournamentClasses,
   accommodationOptions, extraMealOptions, transferOptions, registrationFees,
-  tournamentRegistrations,
+  tournamentRegistrations, registrationPeople,
 } from "@/db/schema";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAdmin, isError } from "@/lib/api-auth";
@@ -36,9 +36,6 @@ export async function GET(req: NextRequest) {
       regNumber: tournamentRegistrations.regNumber,
       status: tournamentRegistrations.status,
       classId: tournamentRegistrations.classId,
-      accomPlayers: tournamentRegistrations.accomPlayers,
-      accomStaff: tournamentRegistrations.accomStaff,
-      accomAccompanying: tournamentRegistrations.accomAccompanying,
       accomCheckIn: tournamentRegistrations.accomCheckIn,
       accomCheckOut: tournamentRegistrations.accomCheckOut,
       accomConfirmed: tournamentRegistrations.accomConfirmed,
@@ -102,6 +99,28 @@ export async function GET(req: NextRequest) {
       totalPaid: sql<number>`SUM(CASE WHEN status = 'received' THEN amount ELSE 0 END)`,
     }).from(payments).where(inArray(payments.registrationId, regIds)).groupBy(payments.registrationId),
   ]);
+
+  // Accommodation counts из pivot (needsHotel=true) — сгруппированно по регистрации × типу.
+  const accomRows = await db
+    .select({
+      registrationId: registrationPeople.registrationId,
+      personType: people.personType,
+      cnt: sql<number>`COUNT(*)::int`,
+    })
+    .from(registrationPeople)
+    .innerJoin(people, eq(people.id, registrationPeople.personId))
+    .where(and(inArray(registrationPeople.registrationId, regIds), eq(registrationPeople.needsHotel, true)))
+    .groupBy(registrationPeople.registrationId, people.personType);
+  const accomByReg = new Map<number, { players: number; staff: number; accompanying: number }>();
+  for (const r of accomRows) {
+    if (!accomByReg.has(r.registrationId)) {
+      accomByReg.set(r.registrationId, { players: 0, staff: 0, accompanying: 0 });
+    }
+    const slot = accomByReg.get(r.registrationId)!;
+    if (r.personType === "player") slot.players = Number(r.cnt);
+    if (r.personType === "staff") slot.staff = Number(r.cnt);
+    if (r.personType === "accompanying") slot.accompanying = Number(r.cnt);
+  }
 
   // ─── Build maps ───────────────────────────────────────────────────────────
   const clubMap = new Map(clubsData.map((c) => [c.id, c]));
@@ -192,8 +211,9 @@ export async function GET(req: NextRequest) {
       departureDate: travel?.departureDate ? travel.departureDate.toISOString().split("T")[0] : null,
       departureTime: travel?.departureTime ?? null,
       accomConfirmed: team.accomConfirmed, accomDeclined: team.accomDeclined,
-      accomPlayers: team.accomPlayers, accomStaff: team.accomStaff,
-      accomAccompanying: team.accomAccompanying,
+      accomPlayers: accomByReg.get(team.regId)?.players ?? 0,
+      accomStaff: accomByReg.get(team.regId)?.staff ?? 0,
+      accomAccompanying: accomByReg.get(team.regId)?.accompanying ?? 0,
       accomCheckIn: team.accomCheckIn, accomCheckOut: team.accomCheckOut,
       hasTransfer: transferRegs.has(team.regId),
       packageName: pkg?.name ?? null, packagePublished: assign?.isPublished ?? false,

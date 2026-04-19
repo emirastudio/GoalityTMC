@@ -132,6 +132,12 @@ export default function TournamentBillingPage() {
   const [extraTeams, setExtraTeams] = useState(0);
   const [extraDivisions, setExtraDivisions] = useState(0);
   const [error, setError] = useState("");
+  // EU Consumer Rights Directive (2011/83/EU) Art. 16(m): to disable the
+  // 14-day right of withdrawal on digital services, the customer must
+  // explicitly consent to immediate performance AND acknowledge the loss
+  // of the right. Without this checkbox the "no-refund" clause in Terms
+  // cannot be enforced against EU consumers.
+  const [waiverAccepted, setWaiverAccepted] = useState(false);
 
   const paymentStatus = searchParams.get("payment");
   const reason = searchParams.get("reason");
@@ -170,13 +176,25 @@ export default function TournamentBillingPage() {
 
   async function handleCheckout() {
     if (selectedPlan === "free") return;
+    if (!waiverAccepted) {
+      setError(t("waiverRequired"));
+      return;
+    }
     setCheckoutLoading(true);
     setError("");
+    const waiverAcceptedAt = new Date().toISOString();
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tournamentId, plan: selectedPlan, extraTeams, extraDivisions }),
+        body: JSON.stringify({
+          tournamentId,
+          plan: selectedPlan,
+          extraTeams,
+          extraDivisions,
+          waiverAcceptedAt,
+          waiverVersion: "1",
+        }),
       });
       const data = await res.json();
       if (data.url) {
@@ -509,28 +527,71 @@ export default function TournamentBillingPage() {
                   {t("freePlanNote")}
                 </div>
               ) : (
-                <button
-                  onClick={handleCheckout}
-                  disabled={checkoutLoading}
-                  className="w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-opacity"
-                  style={{
-                    background: PLAN_STYLE[selectedPlan].gradient,
-                    color: "#fff",
-                    border: "none",
-                    cursor: checkoutLoading ? "wait" : "pointer",
-                    opacity: checkoutLoading ? 0.7 : 1,
-                  }}
-                >
-                  {checkoutLoading ? (
-                    <>{t("paymentOpening")}</>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4" />
-                      {t("paySecurely")}
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                <>
+                  {/* Mandatory waiver — EU Directive 2011/83/EU Art. 16(m) */}
+                  <label
+                    className="flex items-start gap-2.5 mb-3 cursor-pointer select-none"
+                    style={{
+                      padding: "12px",
+                      borderRadius: "12px",
+                      background: "var(--cat-tag-bg)",
+                      border: `1px solid ${waiverAccepted ? "var(--cat-accent)" : "var(--cat-card-border)"}`,
+                      transition: "border-color 0.15s",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={waiverAccepted}
+                      onChange={(e) => setWaiverAccepted(e.target.checked)}
+                      style={{
+                        marginTop: "2px",
+                        width: "16px",
+                        height: "16px",
+                        accentColor: "var(--cat-accent)",
+                        flexShrink: 0,
+                        cursor: "pointer",
+                      }}
+                    />
+                    <span className="text-[12px] leading-relaxed" style={{ color: "var(--cat-text-secondary)" }}>
+                      {t.rich("waiverLabel", {
+                        terms: (chunks) => (
+                          <a
+                            href="/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "var(--cat-accent)", textDecoration: "underline" }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {chunks}
+                          </a>
+                        ),
+                      })}
+                    </span>
+                  </label>
+
+                  <button
+                    onClick={handleCheckout}
+                    disabled={checkoutLoading || !waiverAccepted}
+                    className="w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-opacity"
+                    style={{
+                      background: PLAN_STYLE[selectedPlan].gradient,
+                      color: "#fff",
+                      border: "none",
+                      cursor: checkoutLoading ? "wait" : !waiverAccepted ? "not-allowed" : "pointer",
+                      opacity: checkoutLoading || !waiverAccepted ? 0.5 : 1,
+                    }}
+                  >
+                    {checkoutLoading ? (
+                      <>{t("paymentOpening")}</>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4" />
+                        {t("paySecurely")}
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </>
               )}
 
               {/* Security note */}

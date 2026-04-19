@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { requireAdmin, isError } from "@/lib/api-auth";
+import { getStripeMode } from "@/lib/stripe-mode";
 
 export async function GET() {
   const session = await requireAdmin();
@@ -28,11 +29,18 @@ export async function GET() {
       : "SMTP_HOST not set",
   };
 
+  const stripeMode = getStripeMode();
+  const stripeKeyVar = stripeMode === "test" ? "STRIPE_SECRET_KEY_TEST" : "STRIPE_SECRET_KEY_LIVE";
+  const stripeWebhookVar = stripeMode === "test" ? "STRIPE_WEBHOOK_SECRET_TEST" : "STRIPE_WEBHOOK_SECRET_LIVE";
+  const stripeKey = process.env[stripeKeyVar];
+  const stripeWebhook = process.env[stripeWebhookVar];
   checks.stripe = {
-    ok: Boolean(process.env.STRIPE_SECRET_KEY),
-    detail: process.env.STRIPE_SECRET_KEY
-      ? `Key starts with ${process.env.STRIPE_SECRET_KEY.slice(0, 8)}…`
-      : "STRIPE_SECRET_KEY not set",
+    ok: Boolean(stripeKey && stripeWebhook),
+    detail: !stripeKey
+      ? `${stripeKeyVar} not set (mode: ${stripeMode})`
+      : !stripeWebhook
+      ? `${stripeWebhookVar} not set (mode: ${stripeMode})`
+      : `${stripeMode.toUpperCase()} — key ${stripeKey.slice(0, 8)}…, webhook configured`,
   };
 
   checks.jwt = {

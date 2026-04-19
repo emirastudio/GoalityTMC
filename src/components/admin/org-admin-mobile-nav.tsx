@@ -8,7 +8,7 @@ import {
   LayoutGrid, ClipboardList, Users, SlidersHorizontal,
   GitBranch, CalendarDays, CreditCard, MessageSquare,
   ShoppingBag, Radio, FileText, LogOut, ChevronRight,
-  Zap, Lock,
+  Zap, Lock, MapPin, Hotel,
 } from "lucide-react";
 
 type Props = {
@@ -63,7 +63,9 @@ export function OrgAdminMobileNav({ orgSlug, orgName, orgLogo }: Props) {
     { key: "planner",           icon: CalendarDays,      href: `${base}/planner`,            exact: false, color: "#06b6d4" },
     { key: "registrations",     icon: FileText,          href: `${base}/registrations`,      exact: false, color: "#10b981" },
     { key: "teams",             icon: Users,             href: `${base}/teams`,              exact: false, color: "#10b981" },
-    { key: "servicesPackages",  icon: ShoppingBag,       href: `${base}/services-packages`,  exact: false, color: "#f59e0b" },
+    { key: "servicesPackages",  icon: ShoppingBag,       href: `${base}/offerings`,  exact: false, color: "#ec4899" },
+    { key: "stadiums",          icon: MapPin,            href: `${base}/stadiums`,           exact: false, color: "#ec4899" },
+    { key: "hotels",            icon: Hotel,             href: `${base}/hotels`,             exact: false, color: "#ec4899" },
     { key: "payments",          icon: CreditCard,        href: `${base}/payments`,           exact: false, color: "#f59e0b" },
     { key: "messagesLabel",     icon: MessageSquare,     href: `${base}/messages`,           exact: false, color: "#8b5cf6" },
     { key: "setup",             icon: SlidersHorizontal, href: `${base}/setup`,              exact: false, color: "#8b5cf6" },

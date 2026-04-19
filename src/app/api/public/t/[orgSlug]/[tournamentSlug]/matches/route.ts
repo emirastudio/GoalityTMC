@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { organizations, tournaments, matches, tournamentRegistrations } from "@/db/schema";
 import { eq, and, isNull, asc, inArray, or } from "drizzle-orm";
+import { resolveTeamDisplayNames } from "@/lib/team-display-names";
 
 // GET /api/public/t/[orgSlug]/[tournamentSlug]/matches
 // Публичное расписание матчей — без авторизации
@@ -80,6 +81,26 @@ export async function GET(
       round: true,
     },
   });
+
+  // Fill in tournament-scoped displayName fallback when teams.name is NULL.
+  const teamIdSet = new Set<number>();
+  for (const m of result) {
+    if (m.homeTeam?.id && !m.homeTeam.name) teamIdSet.add(m.homeTeam.id);
+    if (m.awayTeam?.id && !m.awayTeam.name) teamIdSet.add(m.awayTeam.id);
+  }
+  if (teamIdSet.size > 0) {
+    const displayNames = await resolveTeamDisplayNames(tournament.id, Array.from(teamIdSet));
+    for (const m of result) {
+      if (m.homeTeam && !m.homeTeam.name) {
+        const dn = displayNames.get(m.homeTeam.id);
+        if (dn) m.homeTeam.name = dn;
+      }
+      if (m.awayTeam && !m.awayTeam.name) {
+        const dn = displayNames.get(m.awayTeam.id);
+        if (dn) m.awayTeam.name = dn;
+      }
+    }
+  }
 
   return NextResponse.json(result);
 }

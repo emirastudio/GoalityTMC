@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { organizations, tournaments, tournamentDocuments } from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
+import { getEffectivePlan, assertFeature, type TournamentPlan } from "@/lib/plan-gates";
 
 // GET /api/public/t/[orgSlug]/[tournamentSlug]/documents
 // Публичные документы турнира (регламент, правила и т.д.)
@@ -23,6 +24,15 @@ export async function GET(
     ),
   });
   if (!tournament) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Plan gate: hasDocuments (Starter+). Free tournaments return empty, not 402 —
+  // this is a public endpoint, a hard error leaks plan info to visitors.
+  const effectivePlan = getEffectivePlan(
+    (tournament.plan as TournamentPlan) ?? "free",
+    org.eliteSubStatus
+  );
+  const gate = assertFeature(effectivePlan, "hasDocuments");
+  if (gate) return NextResponse.json([]);
 
   const docs = await db.select().from(tournamentDocuments)
     .where(eq(tournamentDocuments.tournamentId, tournament.id))

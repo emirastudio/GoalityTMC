@@ -43,6 +43,9 @@ export default function OnboardingPage() {
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [orgType, setOrgType] = useState<"managed" | "listing" | null>(null);
+  // Single consolidated legal acceptance — covers Terms, Privacy and DPA
+  // (Art. 28). Captured on submit and persisted server-side.
+  const [legalAccepted, setLegalAccepted] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -50,6 +53,11 @@ export default function OnboardingPage() {
 
     if (!isPasswordValid(password)) {
       setError(t("errors.passwordTooWeak"));
+      return;
+    }
+
+    if (!legalAccepted) {
+      setError(t("errors.legalRequired"));
       return;
     }
 
@@ -64,6 +72,9 @@ export default function OnboardingPage() {
       country,
       city,
       orgType: orgType ?? "managed",
+      legalAcceptedAt: new Date().toISOString(),
+      dpaVersion: "1",
+      termsVersion: "1",
     };
 
     // Client validation
@@ -357,14 +368,47 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
+                <label
+                  className="flex items-start gap-2.5 cursor-pointer select-none px-1"
+                  style={{ color: "var(--cat-text-secondary)" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={legalAccepted}
+                    onChange={(e) => setLegalAccepted(e.target.checked)}
+                    style={{
+                      marginTop: "2px",
+                      width: "16px",
+                      height: "16px",
+                      accentColor: "var(--cat-accent)",
+                      flexShrink: 0,
+                      cursor: "pointer",
+                    }}
+                  />
+                  <span className="text-[12px] leading-relaxed">
+                    {t.rich("legalAcceptance", {
+                      terms: (chunks) => (
+                        <Link href="/terms" target="_blank" style={{ color: "var(--cat-accent)", textDecoration: "underline" }}>{chunks}</Link>
+                      ),
+                      privacy: (chunks) => (
+                        <Link href="/privacy" target="_blank" style={{ color: "var(--cat-accent)", textDecoration: "underline" }}>{chunks}</Link>
+                      ),
+                      dpa: (chunks) => (
+                        <Link href="/dpa" target="_blank" style={{ color: "var(--cat-accent)", textDecoration: "underline" }}>{chunks}</Link>
+                      ),
+                    })}
+                  </span>
+                </label>
+
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !legalAccepted}
                   className="cat-cta-glow w-full py-3.5 rounded-xl text-[14px] font-bold transition-opacity hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
                   style={{
                     background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))",
                     color: "var(--cat-accent-text)",
                     boxShadow: "0 4px 20px var(--cat-accent-glow)",
+                    cursor: !legalAccepted ? "not-allowed" : loading ? "wait" : "pointer",
                   }}
                 >
                   {loading ? (

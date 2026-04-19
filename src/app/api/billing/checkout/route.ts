@@ -29,15 +29,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing tournamentId or plan" }, { status: 400 });
   }
 
-  const { tournamentId, plan, extraTeams = 0, extraDivisions = 0 } = body as {
+  const { tournamentId, plan, extraTeams = 0, extraDivisions = 0, waiverAcceptedAt, waiverVersion } = body as {
     tournamentId: number;
     plan: TournamentPlan;
     extraTeams?: number;
     extraDivisions?: number;
+    waiverAcceptedAt?: string;
+    waiverVersion?: string;
   };
 
   if (!["starter", "pro", "elite"].includes(plan)) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+  }
+
+  // EU Consumer Rights Directive 2011/83/EU Art. 16(m): mandatory waiver
+  // to disable the 14-day right of withdrawal for digital services.
+  // Reject the checkout if the client didn't record the acceptance.
+  if (!waiverAcceptedAt || !waiverVersion) {
+    return NextResponse.json({ error: "Waiver acceptance required" }, { status: 400 });
   }
 
   // Verify tournament belongs to this org
@@ -137,6 +146,13 @@ export async function POST(req: NextRequest) {
       plan,
       extraTeams: String(extraTeams),
       extraDivisions: String(extraDivisions),
+      // Legal audit trail — EU Consumer Rights Directive Art. 16(m).
+      waiverAcceptedAt,
+      waiverVersion,
+      waiverIp:
+        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+        req.headers.get("x-real-ip") ??
+        "unknown",
     },
     client_reference_id: String(tournamentId),
     expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 min

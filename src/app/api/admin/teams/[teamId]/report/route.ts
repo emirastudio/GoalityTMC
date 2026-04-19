@@ -4,10 +4,10 @@ import {
   teams, clubs, tournamentClasses, people, packageAssignments, servicePackages,
   teamBookings, teamServiceOverrides, payments, teamTravel, tournamentInfo,
   accommodationOptions, extraMealOptions, transferOptions, registrationFees, tournamentHotels,
-  tournamentRegistrations,
+  tournamentRegistrations, registrationPeople,
 } from "@/db/schema";
 import { requireAdmin, isError } from "@/lib/api-auth";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { recalculateAll } from "@/lib/booking-calculator";
 
 type RouteContext = { params: Promise<{ teamId: string }> };
@@ -41,6 +41,40 @@ export async function GET(req: NextRequest, context: RouteContext) {
   const playerCount = allPeople.filter((p) => p.personType === "player").length;
   const staffCount = allPeople.filter((p) => p.personType === "staff").length;
   const accompanyingCount = allPeople.filter((p) => p.personType === "accompanying").length;
+
+  // Pivot — поездочные поля людей в этой регистрации. Маппим в allPeople,
+  // чтобы UI админки (team-detail-page) продолжал получать единый объект
+  // с полями allergies/medicalNotes/needsHotel и т. д. — как раньше, но
+  // теперь per-turnament, а не вечно.
+  const pivotRows = await db
+    .select()
+    .from(registrationPeople)
+    .where(eq(registrationPeople.registrationId, registration.id));
+  const pivotByPerson = new Map(pivotRows.map((r) => [r.personId, r]));
+
+  const allPeopleEnriched = allPeople.map((p) => {
+    const rp = pivotByPerson.get(p.id);
+    return {
+      ...p,
+      shirtNumber: rp?.shirtNumber ?? null,
+      isResponsibleOnSite: rp?.isResponsibleOnSite ?? false,
+      needsHotel: rp?.needsHotel ?? false,
+      needsTransfer: false, // removed in 0018 — больше не поле
+      allergies: rp?.allergies ?? null,
+      dietaryRequirements: rp?.dietaryRequirements ?? null,
+      medicalNotes: rp?.medicalNotes ?? null,
+      includedInRoster: rp?.includedInRoster ?? false,
+    };
+  });
+
+  // Accommodation «declared» counts — берём из самой регистрации (0020).
+  // Клуб выставляет цифры в форме accom quest на /team/overview, админ видит
+  // их здесь. Галки «в отель» на ростере живут параллельно как справочная
+  // информация и source-of-truth для списка проживающих, но pricing
+  // управляется именно этими числами.
+  const accomPlayers = registration.accomPlayers ?? 0;
+  const accomStaff = registration.accomStaff ?? 0;
+  const accomAccompanying = registration.accomAccompanying ?? 0;
 
   let packageInfo = null;
   if (assignment) {
@@ -108,8 +142,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
       registrationId: registration.id,
       regNumber: registration.regNumber, status: registration.status,
       notes: registration.notes, hotelId: registration.hotelId ?? null,
-      accomPlayers: registration.accomPlayers ?? 0, accomStaff: registration.accomStaff ?? 0,
-      accomAccompanying: registration.accomAccompanying ?? 0,
+      accomPlayers, accomStaff, accomAccompanying,
       accomCheckIn: registration.accomCheckIn ?? null, accomCheckOut: registration.accomCheckOut ?? null,
       accomNotes: registration.accomNotes ?? null,
       accomDeclined: registration.accomDeclined, accomConfirmed: registration.accomConfirmed,
@@ -124,7 +157,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
       minBirthYear: tournamentClass.minBirthYear, maxBirthYear: tournamentClass.maxBirthYear,
     } : null,
     people: {
-      all: allPeople,
+      all: allPeopleEnriched,
       counts: { players: playerCount, staff: staffCount, accompanying: accompanyingCount, total: allPeople.length },
     },
     package: packageInfo ? {
@@ -152,6 +185,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
       id: assignedHotel.id, name: assignedHotel.name, address: assignedHotel.address,
       contactName: assignedHotel.contactName, contactPhone: assignedHotel.contactPhone,
       contactEmail: assignedHotel.contactEmail, notes: assignedHotel.notes,
+      photoUrl: assignedHotel.photoUrl,
     } : null,
     availableHotels: availableHotels.map((h) => ({ id: h.id, name: h.name, address: h.address })),
     tournamentInfo: tInfo ? {

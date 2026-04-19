@@ -5,6 +5,7 @@ import {
   CheckCircle, XCircle, RefreshCw, Database, Mail, CreditCard,
   Key, Server, Cpu, HardDrive, Clock, Loader2, Activity, BookOpen,
 } from "lucide-react";
+import { StripeModeToggle } from "@/components/admin/stripe-mode-toggle";
 
 type Check = { ok: boolean; detail?: string };
 type HealthData = {
@@ -127,6 +128,9 @@ export default function SystemHealthPage() {
           </button>
         </div>
       </div>
+
+      {/* Stripe Mode Toggle */}
+      <StripeModeToggle onChange={load} />
 
       {/* Service Checks */}
       <div>

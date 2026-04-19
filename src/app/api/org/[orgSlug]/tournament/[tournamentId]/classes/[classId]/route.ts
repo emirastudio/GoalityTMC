@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { authorizeOrg, getOrgTournament } from "@/lib/tenant";
 import { db } from "@/db";
-import { tournamentClasses } from "@/db/schema";
+import { tournamentClasses, organizations, tournaments } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { getEffectivePlan, PLAN_LIMITS, type TournamentPlan } from "@/lib/plan-gates";
 
 type Params = { orgSlug: string; tournamentId: string; classId: string };
 
@@ -116,6 +117,59 @@ export async function PATCH(
 
   const body = await req.json();
   const { name, format, minBirthYear, maxBirthYear, maxPlayers, maxStaff, maxTeams, scheduleConfig, startDate, endDate } = body;
+
+  // Day-limit gate on date updates: if start/end would span more than the
+  // plan's maxDays, reject. Uses the final state (new value if sent, else
+  // existing row).
+  if (startDate !== undefined || endDate !== undefined) {
+    const [current] = await db
+      .select({
+        startDate:      tournamentClasses.startDate,
+        endDate:        tournamentClasses.endDate,
+        tournamentPlan: tournaments.plan,
+        eliteSubStatus: organizations.eliteSubStatus,
+      })
+      .from(tournamentClasses)
+      .innerJoin(tournaments, eq(tournaments.id, tournamentClasses.tournamentId))
+      .innerJoin(organizations, eq(organizations.id, tournaments.organizationId))
+      .where(
+        and(
+          eq(tournamentClasses.id, parseInt(classId)),
+          eq(tournamentClasses.tournamentId, tournament.id)
+        )
+      )
+      .limit(1);
+
+    if (current) {
+      const finalStart = startDate !== undefined ? (startDate ?? null) : current.startDate;
+      const finalEnd   = endDate   !== undefined ? (endDate   ?? null) : current.endDate;
+      if (finalStart && finalEnd) {
+        const effectivePlan = getEffectivePlan(
+          (current.tournamentPlan as TournamentPlan) ?? "free",
+          current.eliteSubStatus
+        );
+        const maxDays = PLAN_LIMITS[effectivePlan].maxDays;
+        if (maxDays !== Infinity) {
+          const days = Math.round(
+            (new Date(finalEnd).getTime() - new Date(finalStart).getTime()) / 86400000
+          ) + 1;
+          if (days > maxDays) {
+            return NextResponse.json(
+              {
+                error: "Day limit exceeded",
+                feature: "maxDays",
+                currentPlan: effectivePlan,
+                maxDays,
+                requestedDays: days,
+                upgradeUrl: "/billing",
+              },
+              { status: 402 }
+            );
+          }
+        }
+      }
+    }
+  }
 
   const [updated] = await db
     .update(tournamentClasses)

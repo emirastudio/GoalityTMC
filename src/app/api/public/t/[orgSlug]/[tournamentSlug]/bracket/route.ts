@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { organizations, tournaments, tournamentStages, matchRounds, matches, tournamentRegistrations, stageSlots } from "@/db/schema";
 import { eq, and, isNull, asc, desc, inArray, or } from "drizzle-orm";
+import { resolveTeamDisplayNames } from "@/lib/team-display-names";
 
 // GET /api/public/t/[orgSlug]/[tournamentSlug]/bracket
 // Публичная сетка плей-офф — все раунды + матчи
@@ -78,6 +79,26 @@ export async function GET(
       },
     });
 
+    // displayName fallback for this stage's matches.
+    const needIds = new Set<number>();
+    for (const m of stageMatches) {
+      if (m.homeTeam?.id && !m.homeTeam.name) needIds.add(m.homeTeam.id);
+      if (m.awayTeam?.id && !m.awayTeam.name) needIds.add(m.awayTeam.id);
+    }
+    if (needIds.size > 0) {
+      const dn = await resolveTeamDisplayNames(tournament.id, Array.from(needIds));
+      for (const m of stageMatches) {
+        if (m.homeTeam && !m.homeTeam.name) {
+          const n = dn.get(m.homeTeam.id);
+          if (n) m.homeTeam.name = n;
+        }
+        if (m.awayTeam && !m.awayTeam.name) {
+          const n = dn.get(m.awayTeam.id);
+          if (n) m.awayTeam.name = n;
+        }
+      }
+    }
+
     // Группируем матчи по раундам
     const matchesByRound: Record<number, typeof stageMatches> = {};
     for (const match of stageMatches) {
@@ -116,13 +137,15 @@ export async function GET(
         const roundMatches = matchesByRound[round.id] ?? [];
         const slots = slotsByRound[round.id] ?? { home: [], away: [] };
 
-        // Добавляем слот-лейбл к каждому матчу по позиции
+        // Добавляем слот-лейбл к каждому матчу по позиции.
+        // Матч(и) с индексом >= matchCount при hasThirdPlace=true — это матч(и) за 3-е место.
         const matchesWithSlots = roundMatches.map((m, mi) => ({
           ...m,
           homeSlotLabel:   slots.home[mi]?.slotLabel   ?? null,
           homeSlotLabelRu: slots.home[mi]?.slotLabelRu ?? null,
           awaySlotLabel:   slots.away[mi]?.slotLabel   ?? null,
           awaySlotLabelRu: slots.away[mi]?.slotLabelRu ?? null,
+          isThirdPlace:    round.hasThirdPlace && mi >= round.matchCount,
         }));
 
         // Для TBD-слотов (матчей ещё нет) — виртуальные заглушки

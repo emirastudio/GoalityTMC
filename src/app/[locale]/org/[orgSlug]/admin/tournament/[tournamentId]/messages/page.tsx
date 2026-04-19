@@ -15,7 +15,7 @@ export default function OrgMessagesPage() {
     fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/billing-info`)
       .then(r => r.json())
       .then(d => setHasAccess(d.features?.hasMessaging === true))
-      .catch(() => setHasAccess(true)); // fail open
+      .catch(() => setHasAccess(false)); // fail closed — API gate enforces real check
   }, [orgSlug, tournamentId]);
 
   if (hasAccess === null) return null;

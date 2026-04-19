@@ -21,6 +21,7 @@ interface BracketMatch {
   homeTeam?: { name: string; club?: { badgeUrl?: string | null } | null } | null;
   awayTeam?: { name: string; club?: { badgeUrl?: string | null } | null } | null;
   field?: { name: string } | null;
+  isThirdPlace?: boolean;
 }
 
 interface BracketRound {
@@ -140,12 +141,14 @@ function TeamRow({
 // ─── Match Card ──────────────────────────────────────────────────────────────
 
 function BracketMatchCard({
-  match, brand, isFinal, tFinal, locale,
+  match, brand, isFinal, isThirdPlace, tFinal, tThirdPlace, locale,
 }: {
   match: BracketMatch | null;
   brand: string;
   tFinal?: string;
+  tThirdPlace?: string;
   isFinal?: boolean;
+  isThirdPlace?: boolean;
   locale: string;
 }) {
   const isFinished = match?.status === "finished";
@@ -206,8 +209,10 @@ function BracketMatchCard({
           }}
         >
           <span className="text-[9px] font-bold uppercase tracking-wider"
-            style={{ color: isFinal ? brand : "var(--cat-text-muted)" }}>
-            {isFinal
+            style={{ color: isThirdPlace ? "#CD7F32" : isFinal ? brand : "var(--cat-text-muted)" }}>
+            {isThirdPlace
+              ? <>🥉 {tThirdPlace ?? "3rd Place"}</>
+              : isFinal
               ? <><Crown className="inline w-2.5 h-2.5 mr-1 mb-0.5" />{tFinal ?? "Final"}</>
               : match.matchNumber ? `#${match.matchNumber}` : "—"}
           </span>
@@ -250,7 +255,7 @@ function BracketMatchCard({
 // ─── Round Column с SVG-соединителями ────────────────────────────────────────
 
 function RoundColumn({
-  round, nextRoundMatchCount, brand, isLast, totalRounds, tFinal, locale, tMatchSingular, tMatchPlural,
+  round, nextRoundMatchCount, brand, isLast, totalRounds, tFinal, tThirdPlace, locale, tMatchSingular, tMatchPlural,
 }: {
   round: BracketRound;
   nextRoundMatchCount: number;
@@ -258,6 +263,7 @@ function RoundColumn({
   isLast: boolean;
   totalRounds: number;
   tFinal: string;
+  tThirdPlace: string;
   locale: string;
   tMatchSingular: string;
   tMatchPlural: string;
@@ -304,8 +310,10 @@ function RoundColumn({
             key={match ? match.id : `empty-${i}`}
             match={match}
             brand={brand}
-            isFinal={isFinalRound}
+            isFinal={isFinalRound && !match?.isThirdPlace}
+            isThirdPlace={match?.isThirdPlace}
             tFinal={tFinal}
+            tThirdPlace={tThirdPlace}
             locale={locale}
           />
         ))}
@@ -530,7 +538,7 @@ export default function DivisionBracketPage() {
   const finalRound = current?.rounds.find(
     r => r.shortName?.toUpperCase() === "F" || r.name.toLowerCase() === "final"
   );
-  const finalMatch = finalRound?.matches[0];
+  const finalMatch = finalRound?.matches.find(m => !m.isThirdPlace) ?? finalRound?.matches[0];
 
   const currentMeta = current ? getCompetitionMeta(current.stage.name) : null;
 
@@ -674,6 +682,7 @@ export default function DivisionBracketPage() {
                     isLast={idx === current.rounds.length - 1}
                     totalRounds={current.rounds.length}
                     tFinal={t("final")}
+                    tThirdPlace={t("thirdPlaceMatch")}
                     locale={locale}
                     tMatchSingular={t("matchSingular")}
                     tMatchPlural={t("matchPlural")}

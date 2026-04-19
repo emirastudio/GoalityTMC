@@ -15,7 +15,7 @@ export default function OrgPaymentsPage() {
     fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/billing-info`)
       .then(r => r.json())
       .then(d => setHasAccess(d.features?.hasFinance === true))
-      .catch(() => setHasAccess(true));
+      .catch(() => setHasAccess(false));
   }, [orgSlug, tournamentId]);
 
   if (hasAccess === null) return null;

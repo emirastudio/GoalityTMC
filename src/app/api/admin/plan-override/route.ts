@@ -79,8 +79,14 @@ export async function POST(req: NextRequest) {
     previousPlan = org.plan;
     entityName = org.name;
 
+    // The effective-plan resolver only reads organizations.eliteSubStatus, not
+    // organizations.plan — so writing plan alone has no runtime effect.
+    // To make the override actually gate features, mirror the plan into
+    // eliteSubStatus: Elite → "active" (unlocks all features across all
+    // tournaments), anything else → "cancelled".
     await db.update(organizations).set({
       plan: newPlan as "free" | "starter" | "pro" | "elite",
+      eliteSubStatus: newPlan === "elite" ? "active" : "cancelled",
       updatedAt: new Date(),
     }).where(eq(organizations.id, Number(entityId)));
   }

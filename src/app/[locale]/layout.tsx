@@ -3,6 +3,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import { CookieConsent } from "@/components/ui/cookie-consent";
 
 export async function generateMetadata({
   params,
@@ -35,6 +36,7 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       {children}
+      <CookieConsent />
     </NextIntlClientProvider>
   );
 }

@@ -622,29 +622,11 @@ export function SettingsPageContent() {
         </p>
       </SectionCard>
 
-      {/* ── 6. Дополнительные сервисы ── */}
-      <SectionCard icon={Hotel} color="#10b981" title="Дополнительные сервисы">
-        <div className="space-y-3">
-          <Toggle
-            on={hasAccommodation} onToggle={() => setAccommodation(v => !v)}
-            label="Проживание — организуем размещение команд"
-            icon={Hotel} color="#10b981"
-          />
-          <Toggle
-            on={hasMeals} onToggle={() => setMeals(v => !v)}
-            label="Питание — завтраки / обеды / ужины"
-            icon={Utensils} color="#f59e0b"
-          />
-          <Toggle
-            on={hasTransfer} onToggle={() => setTransfer(v => !v)}
-            label="Трансфер — организованная доставка команд"
-            icon={Bus} color="#6366f1"
-          />
-        </div>
-        <p className="text-xs mt-3" style={{ color: "var(--cat-text-muted)" }}>
-          Включённые сервисы появятся в разделе Финансы для учёта оплат
-        </p>
-      </SectionCard>
+      {/* Legacy "Дополнительные сервисы" block removed — these toggles
+          controlled sidebar links to /accommodation, /meals, /transfer
+          pages that never existed in the app router. The corresponding
+          data is now part of the unified "Offerings" module — see the
+          "Новый модуль услуг (v3)" card at the bottom of this page. */}
 
       {/* Нижняя кнопка сохранения */}
       <div className="flex justify-end pt-2">

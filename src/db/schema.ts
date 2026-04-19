@@ -69,6 +69,54 @@ export const bookingTypeEnum = pgEnum("booking_type", [
   "custom",
 ]);
 
+// ─── Offerings v3 ──────────────────────────────────────────
+// Unified model replacing legacy v1 (accommodationOptions etc.) and v2
+// (servicePackages). Rolled out tournament-by-tournament via
+// tournaments.offeringsV3Enabled. Legacy tables remain untouched for
+// existing tournaments until cutover.
+
+export const offeringKindEnum = pgEnum("offering_kind", ["single", "package"]);
+
+// Whether a club can/must have this offering in its cart.
+// required  — cannot be removed. Tournament fee lives here.
+// default   — added by default, club may remove.
+// optional  — club adds manually from the catalog.
+export const offeringInclusionEnum = pgEnum("offering_inclusion", [
+  "required",
+  "default",
+  "optional",
+]);
+
+export const offeringPriceModelEnum = pgEnum("offering_price_model", [
+  "flat",              // one price for the whole team
+  "per_team",          // price × team count (if club brings multiple)
+  "per_person",        // price × (players + staff)
+  "per_player",        // price × players only
+  "per_staff",         // price × staff only
+  "per_accompanying",  // price × accompanying persons
+  "per_night",         // price × persons × nights
+  "per_meal",          // price × persons × meals
+  "per_unit",          // price × arbitrary quantity (club picks)
+]);
+
+export const dealStateEnum = pgEnum("deal_state", [
+  "proposed",   // organiser created it, club hasn't confirmed yet
+  "accepted",   // club explicitly accepted (optional workflow)
+  "declined",   // club declined an optional offering
+  "archived",   // no longer active (season over)
+]);
+
+export const adjustmentKindEnum = pgEnum("adjustment_kind", [
+  "discount",   // −X
+  "surcharge",  // +X
+]);
+
+export const adjustmentAmountModeEnum = pgEnum("adjustment_amount_mode", [
+  "fixed_cents",   // flat amount in cents
+  "percent_bps",   // basis points of subtotal (10000 = 100%)
+  "per_player",    // cents × players
+]);
+
 // ─── Organizations (multi-tenant) ──────────────────────
 export const organizations = pgTable("organizations", {
   id: serial("id").primaryKey(),
@@ -90,6 +138,12 @@ export const organizations = pgTable("organizations", {
   website: text("website"),
   brandColor: varchar("brand_color", { length: 20 }).default("#272D2D"),
   type: varchar("type", { length: 20 }).default("managed").notNull(), // "managed" | "listing"
+  // Legal acceptances — audit trail for GDPR Art. 28 DPA and Terms acceptance.
+  dpaAcceptedAt: timestamp("dpa_accepted_at"),
+  dpaVersion: varchar("dpa_version", { length: 20 }),
+  termsAcceptedAt: timestamp("terms_accepted_at"),
+  termsVersion: varchar("terms_version", { length: 20 }),
+  legalAcceptanceIp: varchar("legal_acceptance_ip", { length: 64 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -136,6 +190,22 @@ export const tournaments = pgTable("tournaments", {
   // When set, the schedule is visible on public pages and in club admin.
   // Before publishing, only the organizer can see it in the planner.
   schedulePublishedAt: timestamp("schedule_published_at"),
+  // ── Offerings v3 feature flag ─────────────────────────
+  // When true, this tournament uses the new unified offerings model
+  // (offerings / package_contents / team_offering_deals / deal_adjustments).
+  // When false (default), legacy v1 (accommodationOptions et al.) and
+  // v2 (servicePackages) remain active. New tournaments should be
+  // created with this flag ON once the v3 UI ships.
+  // Offerings v3 is the default offerings system as of 0022. Kept as a
+  // column for emergency disable via SQL; UI no longer surfaces a toggle.
+  offeringsV3Enabled: boolean("offerings_v3_enabled").default(true).notNull(),
+  // When set, the backend auto-creates a published teamOfferingDeal(offering)
+  // for this registration the moment the club confirms accommodation.
+  // Null → purely manual mode. See migration 0021.
+  autoAssignPackageOfferingId: integer("auto_assign_package_offering_id"),
+  // Organiser's payment instructions shown to clubs (bank details,
+  // external payment link, etc.). Plain text / Markdown-ish.
+  paymentInstructions: text("payment_instructions"),
   // ── Deletion flow ───────────────────────────────────────
   deleteRequestedAt: timestamp("delete_requested_at"),   // organizer requested → superadmin decides
   deleteRequestReason: text("delete_request_reason"),
@@ -246,6 +316,8 @@ export const tournamentStadiums = pgTable("tournament_stadiums", {
   mapsUrl: text("maps_url"),              // Google Maps link
   wazeUrl: text("waze_url"),              // Waze link
   notes: text("notes"),
+  /** Uploaded stadium photo (see POST /api/admin/upload). Optional. */
+  photoUrl: text("photo_url"),
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -298,6 +370,8 @@ export const tournamentHotels = pgTable("tournament_hotels", {
   contactPhone: text("contact_phone"),
   contactEmail: text("contact_email"),
   notes: text("notes"),
+  /** Uploaded photo (see POST /api/admin/upload). Optional. */
+  photoUrl: text("photo_url"),
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -388,6 +462,25 @@ export const clubInvites = pgTable("club_invites", {
   usedAt: timestamp("used_at"),
 });
 
+// ─── Organization admin invites (Pro+Elite feature: multi-admin teams) ──
+// An active org admin invites a colleague by email. The colleague clicks
+// the link, sets a password and becomes a full admin of that org.
+// Invites expire after 7 days. Acceptance is one-shot (usedAt is set).
+export const orgAdminInvites = pgTable("org_admin_invites", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" })
+    .notNull(),
+  token: text("token").notNull().unique(),
+  invitedEmail: text("invited_email").notNull(),
+  invitedName: text("invited_name"),
+  invitedBy: integer("invited_by").notNull(), // adminUsers.id of the inviter
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  revokedAt: timestamp("revoked_at"),
+});
+
 // ─── Teams (глобальная сущность — принадлежит клубу) ────────
 // Команда существует независимо от турниров.
 // Идентичность: клуб + год рождения + пол (неизменны).
@@ -428,9 +521,13 @@ export const tournamentRegistrations = pgTable("tournament_registrations", {
   displayName: text("display_name"),
   notes: text("notes"),
   hotelId: integer("hotel_id"),
-  accomPlayers: integer("accom_players").default(0),
-  accomStaff: integer("accom_staff").default(0),
-  accomAccompanying: integer("accom_accompanying").default(0),
+  // Accommodation «demand» — то, что клуб задекларировал в accom quest
+  // на /team/overview. Восстановлено в 0020 (было дропнуто в 0018).
+  // Используется calculator'ом для per_player/per_staff/per_accompanying
+  // когда accomConfirmed=true, иначе fallback на roster pivot.
+  accomPlayers: integer("accom_players").notNull().default(0),
+  accomStaff: integer("accom_staff").notNull().default(0),
+  accomAccompanying: integer("accom_accompanying").notNull().default(0),
   accomCheckIn: text("accom_check_in"),
   accomCheckOut: text("accom_check_out"),
   accomNotes: text("accom_notes"),
@@ -450,7 +547,11 @@ export const tournamentRegistrations = pgTable("tournament_registrations", {
 // teamUsers removed — login is per club via clubUsers
 
 // ─── People (Players + Staff + Accompanying) ────────────
-// One unified table with personType to distinguish
+// Справочник клуба: минимум данных, живёт вечно.
+// Для детей (player) контакты запрещены — см. CHECK constraint
+// people_contacts_adults_only в миграции 0018.
+// Всё поездочное (shirtNumber, needsHotel, allergies, medical, responsible)
+// уехало в registrationPeople (pivot по конкретной регистрации на турнир).
 export const people = pgTable("people", {
   id: serial("id").primaryKey(),
   teamId: integer("team_id")
@@ -461,27 +562,19 @@ export const people = pgTable("people", {
   // Basic info
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
+  // Контакты — ТОЛЬКО для staff/accompanying (CHECK constraint в БД).
   email: text("email"),
   phone: text("phone"),
   dateOfBirth: timestamp("date_of_birth"),
 
-  // Player-specific
-  shirtNumber: integer("shirt_number"),
+  // Player-specific default (amplua)
   position: text("position"),
 
   // Staff-specific
   role: text("role"), // head coach, assistant, physio, etc.
-  isResponsibleOnSite: boolean("is_responsible_on_site").default(false).notNull(),
 
-  // Medical / dietary
-  allergies: text("allergies"), // free text: "gluten, nuts"
-  dietaryRequirements: text("dietary_requirements"), // vegetarian, halal, etc.
-  medicalNotes: text("medical_notes"), // medications, conditions
+  // Медицинский документ — опциональная ссылка, хранится клубом (не детали).
   medicalDocumentUrl: text("medical_document_url"),
-
-  // Hotel
-  needsHotel: boolean("needs_hotel").default(false).notNull(),
-  needsTransfer: boolean("needs_transfer").default(false).notNull(),
 
   // Visibility
   showPublicly: boolean("show_publicly").default(false).notNull(),
@@ -489,6 +582,37 @@ export const people = pgTable("people", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// ─── Registration ↔ People (per-tournament roster) ─────────
+// Связь человека с конкретной регистрацией команды на турнир.
+// Здесь живёт всё, что свойственно ПОЕЗДКЕ (а не человеку):
+// — includedInRoster: в протокол этого турнира
+// — needsHotel: в лист проживания
+// — shirtNumber: номер на майке в этом турнире
+// — isResponsibleOnSite: ответственный на площадке (только staff)
+// — allergies / dietaryRequirements / medicalNotes: опционально, для этой поездки
+export const registrationPeople = pgTable("registration_people", {
+  id: serial("id").primaryKey(),
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
+    .notNull(),
+  personId: integer("person_id")
+    .references(() => people.id, { onDelete: "cascade" })
+    .notNull(),
+  includedInRoster: boolean("included_in_roster").default(true).notNull(),
+  needsHotel: boolean("needs_hotel").default(false).notNull(),
+  shirtNumber: integer("shirt_number"),
+  isResponsibleOnSite: boolean("is_responsible_on_site").default(false).notNull(),
+  allergies: text("allergies"),
+  dietaryRequirements: text("dietary_requirements"),
+  medicalNotes: text("medical_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("registration_people_unique").on(table.registrationId, table.personId),
+  index("idx_registration_people_registration").on(table.registrationId),
+  index("idx_registration_people_person").on(table.personId),
+]);
 
 // ─── Team Price Overrides (custom pricing per registration) ─
 export const teamPriceOverrides = pgTable("team_price_overrides", {
@@ -1542,10 +1666,23 @@ export const tournamentRegistrationsRelations = relations(tournamentRegistration
   messageReads: many(teamMessageReads),
   questions: many(teamQuestions),
   priceOverrides: many(teamPriceOverrides),
+  roster: many(registrationPeople),
 }));
 
-export const peopleRelations = relations(people, ({ one }) => ({
+export const peopleRelations = relations(people, ({ one, many }) => ({
   team: one(teams, { fields: [people.teamId], references: [teams.id] }),
+  registrationEntries: many(registrationPeople),
+}));
+
+export const registrationPeopleRelations = relations(registrationPeople, ({ one }) => ({
+  registration: one(tournamentRegistrations, {
+    fields: [registrationPeople.registrationId],
+    references: [tournamentRegistrations.id],
+  }),
+  person: one(people, {
+    fields: [registrationPeople.personId],
+    references: [people.id],
+  }),
 }));
 
 export const tournamentStadiumsRelations = relations(tournamentStadiums, ({ one, many }) => ({
@@ -1833,3 +1970,204 @@ export const drawShowEvents = pgTable("draw_show_events", {
   meta: jsonb("meta").default({}).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ─── Offerings v3 — tables ─────────────────────────────────
+//
+// "offerings" holds both single items (accommodation, fee) AND packages.
+// A package is an offering with kind='package' and a list of child
+// offerings via "package_contents". Price can be computed from the sum
+// of children OR overridden to a custom bundle price.
+export const offerings = pgTable("offerings", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  kind: offeringKindEnum("kind").notNull().default("single"),
+  inclusion: offeringInclusionEnum("inclusion").notNull().default("optional"),
+  title: text("title").notNull(),
+  titleRu: text("title_ru"),
+  titleEt: text("title_et"),
+  description: text("description"),
+  descriptionRu: text("description_ru"),
+  descriptionEt: text("description_et"),
+  icon: varchar("icon", { length: 16 }), // emoji, 1–2 chars
+  priceModel: offeringPriceModelEnum("price_model").notNull().default("per_person"),
+  priceCents: integer("price_cents").notNull().default(0),
+  currency: varchar("currency", { length: 3 }).notNull().default("EUR"),
+  // For packages: when non-null, overrides the sum of child offering prices.
+  // NULL means "compute as sum of children".
+  packagePriceOverrideCents: integer("package_price_override_cents"),
+  // For per_night offerings: fixed nights count (e.g. "3 ночи"). NULL → auto
+  // from tournament/class dates. See migration 0023.
+  nightsCount: integer("nights_count"),
+  // Scope — null = all divisions.
+  scopeClassIds: jsonb("scope_class_ids").$type<number[]>(),
+  // Availability window.
+  availableFrom: timestamp("available_from"),
+  availableUntil: timestamp("available_until"),
+  // Inventory (null = unlimited).
+  inventoryLimit: integer("inventory_limit"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isArchived: boolean("is_archived").notNull().default(false),
+  metadata: jsonb("metadata").default({}).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => [
+  index("offerings_tournament_idx").on(t.tournamentId),
+  index("offerings_kind_idx").on(t.kind),
+]);
+
+export const packageContents = pgTable("package_contents", {
+  id: serial("id").primaryKey(),
+  packageId: integer("package_id")
+    .references(() => offerings.id, { onDelete: "cascade" })
+    .notNull(),
+  childOfferingId: integer("child_offering_id")
+    .references(() => offerings.id, { onDelete: "cascade" })
+    .notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("package_contents_unique_idx").on(t.packageId, t.childOfferingId),
+  index("package_contents_package_idx").on(t.packageId),
+]);
+
+// One row per (team registration, offering). Represents either:
+//   - the main package assigned to the team, OR
+//   - an add-on the team has bought / been given.
+// When organiser assigns the base "Standard" package, a single deal with
+// that package offeringId is created. Optional add-ons become extra
+// rows. Individual discounts and item swaps live in deal_adjustments.
+export const teamOfferingDeals = pgTable("team_offering_deals", {
+  id: serial("id").primaryKey(),
+  registrationId: integer("registration_id")
+    .references(() => tournamentRegistrations.id, { onDelete: "cascade" })
+    .notNull(),
+  offeringId: integer("offering_id")
+    .references(() => offerings.id, { onDelete: "cascade" })
+    .notNull(),
+  state: dealStateEnum("state").notNull().default("proposed"),
+  // When false, the deal is a draft the organiser is still tweaking.
+  // Flipping to true exposes it to the club in their Shop.
+  isPublished: boolean("is_published").notNull().default(false),
+  // Optional override of the organiser's due date for this deal.
+  dueDate: date("due_date"),
+  // Denormalised snapshot of the computed total at the moment of
+  // assignment. Rebuilt on demand, but handy for list views.
+  cachedTotalCents: integer("cached_total_cents"),
+  // Free slots — «подаренные» организатором места внутри пакета.
+  // Calculator вычитает их из платной quantity перед расчётом price×qty.
+  freePlayersCount: integer("free_players_count").notNull().default(0),
+  freeStaffCount: integer("free_staff_count").notNull().default(0),
+  freeAccompanyingCount: integer("free_accompanying_count").notNull().default(0),
+  // NULL → считать per_meal по nights+1 × 3. Число → использовать как count.
+  mealsCountOverride: integer("meals_count_override"),
+  createdBy: integer("created_by"), // adminUsers.id
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("team_offering_deals_unique_idx").on(t.registrationId, t.offeringId),
+  index("team_offering_deals_reg_idx").on(t.registrationId),
+]);
+
+// Inline per-line price override. Used by the team-page UI where clicking
+// a price gives it a new value for this deal only (original price is
+// preserved and shown struck through). Conceptually a narrow-scope
+// adjustment but stored separately for a clean "X → Y" UX.
+export const dealItemOverrides = pgTable("deal_item_overrides", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id")
+    .references(() => teamOfferingDeals.id, { onDelete: "cascade" })
+    .notNull(),
+  offeringId: integer("offering_id")
+    .references(() => offerings.id, { onDelete: "cascade" })
+    .notNull(),
+  priceCentsOverride: integer("price_cents_override").notNull(),
+  reason: text("reason"),
+  createdBy: integer("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("deal_item_overrides_unique_idx").on(t.dealId, t.offeringId),
+  index("deal_item_overrides_deal_idx").on(t.dealId),
+]);
+
+export const dealAdjustments = pgTable("deal_adjustments", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id")
+    .references(() => teamOfferingDeals.id, { onDelete: "cascade" })
+    .notNull(),
+  kind: adjustmentKindEnum("kind").notNull(),
+  amountMode: adjustmentAmountModeEnum("amount_mode").notNull(),
+  // Meaning depends on amountMode:
+  //   fixed_cents  → value in cents (absolute)
+  //   percent_bps  → basis points (10000 = 100%)
+  //   per_player   → cents per player
+  amountValue: integer("amount_value").notNull(),
+  // NULL → whole deal; otherwise → adjust a specific child item.
+  targetOfferingId: integer("target_offering_id")
+    .references(() => offerings.id, { onDelete: "set null" }),
+  // Shown to the club so they understand where the change came from.
+  reason: text("reason").notNull(),
+  createdBy: integer("created_by"), // adminUsers.id
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  index("deal_adjustments_deal_idx").on(t.dealId),
+]);
+
+// ─── Organization-level Offering Templates ─────────────────
+// Пресеты услуг на уровне организации: организатор открывает турнир,
+// нажимает «Отель за N ночей (на человека)» — и в турнир создаётся
+// `offerings` с pre-filled полями. Шаблоны редактируются самим
+// организатором (title, цена, priceModel), плюс 8 встроенных seed'ов
+// появляются автоматически при первом обращении.
+//
+// `isBuiltin` = true у seed'ов — их можно удалить, но «Восстановить
+// стандартные» вернёт их обратно по `slug`.
+export const organizationOfferingTemplates = pgTable("organization_offering_templates", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" })
+    .notNull(),
+  slug: varchar("slug", { length: 64 }), // nullable для пользовательских шаблонов
+  title: text("title").notNull(),
+  titleRu: text("title_ru"),
+  titleEt: text("title_et"),
+  description: text("description"),
+  descriptionRu: text("description_ru"),
+  descriptionEt: text("description_et"),
+  icon: varchar("icon", { length: 16 }),
+  kind: offeringKindEnum("kind").notNull().default("single"),
+  inclusion: offeringInclusionEnum("inclusion").notNull().default("optional"),
+  priceModel: offeringPriceModelEnum("price_model").notNull().default("per_person"),
+  defaultPriceCents: integer("default_price_cents").notNull().default(0),
+  currency: varchar("currency", { length: 3 }).notNull().default("EUR"),
+  nightsCount: integer("nights_count"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isBuiltin: boolean("is_builtin").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => [
+  index("org_offering_templates_org_idx").on(t.organizationId),
+  uniqueIndex("org_offering_templates_slug_unique").on(t.organizationId, t.slug),
+]);
+
+// Manual payment records (for Phase 1 — before platform-native Stripe
+// collection). Organiser marks a deal as partially / fully paid after
+// receiving funds via their own bank / payment link / cash.
+export const dealPayments = pgTable("deal_payments", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id")
+    .references(() => teamOfferingDeals.id, { onDelete: "cascade" })
+    .notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("EUR"),
+  method: paymentMethodEnum("method").notNull().default("bank_transfer"),
+  receivedAt: timestamp("received_at").notNull().defaultNow(),
+  reference: text("reference"),
+  note: text("note"),
+  recordedBy: integer("recorded_by"), // adminUsers.id
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  index("deal_payments_deal_idx").on(t.dealId),
+]);

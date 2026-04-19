@@ -49,11 +49,11 @@ function FeatureCard({ icon: Icon, title, desc, color, delay = 0 }: {
         animationDelay: `${delay}ms`,
       }}
     >
-      <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 cat-feature-icon" style={{ background: color + "18", color }}>
-        <Icon className="w-5 h-5" />
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 cat-feature-icon" style={{ background: color + "18", color }}>
+        <Icon className="w-6 h-6" />
       </div>
-      <h3 className="text-[14px] font-bold mb-2" style={{ color: "var(--cat-text)" }}>{title}</h3>
-      <p className="text-[13px] leading-relaxed" style={{ color: "var(--cat-text-secondary)" }}>{desc}</p>
+      <h3 className="text-[17px] font-bold mb-2" style={{ color: "var(--cat-text)" }}>{title}</h3>
+      <p className="text-[15px] leading-relaxed" style={{ color: "var(--cat-text-secondary)" }}>{desc}</p>
     </div>
   );
 }
@@ -63,12 +63,12 @@ function ForCard({ emoji, title, points, color }: { emoji: string; title: string
   return (
     <div className="cat-card rounded-2xl p-6 border" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", boxShadow: "var(--cat-card-shadow)" }}>
       <div className="text-3xl mb-3">{emoji}</div>
-      <h3 className="text-[15px] font-bold mb-4" style={{ color: "var(--cat-text)" }}>{title}</h3>
+      <h3 className="text-lg font-bold mb-4" style={{ color: "var(--cat-text)" }}>{title}</h3>
       <ul className="space-y-2.5">
         {points.map(p => (
           <li key={p} className="flex items-start gap-2.5">
-            <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color }} />
-            <span className="text-[13px]" style={{ color: "var(--cat-text-secondary)" }}>{p}</span>
+            <CheckCircle className="w-4 h-4 mt-1 shrink-0" style={{ color }} />
+            <span className="text-[15px] leading-snug" style={{ color: "var(--cat-text-secondary)" }}>{p}</span>
           </li>
         ))}
       </ul>

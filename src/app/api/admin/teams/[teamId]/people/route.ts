@@ -38,20 +38,17 @@ export async function POST(req: NextRequest, { params }: RouteCtx) {
     dateOfBirth,
     email,
     phone,
-    shirtNumber,
     position,
     role,
-    needsHotel = false,
-    needsTransfer = false,
     showPublicly = false,
-    allergies,
-    dietaryRequirements,
-    medicalNotes,
   } = body;
 
   if (!firstName || !lastName) {
     return NextResponse.json({ error: "firstName and lastName are required" }, { status: 400 });
   }
+
+  // Приватность детей: email/phone только для staff/accompanying.
+  const isAdult = personType === "staff" || personType === "accompanying";
 
   const [person] = await db.insert(people).values({
     teamId: teamIdNum,
@@ -59,17 +56,11 @@ export async function POST(req: NextRequest, { params }: RouteCtx) {
     firstName: firstName.trim(),
     lastName: lastName.trim(),
     dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-    email: email?.trim() || null,
-    phone: phone?.trim() || null,
-    shirtNumber: shirtNumber ? Number(shirtNumber) : null,
+    email: isAdult ? (email?.trim() || null) : null,
+    phone: isAdult ? (phone?.trim() || null) : null,
     position: position?.trim() || null,
     role: role?.trim() || null,
-    needsHotel,
-    needsTransfer,
     showPublicly,
-    allergies: allergies?.trim() || null,
-    dietaryRequirements: dietaryRequirements?.trim() || null,
-    medicalNotes: medicalNotes?.trim() || null,
   }).returning();
 
   return NextResponse.json({ person }, { status: 201 });

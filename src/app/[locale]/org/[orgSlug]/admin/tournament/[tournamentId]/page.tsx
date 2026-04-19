@@ -64,7 +64,7 @@ export default async function TournamentOverviewPage({ params }: Props) {
   const quickLinks = [
     { key: "registrations", icon: ClipboardList, href: `${basePath}/registrations`, color: "#10B981" },
     { key: "teams",         icon: Users,         href: `${basePath}/teams`,         color: "#3B82F6" },
-    { key: "servicesPackages", icon: Package,    href: `${basePath}/services-packages`, color: "#F59E0B" },
+    { key: "servicesPackages", icon: Package,    href: `${basePath}/offerings`,         color: "#F59E0B" },
     { key: "payments",      icon: Wallet,        href: `${basePath}/payments`,       color: "#8B5CF6" },
     { key: "messages",      icon: Mail,          href: `${basePath}/messages`,       color: "#EC4899" },
     { key: "setup",         icon: Wrench,        href: `${basePath}/setup`,          color: "#06B6D4" },

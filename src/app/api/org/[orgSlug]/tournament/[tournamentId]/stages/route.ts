@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { tournamentStages, stageGroups, groupTeams, standings } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
+import { assertFeature } from "@/lib/plan-gates";
 import { eq, asc, and, isNull } from "drizzle-orm"; // isNull kept for POST
 
 type Params = { orgSlug: string; tournamentId: string };
@@ -85,6 +86,16 @@ export async function POST(
       : and(eq(tournamentStages.tournamentId, ctx.tournament.id), isNull(tournamentStages.classId)),
   });
   const nextOrder = existing.length + 1;
+
+  // Plan gate: hasEliteFormats required for
+  //   (1) any 2nd+ stage in a division (multi-stage tournaments), OR
+  //   (2) any stage with type knockout / swiss / double_elim.
+  // Single "group" or "league" stage is allowed on every plan.
+  const isEliteStageType = type === "knockout" || type === "swiss" || type === "double_elim";
+  if (nextOrder > 1 || isEliteStageType) {
+    const gate = assertFeature(ctx.effectivePlan, "hasEliteFormats");
+    if (gate) return gate;
+  }
 
   const [stage] = await db
     .insert(tournamentStages)

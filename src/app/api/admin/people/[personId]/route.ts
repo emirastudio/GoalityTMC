@@ -17,21 +17,33 @@ export async function PATCH(req: NextRequest, { params }: RouteCtx) {
   const updates: Record<string, unknown> = {};
   const fields = [
     "firstName","lastName","dateOfBirth","email","phone",
-    "shirtNumber","position","role","personType",
-    "needsHotel","needsTransfer","showPublicly",
-    "allergies","dietaryRequirements","medicalNotes",
+    "position","role","personType",
+    "showPublicly",
   ] as const;
 
   for (const f of fields) {
     if (body[f] !== undefined) {
       if (f === "dateOfBirth") {
         updates[f] = body[f] ? new Date(body[f]) : null;
-      } else if (f === "shirtNumber") {
-        updates[f] = body[f] !== null && body[f] !== "" ? Number(body[f]) : null;
       } else {
         updates[f] = typeof body[f] === "string" ? (body[f].trim() || null) : body[f];
       }
     }
+  }
+
+  // Приватность детей: email/phone недопустимы для player.
+  // Проверяем либо новый personType (если меняется), либо текущий.
+  let effectiveType = updates.personType as string | undefined;
+  if (!effectiveType) {
+    const current = await db.query.people.findFirst({
+      where: eq(people.id, Number(personId)),
+      columns: { personType: true },
+    });
+    effectiveType = current?.personType;
+  }
+  if (effectiveType === "player") {
+    if ("email" in updates) updates.email = null;
+    if ("phone" in updates) updates.phone = null;
   }
 
   if (Object.keys(updates).length === 0) {

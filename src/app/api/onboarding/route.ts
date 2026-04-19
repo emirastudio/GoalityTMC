@@ -6,7 +6,10 @@ import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
 import { slugify, isSlugAvailable } from "@/lib/tenant";
 
 export async function POST(req: NextRequest) {
-  const { orgName, name, email, password, country, city, orgType } = await req.json();
+  const {
+    orgName, name, email, password, country, city, orgType,
+    legalAcceptedAt, dpaVersion, termsVersion,
+  } = await req.json();
 
   // Validation
   if (!orgName || !name || !email || !password) {
@@ -16,6 +19,20 @@ export async function POST(req: NextRequest) {
   if (password.length < 6) {
     return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
   }
+
+  // Legal acceptance is mandatory — GDPR Art. 28 DPA and Terms must be
+  // explicitly accepted before an organisation is created.
+  if (!legalAcceptedAt || !dpaVersion || !termsVersion) {
+    return NextResponse.json({ error: "Legal acceptance required" }, { status: 400 });
+  }
+  const acceptedAt = new Date(legalAcceptedAt);
+  if (isNaN(acceptedAt.getTime())) {
+    return NextResponse.json({ error: "Invalid legal acceptance timestamp" }, { status: 400 });
+  }
+  const legalIp =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
 
   // Check email uniqueness
   const existingUser = await db.query.adminUsers.findFirst({
@@ -49,6 +66,11 @@ export async function POST(req: NextRequest) {
       city: city || null,
       contactEmail: email.toLowerCase(),
       type: orgType === "listing" ? "listing" : "managed",
+      dpaAcceptedAt: acceptedAt,
+      dpaVersion,
+      termsAcceptedAt: acceptedAt,
+      termsVersion,
+      legalAcceptanceIp: legalIp,
     } as any)
     .returning();
 

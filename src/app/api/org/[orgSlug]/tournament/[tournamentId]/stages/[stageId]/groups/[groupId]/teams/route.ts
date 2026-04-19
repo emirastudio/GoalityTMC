@@ -130,6 +130,11 @@ export async function POST(
     }
   }
 
+  // NOTE: no team-limit gate here by design. Organizer assigns teams freely;
+  // overage (teams beyond maxTeams + extraTeamsPurchased) is surfaced as a
+  // cart balance in billing-info, and must be settled before the tournament
+  // goes live (result entry / Match Hub).
+
   // Если replace — удаляем старые записи
   if (mode === "replace") {
     await db.delete(groupTeams).where(eq(groupTeams.groupId, gid));

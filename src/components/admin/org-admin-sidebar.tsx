@@ -694,49 +694,12 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
             />
           </nav>
 
-          {/* ── ФИНАНСЫ (только если включены модули) ── */}
+          {/* ── ФИНАНСЫ — только платежи. «Сборы и услуги» переехали в
+                 «Организацию» (там ближе к стадионам/отелям). ── */}
           {showFinance && (
             <>
               <SectionHeader color={CLR.finance} label={tAdmin("sectionFinance")} />
               <nav className="px-2 mb-1 space-y-0.5">
-                <NavLink
-                  href={`${base}/services-packages`}
-                  icon={ShoppingBag}
-                  label={tAdmin("feesServices")}
-                  isActive={isActive(`${base}/services-packages`)}
-                  color={CLR.finance}
-                  bg={BG.finance}
-                />
-                {modules?.hasAccommodation && (
-                  <NavLink
-                    href={`${base}/accommodation`}
-                    icon={Hotel}
-                    label={tAdmin("accommodation")}
-                    isActive={isActive(`${base}/accommodation`)}
-                    color={CLR.finance}
-                    bg={BG.finance}
-                  />
-                )}
-                {modules?.hasMeals && (
-                  <NavLink
-                    href={`${base}/meals`}
-                    icon={Utensils}
-                    label={tAdmin("meals")}
-                    isActive={isActive(`${base}/meals`)}
-                    color={CLR.finance}
-                    bg={BG.finance}
-                  />
-                )}
-                {modules?.hasTransfer && (
-                  <NavLink
-                    href={`${base}/transfer`}
-                    icon={Bus}
-                    label={tAdmin("transfer")}
-                    isActive={isActive(`${base}/transfer`)}
-                    color={CLR.finance}
-                    bg={BG.finance}
-                  />
-                )}
                 {modules && !modules.hasFinance ? (
                   <LockedLink href={`${base}/payments`} icon={CreditCard} label={t("payments")} plan="Pro" />
                 ) : (
@@ -753,19 +716,10 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
             </>
           )}
 
-          {/* Финансы без модулей — только сборы и платежи */}
           {!showFinance && (
             <>
               <SectionHeader color={CLR.finance} label={tAdmin("sectionFinance")} />
               <nav className="px-2 mb-1 space-y-0.5">
-                <NavLink
-                  href={`${base}/services-packages`}
-                  icon={ShoppingBag}
-                  label={tAdmin("feesServices")}
-                  isActive={isActive(`${base}/services-packages`)}
-                  color={CLR.finance}
-                  bg={BG.finance}
-                />
                 <LockedLink href={`${base}/payments`} icon={CreditCard} label={t("payments")} plan="Pro" />
               </nav>
             </>
@@ -775,10 +729,26 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
           <SectionHeader color={CLR.organization} label={tAdmin("sectionOrganization")} />
           <nav className="px-2 mb-1 space-y-0.5">
             <NavLink
+              href={`${base}/offerings`}
+              icon={ShoppingBag}
+              label={tAdmin("feesServices")}
+              isActive={isActive(`${base}/offerings`)}
+              color={CLR.organization}
+              bg={BG.organization}
+            />
+            <NavLink
               href={`${base}/stadiums`}
               icon={MapPin}
               label={tAdmin("stadiums")}
               isActive={isActive(`${base}/stadiums`)}
+              color={CLR.organization}
+              bg={BG.organization}
+            />
+            <NavLink
+              href={`${base}/hotels`}
+              icon={Hotel}
+              label={tAdmin("hotels")}
+              isActive={isActive(`${base}/hotels`)}
               color={CLR.organization}
               bg={BG.organization}
             />

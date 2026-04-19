@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { tournaments, teams, clubs, payments, tournamentRegistrations } from "@/db/schema";
+import { tournaments, teams, clubs, organizations, payments, tournamentRegistrations } from "@/db/schema";
 import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq, inArray } from "drizzle-orm";
+import { getEffectivePlan, assertFeature, type TournamentPlan } from "@/lib/plan-gates";
 
 export async function GET(req: NextRequest) {
   const session = await requireAdmin();
@@ -96,6 +97,27 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  // Plan gate: hasFinance (Pro+). Resolve effective plan via registration → tournament → org.
+  const [ctx] = await db
+    .select({
+      tournamentPlan: tournaments.plan,
+      eliteSubStatus: organizations.eliteSubStatus,
+    })
+    .from(tournamentRegistrations)
+    .innerJoin(tournaments, eq(tournaments.id, tournamentRegistrations.tournamentId))
+    .innerJoin(organizations, eq(organizations.id, tournaments.organizationId))
+    .where(eq(tournamentRegistrations.id, Number(registrationId)))
+    .limit(1);
+  if (!ctx) {
+    return NextResponse.json({ error: "Registration not found" }, { status: 404 });
+  }
+  const effectivePlan = getEffectivePlan(
+    (ctx.tournamentPlan as TournamentPlan) ?? "free",
+    ctx.eliteSubStatus
+  );
+  const gate = assertFeature(effectivePlan, "hasFinance");
+  if (gate) return gate;
 
   const [created] = await db
     .insert(payments)

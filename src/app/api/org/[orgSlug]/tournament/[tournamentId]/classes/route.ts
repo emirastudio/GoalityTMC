@@ -87,24 +87,17 @@ export async function POST(
     (tRow?.plan as TournamentPlan) ?? "free",
     orgRow?.eliteSubStatus
   );
-  const limits        = PLAN_LIMITS[effectivePlan];
-  const maxDivisions  = limits.maxDivisions === Infinity
-    ? 9999
-    : limits.maxDivisions + (tRow?.extraDivisionsPurchased ?? 0);
+  const limits = PLAN_LIMITS[effectivePlan];
 
   const existing = await db
     .select({ id: tournamentClasses.id })
     .from(tournamentClasses)
     .where(eq(tournamentClasses.tournamentId, tournament.id));
 
-  // Hard block only for FREE plan (no extras allowed).
-  // For paid plans: allow creation beyond limit — extras owed are tracked and paid via cart.
-  if (existing.length >= maxDivisions && effectivePlan === "free") {
-    return NextResponse.json(
-      { error: "Division limit reached", limit: maxDivisions, plan: effectivePlan },
-      { status: 403 }
-    );
-  }
+  // NOTE: no hard block on division creation — every plan can create unlimited
+  // divisions. Overage is tracked in extras_payment_due and shown in the cart
+  // (billing-info). Payment is required before the tournament goes live, not
+  // at creation time.
 
   const body = await req.json();
   const {
@@ -121,6 +114,27 @@ export async function POST(
 
   if (!name?.trim()) {
     return NextResponse.json({ error: "Division name is required" }, { status: 400 });
+  }
+
+  // Day-limit gate: a division's date range must fit within the plan's maxDays.
+  // This is a HARD gate — Free/Starter can't schedule a 5-day tournament.
+  if (startDate && endDate && limits.maxDays !== Infinity) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+    if (days > limits.maxDays) {
+      return NextResponse.json(
+        {
+          error: "Day limit exceeded",
+          feature: "maxDays",
+          currentPlan: effectivePlan,
+          maxDays: limits.maxDays,
+          requestedDays: days,
+          upgradeUrl: "/billing",
+        },
+        { status: 402 }
+      );
+    }
   }
 
   const [newClass] = await db
@@ -140,10 +154,10 @@ export async function POST(
     .returning();
 
   // If this division is beyond the plan limit → set payment due to end of current month.
-  // Only for paid plans (free plan is hard-blocked above).
+  // Applies to every plan (including Free) — overage is always billable via cart.
   const planLimit = limits.maxDivisions === Infinity ? Infinity : limits.maxDivisions;
   const newCount  = existing.length + 1;
-  if (effectivePlan !== "free" && planLimit !== Infinity && newCount > planLimit) {
+  if (planLimit !== Infinity && newCount > planLimit + (tRow?.extraDivisionsPurchased ?? 0)) {
     const now = new Date();
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     const endOfMonthStr = endOfMonth.toISOString().split("T")[0]; // "YYYY-MM-DD"

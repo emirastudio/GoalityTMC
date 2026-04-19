@@ -139,3 +139,29 @@ body {
   opacity: 0.25;
   pointer-events: none;
 }
+
+/* ─── Public landing/marketing pages: bumped typography ───────
+   Весь публичный раздел (src/app/[locale]/(public)/*) оборачивается
+   в .public-root. Мы поднимаем ключевые Tailwind-классы через
+   !important — Tailwind генерит их в статическом CSS, а здесь
+   переопределяем специфичностью. Админка/клубный интерфейс не
+   затрагивается, потому что wrapper стоит только в public layout.
+
+   Bumps: +2-3px к body тексту, чтобы на десктопе страницы читались
+   крупно (по просьбе владельца). Не трогаем h1-h3 — они уже large.
+*/
+.public-root .text-\[11px\] { font-size: 12px !important; }
+.public-root .text-\[12px\] { font-size: 13px !important; }
+.public-root .text-\[13px\] { font-size: 15px !important; }
+.public-root .text-\[14px\] { font-size: 16px !important; }
+.public-root .text-\[15px\] { font-size: 17px !important; }
+.public-root .text-xs       { font-size: 13px !important; }
+.public-root .text-sm       { font-size: 15.5px !important; line-height: 1.55 !important; }
+.public-root .text-base     { font-size: 17px !important; line-height: 1.6 !important; }
+
+/* Лейблы форм / input-текст немного крупнее для комфорта */
+.public-root input,
+.public-root textarea,
+.public-root select {
+  font-size: 15px;
+}

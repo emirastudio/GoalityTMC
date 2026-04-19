@@ -4,6 +4,7 @@ import {
   tournaments,
   teams,
   clubs,
+  organizations,
   inboxMessages,
   teamMessageReads,
   messageRecipients,
@@ -13,6 +14,7 @@ import {
 import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq, sql, desc, inArray, count } from "drizzle-orm";
 import { sendMessageNotification } from "@/lib/email";
+import { getEffectivePlan, assertFeature, type TournamentPlan } from "@/lib/plan-gates";
 
 export async function GET(req: NextRequest) {
   const session = await requireAdmin();
@@ -124,6 +126,19 @@ export async function POST(req: NextRequest) {
   if (!tournament) {
     return NextResponse.json({ error: "No active tournament" }, { status: 404 });
   }
+
+  // Plan gate: hasMessaging (Pro+)
+  const [orgRow] = await db
+    .select({ eliteSubStatus: organizations.eliteSubStatus })
+    .from(organizations)
+    .where(eq(organizations.id, tournament.organizationId))
+    .limit(1);
+  const effectivePlan = getEffectivePlan(
+    (tournament.plan as TournamentPlan) ?? "free",
+    orgRow?.eliteSubStatus
+  );
+  const gate = assertFeature(effectivePlan, "hasMessaging");
+  if (gate) return gate;
 
   const { subject, body, sendToAll: sendAll, teamIds } = await req.json();
 

@@ -61,7 +61,7 @@ export async function GET(
       return {
         id: reg.team?.id ?? reg.teamId,
         regNumber: reg.regNumber,
-        name: reg.team?.name ?? "",
+        name: reg.team?.name ?? reg.displayName ?? "",
         status: reg.status,
         classId: reg.classId,
         club: club
@@ -81,7 +81,7 @@ export async function GET(
         return {
           id: reg.team?.id ?? reg.teamId,
           regNumber: reg.regNumber,
-          name: reg.team?.name ?? "",
+          name: reg.team?.name ?? reg.displayName ?? "",
           status: reg.status,
           club: club
             ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
@@ -105,7 +105,7 @@ export async function GET(
       return {
         id: reg.team?.id ?? reg.teamId,
         regNumber: reg.regNumber,
-        name: reg.team?.name ?? "",
+        name: reg.team?.name ?? reg.displayName ?? "",
         status: reg.status,
         club: club
           ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
