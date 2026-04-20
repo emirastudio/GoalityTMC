@@ -72,7 +72,7 @@ interface Match {
   awayTeamId?: number | null;
   homeTeam?: Team | null;
   awayTeam?: Team | null;
-  field?: { id: number; name: string } | null;
+  field?: { id: number; name: string; stadium?: { id: number; name: string } | null } | null;
   stage?: {
     id: number; name: string; nameRu?: string | null; nameEt?: string | null;
     type?: string | null; classId?: number | null;
@@ -1141,7 +1141,8 @@ function UpcomingMatchCard({
       {match.field && (
         <span className="hidden sm:flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-lg shrink-0 whitespace-nowrap"
           style={{ background: "rgba(99,102,241,0.12)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)" }}>
-          <FieldIcon className="w-3 h-3 shrink-0" />{match.field.name}
+          <FieldIcon className="w-3 h-3 shrink-0" />
+          {match.field.stadium ? `${match.field.stadium.name} · ${match.field.name}` : match.field.name}
         </span>
       )}
 
