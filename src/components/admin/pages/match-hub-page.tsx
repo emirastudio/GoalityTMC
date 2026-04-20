@@ -1093,7 +1093,6 @@ function UpcomingMatchCard({
   const classIdx = classId ? Array.from(classMap.keys()).indexOf(classId) : -1;
   const classPalette = classIdx >= 0 ? classColor(classIdx) : null;
 
-  const [quickResult, setQuickResult] = useState(false);
   const [qHome, setQHome] = useState("0");
   const [qAway, setQAway] = useState("0");
   const [qSaving, setQSaving] = useState(false);
@@ -1117,7 +1116,8 @@ function UpcomingMatchCard({
       body: JSON.stringify({ status: "finished", homeScore: h, awayScore: a, finishedAt: new Date().toISOString() }),
     });
     setQSaving(false);
-    setQuickResult(false);
+    setQHome("0");
+    setQAway("0");
     onRefresh();
   }
 
@@ -1143,14 +1143,25 @@ function UpcomingMatchCard({
         )}
       </div>
 
-      {/* Teams */}
+      {/* Teams + inline score inputs */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <ClubBadge team={match.homeTeam} size={22} />
         <span className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>
           {match.homeTeam?.name ?? "TBD"}
         </span>
-        <span className="text-[10px] shrink-0 px-1.5 py-0.5 rounded font-mono"
-          style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>vs</span>
+        <div className="flex items-center gap-1 shrink-0">
+          <input type="number" min={0} max={99} value={qHome}
+            onChange={e => setQHome(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") saveQuickResult(); }}
+            className="w-9 text-center text-sm font-black rounded-lg border outline-none"
+            style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)", padding: "3px 0" }} />
+          <span className="text-xs font-black" style={{ color: "var(--cat-text-muted)" }}>:</span>
+          <input type="number" min={0} max={99} value={qAway}
+            onChange={e => setQAway(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") saveQuickResult(); }}
+            className="w-9 text-center text-sm font-black rounded-lg border outline-none"
+            style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)", padding: "3px 0" }} />
+        </div>
         <span className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>
           {match.awayTeam?.name ?? "TBD"}
         </span>
@@ -1207,52 +1218,23 @@ function UpcomingMatchCard({
 
       {/* Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
-        {quickResult ? (
-          <>
-            <input type="number" min={0} max={99} value={qHome}
-              onChange={e => setQHome(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") saveQuickResult(); if (e.key === "Escape") setQuickResult(false); }}
-              className="w-10 text-center text-sm font-black rounded-lg border outline-none"
-              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-accent)", color: "var(--cat-text)", padding: "3px 0" }}
-              autoFocus />
-            <span className="text-sm font-black" style={{ color: "var(--cat-text-muted)" }}>:</span>
-            <input type="number" min={0} max={99} value={qAway}
-              onChange={e => setQAway(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") saveQuickResult(); if (e.key === "Escape") setQuickResult(false); }}
-              className="w-10 text-center text-sm font-black rounded-lg border outline-none"
-              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-accent)", color: "var(--cat-text)", padding: "3px 0" }} />
-            <button onClick={saveQuickResult} disabled={qSaving}
-              className="p-1.5 rounded-lg hover:opacity-80 transition-opacity"
-              style={{ background: "#10b981", color: "#fff" }}>
-              {qSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-            </button>
-            <button onClick={() => setQuickResult(false)}
-              className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
-              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => onOpenProtocol(match)}
-              className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
-              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}
-              title={t("matchHub.titleProtocol")}>
-              <Eye className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => { setQHome("0"); setQAway("0"); setQuickResult(true); }}
-              className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
-              style={{ background: "var(--cat-tag-bg)", color: "#f59e0b" }}
-              title={t("matchHub.quickResult")}>
-              <Zap className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={startMatch}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold hover:opacity-80 transition-opacity whitespace-nowrap"
-              style={{ background: "#10b981", color: "#fff" }}>
-              <Play className="w-3 h-3" /> {t("matchHub.startMatch")}
-            </button>
-          </>
-        )}
+        <button onClick={() => onOpenProtocol(match)}
+          className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
+          style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}
+          title={t("matchHub.titleProtocol")}>
+          <Eye className="w-3.5 h-3.5" />
+        </button>
+        <button onClick={saveQuickResult} disabled={qSaving}
+          className="p-1.5 rounded-lg hover:opacity-80 transition-opacity"
+          style={{ background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.25)" }}
+          title={t("matchHub.quickResult")}>
+          {qSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+        </button>
+        <button onClick={startMatch}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold hover:opacity-80 transition-opacity whitespace-nowrap"
+          style={{ background: "#10b981", color: "#fff" }}>
+          <Play className="w-3 h-3" /> {t("matchHub.startMatch")}
+        </button>
       </div>
     </div>
   );
