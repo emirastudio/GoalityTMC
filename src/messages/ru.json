@@ -4960,6 +4960,19 @@
     "statusLabelPaid": "Оплачено €11",
     "statusLabelPromo": "Промокод"
   },
+  "refereePanel": {
+    "pageTitle": "Панель судьи",
+    "myMatches": "Мои матчи",
+    "noMatches": "Нет назначенных матчей",
+    "role_main": "Главный судья",
+    "role_assistant1": "Ассистент 1",
+    "role_assistant2": "Ассистент 2",
+    "role_fourth": "Четвёртый судья",
+    "statusScheduled": "Запланирован",
+    "statusLive": "Идёт",
+    "statusFinished": "Завершён",
+    "saveScore": "Сохранить"
+  },
   "refereesAdmin": {
     "pageTitle": "Судьи",
     "pageSubtitle": "Управление составом судей и назначениями на матчи",
@@ -5003,6 +5016,10 @@
     "errorAssign": "Ошибка назначения. Попробуйте ещё раз.",
     "errorUnassign": "Ошибка снятия назначения. Попробуйте ещё раз.",
     "noDate": "Без даты",
-    "vs": "vs"
+    "vs": "vs",
+    "copyLink": "Копировать ссылку",
+    "linkCopied": "Скопировано!",
+    "regenerateToken": "Пересоздать ссылку",
+    "regenerateWarning": "Старая ссылка перестанет работать. Создать новую?"
   }
 }

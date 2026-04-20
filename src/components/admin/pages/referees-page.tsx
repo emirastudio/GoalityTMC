@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useTournament } from "@/lib/tournament-context";
 import {
   Plus, Pencil, Trash2, UserPlus, X, Check,
-  Users2, CalendarDays, Clock,
+  Users2, CalendarDays, Clock, Link2, RefreshCw,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -21,6 +21,7 @@ interface Referee {
   level: string | null;
   colorTag: string | null;
   notes: string | null;
+  accessToken?: string | null;
 }
 
 interface Team {
@@ -469,6 +470,8 @@ export function RefereesPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingReferee, setEditingReferee] = useState<Referee | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  // token map: refereeId → { token, copied, generating }
+  const [tokenMap, setTokenMap] = useState<Record<number, { token: string; copied: boolean; generating: boolean }>>({});
 
   // ── Matches state
   const [matches, setMatches] = useState<Match[]>([]);
@@ -525,6 +528,56 @@ export function RefereesPage() {
   const filteredMatches = selectedDate === "all"
     ? matches
     : matches.filter(m => isoDate(m.scheduledAt) === selectedDate);
+
+  // ── Token / link handlers
+  async function handleGetLink(referee: Referee) {
+    const existingToken = tokenMap[referee.id]?.token ?? referee.accessToken;
+
+    if (existingToken && !window.confirm(t("regenerateWarning"))) {
+      // Already have a token — just copy it again without regenerating
+      const url = `${window.location.origin}/referee/${existingToken}`;
+      await navigator.clipboard.writeText(url);
+      setTokenMap(prev => ({
+        ...prev,
+        [referee.id]: { ...prev[referee.id], token: existingToken, copied: true, generating: false },
+      }));
+      setTimeout(() => {
+        setTokenMap(prev => ({
+          ...prev,
+          [referee.id]: { ...prev[referee.id], copied: false },
+        }));
+      }, 2000);
+      return;
+    }
+
+    setTokenMap(prev => ({
+      ...prev,
+      [referee.id]: { token: prev[referee.id]?.token ?? "", copied: false, generating: true },
+    }));
+
+    try {
+      const res = await fetch(`${base}/referees/${referee.id}/token`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed");
+      const { token: newToken } = await res.json();
+      const url = `${window.location.origin}/referee/${newToken}`;
+      await navigator.clipboard.writeText(url);
+      setTokenMap(prev => ({
+        ...prev,
+        [referee.id]: { token: newToken, copied: true, generating: false },
+      }));
+      setTimeout(() => {
+        setTokenMap(prev => ({
+          ...prev,
+          [referee.id]: { ...prev[referee.id], copied: false },
+        }));
+      }, 2000);
+    } catch {
+      setTokenMap(prev => ({
+        ...prev,
+        [referee.id]: { token: prev[referee.id]?.token ?? "", copied: false, generating: false },
+      }));
+    }
+  }
 
   // ── CRUD handlers
   async function handleCreateReferee(data: Omit<Referee, "id">) {
@@ -700,6 +753,39 @@ export function RefereesPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
+                          {/* Copy / Regenerate link button */}
+                          {(() => {
+                            const ts = tokenMap[referee.id];
+                            const hasToken = !!(ts?.token ?? referee.accessToken);
+                            const isCopied = ts?.copied ?? false;
+                            const isGenerating = ts?.generating ?? false;
+                            return (
+                              <button
+                                onClick={() => handleGetLink(referee)}
+                                disabled={isGenerating}
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
+                                style={{
+                                  background: isCopied ? "rgba(16,185,129,0.12)" : "var(--cat-tag-bg)",
+                                  color: isCopied ? "#10b981" : "var(--cat-text-muted)",
+                                  border: "1px solid var(--cat-card-border)",
+                                }}
+                                title={hasToken ? t("regenerateToken") : t("copyLink")}
+                              >
+                                {isCopied ? (
+                                  <Check className="w-3 h-3" />
+                                ) : isGenerating ? (
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                ) : hasToken ? (
+                                  <RefreshCw className="w-3 h-3" />
+                                ) : (
+                                  <Link2 className="w-3 h-3" />
+                                )}
+                                <span className="hidden sm:inline">
+                                  {isCopied ? t("linkCopied") : hasToken ? t("regenerateToken") : t("copyLink")}
+                                </span>
+                              </button>
+                            );
+                          })()}
                           <button
                             onClick={() => { setEditingReferee(referee); setShowAddForm(false); }}
                             className="w-7 h-7 rounded-lg flex items-center justify-center transition-opacity hover:opacity-70"

@@ -4960,6 +4960,19 @@
     "statusLabelPaid": "Paid €11",
     "statusLabelPromo": "Promo code"
   },
+  "refereePanel": {
+    "pageTitle": "Referee Panel",
+    "myMatches": "My Matches",
+    "noMatches": "No matches assigned",
+    "role_main": "Main referee",
+    "role_assistant1": "Assistant 1",
+    "role_assistant2": "Assistant 2",
+    "role_fourth": "4th official",
+    "statusScheduled": "Scheduled",
+    "statusLive": "Live",
+    "statusFinished": "Finished",
+    "saveScore": "Save"
+  },
   "refereesAdmin": {
     "pageTitle": "Referees",
     "pageSubtitle": "Manage your referee roster and match assignments",
@@ -5003,6 +5016,10 @@
     "errorAssign": "Failed to assign. Please try again.",
     "errorUnassign": "Failed to unassign. Please try again.",
     "noDate": "No date",
-    "vs": "vs"
+    "vs": "vs",
+    "copyLink": "Copy link",
+    "linkCopied": "Copied!",
+    "regenerateToken": "Regenerate link",
+    "regenerateWarning": "Old link will stop working. Generate a new one?"
   }
 }

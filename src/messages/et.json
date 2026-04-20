@@ -4960,6 +4960,19 @@
     "statusLabelPaid": "Tasutud €11",
     "statusLabelPromo": "Sooduskood"
   },
+  "refereePanel": {
+    "pageTitle": "Kohtuniku paneel",
+    "myMatches": "Minu matšid",
+    "noMatches": "Matše pole määratud",
+    "role_main": "Peakohtunik",
+    "role_assistant1": "Assistent 1",
+    "role_assistant2": "Assistent 2",
+    "role_fourth": "Neljas kohtunik",
+    "statusScheduled": "Planeeritud",
+    "statusLive": "Toimub",
+    "statusFinished": "Lõppenud",
+    "saveScore": "Salvesta"
+  },
   "refereesAdmin": {
     "pageTitle": "Kohtunikud",
     "pageSubtitle": "Halda kohtunikke ja matšimääramisi",
@@ -5003,6 +5016,10 @@
     "errorAssign": "Määramine ebaõnnestus. Proovi uuesti.",
     "errorUnassign": "Määramise tühistamine ebaõnnestus. Proovi uuesti.",
     "noDate": "Kuupäev puudub",
-    "vs": "vs"
+    "vs": "vs",
+    "copyLink": "Kopeeri link",
+    "linkCopied": "Kopeeritud!",
+    "regenerateToken": "Loo uus link",
+    "regenerateWarning": "Vana link lakkab töötamast. Luua uus?"
   }
 }

@@ -1367,6 +1367,7 @@ export const tournamentReferees = pgTable("tournament_referees", {
   level: text("level"),                    // "junior"|"senior"|"national" (free text)
   colorTag: text("color_tag"),             // hex color for calendar chip
   notes: text("notes"),
+  accessToken: text("access_token").unique(),
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
