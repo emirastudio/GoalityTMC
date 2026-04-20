@@ -1137,7 +1137,15 @@ function UpcomingMatchCard({
         <ClubBadge team={match.awayTeam} size={22} />
       </div>
 
-      {/* Division + Stage / Group / Round / Field meta */}
+      {/* Field name — always visible */}
+      {match.field && (
+        <span className="hidden sm:flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-lg shrink-0 whitespace-nowrap"
+          style={{ background: "rgba(99,102,241,0.12)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)" }}>
+          <FieldIcon className="w-3 h-3 shrink-0" />{match.field.name}
+        </span>
+      )}
+
+      {/* Division + Stage / Group / Round meta */}
       <div className="hidden md:flex items-center gap-1.5 shrink-0 flex-wrap justify-end max-w-[240px]">
         {/* Division (class) — prominent colored pill */}
         {classInfo && classPalette && (
@@ -1162,11 +1170,6 @@ function UpcomingMatchCard({
           <span className="text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap"
             style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
             {match.round.name}
-          </span>
-        )}
-        {match.field && (
-          <span className="text-[10px] flex items-center gap-0.5 whitespace-nowrap" style={{ color: "var(--cat-text-muted)" }}>
-            <FieldIcon className="w-2.5 h-2.5 shrink-0" />{match.field.name}
           </span>
         )}
         {match.referees && match.referees.length > 0 && (
