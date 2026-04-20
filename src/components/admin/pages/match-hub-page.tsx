@@ -1975,15 +1975,31 @@ export function MatchHubPage() {
 
           {/* UPCOMING — flat or grouped by division/time */}
           {upcoming.length > 0 && (() => {
-            // Render a single group of upcoming matches
-            const renderGroup = (items: Match[]) => (
-              <div className="space-y-1.5">
-                {items.map(m => (
+            // Render matches with inline time slot dividers
+            const renderGroup = (items: Match[]) => {
+              const rows: React.ReactNode[] = [];
+              let lastSlot = "";
+              for (const m of items) {
+                const slot = m.scheduledAt ? fmtTime(m.scheduledAt, locale) : "";
+                if (slot && slot !== lastSlot) {
+                  lastSlot = slot;
+                  rows.push(
+                    <div key={`slot-${slot}-${m.id}`} className="flex items-center gap-2 pt-1">
+                      <span className="text-[11px] font-black font-mono px-2 py-0.5 rounded"
+                        style={{ background: "rgba(245,158,11,0.10)", color: "#f59e0b" }}>
+                        {slot}
+                      </span>
+                      <span className="flex-1 h-px" style={{ background: "rgba(245,158,11,0.15)" }} />
+                    </div>
+                  );
+                }
+                rows.push(
                   <UpcomingMatchCard key={m.id} match={m} base={base}
                     onRefresh={loadMatches} onOpenProtocol={navigateToProtocol} classMap={classMap} />
-                ))}
-              </div>
-            );
+                );
+              }
+              return <div className="space-y-1.5">{rows}</div>;
+            };
 
             // Group by time slot (HH:mm)
             if (groupByTime) {
