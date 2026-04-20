@@ -10,7 +10,7 @@ import {
   CreditCard, MessageSquare, Settings, LayoutDashboard, Trophy, LogOut,
   ChevronDown, ChevronLeft, Radio, Lock, Zap, Receipt, Plus, Trash2,
   ClipboardList, Hotel, Utensils, Bus, BarChart3, MapPin,
-  Crown, Rocket, Gift,
+  Crown, Rocket, Gift, Users2,
 } from "lucide-react";
 import { DivisionCreateModal } from "@/components/admin/division-create-modal";
 import { PlanLimitModal } from "@/components/ui/plan-gate";
@@ -752,6 +752,18 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
               color={CLR.organization}
               bg={BG.organization}
             />
+            {modules && !modules.hasMatchHub ? (
+              <LockedLink href={`${base}/referees`} icon={Users2} label={tAdmin("referees")} plan="Pro" />
+            ) : (
+              <NavLink
+                href={`${base}/referees`}
+                icon={Users2}
+                label={tAdmin("referees")}
+                isActive={isActive(`${base}/referees`)}
+                color={CLR.organization}
+                bg={BG.organization}
+              />
+            )}
           </nav>
           </>)}
 
