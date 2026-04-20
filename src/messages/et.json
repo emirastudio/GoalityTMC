@@ -1062,6 +1062,7 @@
       "matchesFinished": "{done}/{total} mängu lõpetatud",
       "matchesCount": "mängu",
       "groupByDivision": "Gruppi divisjoni järgi",
+      "groupByTime": "Aja järgi",
       "transitioning": "Edasi liikumine...",
       "done": "Tehtud",
       "nextStage": "Järgmine etapp →",

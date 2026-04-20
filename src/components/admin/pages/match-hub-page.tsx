@@ -85,6 +85,7 @@ interface Match {
   group?: { id: number; name: string } | null;
   round?: { id: number; name: string } | null;
   events?: MatchEvent[];
+  referees?: { refereeId: number; role: string; firstName: string; lastName: string; colorTag?: string | null }[];
 }
 
 interface HubLineupPlayer {
@@ -1168,6 +1169,16 @@ function UpcomingMatchCard({
             <FieldIcon className="w-2.5 h-2.5 shrink-0" />{match.field.name}
           </span>
         )}
+        {match.referees && match.referees.length > 0 && (
+          <span className="text-[10px] flex items-center gap-0.5 whitespace-nowrap" style={{ color: "var(--cat-text-muted)" }}>
+            {match.referees.filter(r => r.role === "main").map(r => (
+              <span key={r.refereeId} className="flex items-center gap-0.5">
+                {r.colorTag && <span className="w-2 h-2 rounded-full shrink-0 inline-block" style={{ background: r.colorTag }} />}
+                {r.firstName[0]}. {r.lastName}
+              </span>
+            ))}
+          </span>
+        )}
       </div>
 
       {/* Actions */}
@@ -1711,6 +1722,8 @@ export function MatchHubPage() {
   const [filterField, setFilterField] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [groupByDiv, setGroupByDiv] = useState(false);
+  const [groupByTime, setGroupByTime] = useState(false);
+  const [showFeed, setShowFeed] = useState(false);
 
   function navigateToProtocol(match: Match) {
     router.push(`/org/${orgSlug}/admin/tournament/${tournamentId}/hub/match/${match.id}`);
@@ -1905,6 +1918,28 @@ export function MatchHubPage() {
             </>
           )}
 
+          {/* Group by time toggle */}
+          <span className="w-px h-4 mx-1" style={{ background: "var(--cat-card-border)" }} />
+          <button
+            onClick={() => setGroupByTime(v => !v)}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold transition-all hover:opacity-90 active:scale-95"
+            style={groupByTime
+              ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" }
+              : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-card-border)" }}>
+            ⏱ {t("matchHub.groupByTime")}
+          </button>
+
+          {/* Event feed toggle */}
+          <span className="w-px h-4 mx-1" style={{ background: "var(--cat-card-border)" }} />
+          <button
+            onClick={() => setShowFeed(v => !v)}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold transition-all hover:opacity-90 active:scale-95"
+            style={showFeed
+              ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" }
+              : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-card-border)" }}>
+            <SquareActivity className="w-3 h-3" /> {t("matchHub.eventFeedTitle")}
+          </button>
+
           {/* Reset */}
           {(filterClass !== "all" || filterField !== "all" || filterStatus !== "all") && (
             <button onClick={() => { setFilterClass("all"); setFilterField("all"); setFilterStatus("all"); }}
@@ -1917,9 +1952,9 @@ export function MatchHubPage() {
       </div>
 
       {/* Main layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+      <div className={`grid grid-cols-1 gap-5 ${showFeed ? "xl:grid-cols-3" : ""}`}>
         {/* Left: matches */}
-        <div className="xl:col-span-2 space-y-5">
+        <div className={`${showFeed ? "xl:col-span-2" : ""} space-y-5`}>
           {/* LIVE */}
           {live.length > 0 && (
             <div>
@@ -1938,7 +1973,7 @@ export function MatchHubPage() {
             </div>
           )}
 
-          {/* UPCOMING — flat or grouped by division */}
+          {/* UPCOMING — flat or grouped by division/time */}
           {upcoming.length > 0 && (() => {
             // Render a single group of upcoming matches
             const renderGroup = (items: Match[]) => (
@@ -1949,6 +1984,40 @@ export function MatchHubPage() {
                 ))}
               </div>
             );
+
+            // Group by time slot (HH:mm)
+            if (groupByTime) {
+              const byTime = new Map<string, Match[]>();
+              for (const m of upcoming) {
+                const key = m.scheduledAt ? fmtTime(m.scheduledAt, locale) : "—";
+                if (!byTime.has(key)) byTime.set(key, []);
+                byTime.get(key)!.push(m);
+              }
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5" style={{ color: "#f59e0b" }} />
+                    <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "#f59e0b" }}>
+                      {t("matchHub.sectionUpcoming", { count: upcoming.length })}
+                    </h2>
+                  </div>
+                  {Array.from(byTime.entries()).map(([slot, items]) => (
+                    <div key={slot}>
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <span className="text-xs font-black font-mono px-2.5 py-0.5 rounded"
+                          style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
+                          {slot}
+                        </span>
+                        <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
+                          {items.length} {t("matchHub.matchesCount")}
+                        </span>
+                      </div>
+                      {renderGroup(items)}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
 
             if (groupByDiv && classOptions.length > 1) {
               // Group by class
@@ -2037,7 +2106,7 @@ export function MatchHubPage() {
         </div>
 
         {/* Right: event feed */}
-        <div>
+        {showFeed && <div>
           <div className="sticky top-4">
             <div className="rounded-2xl border overflow-hidden"
               style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
@@ -2057,7 +2126,7 @@ export function MatchHubPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
       </div>
 
     </div>

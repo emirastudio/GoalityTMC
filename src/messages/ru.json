@@ -1062,6 +1062,7 @@
       "matchesFinished": "{done}/{total} матчей завершено",
       "matchesCount": "матчей",
       "groupByDivision": "По дивизиону",
+      "groupByTime": "По времени",
       "transitioning": "Переход...",
       "done": "Выполнено",
       "nextStage": "Следующий этап →",

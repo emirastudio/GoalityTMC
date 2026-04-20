@@ -1062,6 +1062,7 @@
       "matchesFinished": "{done}/{total} matches finished",
       "matchesCount": "matches",
       "groupByDivision": "Group by division",
+      "groupByTime": "By time",
       "transitioning": "Advancing...",
       "done": "Done",
       "nextStage": "Next stage →",
