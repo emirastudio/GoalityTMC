@@ -1326,7 +1326,10 @@
       "stageTypeKnockout": "Play-off",
       "loading": "Laadimine...",
       "noStages": "Etappe pole",
-      "noStagesHint": "Looge etapid jaotises Ajakava"
+      "noStagesHint": "Looge etapid jaotises Ajakava",
+      "editScore": "Muuda skoori",
+      "saveScore": "Salvesta",
+      "cancelEdit": "Tühista"
     }
   },
   "club": {

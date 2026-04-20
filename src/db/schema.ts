@@ -1745,6 +1745,7 @@ export const matchesRelations = relations(matches, ({ one, many }) => ({
   events: many(matchEvents),
   lineup: many(matchLineup),
   resultLog: many(matchResultLog),
+  referees: many(matchReferees),
 }));
 
 export const matchEventsRelations = relations(matchEvents, ({ one }) => ({

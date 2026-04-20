@@ -1326,7 +1326,10 @@
       "stageTypeKnockout": "Плей-офф",
       "loading": "Загрузка...",
       "noStages": "Нет этапов",
-      "noStagesHint": "Создайте этапы в разделе Расписание"
+      "noStagesHint": "Создайте этапы в разделе Расписание",
+      "editScore": "Изменить счёт",
+      "saveScore": "Сохранить",
+      "cancelEdit": "Отмена"
     }
   },
   "club": {

@@ -1326,7 +1326,10 @@
       "stageTypeKnockout": "Knockout",
       "loading": "Loading...",
       "noStages": "No stages",
-      "noStagesHint": "Create stages in the Schedule section"
+      "noStagesHint": "Create stages in the Schedule section",
+      "editScore": "Edit score",
+      "saveScore": "Save",
+      "cancelEdit": "Cancel"
     }
   },
   "club": {
