@@ -5022,6 +5022,27 @@
     "copyLink": "Copy link",
     "linkCopied": "Copied!",
     "regenerateToken": "Regenerate link",
-    "regenerateWarning": "Old link will stop working. Generate a new one?"
+    "regenerateWarning": "Old link will stop working. Generate a new one?",
+    "autoAssign": "Auto-assign",
+    "autoAssignRole": "Role",
+    "autoAssignAll": "Auto-assign all",
+    "autoAssignResult": "Assigned {assigned}, skipped {skipped}",
+    "bulkImport": "Bulk import",
+    "bulkPaste": "Paste names (one per line):",
+    "bulkImportBtn": "Import",
+    "bulkProgress": "Importing {done}/{total}...",
+    "bulkSuccess": "Imported {n} referees",
+    "calculator": "Referee calculator",
+    "calcDuration": "Match duration (min)",
+    "calcPattern": "Work pattern",
+    "calcPatternEvery": "Every match",
+    "calcPatternEvery2": "Every 2nd",
+    "calcPatternEvery3": "Every 3rd",
+    "calcPattern2on1off": "2 on, 1 off",
+    "calcPattern3on1off": "3 on, 1 off",
+    "calcRoles": "Roles per match",
+    "calcBuffer": "Buffer (min)",
+    "calcResult": "Estimated referees needed",
+    "calcPerRef": "{n} matches per referee"
   }
 }

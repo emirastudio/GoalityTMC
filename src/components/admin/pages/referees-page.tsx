@@ -6,6 +6,7 @@ import { useTournament } from "@/lib/tournament-context";
 import {
   Plus, Pencil, Trash2, UserPlus, X, Check,
   Users2, CalendarDays, Clock, Link2, RefreshCw,
+  Download, ChevronDown, ChevronUp, Calculator,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -63,6 +64,8 @@ const PRESET_COLORS = [
 const LEVELS: RefereeLevel[] = ["national", "regional", "local", "trainee"];
 const ROLES = ["main", "assistant1", "assistant2", "fourth"] as const;
 type Role = typeof ROLES[number];
+
+type CalcPattern = "every" | "every2" | "every3" | "2on1off" | "3on1off";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -455,6 +458,310 @@ function AssignDialog({ matchId, referees, existingAssignments, onAssign, onClos
   );
 }
 
+// ─── Bulk Import Panel ────────────────────────────────────────────────────────
+
+interface BulkImportPanelProps {
+  base: string;
+  onDone: () => void;
+  t: (k: string, values?: Record<string, string | number>) => string;
+}
+
+function BulkImportPanel({ base, onDone, t }: BulkImportPanelProps) {
+  const [text, setText] = useState("");
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  async function handleImport() {
+    const lines = text
+      .split("\n")
+      .map(l => l.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) return;
+
+    setProgress({ done: 0, total: lines.length });
+    setResult(null);
+    setErrors([]);
+
+    let imported = 0;
+    const errs: string[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const [namePart, emailPart] = line.split(",").map(s => s.trim());
+      const nameTokens = (namePart ?? "").trim().split(/\s+/);
+      if (nameTokens.length < 2) {
+        errs.push(line);
+        setProgress({ done: i + 1, total: lines.length });
+        continue;
+      }
+      const lastName = nameTokens[nameTokens.length - 1];
+      const firstName = nameTokens.slice(0, -1).join(" ");
+      const email = emailPart && emailPart.includes("@") ? emailPart : undefined;
+
+      try {
+        const res = await fetch(`${base}/referees`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName, lastName, email: email ?? null }),
+        });
+        if (res.ok) {
+          imported++;
+        } else {
+          errs.push(line);
+        }
+      } catch {
+        errs.push(line);
+      }
+      setProgress({ done: i + 1, total: lines.length });
+    }
+
+    setErrors(errs);
+    setResult(t("bulkSuccess", { n: imported }));
+    setProgress(null);
+
+    if (errs.length === 0) {
+      setTimeout(() => {
+        onDone();
+      }, 1200);
+    } else {
+      onDone();
+    }
+  }
+
+  const isImporting = progress !== null;
+
+  return (
+    <div
+      className="rounded-xl p-4 mb-2"
+      style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-card-border)" }}
+    >
+      <p className="text-xs font-black uppercase tracking-widest mb-3" style={{ color: "var(--cat-accent)" }}>
+        {t("bulkImport")}
+      </p>
+      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--cat-text-muted)" }}>
+        {t("bulkPaste")}
+      </label>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        rows={6}
+        disabled={isImporting}
+        placeholder={"John Smith\nJane Doe, jane@example.com"}
+        className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 resize-none font-mono disabled:opacity-50"
+        style={{
+          background: "var(--cat-input-bg, var(--cat-card-bg))",
+          borderColor: "var(--cat-card-border)",
+          color: "var(--cat-text)",
+        }}
+      />
+
+      {isImporting && (
+        <p className="text-xs mt-2" style={{ color: "var(--cat-text-muted)" }}>
+          {t("bulkProgress", { done: progress.done, total: progress.total })}
+        </p>
+      )}
+      {result && (
+        <p className="text-xs mt-2 font-semibold" style={{ color: "#10b981" }}>
+          {result}
+          {errors.length > 0 && `, ${errors.length} errors`}
+        </p>
+      )}
+
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={handleImport}
+          disabled={isImporting || !text.trim()}
+          className="flex-1 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
+          style={{ background: "var(--cat-accent)", color: "#000" }}
+        >
+          {isImporting
+            ? t("bulkProgress", { done: progress!.done, total: progress!.total })
+            : t("bulkImportBtn")}
+        </button>
+        <button
+          onClick={onDone}
+          disabled={isImporting}
+          className="px-4 py-2 rounded-lg text-sm transition-opacity hover:opacity-70 disabled:opacity-40"
+          style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)", border: "1px solid var(--cat-card-border)" }}
+        >
+          {t("cancel")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Referee Calculator ───────────────────────────────────────────────────────
+
+interface CalculatorProps {
+  matchCount: number;
+  t: (k: string, values?: Record<string, string | number>) => string;
+}
+
+function RefereeCalculator({ matchCount, t }: CalculatorProps) {
+  const [open, setOpen] = useState(false);
+  const [duration, setDuration] = useState(60);
+  const [pattern, setPattern] = useState<CalcPattern>("every");
+  const [rolesPerMatch, setRolesPerMatch] = useState(1);
+  const [buffer, setBuffer] = useState(15);
+
+  const utilizationByPattern: Record<CalcPattern, number> = {
+    every: 1.0,
+    every2: 0.5,
+    every3: 1 / 3,
+    "2on1off": 2 / 3,
+    "3on1off": 3 / 4,
+  };
+
+  const totalSlots = matchCount * rolesPerMatch;
+  const utilization = utilizationByPattern[pattern];
+  // How many matches can one referee do in a day assuming matches are sequential?
+  // With full utilization: floor(480 / (duration + buffer)) as approx daily cap
+  // But we compute it as: matchesPerRef based on utilization ratio of total slots
+  const matchesPerRef =
+    utilization > 0
+      ? Math.max(1, Math.floor((1 / (1 - utilization + 1)) * (1 / utilization)))
+      : 1;
+
+  // Simplified: matchesPerRef = how many consecutive matches a referee handles given pattern
+  // e.g. every=1 slot per cycle, every2=1 of 2, 2on1off=2 of 3 → matchesPerRef = cycle_on / cycle_total * N
+  // Use: estimated = ceil(totalSlots / matchesPerRef)
+  const effectiveMatchesPerRef = Math.max(
+    1,
+    Math.round(matchCount * utilization),
+  );
+  const estimated = Math.ceil(totalSlots / effectiveMatchesPerRef);
+  // Minimum: based on one full working day capacity
+  const dailyCapacity = Math.max(1, Math.floor(480 / (duration + buffer)));
+  const minimum = Math.ceil(totalSlots / (dailyCapacity * rolesPerMatch));
+  const recommended = Math.max(minimum, estimated);
+
+  const patternOptions: Array<{ value: CalcPattern; label: string }> = [
+    { value: "every",    label: t("calcPatternEvery") },
+    { value: "every2",   label: t("calcPatternEvery2") },
+    { value: "every3",   label: t("calcPatternEvery3") },
+    { value: "2on1off",  label: t("calcPattern2on1off") },
+    { value: "3on1off",  label: t("calcPattern3on1off") },
+  ];
+
+  const inputClass = "rounded-lg border px-2 py-1 text-sm outline-none w-20 text-center";
+  const inputStyle = {
+    background: "var(--cat-input-bg, var(--cat-card-bg))",
+    borderColor: "var(--cat-card-border)",
+    color: "var(--cat-text)",
+  };
+
+  return (
+    <div
+      className="rounded-xl border mb-3 overflow-hidden"
+      style={{ borderColor: "var(--cat-card-border)" }}
+    >
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-black/5"
+        style={{ background: "var(--cat-tag-bg)" }}
+      >
+        <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
+          <Calculator className="w-4 h-4" style={{ color: "var(--cat-accent)" }} />
+          {t("calculator")}
+        </span>
+        {open ? (
+          <ChevronUp className="w-4 h-4" style={{ color: "var(--cat-text-muted)" }} />
+        ) : (
+          <ChevronDown className="w-4 h-4" style={{ color: "var(--cat-text-muted)" }} />
+        )}
+      </button>
+
+      {open && (
+        <div className="px-4 py-4 space-y-3" style={{ background: "var(--cat-card-bg)" }}>
+          {/* Matches (auto) */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>Matches</span>
+            <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{matchCount}</span>
+          </div>
+
+          {/* Duration */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("calcDuration")}</span>
+            <input
+              type="number"
+              min={10}
+              max={300}
+              value={duration}
+              onChange={e => setDuration(Math.max(10, parseInt(e.target.value) || 60))}
+              className={inputClass}
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Pattern */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs shrink-0" style={{ color: "var(--cat-text-muted)" }}>{t("calcPattern")}</span>
+            <select
+              value={pattern}
+              onChange={e => setPattern(e.target.value as CalcPattern)}
+              className="rounded-lg border px-2 py-1 text-sm outline-none"
+              style={{ ...inputStyle, width: "auto" }}
+            >
+              {patternOptions.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Roles per match */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("calcRoles")}</span>
+            <select
+              value={rolesPerMatch}
+              onChange={e => setRolesPerMatch(parseInt(e.target.value))}
+              className="rounded-lg border px-2 py-1 text-sm outline-none"
+              style={{ ...inputStyle, width: "auto" }}
+            >
+              <option value={1}>1 — main</option>
+              <option value={2}>2 — +asst1</option>
+              <option value={3}>3 — +asst2</option>
+              <option value={4}>4 — full</option>
+            </select>
+          </div>
+
+          {/* Buffer */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("calcBuffer")}</span>
+            <input
+              type="number"
+              min={0}
+              max={120}
+              value={buffer}
+              onChange={e => setBuffer(Math.max(0, parseInt(e.target.value) || 15))}
+              className={inputClass}
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Divider */}
+          <div style={{ borderTop: "1px solid var(--cat-card-border)", margin: "4px 0" }} />
+
+          {/* Result */}
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("calcResult")}</p>
+              <p className="text-2xl font-black mt-0.5" style={{ color: "var(--cat-accent)" }}>
+                {recommended}
+              </p>
+            </div>
+            <p className="text-xs pb-1" style={{ color: "var(--cat-text-muted)" }}>
+              {t("calcPerRef", { n: effectiveMatchesPerRef })}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function RefereesPage() {
@@ -468,6 +775,7 @@ export function RefereesPage() {
   const [referees, setReferees] = useState<Referee[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [editingReferee, setEditingReferee] = useState<Referee | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   // token map: refereeId → { token, copied, generating }
@@ -479,6 +787,11 @@ export function RefereesPage() {
   const [selectedDate, setSelectedDate] = useState<string>("all");
   const [assignments, setAssignments] = useState<Record<number, MatchRefereeAssignment[]>>({});
   const [assignDialogMatch, setAssignDialogMatch] = useState<Match | null>(null);
+
+  // ── Auto-assign state
+  const [autoAssignRole, setAutoAssignRole] = useState<Role>("main");
+  const [autoAssigning, setAutoAssigning] = useState(false);
+  const [autoAssignToast, setAutoAssignToast] = useState<string | null>(null);
 
   // ── Load roster
   const loadReferees = useCallback(async () => {
@@ -509,6 +822,11 @@ export function RefereesPage() {
       setAssignments(prev => ({ ...prev, [matchId]: d.referees ?? [] }));
     }
   }, [base]);
+
+  // ── Reload all visible assignments
+  const reloadAllAssignments = useCallback(async (matchList: Match[]) => {
+    await Promise.all(matchList.map(m => loadAssignments(m.id)));
+  }, [loadAssignments]);
 
   useEffect(() => { loadReferees(); }, [loadReferees]);
   useEffect(() => { loadMatches(); }, [loadMatches]);
@@ -633,6 +951,29 @@ export function RefereesPage() {
     if (r.ok) await loadAssignments(matchId);
   }
 
+  // ── Auto-assign handler
+  async function handleAutoAssign() {
+    setAutoAssigning(true);
+    setAutoAssignToast(null);
+    try {
+      const r = await fetch(`${base}/referees/auto-assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: autoAssignRole }),
+      });
+      if (r.ok) {
+        const { assigned, skipped } = await r.json() as { assigned: number; skipped: number };
+        setAutoAssignToast(
+          t("autoAssignResult", { assigned, skipped }),
+        );
+        await reloadAllAssignments(matches);
+        setTimeout(() => setAutoAssignToast(null), 4000);
+      }
+    } finally {
+      setAutoAssigning(false);
+    }
+  }
+
   function roleLabel(role: string) {
     const map: Record<string, string> = {
       main: t("roleMain"),
@@ -675,19 +1016,45 @@ export function RefereesPage() {
               <h2 className="font-bold text-base" style={{ color: "var(--cat-text)" }}>
                 {t("rosterTitle")}
               </h2>
-              {!showAddForm && !editingReferee && (
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80"
-                  style={{ background: "var(--cat-accent)", color: "#000" }}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  {t("addReferee")}
-                </button>
+              {!showAddForm && !editingReferee && !showBulkImport && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowBulkImport(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80"
+                    style={{
+                      background: "var(--cat-tag-bg)",
+                      color: "var(--cat-text-secondary)",
+                      border: "1px solid var(--cat-card-border)",
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    {t("bulkImport")}
+                  </button>
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80"
+                    style={{ background: "var(--cat-accent)", color: "#000" }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {t("addReferee")}
+                  </button>
+                </div>
               )}
             </div>
 
             <div className="p-4 space-y-3">
+              {/* Bulk import panel */}
+              {showBulkImport && (
+                <BulkImportPanel
+                  base={base}
+                  onDone={async () => {
+                    setShowBulkImport(false);
+                    await loadReferees();
+                  }}
+                  t={t as (k: string, values?: Record<string, string | number>) => string}
+                />
+              )}
+
               {/* Add form */}
               {showAddForm && (
                 <div
@@ -710,7 +1077,7 @@ export function RefereesPage() {
                 <div className="py-8 text-center text-sm" style={{ color: "var(--cat-text-muted)" }}>
                   ...
                 </div>
-              ) : referees.length === 0 && !showAddForm ? (
+              ) : referees.length === 0 && !showAddForm && !showBulkImport ? (
                 <div className="py-8 text-center">
                   <Users2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>{t("noReferees")}</p>
@@ -827,128 +1194,179 @@ export function RefereesPage() {
               <h2 className="font-bold text-base" style={{ color: "var(--cat-text)" }}>
                 {t("matchAssignments")}
               </h2>
-              {/* Date filter */}
-              <select
-                value={selectedDate}
-                onChange={e => setSelectedDate(e.target.value)}
-                className="rounded-lg border px-2 py-1.5 text-xs outline-none"
-                style={{
-                  background: "var(--cat-tag-bg)",
-                  borderColor: "var(--cat-card-border)",
-                  color: "var(--cat-text-secondary)",
-                }}
-              >
-                <option value="all">{t("allDates")}</option>
-                {uniqueDates.map(d => (
-                  <option key={d} value={d}>
-                    {formatDate(d)}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                {/* Auto-assign controls */}
+                <select
+                  value={autoAssignRole}
+                  onChange={e => setAutoAssignRole(e.target.value as Role)}
+                  className="rounded-lg border px-2 py-1.5 text-xs outline-none"
+                  style={{
+                    background: "var(--cat-tag-bg)",
+                    borderColor: "var(--cat-card-border)",
+                    color: "var(--cat-text-secondary)",
+                  }}
+                  title={t("autoAssignRole")}
+                >
+                  {ROLES.map(r => (
+                    <option key={r} value={r}>{roleLabel(r)}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAutoAssign}
+                  disabled={autoAssigning || referees.length === 0}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
+                  style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)", border: "1px solid var(--cat-card-border)" }}
+                  title={t("autoAssignAll")}
+                >
+                  {autoAssigning ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <UserPlus className="w-3.5 h-3.5" />
+                  )}
+                  {t("autoAssign")}
+                </button>
+                {/* Date filter */}
+                <select
+                  value={selectedDate}
+                  onChange={e => setSelectedDate(e.target.value)}
+                  className="rounded-lg border px-2 py-1.5 text-xs outline-none"
+                  style={{
+                    background: "var(--cat-tag-bg)",
+                    borderColor: "var(--cat-card-border)",
+                    color: "var(--cat-text-secondary)",
+                  }}
+                >
+                  <option value="all">{t("allDates")}</option>
+                  {uniqueDates.map(d => (
+                    <option key={d} value={d}>
+                      {formatDate(d)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="p-4 space-y-3">
-              {matchesLoading ? (
-                <div className="py-8 text-center text-sm" style={{ color: "var(--cat-text-muted)" }}>
-                  ...
+            <div className="p-4">
+              {/* Auto-assign toast */}
+              {autoAssignToast && (
+                <div
+                  className="mb-3 px-3 py-2 rounded-xl text-xs font-semibold"
+                  style={{ background: "rgba(16,185,129,0.12)", color: "#059669" }}
+                >
+                  {autoAssignToast}
                 </div>
-              ) : filteredMatches.length === 0 ? (
-                <div className="py-8 text-center">
-                  <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>{t("noMatches")}</p>
-                </div>
-              ) : (
-                filteredMatches.map(match => {
-                  const matchAssignments = assignments[match.id] ?? [];
-                  return (
-                    <div
-                      key={match.id}
-                      className="rounded-xl border overflow-hidden"
-                      style={{ borderColor: "var(--cat-card-border)" }}
-                    >
-                      {/* Match header */}
-                      <div
-                        className="px-4 py-3"
-                        style={{ background: "var(--cat-tag-bg)" }}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>
-                              {match.homeTeam?.name ?? "—"} {t("vs")} {match.awayTeam?.name ?? "—"}
-                            </p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {match.scheduledAt && (
-                                <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-                                  <Clock className="w-3 h-3" />
-                                  {formatTime(match.scheduledAt)}
-                                  {" · "}
-                                  {formatDate(match.scheduledAt)}
-                                </span>
-                              )}
-                              {match.field && (
-                                <span className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-                                  · {match.field.name}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {referees.length > 0 && (
-                            <button
-                              onClick={() => setAssignDialogMatch(match)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 shrink-0"
-                              style={{ background: "var(--cat-accent)", color: "#000" }}
-                            >
-                              <UserPlus className="w-3 h-3" />
-                              {t("assignReferee")}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Assignments list */}
-                      {matchAssignments.length > 0 && (
-                        <div className="divide-y" style={{ borderColor: "var(--cat-card-border)" }}>
-                          {matchAssignments.map(a => (
-                            <div
-                              key={`${match.id}-${a.refereeId}`}
-                              className="flex items-center gap-2.5 px-4 py-2.5"
-                            >
-                              <ColorDot color={a.colorTag} size={8} />
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm" style={{ color: "var(--cat-text)" }}>
-                                  {a.firstName} {a.lastName}
-                                </span>
-                                <span
-                                  className="ml-2 text-[10px] font-semibold uppercase tracking-wide"
-                                  style={{ color: "var(--cat-text-muted)" }}
-                                >
-                                  {roleLabel(a.role)}
-                                </span>
-                              </div>
-                              <button
-                                onClick={() => handleUnassign(match.id, a.refereeId)}
-                                className="w-6 h-6 rounded-lg flex items-center justify-center transition-opacity hover:opacity-70 shrink-0"
-                                style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}
-                                title={t("unassign")}
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {matchAssignments.length === 0 && (
-                        <div className="px-4 py-2.5">
-                          <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
-                            —
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
               )}
+
+              {/* Calculator */}
+              <RefereeCalculator
+                matchCount={matches.length}
+                t={t as (k: string, values?: Record<string, string | number>) => string}
+              />
+
+              {/* Match list */}
+              <div className="space-y-3">
+                {matchesLoading ? (
+                  <div className="py-8 text-center text-sm" style={{ color: "var(--cat-text-muted)" }}>
+                    ...
+                  </div>
+                ) : filteredMatches.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>{t("noMatches")}</p>
+                  </div>
+                ) : (
+                  filteredMatches.map(match => {
+                    const matchAssignments = assignments[match.id] ?? [];
+                    return (
+                      <div
+                        key={match.id}
+                        className="rounded-xl border overflow-hidden"
+                        style={{ borderColor: "var(--cat-card-border)" }}
+                      >
+                        {/* Match header */}
+                        <div
+                          className="px-4 py-3"
+                          style={{ background: "var(--cat-tag-bg)" }}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>
+                                {match.homeTeam?.name ?? "—"} {t("vs")} {match.awayTeam?.name ?? "—"}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {match.scheduledAt && (
+                                  <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                                    <Clock className="w-3 h-3" />
+                                    {formatTime(match.scheduledAt)}
+                                    {" · "}
+                                    {formatDate(match.scheduledAt)}
+                                  </span>
+                                )}
+                                {match.field && (
+                                  <span className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                                    · {match.field.name}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {referees.length > 0 && (
+                              <button
+                                onClick={() => setAssignDialogMatch(match)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 shrink-0"
+                                style={{ background: "var(--cat-accent)", color: "#000" }}
+                              >
+                                <UserPlus className="w-3 h-3" />
+                                {t("assignReferee")}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Assignments list */}
+                        {matchAssignments.length > 0 && (
+                          <div className="divide-y" style={{ borderColor: "var(--cat-card-border)" }}>
+                            {matchAssignments.map(a => (
+                              <div
+                                key={`${match.id}-${a.refereeId}`}
+                                className="flex items-center gap-2.5 px-4 py-2.5"
+                              >
+                                <ColorDot color={a.colorTag} size={8} />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-sm" style={{ color: "var(--cat-text)" }}>
+                                    {a.firstName} {a.lastName}
+                                  </span>
+                                  <span
+                                    className="ml-2 text-[10px] font-semibold uppercase tracking-wide"
+                                    style={{ color: "var(--cat-text-muted)" }}
+                                  >
+                                    {roleLabel(a.role)}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => handleUnassign(match.id, a.refereeId)}
+                                  className="w-6 h-6 rounded-lg flex items-center justify-center transition-opacity hover:opacity-70 shrink-0"
+                                  style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}
+                                  title={t("unassign")}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {matchAssignments.length === 0 && (
+                          <div className="px-4 py-2.5">
+                            <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
+                              —
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
         </div>

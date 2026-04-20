@@ -5022,6 +5022,27 @@
     "copyLink": "Kopeeri link",
     "linkCopied": "Kopeeritud!",
     "regenerateToken": "Loo uus link",
-    "regenerateWarning": "Vana link lakkab töötamast. Luua uus?"
+    "regenerateWarning": "Vana link lakkab töötamast. Luua uus?",
+    "autoAssign": "Automaatne määramine",
+    "autoAssignRole": "Roll",
+    "autoAssignAll": "Määra kõigile",
+    "autoAssignResult": "Määratud {assigned}, vahele jäetud {skipped}",
+    "bulkImport": "Hulgi import",
+    "bulkPaste": "Kleebi nimed (üks real):",
+    "bulkImportBtn": "Impordi",
+    "bulkProgress": "Importimine {done}/{total}...",
+    "bulkSuccess": "Imporditi {n} kohtunikku",
+    "calculator": "Kohtunikekalkulaator",
+    "calcDuration": "Mängu kestus (min)",
+    "calcPattern": "Töömuster",
+    "calcPatternEvery": "Iga mäng",
+    "calcPatternEvery2": "Iga 2.",
+    "calcPatternEvery3": "Iga 3.",
+    "calcPattern2on1off": "2 sisse, 1 välja",
+    "calcPattern3on1off": "3 sisse, 1 välja",
+    "calcRoles": "Rolle mängu kohta",
+    "calcBuffer": "Puhver (min)",
+    "calcResult": "Vajatavate kohtunike arv",
+    "calcPerRef": "{n} mängu kohtunikule"
   }
 }

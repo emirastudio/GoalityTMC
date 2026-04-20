@@ -5022,6 +5022,27 @@
     "copyLink": "Копировать ссылку",
     "linkCopied": "Скопировано!",
     "regenerateToken": "Пересоздать ссылку",
-    "regenerateWarning": "Старая ссылка перестанет работать. Создать новую?"
+    "regenerateWarning": "Старая ссылка перестанет работать. Создать новую?",
+    "autoAssign": "Авто-назначение",
+    "autoAssignRole": "Роль",
+    "autoAssignAll": "Назначить всем",
+    "autoAssignResult": "Назначено {assigned}, пропущено {skipped}",
+    "bulkImport": "Массовый импорт",
+    "bulkPaste": "Вставьте имена (по одному в строке):",
+    "bulkImportBtn": "Импортировать",
+    "bulkProgress": "Импортируем {done}/{total}...",
+    "bulkSuccess": "Импортировано {n} судей",
+    "calculator": "Калькулятор судей",
+    "calcDuration": "Длительность матча (мин)",
+    "calcPattern": "Режим работы",
+    "calcPatternEvery": "Каждая игра",
+    "calcPatternEvery2": "Через одну",
+    "calcPatternEvery3": "Через две",
+    "calcPattern2on1off": "2 через 1",
+    "calcPattern3on1off": "3 через 1",
+    "calcRoles": "Ролей на матч",
+    "calcBuffer": "Пауза (мин)",
+    "calcResult": "Примерно нужно судей",
+    "calcPerRef": "{n} матчей на судью"
   }
 }
