@@ -6,6 +6,10 @@ const TOKEN_NAME = "goality_token";
 
 // POST /api/dev/exit-team — возвращает admin-сессию из backup
 export async function POST() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const session = await getSession();
   if (!session?.isSuper) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -21,7 +25,7 @@ export async function POST() {
   // Восстанавливаем admin-токен
   cookieStore.set(TOKEN_NAME, adminToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false,
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7,
     path: "/",

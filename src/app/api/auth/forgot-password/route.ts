@@ -4,11 +4,16 @@ import { clubUsers, clubs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { sendPasswordReset } from "@/lib/email";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goality.kingscup.ee";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  const { allowed, retryAfterSec } = checkRateLimit(`forgot:${ip}`, 5, 15 * 60 * 1000);
+  if (!allowed) return rateLimitResponse(retryAfterSec);
+
   const body = await req.json();
   const email = (body.email ?? "").trim().toLowerCase();
 

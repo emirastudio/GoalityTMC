@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { db } from "@/db";
 import { clubUsers, clubs, tournaments, organizations, adminUsers, teams, tournamentRegistrations } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { verifyPassword, createToken, setSessionCookie } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  const { allowed, retryAfterSec } = checkRateLimit(`club-login:${ip}`, 10, 15 * 60 * 1000);
+  if (!allowed) return rateLimitResponse(retryAfterSec);
+
   const { email, password } = await req.json();
 
   const user = await db.query.clubUsers.findFirst({

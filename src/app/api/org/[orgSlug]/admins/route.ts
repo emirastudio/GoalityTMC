@@ -124,7 +124,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   });
 
   // Send email.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://goality.app";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com";
   const inviteLink = `${appUrl}/en/invites/admin/${token}`;
   const [inviter] = await db
     .select({ name: adminUsers.name })

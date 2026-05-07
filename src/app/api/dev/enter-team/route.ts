@@ -10,6 +10,10 @@ const TOKEN_NAME = "goality_token";
 
 // POST /api/dev/enter-team — переключает super admin в сессию клубного юзера
 export async function POST() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const session = await getSession();
   if (!session?.isSuper) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -30,7 +34,7 @@ export async function POST() {
   if (currentToken) {
     cookieStore.set(ADMIN_BACKUP_COOKIE, currentToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 60 * 60 * 8,
       path: "/",
@@ -48,7 +52,7 @@ export async function POST() {
 
   cookieStore.set(TOKEN_NAME, clubToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false,
     sameSite: "lax",
     maxAge: 60 * 60 * 8,
     path: "/",

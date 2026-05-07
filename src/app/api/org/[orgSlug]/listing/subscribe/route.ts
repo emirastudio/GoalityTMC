@@ -11,7 +11,7 @@ function baseUrl(): string {
     process.env.AUTH_URL ??
     process.env.NEXTAUTH_URL ??
     process.env.NEXT_PUBLIC_APP_URL;
-  return env?.replace(/\/$/, "") ?? "https://goality.app";
+  return env?.replace(/\/$/, "") ?? "https://goalityfootball.com";
 }
 
 export async function POST(
