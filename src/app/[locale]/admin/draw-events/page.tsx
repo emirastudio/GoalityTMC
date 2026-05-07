@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Sparkles,
   Eye,
@@ -43,20 +44,22 @@ type ApiResponse = {
   uniqueLeads: number;
 };
 
-const EVENT_STYLE: Record<DrawEvent["eventType"], { color: string; bg: string; icon: React.ElementType; label: string }> = {
-  visited:   { color: "#6B7280", bg: "rgba(107,114,128,0.1)", icon: Eye,     label: "Visited" },
-  created:   { color: "#2563EB", bg: "rgba(37,99,235,0.1)",   icon: PenLine, label: "Created" },
-  activated: { color: "#059669", bg: "rgba(5,150,105,0.12)",  icon: Play,    label: "Activated" },
-};
-
-const STATUS_STYLE: Record<DrawEvent["status"], { color: string; bg: string; label: string }> = {
-  free_standalone: { color: "#6B7280", bg: "rgba(107,114,128,0.12)", label: "Standalone (free)" },
-  free_plan:       { color: "#7C3AED", bg: "rgba(124,58,237,0.12)",  label: "Pro/Elite plan" },
-  paid:            { color: "#059669", bg: "rgba(5,150,105,0.12)",   label: "Paid €11" },
-  promo:           { color: "#EA580C", bg: "rgba(234,88,12,0.12)",   label: "Promo code" },
-};
-
 export default function DrawEventsPage() {
+  const t = useTranslations("drawEventsAdmin");
+
+  const EVENT_STYLE: Record<DrawEvent["eventType"], { color: string; bg: string; icon: React.ElementType; label: string }> = {
+    visited:   { color: "#6B7280", bg: "rgba(107,114,128,0.1)", icon: Eye,     label: t("eventLabelVisited") },
+    created:   { color: "#2563EB", bg: "rgba(37,99,235,0.1)",   icon: PenLine, label: t("eventLabelCreated") },
+    activated: { color: "#059669", bg: "rgba(5,150,105,0.12)",  icon: Play,    label: t("eventLabelActivated") },
+  };
+
+  const STATUS_STYLE: Record<DrawEvent["status"], { color: string; bg: string; label: string }> = {
+    free_standalone: { color: "#6B7280", bg: "rgba(107,114,128,0.12)", label: t("statusLabelFreeStandalone") },
+    free_plan:       { color: "#7C3AED", bg: "rgba(124,58,237,0.12)",  label: t("statusLabelFreePlan") },
+    paid:            { color: "#059669", bg: "rgba(5,150,105,0.12)",   label: t("statusLabelPaid") },
+    promo:           { color: "#EA580C", bg: "rgba(234,88,12,0.12)",   label: t("statusLabelPromo") },
+  };
+
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,10 +147,10 @@ export default function DrawEventsPage() {
           <h1 className="text-2xl font-black mb-1 flex items-center gap-2"
             style={{ color: "var(--cat-text)" }}>
             <Sparkles className="w-6 h-6" style={{ color: "#2BFEBA" }} />
-            Draw Show events
+            {t("pageTitle")}
           </h1>
           <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-            Every visit, creation and activation across the standalone /draw product. Use this to measure conversion and follow up with leads.
+            {t("pageSubtitle")}
           </p>
         </div>
         <button
@@ -159,7 +162,7 @@ export default function DrawEventsPage() {
             color: "var(--cat-accent-text)",
           }}
         >
-          <Download className="w-4 h-4" /> Export CSV
+          <Download className="w-4 h-4" /> {t("exportCsvButton")}
         </button>
       </div>
 
@@ -167,35 +170,35 @@ export default function DrawEventsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryCard
           icon={<Eye className="w-4 h-4" />}
-          label="Visits"
+          label={t("summaryVisitsLabel")}
           value={data?.summary.visited ?? "—"}
           color="#6B7280"
         />
         <SummaryCard
           icon={<PenLine className="w-4 h-4" />}
-          label="Created"
+          label={t("summaryCreatedLabel")}
           value={data?.summary.created ?? "—"}
           color="#2563EB"
           extra={
             conversion
-              ? `${conversion.createdRate.toFixed(1)}% of visits`
+              ? t("conversionOfVisits", { rate: conversion.createdRate.toFixed(1) })
               : undefined
           }
         />
         <SummaryCard
           icon={<Play className="w-4 h-4" />}
-          label="Activated"
+          label={t("summaryActivatedLabel")}
           value={data?.summary.activated ?? "—"}
           color="#059669"
           extra={
             conversion
-              ? `${conversion.activatedRate.toFixed(1)}% of created`
+              ? t("conversionOfCreated", { rate: conversion.activatedRate.toFixed(1) })
               : undefined
           }
         />
         <SummaryCard
           icon={<Mail className="w-4 h-4" />}
-          label="Unique leads"
+          label={t("summaryUniqueLeadsLabel")}
           value={data?.uniqueLeads ?? "—"}
           color="#EA580C"
         />
@@ -230,7 +233,7 @@ export default function DrawEventsPage() {
                     }
               }
             >
-              {k}
+              {t(`filter${k.charAt(0).toUpperCase()}${k.slice(1)}` as "filterAll" | "filterVisited" | "filterCreated" | "filterActivated")}
             </button>
           ))}
         </div>
@@ -238,7 +241,7 @@ export default function DrawEventsPage() {
           type="text"
           value={emailFilter}
           onChange={(e) => setEmailFilter(e.target.value)}
-          placeholder="Filter by email…"
+          placeholder={t("filterEmailPlaceholder")}
           className="flex-1 min-w-[200px] rounded-lg px-3 py-1.5 text-xs outline-none"
           style={{
             background: "var(--cat-input-bg, var(--cat-card-bg))",
@@ -271,20 +274,20 @@ export default function DrawEventsPage() {
         {data && data.events.length === 0 && !loading && (
           <div className="px-4 py-12 text-center text-sm"
             style={{ color: "var(--cat-text-muted)" }}>
-            No events match the current filters.
+            {t("emptyState")}
           </div>
         )}
         {data && data.events.length > 0 && (
           <table className="w-full text-sm">
             <thead style={{ background: "var(--cat-tag-bg)" }}>
               <tr style={{ color: "var(--cat-text-muted)" }}>
-                <Th>When</Th>
-                <Th>Event</Th>
-                <Th>Status</Th>
-                <Th>Email</Th>
-                <Th>Draw</Th>
-                <Th>Promo</Th>
-                <Th>Locale</Th>
+                <Th>{t("tableHeaderWhen")}</Th>
+                <Th>{t("tableHeaderEvent")}</Th>
+                <Th>{t("tableHeaderStatus")}</Th>
+                <Th>{t("tableHeaderEmail")}</Th>
+                <Th>{t("tableHeaderDraw")}</Th>
+                <Th>{t("tableHeaderPromo")}</Th>
+                <Th>{t("tableHeaderLocale")}</Th>
               </tr>
             </thead>
             <tbody>

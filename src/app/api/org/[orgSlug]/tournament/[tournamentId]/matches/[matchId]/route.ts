@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { matches, tournamentStages } from "@/db/schema";
+import { matches, matchReferees, tournamentStages } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
 import { recalculateGroupStandings } from "@/lib/standings-calculator";
 import { eq, and, isNull, asc } from "drizzle-orm";
@@ -55,7 +55,24 @@ export async function GET(
   });
 
   if (!match) return NextResponse.json({ error: "Match not found" }, { status: 404 });
-  return NextResponse.json(match);
+
+  // Fetch assigned referees
+  const assignedReferees = await db.query.matchReferees.findMany({
+    where: eq(matchReferees.matchId, parseInt(p.matchId)),
+    with: { referee: true },
+  });
+
+  return NextResponse.json({
+    ...match,
+    referees: assignedReferees.map((r) => ({
+      id: r.refereeId,
+      refereeId: r.refereeId,
+      role: r.role,
+      firstName: r.referee.firstName,
+      lastName: r.referee.lastName,
+      colorTag: r.referee.colorTag,
+    })),
+  });
 }
 
 // PATCH /api/.../matches/[matchId]

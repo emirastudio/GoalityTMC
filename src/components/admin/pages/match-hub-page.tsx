@@ -10,6 +10,7 @@ import {
   RefreshCw, Plus, SquareActivity, Swords, X,
   Play, StopCircle, Eye, Pencil, RotateCcw,
   Link2, Printer, Save, Ban, ChevronDown,
+  Loader2, Check,
 
 } from "lucide-react";
 
@@ -72,7 +73,7 @@ interface Match {
   awayTeamId?: number | null;
   homeTeam?: Team | null;
   awayTeam?: Team | null;
-  field?: { id: number; name: string } | null;
+  field?: { id: number; name: string; stadium?: { id: number; name: string } | null } | null;
   stage?: {
     id: number; name: string; nameRu?: string | null; nameEt?: string | null;
     type?: string | null; classId?: number | null;
@@ -85,6 +86,7 @@ interface Match {
   group?: { id: number; name: string } | null;
   round?: { id: number; name: string } | null;
   events?: MatchEvent[];
+  referees?: { refereeId: number; role: string; firstName: string; lastName: string; colorTag?: string | null }[];
 }
 
 interface HubLineupPlayer {
@@ -1091,12 +1093,31 @@ function UpcomingMatchCard({
   const classIdx = classId ? Array.from(classMap.keys()).indexOf(classId) : -1;
   const classPalette = classIdx >= 0 ? classColor(classIdx) : null;
 
+  const [qHome, setQHome] = useState("0");
+  const [qAway, setQAway] = useState("0");
+  const [qSaving, setQSaving] = useState(false);
+
   async function startMatch() {
     await fetch(`${base}/matches/${match.id}/result`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "live", startedAt: new Date().toISOString(), homeScore: 0, awayScore: 0 }),
     });
+    onRefresh();
+  }
+
+  async function saveQuickResult() {
+    const h = parseInt(qHome) || 0;
+    const a = parseInt(qAway) || 0;
+    setQSaving(true);
+    await fetch(`${base}/matches/${match.id}/result`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "finished", homeScore: h, awayScore: a, finishedAt: new Date().toISOString() }),
+    });
+    setQSaving(false);
+    setQHome("0");
+    setQAway("0");
     onRefresh();
   }
 
@@ -1122,21 +1143,41 @@ function UpcomingMatchCard({
         )}
       </div>
 
-      {/* Teams */}
+      {/* Teams + inline score inputs */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <ClubBadge team={match.homeTeam} size={22} />
         <span className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>
           {match.homeTeam?.name ?? "TBD"}
         </span>
-        <span className="text-[10px] shrink-0 px-1.5 py-0.5 rounded font-mono"
-          style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>vs</span>
+        <div className="flex items-center gap-1 shrink-0">
+          <input type="number" min={0} max={99} value={qHome}
+            onChange={e => setQHome(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") saveQuickResult(); }}
+            className="w-9 text-center text-sm font-black rounded-lg border outline-none"
+            style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)", padding: "3px 0" }} />
+          <span className="text-xs font-black" style={{ color: "var(--cat-text-muted)" }}>:</span>
+          <input type="number" min={0} max={99} value={qAway}
+            onChange={e => setQAway(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") saveQuickResult(); }}
+            className="w-9 text-center text-sm font-black rounded-lg border outline-none"
+            style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)", padding: "3px 0" }} />
+        </div>
         <span className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>
           {match.awayTeam?.name ?? "TBD"}
         </span>
         <ClubBadge team={match.awayTeam} size={22} />
       </div>
 
-      {/* Division + Stage / Group / Round / Field meta */}
+      {/* Field name — always visible */}
+      {match.field && (
+        <span className="hidden sm:flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-lg shrink-0 whitespace-nowrap"
+          style={{ background: "rgba(99,102,241,0.12)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)" }}>
+          <FieldIcon className="w-3 h-3 shrink-0" />
+          {match.field.stadium ? `${match.field.stadium.name} · ${match.field.name}` : match.field.name}
+        </span>
+      )}
+
+      {/* Division + Stage / Group / Round meta */}
       <div className="hidden md:flex items-center gap-1.5 shrink-0 flex-wrap justify-end max-w-[240px]">
         {/* Division (class) — prominent colored pill */}
         {classInfo && classPalette && (
@@ -1163,9 +1204,14 @@ function UpcomingMatchCard({
             {match.round.name}
           </span>
         )}
-        {match.field && (
+        {match.referees && match.referees.length > 0 && (
           <span className="text-[10px] flex items-center gap-0.5 whitespace-nowrap" style={{ color: "var(--cat-text-muted)" }}>
-            <FieldIcon className="w-2.5 h-2.5 shrink-0" />{match.field.name}
+            {match.referees.filter(r => r.role === "main").map(r => (
+              <span key={r.refereeId} className="flex items-center gap-0.5">
+                {r.colorTag && <span className="w-2 h-2 rounded-full shrink-0 inline-block" style={{ background: r.colorTag }} />}
+                {r.firstName[0]}. {r.lastName}
+              </span>
+            ))}
           </span>
         )}
       </div>
@@ -1177,6 +1223,12 @@ function UpcomingMatchCard({
           style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}
           title={t("matchHub.titleProtocol")}>
           <Eye className="w-3.5 h-3.5" />
+        </button>
+        <button onClick={saveQuickResult} disabled={qSaving}
+          className="p-1.5 rounded-lg hover:opacity-80 transition-opacity"
+          style={{ background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.25)" }}
+          title={t("matchHub.quickResult")}>
+          {qSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
         </button>
         <button onClick={startMatch}
           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold hover:opacity-80 transition-opacity whitespace-nowrap"
@@ -1711,6 +1763,8 @@ export function MatchHubPage() {
   const [filterField, setFilterField] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [groupByDiv, setGroupByDiv] = useState(false);
+  const [groupByTime, setGroupByTime] = useState(false);
+  const [showFeed, setShowFeed] = useState(false);
 
   function navigateToProtocol(match: Match) {
     router.push(`/org/${orgSlug}/admin/tournament/${tournamentId}/hub/match/${match.id}`);
@@ -1905,6 +1959,28 @@ export function MatchHubPage() {
             </>
           )}
 
+          {/* Group by time toggle */}
+          <span className="w-px h-4 mx-1" style={{ background: "var(--cat-card-border)" }} />
+          <button
+            onClick={() => setGroupByTime(v => !v)}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold transition-all hover:opacity-90 active:scale-95"
+            style={groupByTime
+              ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" }
+              : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-card-border)" }}>
+            ⏱ {t("matchHub.groupByTime")}
+          </button>
+
+          {/* Event feed toggle */}
+          <span className="w-px h-4 mx-1" style={{ background: "var(--cat-card-border)" }} />
+          <button
+            onClick={() => setShowFeed(v => !v)}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold transition-all hover:opacity-90 active:scale-95"
+            style={showFeed
+              ? { background: "var(--cat-accent)", color: "var(--cat-accent-text)" }
+              : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)", border: "1px solid var(--cat-card-border)" }}>
+            <SquareActivity className="w-3 h-3" /> {t("matchHub.eventFeedTitle")}
+          </button>
+
           {/* Reset */}
           {(filterClass !== "all" || filterField !== "all" || filterStatus !== "all") && (
             <button onClick={() => { setFilterClass("all"); setFilterField("all"); setFilterStatus("all"); }}
@@ -1917,9 +1993,9 @@ export function MatchHubPage() {
       </div>
 
       {/* Main layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+      <div className={`grid grid-cols-1 gap-5 ${showFeed ? "xl:grid-cols-3" : ""}`}>
         {/* Left: matches */}
-        <div className="xl:col-span-2 space-y-5">
+        <div className={`${showFeed ? "xl:col-span-2" : ""} space-y-5`}>
           {/* LIVE */}
           {live.length > 0 && (
             <div>
@@ -1938,17 +2014,67 @@ export function MatchHubPage() {
             </div>
           )}
 
-          {/* UPCOMING — flat or grouped by division */}
+          {/* UPCOMING — flat or grouped by division/time */}
           {upcoming.length > 0 && (() => {
-            // Render a single group of upcoming matches
-            const renderGroup = (items: Match[]) => (
-              <div className="space-y-1.5">
-                {items.map(m => (
+            // Render matches with inline time slot dividers
+            const renderGroup = (items: Match[]) => {
+              const rows: React.ReactNode[] = [];
+              let lastSlot = "";
+              for (const m of items) {
+                const slot = m.scheduledAt ? fmtTime(m.scheduledAt, locale) : "";
+                if (slot && slot !== lastSlot) {
+                  lastSlot = slot;
+                  rows.push(
+                    <div key={`slot-${slot}-${m.id}`} className="flex items-center gap-2 pt-1">
+                      <span className="text-[11px] font-black font-mono px-2 py-0.5 rounded"
+                        style={{ background: "rgba(245,158,11,0.10)", color: "#f59e0b" }}>
+                        {slot}
+                      </span>
+                      <span className="flex-1 h-px" style={{ background: "rgba(245,158,11,0.15)" }} />
+                    </div>
+                  );
+                }
+                rows.push(
                   <UpcomingMatchCard key={m.id} match={m} base={base}
                     onRefresh={loadMatches} onOpenProtocol={navigateToProtocol} classMap={classMap} />
-                ))}
-              </div>
-            );
+                );
+              }
+              return <div className="space-y-1.5">{rows}</div>;
+            };
+
+            // Group by time slot (HH:mm)
+            if (groupByTime) {
+              const byTime = new Map<string, Match[]>();
+              for (const m of upcoming) {
+                const key = m.scheduledAt ? fmtTime(m.scheduledAt, locale) : "—";
+                if (!byTime.has(key)) byTime.set(key, []);
+                byTime.get(key)!.push(m);
+              }
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5" style={{ color: "#f59e0b" }} />
+                    <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "#f59e0b" }}>
+                      {t("matchHub.sectionUpcoming", { count: upcoming.length })}
+                    </h2>
+                  </div>
+                  {Array.from(byTime.entries()).map(([slot, items]) => (
+                    <div key={slot}>
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <span className="text-xs font-black font-mono px-2.5 py-0.5 rounded"
+                          style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
+                          {slot}
+                        </span>
+                        <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
+                          {items.length} {t("matchHub.matchesCount")}
+                        </span>
+                      </div>
+                      {renderGroup(items)}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
 
             if (groupByDiv && classOptions.length > 1) {
               // Group by class
@@ -2037,7 +2163,7 @@ export function MatchHubPage() {
         </div>
 
         {/* Right: event feed */}
-        <div>
+        {showFeed && <div>
           <div className="sticky top-4">
             <div className="rounded-2xl border overflow-hidden"
               style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
@@ -2057,7 +2183,7 @@ export function MatchHubPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
       </div>
 
     </div>

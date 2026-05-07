@@ -88,8 +88,8 @@ type FeatureMeta = {
 
 // ─── Plan price display ───────────────────────────────────────────────────────
 
-function getPlanPrice(plan: TournamentPlan): string {
-  if (plan === "free") return "Free";
+function getPlanPrice(plan: TournamentPlan, t: ReturnType<typeof useTranslations>): string {
+  if (plan === "free") return t("planPriceFree");
   const cents = PLAN_PRICES_EUR_CENTS[plan as keyof typeof PLAN_PRICES_EUR_CENTS];
   return `€${cents / 100}`;
 }
@@ -149,7 +149,7 @@ export function PlanGate({
   if (!meta) return null;
 
   const Icon = meta.icon;
-  const price = getPlanPrice(meta.requiredPlan);
+  const price = getPlanPrice(meta.requiredPlan, t);
   const billingUrl = `/org/${slug}/admin/tournament/${tid}/billing`;
 
   return (
@@ -250,7 +250,7 @@ export function PlanGate({
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider mb-0.5" style={{ color: meta.accentColor }}>
-                    {PLAN_NAMES[meta.requiredPlan]} Plan
+                    {t("planNameLabel", { name: PLAN_NAMES[meta.requiredPlan] })}
                   </p>
                   <p className="text-2xl font-black" style={{ color: "var(--cat-text)" }}>
                     {price}

@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Tag,
   Plus,
@@ -51,6 +52,7 @@ const TYPE_STYLE: Record<string, { color: string; bg: string; label: string }> =
 };
 
 export default function DrawPromosPage() {
+  const t = useTranslations("drawPromosAdmin");
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,10 +77,10 @@ export default function DrawPromosPage() {
           style={{ color: "var(--cat-text)" }}
         >
           <Tag className="w-6 h-6" style={{ color: "#2BFEBA" }} />
-          Draw Show promo codes
+          {t("pageTitle")}
         </h1>
         <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-          Coupons for the standalone /draw product. Free codes also let users skip the (future) €11 paywall — usage is tracked in the Draw Show events log.
+          {t("pageSubtitle")}
         </p>
       </div>
 
@@ -86,13 +88,13 @@ export default function DrawPromosPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryCard
           icon={<Sparkles className="w-4 h-4" />}
-          label="Active codes"
+          label={t("summaryActiveLabel")}
           value={data?.summary.activeCount ?? "—"}
           color="#2BFEBA"
         />
         <SummaryCard
           icon={<Check className="w-4 h-4" />}
-          label="Total uses"
+          label={t("summaryTotalUsesLabel")}
           value={data?.summary.totalUses ?? "—"}
           color="#059669"
         />
@@ -123,20 +125,20 @@ export default function DrawPromosPage() {
         {data && data.promos.length === 0 && !loading && (
           <div className="px-4 py-12 text-center text-sm"
             style={{ color: "var(--cat-text-muted)" }}>
-            No promo codes yet. Create one above.
+            {t("emptyState")}
           </div>
         )}
         {data && data.promos.length > 0 && (
           <table className="w-full text-sm">
             <thead style={{ background: "var(--cat-tag-bg)" }}>
               <tr style={{ color: "var(--cat-text-muted)" }}>
-                <Th>Code</Th>
-                <Th>Discount</Th>
-                <Th>Uses</Th>
-                <Th>Valid</Th>
-                <Th>Notes</Th>
-                <Th>Created</Th>
-                <Th>Actions</Th>
+                <Th>{t("tableHeaderCode")}</Th>
+                <Th>{t("tableHeaderDiscount")}</Th>
+                <Th>{t("tableHeaderUses")}</Th>
+                <Th>{t("tableHeaderValid")}</Th>
+                <Th>{t("tableHeaderNotes")}</Th>
+                <Th>{t("tableHeaderCreated")}</Th>
+                <Th>{t("tableHeaderActions")}</Th>
               </tr>
             </thead>
             <tbody>
@@ -154,6 +156,7 @@ export default function DrawPromosPage() {
 // ─── Sub-components ──────────────────────────────────────────────────
 
 function CreatePromoCard({ onCreated }: { onCreated: () => void }) {
+  const t = useTranslations("drawPromosAdmin");
   const [code, setCode] = useState("");
   const [discountType, setDiscountType] = useState<"free" | "percent" | "flat">("free");
   const [discountValue, setDiscountValue] = useState(0);
@@ -212,14 +215,14 @@ function CreatePromoCard({ onCreated }: { onCreated: () => void }) {
     >
       <p className="text-xs font-bold uppercase tracking-widest"
         style={{ color: "var(--cat-text-muted)" }}>
-        Create new promo code
+        {t("createSectionTitle")}
       </p>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <input
           type="text"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder="LAUNCH20"
+          placeholder={t("codePlaceholder")}
           required
           minLength={3}
           maxLength={32}
@@ -241,9 +244,9 @@ function CreatePromoCard({ onCreated }: { onCreated: () => void }) {
             color: "var(--cat-text)",
           }}
         >
-          <option value="free">Free (100%)</option>
-          <option value="percent">Percent off</option>
-          <option value="flat">Flat € off</option>
+          <option value="free">{t("discountTypeFree")}</option>
+          <option value="percent">{t("discountTypePercent")}</option>
+          <option value="flat">{t("discountTypeFlat")}</option>
         </select>
         {discountType !== "free" && (
           <input
@@ -266,7 +269,7 @@ function CreatePromoCard({ onCreated }: { onCreated: () => void }) {
           type="number"
           value={maxUses}
           onChange={(e) => setMaxUses(e.target.value)}
-          placeholder="Max uses (∞)"
+          placeholder={t("maxUsesPlaceholder")}
           min={1}
           className="rounded-xl px-3 py-2 text-sm outline-none"
           style={{
@@ -292,7 +295,7 @@ function CreatePromoCard({ onCreated }: { onCreated: () => void }) {
           type="text"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes (e.g. Telegram launch promo)"
+          placeholder={t("notesPlaceholder")}
           className="rounded-xl px-3 py-2 text-sm outline-none"
           style={{
             background: "var(--cat-input-bg, var(--cat-card-bg))",
@@ -320,7 +323,7 @@ function CreatePromoCard({ onCreated }: { onCreated: () => void }) {
         ) : (
           <Plus className="w-4 h-4" />
         )}
-        Create promo
+        {t("createButton")}
       </button>
     </form>
   );
@@ -333,6 +336,7 @@ function PromoRowItem({
   promo: PromoRow;
   onChange: () => void;
 }) {
+  const t = useTranslations("drawPromosAdmin");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -350,7 +354,7 @@ function PromoRowItem({
     }
   }
   async function remove() {
-    if (!confirm(`Delete promo "${promo.code}"? This is permanent.`)) return;
+    if (!confirm(t("deleteConfirm", { code: promo.code }))) return;
     setBusy(true);
     try {
       await fetch(`/api/admin/draw-promos/${promo.id}`, { method: "DELETE" });
@@ -428,7 +432,7 @@ function PromoRowItem({
           <button
             onClick={toggleDisabled}
             disabled={busy}
-            title={promo.disabled ? "Enable" : "Disable"}
+            title={promo.disabled ? t("actionEnable") : t("actionDisable")}
             className="w-7 h-7 rounded-md flex items-center justify-center hover:opacity-70"
             style={{
               background: promo.disabled
@@ -442,7 +446,7 @@ function PromoRowItem({
           <button
             onClick={remove}
             disabled={busy}
-            title="Delete"
+            title={t("actionDelete")}
             className="w-7 h-7 rounded-md flex items-center justify-center hover:opacity-70"
             style={{
               background: "rgba(239,68,68,0.08)",
