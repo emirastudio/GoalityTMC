@@ -18,23 +18,10 @@ import {
   tournaments,
 } from "@/db/schema";
 
-// Separate transporter import to avoid circular deps with email templates.
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const smtpPort = Number(process.env.SMTP_PORT ?? 587);
-const mailer = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: smtpPort,
-  secure: smtpPort === 465,
-  requireTLS: smtpPort === 587,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: { rejectUnauthorized: false },
-});
-
-const FROM = process.env.SMTP_FROM ?? "Goality <goal@goality.app>";
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM = process.env.EMAIL_FROM ?? "Goality <noreply@goalityfootball.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goality.app";
 
 const MAX_ATTEMPTS = 5;
@@ -139,9 +126,9 @@ async function processRow(row: {
     `— Goality`,
   ].join("\n");
 
-  await mailer.sendMail({
+  const { error } = await resend.emails.send({
     from: FROM,
-    to: recipient.email,
+    to: [recipient.email],
     subject,
     text,
     html: `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#0a0f1e;padding:24px;background:#f0f2f5;">
@@ -156,6 +143,7 @@ async function processRow(row: {
       </div>
     </body></html>`,
   });
+  if (error) throw error;
 }
 
 /**

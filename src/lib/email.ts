@@ -1,27 +1,31 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 // ─── Transport ────────────────────────────────────────────────────────────────
-const port = Number(process.env.SMTP_PORT ?? 587);
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port,
-  secure: port === 465,
-  requireTLS: port === 587,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: { rejectUnauthorized: false },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM    = process.env.SMTP_FROM ?? "Goality <goal@goality.app>";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goality.app";
+const FROM    = process.env.EMAIL_FROM ?? "Goality <noreply@goalityfootball.com>";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com";
 
-// Recipient for GDPR / privacy-related notices. Defaults to the SMTP_USER
-// mailbox so delivery always works out of the box; can be overridden to a
-// dedicated inbox (e.g. privacy@goality.app) once the alias is set up on
-// the incoming mail provider.
-const PRIVACY_TO = process.env.PRIVACY_EMAIL ?? process.env.SMTP_USER ?? "goal@goality.app";
+// Recipient for GDPR notices and internal admin alerts.
+const PRIVACY_TO = process.env.PRIVACY_EMAIL ?? "goal@goalityfootball.com";
+
+async function send(opts: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
+  replyTo?: string;
+}) {
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: Array.isArray(opts.to) ? opts.to : [opts.to],
+    subject: opts.subject,
+    html: opts.html,
+    ...(opts.text ? { text: opts.text } : {}),
+    ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
+  });
+  if (error) throw error;
+}
 
 // ─── Premium Base Template ────────────────────────────────────────────────────
 function base({
@@ -195,8 +199,7 @@ export async function sendWelcomeEmail({
   const name = contactName || "there";
   const url = loginUrl ?? `${APP_URL}/en/login`;
 
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to,
     subject: `Welcome to Goality — ${clubName} is ready 🎉`,
     text: `Hi ${name},\n\nWelcome to Goality! Your club "${clubName}" has been successfully registered.\n\nLog in at: ${url}\n\nGoality Team`,
@@ -233,8 +236,7 @@ export async function sendPasswordReset({
   toName: string;
   resetLink: string;
 }) {
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to: `${toName} <${to}>`,
     subject: "Reset your Goality password",
     text: `Hi ${toName},\n\nClick the link to reset your password (valid for 1 hour):\n${resetLink}\n\nIf you didn't request this, ignore this email.\n\nGoality Team`,
@@ -266,8 +268,7 @@ export async function sendClubInvite({
 }) {
   const inviter = inviterName ? `<strong>${inviterName}</strong>` : "the club administrator";
 
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to,
     subject: `You've been invited to join ${clubName} on Goality`,
     text: `You've been invited to join ${clubName} as a manager on Goality.\n\nAccept invitation: ${inviteLink}\n\nLink valid for 7 days.\n\nGoality Team`,
@@ -302,8 +303,7 @@ export async function sendOrgAdminInvite({
   inviterName?: string | null;
 }) {
   const inviter = inviterName ? `<strong>${inviterName}</strong>` : "An administrator";
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to,
     subject: `You've been invited to administer ${orgName} on Goality`,
     text: `${inviter} has invited you to become an administrator of ${orgName} on Goality.\n\nAccept invitation: ${inviteLink}\n\nLink valid for 7 days.\n\nGoality Team`,
@@ -338,8 +338,7 @@ export async function sendRegistrationReceived({
   tournamentName: string;
   tournamentOrganizer?: string | null;
 }) {
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to,
     subject: `Application received — ${tournamentName}`,
     text: `Hi ${clubName},\n\nYour registration for "${teamName}" in "${tournamentName}" has been received.\n\nThe organizer will review it shortly.\n\nGoality Team`,
@@ -383,8 +382,7 @@ export async function sendRegistrationConfirmed({
 }) {
   const portalUrl = `${APP_URL}/en/team/overview`;
 
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to,
     subject: `✅ Confirmed — ${teamName} is in ${tournamentName}!`,
     text: `Hi ${clubName},\n\nGreat news! ${teamName} has been confirmed for ${tournamentName}.\n\n${notes ? `Note from organizer: ${notes}\n\n` : ""}Open your team portal: ${portalUrl}\n\nGoality Team`,
@@ -436,8 +434,7 @@ export async function sendRegistrationRejected({
   tournamentName: string;
   notes?: string | null;
 }) {
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to,
     subject: `Update on your application — ${tournamentName}`,
     text: `Hi ${clubName},\n\nUnfortunately, ${teamName}'s application for ${tournamentName} was not accepted at this time.\n\n${notes ? `Message from organizer: ${notes}\n\n` : ""}You can browse other tournaments at: ${APP_URL}/en/catalog\n\nGoality Team`,
@@ -484,8 +481,7 @@ export async function sendOrganizerMessage({
   body: string;
   tournamentName?: string | null;
 }) {
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to: `${toName} <${to}>`,
     subject: `Message from organizer: ${subject}`,
     text: `Hi ${toName},\n\nYou have a new message from the organizer.\n\n${subject}\n\n${msgBody}\n\nOpen inbox: ${APP_URL}/en/team/inbox\n\nGoality Team`,
@@ -537,8 +533,7 @@ export async function sendQuestionConfirmation({
 }: {
   to: string; toName: string; subject: string; teamName: string;
 }) {
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to: `${toName} <${to}>`,
     subject: `Question received: ${subject}`,
     text: `Hi ${toName},\n\nWe received your question from ${teamName}: "${subject}".\nWe'll get back to you shortly.\n\nGoality Team`,
@@ -563,8 +558,7 @@ export async function sendDeletionRequest({
 }: {
   clubName: string; contactName: string; contactEmail: string; teamNames: string[];
 }) {
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to: PRIVACY_TO,
     subject: `Account deletion request — ${clubName}`,
     html: base({
@@ -592,8 +586,7 @@ export async function sendOrgDeletionRequest({
   tournamentCount: number;
   activeTournaments: string[];
 }) {
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to: PRIVACY_TO,
     replyTo: contactEmail,
     subject: `Organisation deletion request — ${orgName}`,
@@ -618,9 +611,8 @@ export async function sendNewQuestionNotification({
 }: {
   teamName: string; subject: string; body: string; questionId: number;
 }) {
-  await transporter.sendMail({
-    from: FROM,
-    to: FROM,
+  await send({
+    to: PRIVACY_TO,
     subject: `New question from ${teamName}: ${subject}`,
     html: base({
       preheader: `New question #${questionId} from ${teamName}`,
@@ -677,8 +669,7 @@ export async function sendDrawShareLink({
       }).format(new Date(scheduledAt))
     : null;
 
-  await transporter.sendMail({
-    from: FROM,
+  await send({
     to,
     subject: scheduledAt
       ? `🎬 ${headline}${sub ? " · " + sub : ""} — premiere link inside`
