@@ -36,6 +36,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# audit / forensics bundles (local-only)
+.forensics/
+
+# claude-code worktrees
+.claude/worktrees/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
