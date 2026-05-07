@@ -22,11 +22,20 @@ export async function GET() {
   }
 
   // ── Environment variables ─────────────────────────────────────────
-  checks.smtp = {
-    ok: Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
-    detail: process.env.SMTP_HOST
-      ? `${process.env.SMTP_USER} @ ${process.env.SMTP_HOST}:${process.env.SMTP_PORT ?? 587}`
-      : "SMTP_HOST not set",
+  checks.resend = {
+    ok: Boolean(process.env.RESEND_API_KEY),
+    detail: process.env.RESEND_API_KEY
+      ? `Key configured: ${process.env.RESEND_API_KEY.slice(0, 8)}…`
+      : "RESEND_API_KEY not set",
+  };
+
+  checks.oauth = {
+    ok: Boolean((process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID) &&
+                (process.env.AUTH_FACEBOOK_ID || process.env.FACEBOOK_CLIENT_ID)),
+    detail: [
+      (process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID) ? "Google ✓" : "Google ✗",
+      (process.env.AUTH_FACEBOOK_ID || process.env.FACEBOOK_CLIENT_ID) ? "Facebook ✓" : "Facebook ✗",
+    ].join(" · "),
   };
 
   const stripeMode = getStripeMode();

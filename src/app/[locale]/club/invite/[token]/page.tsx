@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Building2, CheckCircle, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 
 interface InviteInfo {
@@ -15,6 +16,8 @@ export default function ClubInvitePage() {
   const params = useParams();
   const router = useRouter();
   const token = params.token as string;
+  const tErr = useTranslations("errors");
+  const tInvite = useTranslations("invite");
 
   const [invite, setInvite] = useState<InviteInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,15 +33,15 @@ export default function ClubInvitePage() {
   useEffect(() => {
     fetch(`/api/invites/club/${token}`)
       .then((r) => {
-        if (r.status === 404) throw new Error("Invite not found or already used");
-        if (r.status === 410) throw new Error("This invite link has expired");
-        if (!r.ok) throw new Error("Failed to load invite");
+        if (r.status === 404) throw new Error(tErr("inviteNotFound"));
+        if (r.status === 410) throw new Error(tErr("inviteExpired"));
+        if (!r.ok) throw new Error(tErr("inviteLoadFailed"));
         return r.json();
       })
       .then(setInvite)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, tErr]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,7 +61,7 @@ export default function ClubInvitePage() {
       setDone(true);
       setTimeout(() => router.push("/club/dashboard"), 1500);
     } catch {
-      setError("Network error. Please try again.");
+      setError(tErr("networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -81,7 +84,7 @@ export default function ClubInvitePage() {
         >
           <AlertCircle className="w-12 h-12 mx-auto mb-4" style={{ color: "#ef4444" }} />
           <h1 className="text-xl font-bold mb-2" style={{ color: "var(--cat-text, #f9fafb)" }}>
-            Invalid Invite
+            {tInvite("invalidHeading")}
           </h1>
           <p className="text-sm" style={{ color: "var(--cat-text-muted, #9ca3af)" }}>
             {error}
@@ -103,7 +106,7 @@ export default function ClubInvitePage() {
             Welcome to {invite?.clubName}!
           </h1>
           <p className="text-sm" style={{ color: "var(--cat-text-muted, #9ca3af)" }}>
-            Taking you to the dashboard…
+            {tInvite("redirecting")}
           </p>
         </div>
       </div>
@@ -133,7 +136,7 @@ export default function ClubInvitePage() {
           </div>
           <h1 className="text-lg font-bold text-white mb-1">Join {invite?.clubName}</h1>
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
-            Create your manager account
+            {tInvite("managerSubtitle")}
           </p>
         </div>
 
@@ -151,13 +154,13 @@ export default function ClubInvitePage() {
 
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--cat-text-secondary, #d1d5db)" }}>
-              Your Name
+              {tInvite("name")}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="John Smith"
+              placeholder={tInvite("namePlaceholder")}
               className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border"
               style={{
                 background: "var(--cat-input-bg, #1f2937)",
@@ -169,7 +172,7 @@ export default function ClubInvitePage() {
 
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--cat-text-secondary, #d1d5db)" }}>
-              Email *
+              {tInvite("email")} *
             </label>
             <input
               type="email"
@@ -188,13 +191,13 @@ export default function ClubInvitePage() {
 
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--cat-text-secondary, #d1d5db)" }}>
-              Password * <span style={{ color: "var(--cat-text-muted, #6b7280)" }}>(min 6 characters)</span>
+              {tInvite("password")} *
             </label>
             <div className="relative">
               <input
                 type={showPass ? "text" : "password"}
                 required
-                minLength={6}
+                minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -222,11 +225,11 @@ export default function ClubInvitePage() {
             style={{ background: "var(--cat-accent, #c8ff00)", color: "#000" }}
           >
             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {submitting ? "Creating account…" : "Create Account & Join Club"}
+            {submitting ? tInvite("submitting") : tInvite("joinCta")}
           </button>
 
           <p className="text-center text-xs" style={{ color: "var(--cat-text-muted, #6b7280)" }}>
-            By creating an account you agree to the Goality Terms of Service.
+            {tInvite("terms")}
           </p>
         </form>
       </div>

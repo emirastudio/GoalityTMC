@@ -654,12 +654,14 @@ export async function GET(
 
   // ── 8. Grade ─────────────────────────────────────────────────────────────────
 
-  const hardViolations = violations.filter(v => v.severity === "error").length;
+  const hardViolations = violations.filter(v => v.severity === "error").length + roundOrderIssues.length;
   const warnings = violations.filter(v => v.severity === "warning" && v.type !== "unscheduled").length;
 
   let score = 100;
   // Hard violations (field/team overlap, blackout breach) — critical, -25 each.
-  score -= hardViolations * 25;
+  score -= violations.filter(v => v.severity === "error").length * 25;
+  // Round order violations (tour 2 starts before tour 1 ends) — serious, -10 each.
+  score -= roundOrderIssues.length * 10;
   // Rest rule violations (below configured minimum) — real infraction, -8 each.
   score -= restViolationCount * 8;
   // Back-to-back comfort warnings — soft advisory only. Cap total deduction at 10

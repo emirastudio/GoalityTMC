@@ -20,6 +20,7 @@ export function OrgLegalActions({
   orgName: string;
 }) {
   const t = useTranslations("orgAdmin");
+  const tErr = useTranslations("errors");
 
   const [exportLoading, setExportLoading] = useState(false);
 
@@ -32,7 +33,7 @@ export function OrgLegalActions({
     setExportLoading(true);
     try {
       const res = await fetch(`/api/org/${orgSlug}/export`, { credentials: "include" });
-      if (!res.ok) throw new Error("Export failed");
+      if (!res.ok) throw new Error(tErr("exportFailed"));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

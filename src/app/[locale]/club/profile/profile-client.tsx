@@ -30,6 +30,7 @@ type Props = {
 
 export function ClubProfileClient({ clubId }: Props) {
   const t = useTranslations("clubDashboard");
+  const tErr = useTranslations("errors");
 
   const [club, setClub] = useState<ClubData | null>(null);
   const [managers, setManagers] = useState<Manager[]>([]);
@@ -59,7 +60,7 @@ export function ClubProfileClient({ clubId }: Props) {
     setExportLoading(true);
     try {
       const res = await fetch(`/api/clubs/${clubId}/export`, { credentials: "include" });
-      if (!res.ok) throw new Error("Export failed");
+      if (!res.ok) throw new Error(tErr("exportFailed"));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

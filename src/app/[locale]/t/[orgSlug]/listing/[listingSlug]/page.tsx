@@ -64,8 +64,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `${metaName} | ${org.name}`;
   const desc = metaDesc?.slice(0, 160) ??
     `${metaName} — youth football tournament in ${[listing.city, listing.country].filter(Boolean).join(", ")}. Goality TMC.`;
-  const imgUrl = listing.coverUrl ?? listing.cardImageUrl ?? listing.logoUrl ?? `https://goality.app/defaults/og-default.jpg`;
-  const pageUrl = `https://goality.app/en/t/${orgSlug}/listing/${listingSlug}`;
+  const imgUrl = listing.coverUrl ?? listing.cardImageUrl ?? listing.logoUrl ?? `https://goalityfootball.com/defaults/og-default.jpg`;
+  const pageUrl = `https://goalityfootball.com/en/t/${orgSlug}/listing/${listingSlug}`;
 
   return {
     title,
@@ -208,7 +208,7 @@ export default async function ListingPublicPage({ params }: Props) {
     "description": displayDescription ?? undefined,
     "startDate": listing.startDate ?? undefined,
     "endDate": listing.endDate ?? undefined,
-    "url": `https://goality.app/en/t/${orgSlug}/listing/${listingSlug}`,
+    "url": `https://goalityfootball.com/en/t/${orgSlug}/listing/${listingSlug}`,
     ...(coverImg ? { "image": coverImg } : {}),
     "location": {
       "@type": "Place",
