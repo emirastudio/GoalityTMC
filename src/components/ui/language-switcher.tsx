@@ -8,6 +8,7 @@ const locales = [
   { code: "en", label: "EN" },
   { code: "ru", label: "RU" },
   { code: "et", label: "ET" },
+  { code: "es", label: "ES" },
 ] as const;
 
 type Props = {
