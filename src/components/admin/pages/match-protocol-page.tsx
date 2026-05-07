@@ -1087,13 +1087,41 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
 
   const lineupBase = `${base}/matches/${matchId}`;
 
-  const loadLineup = useCallback(async () => {
+  const loadLineup = useCallback(async (autoImport = false) => {
     const r = await fetch(`${lineupBase}/lineup?includeSquad=true`);
-    if (r.ok) {
-      const d = await r.json();
-      setLineup(d.lineup ?? []);
-      setHomePlayers(d.homePlayers ?? []);
-      setAwayPlayers(d.awayPlayers ?? []);
+    if (!r.ok) return;
+    const d = await r.json();
+    const existingLineup: LineupEntry[] = d.lineup ?? [];
+    const home: SquadPlayer[] = d.homePlayers ?? [];
+    const away: SquadPlayer[] = d.awayPlayers ?? [];
+    setLineup(existingLineup);
+    setHomePlayers(home);
+    setAwayPlayers(away);
+
+    // Auto-populate both teams from squad on first open if lineup is empty
+    if (autoImport && existingLineup.length === 0 && (home.length > 0 || away.length > 0)) {
+      const imports: Promise<Response>[] = [];
+      const homeTeamId = home[0]?.teamId;
+      const awayTeamId = away[0]?.teamId;
+      if (homeTeamId) imports.push(fetch(`${lineupBase}/lineup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ importSquad: true, teamId: homeTeamId, isStarting: false }),
+      }));
+      if (awayTeamId) imports.push(fetch(`${lineupBase}/lineup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ importSquad: true, teamId: awayTeamId, isStarting: false }),
+      }));
+      if (imports.length > 0) {
+        await Promise.all(imports);
+        // Reload lineup with fresh data
+        const r2 = await fetch(`${lineupBase}/lineup?includeSquad=true`);
+        if (r2.ok) {
+          const d2 = await r2.json();
+          setLineup(d2.lineup ?? []);
+        }
+      }
     }
   }, [lineupBase]);
 
@@ -1110,7 +1138,7 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
     }
   }, [base, matchId]);
 
-  useEffect(() => { loadMatch(); loadLineup(); }, [loadMatch, loadLineup]);
+  useEffect(() => { loadMatch(); loadLineup(true); }, [loadMatch, loadLineup]);
 
   // Auto-refresh for live matches
   useEffect(() => {
