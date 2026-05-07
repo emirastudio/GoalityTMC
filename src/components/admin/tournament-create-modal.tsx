@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { X, Trophy, Sparkles, Loader2, AlertCircle, Rocket, Zap, Crown, CheckCircle2 } from "lucide-react";
+import { X, Trophy, Sparkles, Loader2, AlertCircle, Rocket, Zap, Crown, CheckCircle2, Copy } from "lucide-react";
 
 const ACCENT = "#2BFEBA";
 const CURRENCIES = ["EUR", "USD", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN", "CZK", "HUF"];
@@ -42,6 +42,8 @@ const PLANS = [
   },
 ];
 
+type TournamentListItem = { id: number; name: string; year: number };
+
 export function TournamentCreateModal({
   orgSlug,
   locale,
@@ -54,23 +56,42 @@ export function TournamentCreateModal({
   requiresPlan?: boolean;
 }) {
   const t = useTranslations("orgAdmin");
+  const tCT = useTranslations("createTournament");
+  const tErr = useTranslations("errors");
   const router = useRouter();
 
   const [step, setStep] = useState<"plan" | "form">(requiresPlan ? "plan" : "form");
   const [selectedPlan, setSelectedPlan] = useState<"free" | "starter" | "pro" | "elite">(
     requiresPlan ? "starter" : "free"
   );
+  const [formMode, setFormMode] = useState<"scratch" | "copy">("scratch");
   const [name, setName] = useState("");
   const [year, setYear] = useState(2026);
   const [currency, setCurrency] = useState("EUR");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [tournamentList, setTournamentList] = useState<TournamentListItem[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [selectedSourceId, setSelectedSourceId] = useState<number | null>(null);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  useEffect(() => {
+    if (formMode !== "copy") return;
+    setListLoading(true);
+    fetch(`/api/org/${orgSlug}/tournament`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: TournamentListItem[]) => {
+        setTournamentList(data);
+        if (data.length > 0) setSelectedSourceId(data[0].id);
+      })
+      .finally(() => setListLoading(false));
+  }, [formMode, orgSlug]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,13 +106,34 @@ export function TournamentCreateModal({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to create");
+        throw new Error(data.error || tErr("createFailed"));
       }
       const { id } = await res.json();
       router.push(`/${locale}/org/${orgSlug}/admin/tournament/${id}/setup`);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error");
+      setError(err instanceof Error ? err.message : tErr("unknownError"));
+      setSaving(false);
+    }
+  }
+
+  async function handleClone() {
+    if (!selectedSourceId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/org/${orgSlug}/tournament/${selectedSourceId}/clone`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || tErr("createFailed"));
+      }
+      const { id } = await res.json();
+      router.push(`/${locale}/org/${orgSlug}/admin/tournament/${id}/setup`);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tErr("unknownError"));
       setSaving(false);
     }
   }
@@ -196,100 +238,192 @@ export function TournamentCreateModal({
 
         {/* ── STEP 2: Tournament form ── */}
         {step === "form" && (
-          <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
-            {/* Name */}
-            <div>
-              <label className="block text-xs font-semibold mb-1.5"
-                style={{ color: "var(--cat-text-muted, rgba(255,255,255,0.6))" }}>
-                {t("tournamentName")} <span style={{ color: ACCENT }}>*</span>
-              </label>
-              <input
-                autoFocus
-                type="text"
-                className={inputCls}
-                style={inputStyle}
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder={t("tournamentNamePlaceholder")}
-                required
-              />
-            </div>
-
-            {/* Year + Currency */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1.5"
-                  style={{ color: "var(--cat-text-muted, rgba(255,255,255,0.6))" }}>
-                  {t("year")}
-                </label>
-                <input
-                  type="number"
-                  className={inputCls}
-                  style={inputStyle}
-                  value={year}
-                  onChange={e => setYear(Number(e.target.value))}
-                  min={2020}
-                  max={2035}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1.5"
-                  style={{ color: "var(--cat-text-muted, rgba(255,255,255,0.6))" }}>
-                  {t("currency")}
-                </label>
-                <select
-                  className={inputCls}
-                  style={inputStyle}
-                  value={currency}
-                  onChange={e => setCurrency(e.target.value)}
-                >
-                  {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* Hint */}
-            {!requiresPlan && (
-              <div className="rounded-xl px-3 py-2.5 text-xs flex items-start gap-2"
-                style={{ background: "rgba(43,254,186,0.06)", border: "1px solid rgba(43,254,186,0.15)", color: "var(--cat-text-muted, rgba(255,255,255,0.5))" }}>
-                <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: ACCENT }} />
-                {t("createTournamentSubhint")}
-              </div>
-            )}
-
-            {/* Error */}
-            {error && (
-              <div className="rounded-xl px-3 py-2.5 text-xs flex items-start gap-2"
-                style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", color: "#f87171" }}>
-                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                {error}
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-1">
-              {requiresPlan ? (
-                <button type="button" onClick={() => setStep("plan")}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-70"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
-                  ← {t("back")}
-                </button>
-              ) : (
-                <button type="button" onClick={onClose}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-70"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
-                  {t("cancel")}
-                </button>
-              )}
-              <button type="submit" disabled={saving || !name.trim()}
-                className="flex-[2] py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                style={{ background: ACCENT, color: "#000", boxShadow: `0 0 20px rgba(43,254,186,0.35)` }}>
-                {saving
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />{t("creating")}</>
-                  : <><Sparkles className="w-4 h-4" />{t("create")}</>
-                }
+          <div className="px-6 pb-6 space-y-4">
+            {/* Mode switcher */}
+            <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+              <button
+                type="button"
+                onClick={() => setFormMode("scratch")}
+                className="flex-1 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                style={{
+                  background: formMode === "scratch" ? ACCENT : "transparent",
+                  color: formMode === "scratch" ? "#000" : "rgba(255,255,255,0.5)",
+                }}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {tCT("fromScratch")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormMode("copy")}
+                className="flex-1 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                style={{
+                  background: formMode === "copy" ? ACCENT : "transparent",
+                  color: formMode === "copy" ? "#000" : "rgba(255,255,255,0.5)",
+                }}
+              >
+                <Copy className="w-3.5 h-3.5" />
+                {tCT("copyFrom")}
               </button>
             </div>
-          </form>
+
+            {formMode === "scratch" ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Name */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5"
+                    style={{ color: "var(--cat-text-muted, rgba(255,255,255,0.6))" }}>
+                    {t("tournamentName")} <span style={{ color: ACCENT }}>*</span>
+                  </label>
+                  <input
+                    autoFocus
+                    type="text"
+                    className={inputCls}
+                    style={inputStyle}
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder={t("tournamentNamePlaceholder")}
+                    required
+                  />
+                </div>
+
+                {/* Year + Currency */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5"
+                      style={{ color: "var(--cat-text-muted, rgba(255,255,255,0.6))" }}>
+                      {t("year")}
+                    </label>
+                    <input
+                      type="number"
+                      className={inputCls}
+                      style={inputStyle}
+                      value={year}
+                      onChange={e => setYear(Number(e.target.value))}
+                      min={2020}
+                      max={2035}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5"
+                      style={{ color: "var(--cat-text-muted, rgba(255,255,255,0.6))" }}>
+                      {t("currency")}
+                    </label>
+                    <select
+                      className={inputCls}
+                      style={inputStyle}
+                      value={currency}
+                      onChange={e => setCurrency(e.target.value)}
+                    >
+                      {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Hint */}
+                {!requiresPlan && (
+                  <div className="rounded-xl px-3 py-2.5 text-xs flex items-start gap-2"
+                    style={{ background: "rgba(43,254,186,0.06)", border: "1px solid rgba(43,254,186,0.15)", color: "var(--cat-text-muted, rgba(255,255,255,0.5))" }}>
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: ACCENT }} />
+                    {t("createTournamentSubhint")}
+                  </div>
+                )}
+
+                {/* Error */}
+                {error && (
+                  <div className="rounded-xl px-3 py-2.5 text-xs flex items-start gap-2"
+                    style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", color: "#f87171" }}>
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  {requiresPlan ? (
+                    <button type="button" onClick={() => setStep("plan")}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-70"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
+                      ← {t("back")}
+                    </button>
+                  ) : (
+                    <button type="button" onClick={onClose}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-70"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
+                      {t("cancel")}
+                    </button>
+                  )}
+                  <button type="submit" disabled={saving || !name.trim()}
+                    className="flex-[2] py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    style={{ background: ACCENT, color: "#000", boxShadow: `0 0 20px rgba(43,254,186,0.35)` }}>
+                    {saving
+                      ? <><Loader2 className="w-4 h-4 animate-spin" />{t("creating")}</>
+                      : <><Sparkles className="w-4 h-4" />{t("create")}</>
+                    }
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                {/* Source selector */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5"
+                    style={{ color: "var(--cat-text-muted, rgba(255,255,255,0.6))" }}>
+                    {tCT("selectSource")}
+                  </label>
+                  {listLoading ? (
+                    <div className="flex items-center gap-2 py-3 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Loading...
+                    </div>
+                  ) : tournamentList.length === 0 ? (
+                    <div className="rounded-xl px-3 py-2.5 text-xs"
+                      style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)" }}>
+                      No tournaments found
+                    </div>
+                  ) : (
+                    <select
+                      className={inputCls}
+                      style={inputStyle}
+                      value={selectedSourceId ?? ""}
+                      onChange={e => setSelectedSourceId(Number(e.target.value))}
+                    >
+                      {tournamentList.map(t => (
+                        <option key={t.id} value={t.id}>{t.name} ({t.year})</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <div className="rounded-xl px-3 py-2.5 text-xs flex items-start gap-2"
+                    style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", color: "#f87171" }}>
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={onClose}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-70"
+                    style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
+                    {t("cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving || !selectedSourceId || listLoading}
+                    onClick={handleClone}
+                    className="flex-[2] py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    style={{ background: ACCENT, color: "#000", boxShadow: `0 0 20px rgba(43,254,186,0.35)` }}
+                  >
+                    {saving
+                      ? <><Loader2 className="w-4 h-4 animate-spin" />{tCT("cloning")}</>
+                      : <><Copy className="w-4 h-4" />{tCT("clone")}</>
+                    }
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
