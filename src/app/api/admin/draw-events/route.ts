@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
   const emailFilter = params.get("email")?.trim().toLowerCase();
 
   const conditions = [];
-  if (eventFilter && ["visited", "created", "activated"].includes(eventFilter)) {
+  const allEventTypes = ["visited", "created", "activated", "wizard_start", "promo_applied", "purchase_intent"];
+  if (eventFilter && allEventTypes.includes(eventFilter)) {
     conditions.push(eq(drawShowEvents.eventType, eventFilter));
   }
   if (emailFilter) {
@@ -66,6 +67,9 @@ export async function GET(req: NextRequest) {
     visited: 0,
     created: 0,
     activated: 0,
+    wizard_start: 0,
+    promo_applied: 0,
+    purchase_intent: 0,
   };
   for (const row of totals) summary[row.eventType] = row.count;
 

@@ -23,7 +23,7 @@ import { routing } from "@/i18n/routing";
  *     page itself (see DrawLanding) for structured-data eligibility.
  */
 
-const BASE_URL = "https://goality.app";
+const BASE_URL = "https://goalityfootball.com";
 
 export async function generateMetadata({
   params,
