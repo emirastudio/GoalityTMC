@@ -8,6 +8,7 @@ import {
   Calendar, Mail, Globe, Clock, CheckCircle, ArrowRight,
   Trophy, Users, Building2, Layers, Sparkles, MapPin,
 } from "lucide-react";
+import { TournamentProgressBar } from "@/components/tournament/tournament-progress-bar";
 
 function fmt(d: string | null, locale: string) {
   if (!d) return null;
@@ -100,6 +101,9 @@ export default function TournamentInfoPage() {
           </div>
         ))}
       </div>
+
+      {/* Tournament Progress */}
+      <TournamentProgressBar orgSlug={org.slug} tournamentSlug={tourney.slug} locale={locale} />
 
       {/* Registration status */}
       <div className="rounded-2xl p-4 border flex items-center justify-between gap-4"
