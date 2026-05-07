@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Lint is informational for now: there's ~200 pre-existing errors
+      # we're aware of but haven't yet cleaned up. Blocking on them would
+      # block all deploys. Tracked separately as tech debt.
+      - name: Lint (non-blocking)
+        run: pnpm lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Build
+        env:
+          # Build doesn't connect to a real DB but Next.js needs the env vars present
+          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+          JWT_SECRET: ci-secret
+          NEXT_PUBLIC_APP_URL: https://example.test
+          RESEND_API_KEY: re_ci_dummy
+          EMAIL_FROM: CI <ci@example.test>
+        run: pnpm build
