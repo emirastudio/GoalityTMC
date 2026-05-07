@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Plus, Sparkles, AlertCircle } from "lucide-react";
 import { TournamentCreateModal } from "@/components/admin/tournament-create-modal";
@@ -17,7 +18,8 @@ export function TournamentsPageClient({
   existingCount: number;
 }) {
   const t = useTranslations("orgAdmin");
-  const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const [open, setOpen] = useState(searchParams.get("create") === "true");
   const requiresPlan = existingCount >= 1;
 
   return (

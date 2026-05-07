@@ -8,7 +8,7 @@ import { X, Trophy, Sparkles, Loader2, AlertCircle, Rocket, Zap, Crown, CheckCir
 const ACCENT = "#2BFEBA";
 const CURRENCIES = ["EUR", "USD", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN", "CZK", "HUF"];
 
-const inputCls = "w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2";
+const inputCls = "w-full h-10 rounded-xl border px-3 text-sm outline-none transition-all focus:ring-2";
 const inputStyle = {
   background: "var(--cat-input-bg, rgba(255,255,255,0.06))",
   borderColor: "var(--cat-card-border, rgba(255,255,255,0.1))",

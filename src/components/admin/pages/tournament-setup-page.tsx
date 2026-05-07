@@ -15,6 +15,7 @@ import {
   Globe, Calendar, Users, DollarSign, LayoutGrid,
   CheckCircle2, Circle, ArrowRight, X, Zap, Crown, Gift,
 } from "lucide-react";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 
 // ─────────────────────────────────────────────────────────────
 //  Типы данных
@@ -489,16 +490,16 @@ function StepBasics({ name, setName, year, setYear, startDate, setStartDate, end
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label={t("startDate")}>
-          <input type="date" className={inputCls} style={inputStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
+          <DatePickerInput value={startDate} onChange={setStartDate} inputCls={inputCls} inputStyle={inputStyle} />
         </Field>
         <Field label={t("endDate")}>
-          <input type="date" className={inputCls} style={inputStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
+          <DatePickerInput value={endDate} onChange={setEndDate} inputCls={inputCls} inputStyle={inputStyle} />
         </Field>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label={t("registrationDeadline")} hint={t("registrationDeadlineHint")}>
-          <input type="date" className={inputCls} style={inputStyle} value={regDeadline} onChange={e => setRegDeadline(e.target.value)} />
+          <DatePickerInput value={regDeadline} onChange={setRegDeadline} inputCls={inputCls} inputStyle={inputStyle} />
         </Field>
         <Field label={t("currency")}>
           <select className={inputCls} style={inputStyle} value={currency} onChange={e => setCurrency(e.target.value)}>

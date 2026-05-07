@@ -98,7 +98,7 @@ export default async function OrgDashboardPage({ params, searchParams }: Props) 
           )}
         </div>
         <Link
-          href={`/org/${orgSlug}/admin/tournaments`}
+          href={`/org/${orgSlug}/admin/tournaments?create=true`}
           className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
           style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
         >
@@ -112,7 +112,7 @@ export default async function OrgDashboardPage({ params, searchParams }: Props) 
           <Trophy className="w-10 h-10 th-text-m mx-auto mb-3" />
           <p className="th-text-2 mb-4">{t("noTournaments")}</p>
           <Link
-            href={`/org/${orgSlug}/admin/tournaments`}
+            href={`/org/${orgSlug}/admin/tournaments?create=true`}
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
             style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
           >
