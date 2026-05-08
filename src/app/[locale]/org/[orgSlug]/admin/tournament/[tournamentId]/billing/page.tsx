@@ -14,6 +14,7 @@ import {
   PLAN_NAMES,
   type TournamentPlan,
 } from "@/lib/plan-gates";
+import { PremiumSubscriptionCard } from "@/components/admin/premium-subscription-card";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -638,6 +639,9 @@ export default function TournamentBillingPage() {
           ) : null}
         </div>
       </div>
+
+      {/* Premium subscription — org-level, applies to ALL tournaments */}
+      <PremiumSubscriptionCard orgSlug={orgSlug} />
     </div>
   );
 }
