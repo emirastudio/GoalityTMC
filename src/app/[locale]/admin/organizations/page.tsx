@@ -2,8 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
 import { organizations, tournaments, tournamentRegistrations } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
-import { Link } from "@/i18n/navigation";
-import { Building2, Trophy, Users } from "lucide-react";
+import { OrganizationsListClient } from "./organizations-list-client";
 
 export default async function OrganizationsPage() {
   const t = await getTranslations("superAdmin");
@@ -12,18 +11,25 @@ export default async function OrganizationsPage() {
     orderBy: (o, { desc }) => [desc(o.createdAt)],
   });
 
-  // Enrich with counts
   const enrichedOrgs = await Promise.all(
     orgs.map(async (org) => {
       const [tc] = await db.select({ value: count() }).from(tournaments).where(eq(tournaments.organizationId, org.id));
       const tournamentIds = await db.select({ id: tournaments.id }).from(tournaments).where(eq(tournaments.organizationId, org.id));
       let teamCount = 0;
-      for (const t of tournamentIds) {
-        const [tc] = await db.select({ value: count() }).from(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, t.id));
-        teamCount += Number(tc?.value ?? 0);
+      for (const tnm of tournamentIds) {
+        const [reg] = await db.select({ value: count() }).from(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, tnm.id));
+        teamCount += Number(reg?.value ?? 0);
       }
       return {
-        ...org,
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        country: org.country ?? null,
+        city: org.city ?? null,
+        plan: org.plan,
+        eliteSubStatus: org.eliteSubStatus ?? null,
+        eliteSubPeriodEnd: org.eliteSubPeriodEnd ? org.eliteSubPeriodEnd.toISOString() : null,
+        eliteSubId: org.eliteSubId ?? null,
         tournamentsCount: Number(tc?.value ?? 0),
         teamsCount: teamCount,
       };
@@ -33,53 +39,7 @@ export default async function OrganizationsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold th-text">{t("organizations")}</h1>
-
-      {enrichedOrgs.length === 0 ? (
-        <div className="th-card rounded-xl border th-border p-12 text-center">
-          <Building2 className="w-12 h-12 text-text-secondary/30 mx-auto mb-4" />
-          <p className="th-text-2">{t("noOrganizations")}</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {enrichedOrgs.map((org) => (
-            <Link
-              key={org.id}
-              href={`/org/${org.slug}/admin`}
-              className="flex items-center justify-between th-card rounded-xl border th-border p-5 hover:border-navy/30 transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-navy/10 flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-navy" />
-                </div>
-                <div>
-                  <h3 className="font-semibold th-text">{org.name}</h3>
-                  <p className="text-sm th-text-2">
-                    /{org.slug} &middot; {org.country ?? ""}{org.city ? `, ${org.city}` : ""}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6 text-sm th-text-2">
-                <div className="flex items-center gap-1.5">
-                  <Trophy className="w-4 h-4" />
-                  <span>{org.tournamentsCount}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-4 h-4" />
-                  <span>{org.teamsCount}</span>
-                </div>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  org.plan === "elite"   ? "bg-gold/20 text-gold" :
-                  org.plan === "pro"     ? "bg-navy/10 text-navy" :
-                  org.plan === "starter" ? "bg-blue-100 text-blue-700" :
-                  "bg-gray-100 text-gray-600"
-                }`}>
-                  {org.plan}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <OrganizationsListClient initialOrgs={enrichedOrgs} />
     </div>
   );
 }
