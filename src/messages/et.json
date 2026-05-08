@@ -2193,7 +2193,16 @@
     "choosePlanForTournament": "Valige selle turniiri plaan",
     "continueWithPlan": "Jätka",
     "cancel": "Tühista",
-    "planner": "Ajakava planeerija"
+    "planner": "Ajakava planeerija",
+    "regCtaReadyTitle": "Valmis käivitamiseks?",
+    "regCtaReadyDesc": "Ava registreerimine, et klubid saaksid registreeruda. Saad selle igal ajal peatada.",
+    "regCtaOpenBtn": "Ava registreerimine",
+    "regCtaPauseBtn": "Paus",
+    "regCtaWorking": "Salvestame...",
+    "regCtaLiveTitle": "Registreerimine avatud",
+    "regCtaCompleteSetupTitle": "Lõpeta esmalt seadistus",
+    "regCtaCompleteSetupDesc": "Enne registreerimise avamist lisa vähemalt üks divisjon, väljad ja formaat.",
+    "regCtaCompleteSetupBtn": "Lõpeta seadistus"
   },
   "divisionWizard": {
     "title": "Uus divisjon",
