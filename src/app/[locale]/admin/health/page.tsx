@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   CheckCircle, XCircle, RefreshCw, Database, Mail, CreditCard,
-  Key, Server, Cpu, HardDrive, Clock, Loader2, Activity, BookOpen,
+  Key, Server, Cpu, HardDrive, Clock, Loader2, Activity, BookOpen, ShieldCheck,
 } from "lucide-react";
 import { StripeModeToggle } from "@/components/admin/stripe-mode-toggle";
 
@@ -12,7 +12,8 @@ type HealthData = {
   ok: boolean;
   checks: {
     database: Check;
-    smtp: Check;
+    resend: Check;
+    oauth: Check;
     stripe: Check;
     jwt: Check;
     blogApiKey: Check;
@@ -40,14 +41,18 @@ function CheckRow({ icon: Icon, label, check, iconColor }: {
   icon: React.ElementType; label: string; check: Check; iconColor: string;
 }) {
   return (
-    <div className={`flex items-start gap-4 p-4 rounded-xl border ${check.ok ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${check.ok ? "bg-green-100" : "bg-red-100"} shrink-0`}>
+    <div className="flex items-start gap-4 p-4 rounded-xl border th-card th-border">
+      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+        style={{ background: check.ok ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)" }}>
         <Icon className={`w-5 h-5 ${iconColor}`} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="font-semibold th-text text-sm">{label}</p>
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${check.ok ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+            style={check.ok
+              ? { background: "rgba(16,185,129,0.15)", color: "#10B981" }
+              : { background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>
             {check.ok ? "OK" : "FAIL"}
           </span>
         </div>
@@ -136,11 +141,12 @@ export default function SystemHealthPage() {
       <div>
         <h2 className="text-sm font-semibold th-text uppercase tracking-wide mb-4">Service Checks</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <CheckRow icon={Database}  label="Database (PostgreSQL)" check={checks.database}  iconColor="text-blue-600" />
-          <CheckRow icon={Mail}      label="SMTP Email"            check={checks.smtp}      iconColor="text-purple-600" />
-          <CheckRow icon={CreditCard} label="Stripe Payments"      check={checks.stripe}    iconColor="text-indigo-600" />
-          <CheckRow icon={Key}       label="JWT Secret"            check={checks.jwt}       iconColor="text-amber-600" />
-          <CheckRow icon={BookOpen}  label="Blog API Key"          check={checks.blogApiKey} iconColor="text-pink-600" />
+          <CheckRow icon={Database}    label="Database (PostgreSQL)" check={checks.database}  iconColor="text-blue-600" />
+          <CheckRow icon={Mail}        label="Resend Email"          check={checks.resend}    iconColor="text-purple-600" />
+          <CheckRow icon={ShieldCheck} label="OAuth (Google/FB)"     check={checks.oauth}     iconColor="text-emerald-600" />
+          <CheckRow icon={CreditCard}  label="Stripe Payments"       check={checks.stripe}    iconColor="text-indigo-600" />
+          <CheckRow icon={Key}         label="JWT Secret"            check={checks.jwt}       iconColor="text-amber-600" />
+          <CheckRow icon={BookOpen}    label="Blog API Key"          check={checks.blogApiKey} iconColor="text-pink-600" />
         </div>
       </div>
 

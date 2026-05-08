@@ -4,16 +4,18 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { db } from "@/db";
-import { teams, payments, tournamentClasses, tournamentFields, tournamentStages, tournamentRegistrations } from "@/db/schema";
-import { eq, count, sum, sql } from "drizzle-orm";
+import { teams, payments, tournamentClasses, tournamentFields, tournamentStages, tournamentRegistrations, matches } from "@/db/schema";
+import { eq, count, sum, sql, and } from "drizzle-orm";
 import {
   Users, Wallet, Trophy, ArrowLeft, Settings,
   Package, Mail, ClipboardList, Wrench,
-  ExternalLink, Link2, Share2, QrCode, Megaphone,
-  Copy, MessageSquare, Send, LayoutGrid,
+  ExternalLink, Link2, Megaphone,
+  MessageSquare, Send, LayoutGrid,
 } from "lucide-react";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
 import { TournamentSetupChecklist, type ChecklistStep } from "@/components/admin/tournament-setup-checklist";
+import { TournamentProgressBar } from "@/components/tournament/tournament-progress-bar";
+import { QrCodeDownload } from "@/components/admin/qr-code-download";
 
 type Props = {
   params: Promise<{ locale: string; orgSlug: string; tournamentId: string }>;
@@ -46,6 +48,49 @@ export default async function TournamentOverviewPage({ params }: Props) {
   const [fieldCount] = await db.select({ value: count() }).from(tournamentFields).where(eq(tournamentFields.tournamentId, tournament.id));
   const [stageCount] = await db.select({ value: count() }).from(tournamentStages).where(eq(tournamentStages.tournamentId, tournament.id));
 
+  /* Progress bar: stages grouped by class */
+  const [progressStages, progressClasses] = await Promise.all([
+    db.select({
+      id: tournamentStages.id,
+      name: tournamentStages.name,
+      nameRu: tournamentStages.nameRu,
+      nameEt: tournamentStages.nameEt,
+      order: tournamentStages.order,
+      type: tournamentStages.type,
+      status: tournamentStages.status,
+      classId: tournamentStages.classId,
+      total: count(matches.id),
+      finished: sql<number>`COALESCE(SUM(CASE WHEN ${matches.status} IN ('finished','walkover') THEN 1 ELSE 0 END), 0)::int`,
+    })
+    .from(tournamentStages)
+    .leftJoin(matches, and(eq(matches.stageId, tournamentStages.id), eq(matches.isPublic, true)))
+    .where(eq(tournamentStages.tournamentId, tournament.id))
+    .groupBy(tournamentStages.id, tournamentStages.name, tournamentStages.nameRu, tournamentStages.nameEt, tournamentStages.order, tournamentStages.type, tournamentStages.status, tournamentStages.classId)
+    .orderBy(tournamentStages.order),
+
+    db.select({ id: tournamentClasses.id, name: tournamentClasses.name })
+      .from(tournamentClasses)
+      .where(eq(tournamentClasses.tournamentId, tournament.id))
+      .orderBy(tournamentClasses.id),
+  ]);
+
+  const classNameMap = new Map(progressClasses.map(c => [c.id, c.name]));
+  const groupMap = new Map<number | null, { classId: number | null; className: string | null; stages: typeof progressStages }>();
+  for (const s of progressStages) {
+    const key = s.classId ?? null;
+    if (!groupMap.has(key)) groupMap.set(key, { classId: key, className: key ? (classNameMap.get(key) ?? null) : null, stages: [] });
+    groupMap.get(key)!.stages.push(s);
+  }
+  const progressGroupsData = Array.from(groupMap.values()).map(g => ({
+    ...g,
+    stages: g.stages.map(s => ({
+      ...s,
+      total: Number(s.total),
+      finished: Number(s.finished),
+      pct: Number(s.total) > 0 ? Math.round((Number(s.finished) / Number(s.total)) * 100) : 0,
+    })),
+  }));
+
   const basePath = `/org/${orgSlug}/admin/tournament/${tournamentId}`;
 
   /* Setup checklist steps */
@@ -58,8 +103,8 @@ export default async function TournamentOverviewPage({ params }: Props) {
   ];
 
   /* Public registration URL */
-  const registerUrl = `https://goality.ee/${locale}/t/${organization.slug}/${tournament.slug}/register`;
-  const publicUrl   = `https://goality.ee/${locale}/t/${organization.slug}/${tournament.slug}`;
+  const registerUrl = `https://goalityfootball.com/${locale}/t/${organization.slug}/${tournament.slug}/register`;
+  const publicUrl   = `https://goalityfootball.com/${locale}/t/${organization.slug}/${tournament.slug}`;
 
   const quickLinks = [
     { key: "registrations", icon: ClipboardList, href: `${basePath}/registrations`, color: "#10B981" },
@@ -162,6 +207,16 @@ export default async function TournamentOverviewPage({ params }: Props) {
         ))}
       </div>
 
+      {/* ── Tournament Progress ── */}
+      {progressGroupsData.length > 0 && (
+        <TournamentProgressBar
+          orgSlug={orgSlug}
+          tournamentSlug={tournament.slug}
+          locale={locale}
+          initialGroups={progressGroupsData}
+        />
+      )}
+
       {/* ── INVITE & REFERRAL ── */}
       <div className="rounded-2xl border overflow-hidden" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
         {/* Header */}
@@ -220,14 +275,8 @@ export default async function TournamentOverviewPage({ params }: Props) {
             </div>
           </div>
 
-          {/* QR hint */}
-          <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "var(--cat-tag-bg)" }}>
-            <QrCode className="w-8 h-8 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
-            <div>
-              <p className="text-[12px] font-bold th-text">{t("qrCode")}</p>
-              <p className="text-[10px] th-text-2">{t("qrCodeSoon")}</p>
-            </div>
-          </div>
+          {/* QR Code download */}
+          <QrCodeDownload url={publicUrl} tournamentName={tournament.name} />
 
           {/* Referral stats summary */}
           <div className="grid grid-cols-3 gap-3 pt-1" style={{ borderTop: "1px solid var(--cat-divider)" }}>

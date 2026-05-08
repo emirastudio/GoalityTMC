@@ -31,7 +31,6 @@ export function PublicNavHeader() {
       ],
     },
     { label: t("navCatalog"),  href: "/catalog" },
-    { label: t("navBlog"),     href: "/blog" },
     { label: t("navListing"),  href: "/listing" },
     { label: t("navPricing"),  href: "/pricing" },
   ];
