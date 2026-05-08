@@ -463,7 +463,7 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
                   <div>
                     <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Контакт (имя)</label>
                     <input value={draft.contactName} onChange={e => setDraft(d => ({ ...d, contactName: e.target.value }))}
-                      placeholder="Иван Иванов" style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
+                      placeholder="Danny Smith" style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
                   </div>
                   <div>
                     <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Телефон</label>
@@ -483,7 +483,7 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
                   <div className="col-span-2">
                     <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Примечание</label>
                     <input value={draft.notes} onChange={e => setDraft(d => ({ ...d, notes: e.target.value }))}
-                      placeholder="Вход с улицы Рауа" style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
+                      placeholder="Enter from Raua street" style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
                   </div>
                 </div>
 
@@ -651,7 +651,7 @@ function AddStadiumForm({ apiBase, onAdded }: AddStadiumFormProps) {
         <div>
           <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Контакт (имя)</label>
           <input value={form.contactName} onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))}
-            placeholder="Иван Иванов" style={inputStyle} />
+            placeholder="Danny Smith" style={inputStyle} />
         </div>
         <div>
           <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Телефон</label>
@@ -675,7 +675,7 @@ function AddStadiumForm({ apiBase, onAdded }: AddStadiumFormProps) {
         <div className="col-span-2">
           <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Примечание</label>
           <input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-            placeholder="Вход с улицы Рауа..." style={inputStyle} />
+            placeholder="Enter from Raua street..." style={inputStyle} />
         </div>
       </div>
 
