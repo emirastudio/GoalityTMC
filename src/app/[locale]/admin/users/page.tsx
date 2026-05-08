@@ -45,9 +45,14 @@ function PlanBadge({ plan }: { plan: string | null }) {
     starter: "bg-green-100 text-green-700",
     free:    "bg-gray-100 text-gray-600",
   };
+  // This page lists organizations and their admins → 'elite' on an org row
+  // means the org has a Premium subscription active. Display as 'Premium'
+  // to match the rest of the UI (per-tournament Elite tier still shows as
+  // 'elite' on /admin/tournaments where its badge is rendered separately).
+  const label = plan === "elite" ? "Premium" : plan;
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[plan] ?? styles.free}`}>
-      {plan}
+      {label}
     </span>
   );
 }

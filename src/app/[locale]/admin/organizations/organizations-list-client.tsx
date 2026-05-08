@@ -87,7 +87,9 @@ export function OrganizationsListClient({ initialOrgs }: { initialOrgs: Org[] })
                     org.plan === "starter" ? "bg-blue-100 text-blue-700" :
                     "bg-gray-100 text-gray-600"
                   }`}>
-                    {org.plan}
+                    {/* org.plan='elite' represents Premium subscription at the
+                        organization level — show user-facing label. */}
+                    {org.plan === "elite" ? "Premium" : org.plan}
                   </span>
                   <button
                     onClick={() => setGiftTarget(org)}
