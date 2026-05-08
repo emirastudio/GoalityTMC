@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useAdminFetch, useTournament } from "@/lib/tournament-context";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
 import { TournamentExtraSettingsBlock } from "@/components/admin/tournament-extra-settings";
+import { CatalogImageBlock } from "@/components/admin/catalog-image-block";
 import { StadiumsPageContent } from "@/components/admin/pages/stadiums-page";
 import { Link } from "@/i18n/navigation";
 import {
@@ -547,6 +548,8 @@ function StepMedia({ orgSlug, tournamentId, coverUrl, logoUrl, onLogoChange, onC
         onLogoChange={onLogoChange}
         onCoverChange={onCoverChange}
       />
+      {/* Catalog image — third media slot, separate aspect ratio (7:4) */}
+      <CatalogImageBlock orgSlug={orgSlug} tournamentId={tournamentId} />
       <div className="rounded-2xl border px-4 py-3 flex items-center gap-3"
         style={{ background: "rgba(139,92,246,0.06)", borderColor: "rgba(139,92,246,0.2)" }}>
         <Sparkles className="w-4 h-4 shrink-0" style={{ color: "#8b5cf6" }} />
