@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { matchReferees, matches, tournamentReferees } from "@/db/schema";
+import { matchReferees, matches, tournamentReferees, tournamentRegistrations } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
 import { assertFeature } from "@/lib/plan-gates";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, inArray } from "drizzle-orm";
 
 type Params = { orgSlug: string; tournamentId: string; matchId: string };
 
@@ -98,6 +98,79 @@ export async function POST(
       target: [matchReferees.matchId, matchReferees.refereeId],
       set: { role },
     });
+
+  // Send email notification if referee has an email address (non-blocking)
+  if (referee.email && referee.accessToken) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com";
+    const panelUrl = `${appUrl}/en/referee/${referee.accessToken}`;
+
+    // Load team names for the email
+    const teamIds = [match.homeTeamId, match.awayTeamId].filter(Boolean) as number[];
+    const displayMap = new Map<number, string | null>();
+    if (teamIds.length > 0) {
+      const regs = await db
+        .select({
+          teamId: tournamentRegistrations.teamId,
+          displayName: tournamentRegistrations.displayName,
+        })
+        .from(tournamentRegistrations)
+        .where(
+          and(
+            eq(tournamentRegistrations.tournamentId, ctx.tournament.id),
+            inArray(tournamentRegistrations.teamId, teamIds),
+          ),
+        );
+      for (const r of regs) displayMap.set(r.teamId, r.displayName);
+    }
+
+    const fullMatch = await db.query.matches.findFirst({
+      where: eq(matches.id, mid),
+      with: {
+        homeTeam: { with: { club: true } },
+        awayTeam: { with: { club: true } },
+        field: true,
+      },
+    });
+
+    const homeName =
+      (match.homeTeamId ? displayMap.get(match.homeTeamId) : undefined) ??
+      fullMatch?.homeTeam?.name ??
+      fullMatch?.homeTeam?.club?.name ??
+      null;
+    const awayName =
+      (match.awayTeamId ? displayMap.get(match.awayTeamId) : undefined) ??
+      fullMatch?.awayTeam?.name ??
+      fullMatch?.awayTeam?.club?.name ??
+      null;
+    const venue = fullMatch?.field?.name ?? null;
+    const matchTime = match.scheduledAt
+      ? new Intl.DateTimeFormat("en-GB", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(new Date(match.scheduledAt))
+      : null;
+
+    import("@/lib/email")
+      .then(({ sendRefereeMatchAssignment }) =>
+        sendRefereeMatchAssignment({
+          to: referee.email!,
+          refereeName: `${referee.firstName} ${referee.lastName}`,
+          tournamentName: ctx.tournament.name,
+          matchTime,
+          homeTeam: homeName,
+          awayTeam: awayName,
+          venue,
+          panelUrl,
+          role,
+        }),
+      )
+      .catch(() => {
+        // Non-blocking: ignore email send failures
+      });
+  }
 
   return NextResponse.json({ ok: true });
 }

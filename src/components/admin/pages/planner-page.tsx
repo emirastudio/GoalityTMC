@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { TeamBadge } from "@/components/ui/team-badge";
 import { useTournament } from "@/lib/tournament-context";
@@ -138,8 +138,8 @@ function isFinalMatch(match: Match): boolean {
   if (match.round?.matchCount === 1 && sn !== "3P" && sn !== "3RD" && sn !== "BRONZE") return true;
   return false;
 }
-function fmtDate(d: string) {
-  return new Date(d + "T12:00:00Z").toLocaleDateString("ru-RU", {
+function fmtDate(d: string, locale = "en") {
+  return new Date(d + "T12:00:00Z").toLocaleDateString(locale, {
     weekday: "short", day: "numeric", month: "short",
   });
 }
@@ -794,6 +794,7 @@ function StadiumScheduleModal({
   }, [stadiums, tournamentDays, schedules]);
 
   const t = useTranslations("admin");
+  const locale = useLocale();
   const [localState, setLocalState] = useState(() => buildLocalState());
   const [saving, setSaving] = useState(false);
   const [copyFromStadium, setCopyFromStadium] = useState<number | null>(null);
@@ -870,7 +871,7 @@ function StadiumScheduleModal({
   }
 
   function fmtDay(d: string) {
-    return new Date(d + "T12:00:00Z").toLocaleDateString("ru-RU", {
+    return new Date(d + "T12:00:00Z").toLocaleDateString(locale, {
       weekday: "short", day: "numeric", month: "short",
     });
   }
@@ -2117,6 +2118,7 @@ function AddMatchModal({
 
 export function PlannerPage() {
   const t = useTranslations("admin");
+  const locale = useLocale();
   const ctx = useTournament();
   const orgSlug = ctx?.orgSlug ?? "";
   const tournamentId = ctx?.tournamentId ?? 0;
@@ -2273,8 +2275,17 @@ export function PlannerPage() {
         return true;
       });
 
-      const days = getScheduledDays(mArr);
-      if (days.length > 0) setActiveDay(prev => prev && days.includes(prev) ? prev : days[0]);
+      const sDays = getScheduledDays(mArr);
+      const cDays = getClassDays(clArr);
+      const allDays = Array.from(new Set([...sDays, ...cDays])).sort();
+      if (allDays.length > 0) {
+        setActiveDay(prev => {
+          if (prev && allDays.includes(prev)) return prev;
+          // prefer today if it's in range, else first day
+          const today = new Date().toISOString().substring(0, 10);
+          return allDays.includes(today) ? today : allDays[0];
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -2302,7 +2313,26 @@ export function PlannerPage() {
     return Array.from(s).sort();
   }
 
-  const days = useMemo(() => getScheduledDays(matches), [matches]);
+  function getClassDays(clArr: TournamentClass[]): string[] {
+    const s = new Set<string>();
+    for (const cls of clArr) {
+      if (!cls.startDate || !cls.endDate) continue;
+      const cur = new Date(cls.startDate + "T12:00:00Z");
+      const end = new Date(cls.endDate   + "T12:00:00Z");
+      while (cur <= end) {
+        s.add(cur.toISOString().substring(0, 10));
+        cur.setUTCDate(cur.getUTCDate() + 1);
+      }
+    }
+    return Array.from(s).sort();
+  }
+
+  const scheduledDays = useMemo(() => getScheduledDays(matches), [matches]);
+  const days = useMemo(() => {
+    const classDays = getClassDays(classes);
+    const merged = new Set([...scheduledDays, ...classDays]);
+    return Array.from(merged).sort();
+  }, [scheduledDays, classes]);
   const slots = useMemo(() => generateSlots(startHour, endHour, slotMins), [startHour, endHour, slotMins]);
 
   const stageColorMap = useCallback((id: number) => {
@@ -3251,9 +3281,13 @@ export function PlannerPage() {
             <span className="px-4 py-1.5 text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("planner.noMatchesWithDatesTabs")}</span>
           ) : days.map(day => (
             <button key={day} onClick={() => setActiveDay(day)}
-              className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
               style={activeDay === day ? { background: "var(--cat-accent)", color: "#0A0E14" } : { color: "var(--cat-text-secondary)" }}>
-              {fmtDate(day)}
+              {fmtDate(day, locale)}
+              {scheduledDays.includes(day) && (
+                <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ background: activeDay === day ? "#0A0E14" : "var(--cat-accent)", opacity: 0.8 }} />
+              )}
             </button>
           ))}
         </div>

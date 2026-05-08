@@ -48,6 +48,12 @@ interface RefereePanelData {
   matches: MatchInfo[];
 }
 
+interface AvailabilityEntry {
+  date: string;
+  isBlackout: boolean;
+  notes?: string | null;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatTime(iso: string | null): string {
@@ -60,6 +66,27 @@ function formatDate(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+/** Generate array of date strings "YYYY-MM-DD" from startDate to endDate (inclusive) */
+function buildDateRange(startDate: string | null, endDate: string | null): string[] {
+  if (!startDate || !endDate) return [];
+  const dates: string[] = [];
+  const cur = new Date(startDate);
+  const end = new Date(endDate);
+  // Normalize to midnight UTC
+  cur.setUTCHours(0, 0, 0, 0);
+  end.setUTCHours(0, 0, 0, 0);
+  while (cur <= end) {
+    dates.push(cur.toISOString().slice(0, 10));
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return dates;
+}
+
+function formatDateLabel(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00Z");
+  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
 }
 
 // ─── Score Entry (single match) ───────────────────────────────────────────────
@@ -203,6 +230,7 @@ interface MatchCardProps {
   match: MatchInfo;
   token: string;
   onScoreUpdate: (matchId: number, homeScore: number, awayScore: number) => void;
+  onStatusUpdate: (matchId: number, status: string) => void;
   t: ReturnType<typeof useTranslations<"refereePanel">>;
 }
 
@@ -246,10 +274,47 @@ function StatusChip({
   );
 }
 
-function MatchCard({ match, token, onScoreUpdate, t }: MatchCardProps) {
+function MatchCard({ match, token, onScoreUpdate, onStatusUpdate, t }: MatchCardProps) {
+  const isScheduled = match.status === "scheduled";
   const isLive = match.status === "live";
   const isFinished = match.status === "finished";
   const showScore = isLive || isFinished;
+
+  const [actionLoading, setActionLoading] = useState(false);
+  const [confirmingFinish, setConfirmingFinish] = useState(false);
+
+  async function handleStartMatch() {
+    setActionLoading(true);
+    try {
+      await fetch(`/api/referee/${token}/match/${match.id}/result`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "live" }),
+      });
+      onStatusUpdate(match.id, "live");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleFinishMatch() {
+    setConfirmingFinish(false);
+    setActionLoading(true);
+    try {
+      await fetch(`/api/referee/${token}/match/${match.id}/result`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "finished",
+          homeScore: match.homeScore ?? 0,
+          awayScore: match.awayScore ?? 0,
+        }),
+      });
+      onStatusUpdate(match.id, "finished");
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
   return (
     <div
@@ -340,7 +405,169 @@ function MatchCard({ match, token, onScoreUpdate, t }: MatchCardProps) {
             t={t}
           />
         )}
+
+        {/* Action buttons */}
+        {isScheduled && (
+          <div className="mt-4">
+            <button
+              onClick={handleStartMatch}
+              disabled={actionLoading}
+              className="w-full py-2.5 rounded-xl text-sm font-bold active:scale-95 transition-transform disabled:opacity-60"
+              style={{ background: "#22c55e", color: "#fff" }}
+            >
+              {actionLoading ? "…" : t("startMatch")}
+            </button>
+          </div>
+        )}
+
+        {isLive && !confirmingFinish && (
+          <div className="mt-3">
+            <button
+              onClick={() => setConfirmingFinish(true)}
+              disabled={actionLoading}
+              className="w-full py-2.5 rounded-xl text-sm font-bold active:scale-95 transition-transform disabled:opacity-60"
+              style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)", border: "1px solid var(--cat-card-border)" }}
+            >
+              {t("finishMatch")}
+            </button>
+          </div>
+        )}
+
+        {isLive && confirmingFinish && (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs text-center font-semibold" style={{ color: "var(--cat-text-muted)" }}>
+              {t("confirmFinish")}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmingFinish(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold active:scale-95 transition-transform"
+                style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)", border: "1px solid var(--cat-card-border)" }}
+              >
+                {t("cancel")}
+              </button>
+              <button
+                onClick={handleFinishMatch}
+                disabled={actionLoading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold active:scale-95 transition-transform disabled:opacity-60"
+                style={{ background: "#ef4444", color: "#fff" }}
+              >
+                {actionLoading ? "…" : t("confirm")}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// ─── Availability Section ─────────────────────────────────────────────────────
+
+interface AvailabilitySectionProps {
+  token: string;
+  tournament: TournamentInfo;
+  t: ReturnType<typeof useTranslations<"refereePanel">>;
+}
+
+function AvailabilitySection({ token, tournament, t }: AvailabilitySectionProps) {
+  const [entries, setEntries] = useState<Map<string, AvailabilityEntry>>(new Map());
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const dates = buildDateRange(tournament.startDate, tournament.endDate);
+
+  // Load current availability on mount
+  useEffect(() => {
+    if (dates.length === 0) return;
+    fetch(`/api/referee/${token}/availability`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.availability) {
+          const map = new Map<string, AvailabilityEntry>();
+          for (const row of data.availability) {
+            map.set(row.date, { date: row.date, isBlackout: row.isBlackout, notes: row.notes });
+          }
+          setEntries(map);
+        }
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  async function toggleDate(date: string) {
+    const current = entries.get(date);
+    const newEntry: AvailabilityEntry = current
+      ? { ...current, isBlackout: !current.isBlackout }
+      : { date, isBlackout: true };
+
+    const next = new Map(entries);
+    next.set(date, newEntry);
+    setEntries(next);
+
+    setSaving(true);
+    try {
+      await fetch(`/api/referee/${token}/availability`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries: Array.from(next.values()) }),
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (dates.length === 0) return null;
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: "var(--cat-text-muted)" }}>
+          {t("availability")}
+        </h2>
+        {saving && (
+          <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
+            {t("saveScore")}…
+          </span>
+        )}
+      </div>
+
+      {!loaded ? (
+        <div className="h-10 rounded-xl animate-pulse" style={{ background: "var(--cat-tag-bg)" }} />
+      ) : (
+        <div className="space-y-2">
+          {dates.map((date) => {
+            const entry = entries.get(date);
+            const isBlackout = entry?.isBlackout ?? false;
+            return (
+              <div
+                key={date}
+                className="flex items-center justify-between px-4 py-3 rounded-xl border"
+                style={{
+                  background: "var(--cat-card-bg)",
+                  borderColor: "var(--cat-card-border)",
+                }}
+              >
+                <span className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
+                  {formatDateLabel(date)}
+                </span>
+                <button
+                  onClick={() => toggleDate(date)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95 transition-transform"
+                  style={
+                    isBlackout
+                      ? { background: "#fee2e2", color: "#b91c1c" }
+                      : { background: "#d1fae5", color: "#065f46" }
+                  }
+                >
+                  {isBlackout ? `❌ ${t("unavailable")}` : `✅ ${t("available")}`}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -364,6 +591,16 @@ export function RefereePanelClient({ data: initialData, token }: RefereePanelCli
       ...prev,
       matches: prev.matches.map((m) =>
         m.id === matchId ? { ...m, homeScore, awayScore } : m,
+      ),
+    }));
+  }, []);
+
+  // Optimistic status update
+  const handleStatusUpdate = useCallback((matchId: number, status: string) => {
+    setData((prev) => ({
+      ...prev,
+      matches: prev.matches.map((m) =>
+        m.id === matchId ? { ...m, status } : m,
       ),
     }));
   }, []);
@@ -465,10 +702,18 @@ export function RefereePanelClient({ data: initialData, token }: RefereePanelCli
               match={match}
               token={token}
               onScoreUpdate={handleScoreUpdate}
+              onStatusUpdate={handleStatusUpdate}
               t={t}
             />
           ))
         )}
+
+        {/* Availability section */}
+        <AvailabilitySection
+          token={token}
+          tournament={data.tournament}
+          t={t}
+        />
       </div>
     </div>
   );

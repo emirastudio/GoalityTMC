@@ -1,81 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { matches, matchResultLog, tournamentStages, matchRounds } from "@/db/schema";
+import { matches, matchResultLog, tournamentStages } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
 import { recalculateGroupStandings } from "@/lib/standings-calculator";
 import { maybeAutoAdvanceGroup } from "@/lib/playoff-advance";
-import { eq, and, isNull, asc } from "drizzle-orm";
-
-// ── Плей-офф: прогрессия победителя (и проигравшего) в следующий раунд ────────
-async function progressPlayoffWinner(match: typeof matches.$inferSelect) {
-  if (!match.roundId || !match.stageId) return;
-
-  const currentRound = await db.query.matchRounds.findFirst({
-    where: eq(matchRounds.id, match.roundId),
-  });
-  if (!currentRound) return;
-
-  // Все матчи текущего раунда, отсортированные по matchNumber
-  const roundMatches = await db.query.matches.findMany({
-    where: and(eq(matches.roundId, match.roundId), eq(matches.stageId, match.stageId), isNull(matches.deletedAt)),
-    orderBy: [asc(matches.matchNumber)],
-  });
-
-  const position = roundMatches.findIndex(m => m.id === match.id);
-  if (position === -1) return;
-
-  const winnerId = match.winnerId;
-  const loserId = winnerId === match.homeTeamId ? match.awayTeamId : match.homeTeamId;
-
-  // ── Победитель → следующий раунд (финал) ──────────────────────────────────
-  if (winnerId && currentRound.order > 1) {
-    const nextRound = await db.query.matchRounds.findFirst({
-      where: and(
-        eq(matchRounds.stageId, currentRound.stageId),
-        eq(matchRounds.order, currentRound.order - 1),
-      ),
-    });
-    if (nextRound) {
-      const nextRoundMatches = await db.query.matches.findMany({
-        where: and(
-          eq(matches.roundId, nextRound.id),
-          eq(matches.stageId, match.stageId),
-          isNull(matches.deletedAt)
-        ),
-        orderBy: [asc(matches.matchNumber)],
-      });
-      const targetIndex = Math.floor(position / 2);
-      const targetMatch = nextRoundMatches[targetIndex];
-      if (targetMatch) {
-        const isHome = position % 2 === 0;
-        await db.update(matches)
-          .set(isHome ? { homeTeamId: winnerId } : { awayTeamId: winnerId })
-          .where(eq(matches.id, targetMatch.id));
-      }
-    }
-  }
-
-  // ── Проигравший → матч за 3-е место (если hasThirdPlace на полуфинальном раунде) ──
-  if (loserId && currentRound.hasThirdPlace) {
-    // Матч за 3-е место — это отдельный матч в том же раунде с matchCount+1
-    const thirdPlaceMatches = await db.query.matches.findMany({
-      where: and(
-        eq(matches.roundId, currentRound.id),
-        eq(matches.stageId, match.stageId),
-        isNull(matches.deletedAt)
-      ),
-      orderBy: [asc(matches.matchNumber)],
-    });
-    // Матч за 3-е место = последний матч в раунде (после основных)
-    const thirdMatch = thirdPlaceMatches[currentRound.matchCount];
-    if (thirdMatch) {
-      const isHome = position % 2 === 0;
-      await db.update(matches)
-        .set(isHome ? { homeTeamId: loserId } : { awayTeamId: loserId })
-        .where(eq(matches.id, thirdMatch.id));
-    }
-  }
-}
+import { progressPlayoffWinner } from "@/lib/playoff-progress";
+import { eq, and, isNull } from "drizzle-orm";
 
 type Params = { orgSlug: string; tournamentId: string; matchId: string };
 
