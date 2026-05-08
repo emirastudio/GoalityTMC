@@ -2289,6 +2289,7 @@
     "giftDuration3m": "3 kuud",
     "giftDuration6m": "6 kuud",
     "giftDuration12m": "1 aasta",
+    "giftDurationPermanent": "Tähtajatu",
     "giftReasonPlaceholder": "Miks me Elite-i kingime? (näiteks partnerlepe, beetatestija, kompenseerimine)",
     "giftRevokeReasonPlaceholder": "Miks tühistame? (näiteks partnerlus lõppes, rikkumised)",
     "giftApply": "Kingi Elite",
