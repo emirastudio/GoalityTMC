@@ -288,6 +288,30 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
     return () => window.removeEventListener("billing:refresh", onBillingRefresh);
   }, [tournamentId, orgSlug]);
 
+  // Listen for tournament-data save events from the Setup wizard so the
+  // divisions list (and tournament name/logo) refresh without a full page
+  // reload.
+  useEffect(() => {
+    if (!tournamentId || !orgSlug) return;
+    function onTournamentSaved() {
+      fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/classes`)
+        .then(r => r.ok ? r.json() : [])
+        .then((list: TournamentClass[]) => setClasses(list))
+        .catch(() => null);
+      fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/name`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.name) {
+            setTournamentName(d.name);
+            setTournamentLogo(d.logoUrl ?? null);
+          }
+        })
+        .catch(() => null);
+    }
+    window.addEventListener("tournament:saved", onTournamentSaved);
+    return () => window.removeEventListener("tournament:saved", onTournamentSaved);
+  }, [tournamentId, orgSlug]);
+
   function isActive(href: string, exact = false) {
     return exact ? pathname === href : pathname.startsWith(href);
   }

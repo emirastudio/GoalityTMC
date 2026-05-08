@@ -1751,6 +1751,14 @@ export function TournamentSetupPageContent() {
       setData(updated);
       setClasses(updated.classes ?? []);
       setProducts(updated.products ?? []);
+      // Notify the sidebar (and any other listener) that tournament-level
+      // data changed — classes list, name, plan etc — so they can re-fetch
+      // without a full page reload. Sidebar already listens for
+      // 'billing:refresh'; mirror that for setup-driven changes.
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("tournament:saved"));
+        window.dispatchEvent(new Event("billing:refresh"));
+      }
       return true;
     } catch {
       setError("Failed to save. Please try again.");
