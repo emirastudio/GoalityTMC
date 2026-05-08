@@ -21,11 +21,14 @@ import {
   Filter,
   Download,
   Loader2,
+  MousePointerClick,
+  Tag,
+  CreditCard,
 } from "lucide-react";
 
 type DrawEvent = {
   id: number;
-  eventType: "visited" | "created" | "activated";
+  eventType: "visited" | "created" | "activated" | "wizard_start" | "promo_applied" | "purchase_intent";
   status: "free_standalone" | "free_plan" | "paid" | "promo";
   drawId: string | null;
   email: string | null;
@@ -40,7 +43,7 @@ type DrawEvent = {
 
 type ApiResponse = {
   events: DrawEvent[];
-  summary: { visited: number; created: number; activated: number };
+  summary: { visited: number; created: number; activated: number; wizard_start: number; promo_applied: number; purchase_intent: number };
   uniqueLeads: number;
 };
 
@@ -48,9 +51,12 @@ export default function DrawEventsPage() {
   const t = useTranslations("drawEventsAdmin");
 
   const EVENT_STYLE: Record<DrawEvent["eventType"], { color: string; bg: string; icon: React.ElementType; label: string }> = {
-    visited:   { color: "#6B7280", bg: "rgba(107,114,128,0.1)", icon: Eye,     label: t("eventLabelVisited") },
-    created:   { color: "#2563EB", bg: "rgba(37,99,235,0.1)",   icon: PenLine, label: t("eventLabelCreated") },
-    activated: { color: "#059669", bg: "rgba(5,150,105,0.12)",  icon: Play,    label: t("eventLabelActivated") },
+    visited:          { color: "#6B7280", bg: "rgba(107,114,128,0.1)",  icon: Eye,               label: t("eventLabelVisited") },
+    wizard_start:     { color: "#8B5CF6", bg: "rgba(139,92,246,0.12)",  icon: MousePointerClick, label: "Wizard Start" },
+    promo_applied:    { color: "#EA580C", bg: "rgba(234,88,12,0.12)",   icon: Tag,               label: "Promo Applied" },
+    purchase_intent:  { color: "#0EA5E9", bg: "rgba(14,165,233,0.12)",  icon: CreditCard,        label: "Purchase Intent" },
+    created:          { color: "#2563EB", bg: "rgba(37,99,235,0.1)",    icon: PenLine,           label: t("eventLabelCreated") },
+    activated:        { color: "#059669", bg: "rgba(5,150,105,0.12)",   icon: Play,              label: t("eventLabelActivated") },
   };
 
   const STATUS_STYLE: Record<DrawEvent["status"], { color: string; bg: string; label: string }> = {
@@ -168,40 +174,17 @@ export default function DrawEventsPage() {
 
       {/* ── Funnel summary cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SummaryCard
-          icon={<Eye className="w-4 h-4" />}
-          label={t("summaryVisitsLabel")}
-          value={data?.summary.visited ?? "—"}
-          color="#6B7280"
-        />
-        <SummaryCard
-          icon={<PenLine className="w-4 h-4" />}
-          label={t("summaryCreatedLabel")}
-          value={data?.summary.created ?? "—"}
-          color="#2563EB"
-          extra={
-            conversion
-              ? t("conversionOfVisits", { rate: conversion.createdRate.toFixed(1) })
-              : undefined
-          }
-        />
-        <SummaryCard
-          icon={<Play className="w-4 h-4" />}
-          label={t("summaryActivatedLabel")}
-          value={data?.summary.activated ?? "—"}
-          color="#059669"
-          extra={
-            conversion
-              ? t("conversionOfCreated", { rate: conversion.activatedRate.toFixed(1) })
-              : undefined
-          }
-        />
-        <SummaryCard
-          icon={<Mail className="w-4 h-4" />}
-          label={t("summaryUniqueLeadsLabel")}
-          value={data?.uniqueLeads ?? "—"}
-          color="#EA580C"
-        />
+        <SummaryCard icon={<Eye className="w-4 h-4" />}             label="Визиты"           value={data?.summary.visited ?? "—"}          color="#6B7280" />
+        <SummaryCard icon={<MousePointerClick className="w-4 h-4" />} label="Открыли визард" value={data?.summary.wizard_start ?? "—"}     color="#8B5CF6"
+          extra={data && data.summary.visited > 0 ? `${((data.summary.wizard_start / data.summary.visited) * 100).toFixed(1)}% визитов` : undefined} />
+        <SummaryCard icon={<CreditCard className="w-4 h-4" />}      label="Пытались создать" value={data?.summary.purchase_intent ?? "—"} color="#0EA5E9"
+          extra={data && data.summary.wizard_start > 0 ? `${((data.summary.purchase_intent / data.summary.wizard_start) * 100).toFixed(1)}% визарда` : undefined} />
+        <SummaryCard icon={<PenLine className="w-4 h-4" />}         label={t("summaryCreatedLabel")} value={data?.summary.created ?? "—"} color="#2563EB"
+          extra={conversion ? t("conversionOfVisits", { rate: conversion.createdRate.toFixed(1) }) : undefined} />
+        <SummaryCard icon={<Tag className="w-4 h-4" />}             label="Промокод"         value={data?.summary.promo_applied ?? "—"}    color="#EA580C" />
+        <SummaryCard icon={<Play className="w-4 h-4" />}            label={t("summaryActivatedLabel")} value={data?.summary.activated ?? "—"} color="#059669"
+          extra={conversion ? t("conversionOfCreated", { rate: conversion.activatedRate.toFixed(1) }) : undefined} />
+        <SummaryCard icon={<Mail className="w-4 h-4" />}            label={t("summaryUniqueLeadsLabel")} value={data?.uniqueLeads ?? "—"} color="#10B981" />
       </div>
 
       {/* ── Filters ── */}
@@ -215,25 +198,26 @@ export default function DrawEventsPage() {
         <Filter className="w-4 h-4" style={{ color: "var(--cat-text-muted)" }} />
         <div className="inline-flex p-1 rounded-xl"
           style={{ background: "var(--cat-tag-bg)" }}>
-          {(["all", "visited", "created", "activated"] as const).map((k) => (
+          {([
+            { key: "all",             label: "Все" },
+            { key: "visited",         label: "Визит" },
+            { key: "wizard_start",    label: "Визард" },
+            { key: "promo_applied",   label: "Промо" },
+            { key: "purchase_intent", label: "Создать" },
+            { key: "created",         label: "Создано" },
+            { key: "activated",       label: "Запуск" },
+          ] as { key: string; label: string }[]).map(({ key, label }) => (
             <button
-              key={k}
-              onClick={() => setEventFilter(k)}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold capitalize"
+              key={key}
+              onClick={() => setEventFilter(key as DrawEvent["eventType"] | "all")}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold"
               style={
-                eventFilter === k
-                  ? {
-                      background: "var(--cat-card-bg)",
-                      color: "var(--cat-accent)",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
-                    }
-                  : {
-                      background: "transparent",
-                      color: "var(--cat-text-muted)",
-                    }
+                eventFilter === key
+                  ? { background: "var(--cat-card-bg)", color: "var(--cat-accent)", boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }
+                  : { background: "transparent", color: "var(--cat-text-muted)" }
               }
             >
-              {t(`filter${k.charAt(0).toUpperCase()}${k.slice(1)}` as "filterAll" | "filterVisited" | "filterCreated" | "filterActivated")}
+              {label}
             </button>
           ))}
         </div>

@@ -24,6 +24,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+
+function trackDrawEvent(eventType: string, meta?: Record<string, unknown>) {
+  try {
+    (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag?.("event", eventType, meta);
+    fetch("/api/draw/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType, locale: navigator.language, meta }),
+    }).catch(() => {});
+  } catch {}
+}
 import {
   ArrowRight,
   ListChecks,
@@ -229,6 +240,7 @@ export function DrawWizard({ id }: { id?: string }) {
               finalPriceCents: data.finalPriceCents,
               isFree: data.isFree,
             });
+            trackDrawEvent("promo_applied", { promoCode: code, discountType: data.discountType, isFree: data.isFree });
           } else {
             setPromoState({
               status: "invalid",
@@ -337,6 +349,12 @@ export function DrawWizard({ id }: { id?: string }) {
       setError("consent_required");
       return;
     }
+    trackDrawEvent("purchase_intent", {
+      teamCount: teams.length,
+      mode,
+      isFree: promoState.status === "valid" && promoState.isFree,
+      hasPromo: promoState.status === "valid",
+    });
     setSubmitting(true);
     setError(null);
 

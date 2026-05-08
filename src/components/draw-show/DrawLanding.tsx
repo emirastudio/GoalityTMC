@@ -17,6 +17,17 @@ import { Sparkles, ArrowDown, Play, Share2, Tv, Zap } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { DrawMockup } from "./DrawMockup";
 
+function trackEvent(eventType: string, meta?: Record<string, unknown>) {
+  try {
+    (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag?.("event", eventType, meta);
+    fetch("/api/draw/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType, locale: navigator.language, meta }),
+    }).catch(() => {});
+  } catch {}
+}
+
 export function DrawLanding({
   onStart,
 }: {
@@ -101,7 +112,7 @@ export function DrawLanding({
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
-            onClick={onStart}
+            onClick={() => { trackEvent("wizard_start"); onStart(); }}
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
             style={{
               background: "var(--cat-accent)",
