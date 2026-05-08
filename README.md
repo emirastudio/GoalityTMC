@@ -26,16 +26,16 @@ pnpm db:migrate
 pnpm db:seed
 
 # 6. Run dev server
-pnpm dev          # → http://localhost:3001
+pnpm dev          # → http://localhost:7171
 ```
 
-> **Port 3001, not 3000.** Port 3000 is reserved.
+> Local dev runs on **port 7171** (production is on 3001 via PM2; keeping them separate avoids conflicts when running both locally).
 
 ## Common scripts
 
 | Command | What it does |
 |---|---|
-| `pnpm dev` | Next.js dev server (Turbopack) on port 3001 |
+| `pnpm dev` | Next.js dev server (Turbopack) on port 7171 |
 | `pnpm build` | Production build |
 | `pnpm start` | Run production build |
 | `pnpm lint` | ESLint |
