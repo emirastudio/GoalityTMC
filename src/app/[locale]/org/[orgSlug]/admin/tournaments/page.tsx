@@ -8,6 +8,7 @@ import { eq, count, sql } from "drizzle-orm";
 import { Link } from "@/i18n/navigation";
 import { Trophy, Calendar, ChevronRight, ArrowLeft, Users, Hourglass, Lock, Zap, Rocket, Crown, Gift } from "lucide-react";
 import { TournamentsPageClient } from "./page-client";
+import { getEffectivePlan, type TournamentPlan } from "@/lib/plan-gates";
 
 type Props = {
   params: Promise<{ locale: string; orgSlug: string }>;
@@ -48,11 +49,14 @@ export default async function TournamentsPage({ params }: Props) {
     starter: { label: "Starter", color: "#2563EB", bg: "rgba(37,99,235,0.12)", Icon: Rocket },
     pro:     { label: "Pro",     color: "#059669", bg: "rgba(5,150,105,0.12)",  Icon: Zap },
     elite:   { label: "Elite",   color: "#EA580C", bg: "rgba(234,88,12,0.12)",  Icon: Crown },
+    premium: { label: "Premium", color: "#7C3AED", bg: "rgba(124,58,237,0.12)", Icon: Crown },
     free:    { label: "Free",    color: "#059669", bg: "rgba(5,150,105,0.12)",  Icon: Gift },
   };
 
   function getPlanBadge(tournament: typeof rawTournaments[number]) {
-    const plan = (tournament as any).plan as string ?? "free";
+    // Effective plan: bumped to 'premium' when org has Premium subscription.
+    const rawPlan = ((tournament as any).plan as TournamentPlan | undefined) ?? "free";
+    const plan = getEffectivePlan(rawPlan, (organization as any).eliteSubStatus);
     if (plan !== "free") return PLAN_BADGE[plan] ?? PLAN_BADGE.free;
     const isFreeSeat = tournament.id === freeSeatId;
     if (isFreeSeat) return PLAN_BADGE.free;

@@ -59,6 +59,7 @@ export default async function OrgDashboardPage({ params, searchParams }: Props) 
     starter: { label: "Starter", color: "#2563EB", bg: "rgba(37,99,235,0.12)", Icon: Rocket },
     pro:     { label: "Pro",     color: "#059669", bg: "rgba(5,150,105,0.12)",  Icon: Zap },
     elite:   { label: "Elite",   color: "#EA580C", bg: "rgba(234,88,12,0.12)",  Icon: Crown },
+    premium: { label: "Premium", color: "#7C3AED", bg: "rgba(124,58,237,0.12)", Icon: Crown },
     free:    { label: "Free",    color: "#059669", bg: "rgba(5,150,105,0.12)",  Icon: Gift },
   };
 
