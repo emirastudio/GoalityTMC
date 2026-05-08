@@ -331,7 +331,7 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
           drop-zone when empty. Either way a single place to manage the
           stadium's banner image. */}
       {(draft.photoUrl || stadium.photoUrl) ? (
-        <div className="relative w-full" style={{ aspectRatio: "21 / 9" }}>
+        <div className="relative w-full" style={{ height: "160px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={draft.photoUrl || stadium.photoUrl || ""}
