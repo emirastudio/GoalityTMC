@@ -7,7 +7,24 @@ import { NextResponse } from "next/server";
 
 // ─── Types ──────────────────────────────────────────────────
 
-export type TournamentPlan = "free" | "starter" | "pro" | "elite";
+/**
+ * Plan tiers.
+ *
+ *  free / starter / pro / elite — per-tournament plans, stored on
+ *  `tournaments.plan` (DB enum constrained to these 4 values).
+ *
+ *  premium — purely runtime-derived: returned by getEffectivePlan() when the
+ *  organization has an active Premium subscription (organizations.eliteSubStatus
+ *  in {active, trialing}). It is NEVER stored on tournaments.plan; the DB
+ *  enum doesn't include it.
+ *
+ *  Premium = Elite + truly unlimited (teams, divisions, days, all features) for
+ *  every tournament in the org.
+ */
+export type TournamentPlan = "free" | "starter" | "pro" | "elite" | "premium";
+
+/** Plans that can be picked per-tournament (excluding the runtime-only Premium). */
+export type PerTournamentPlan = Exclude<TournamentPlan, "premium">;
 
 export type PlanLimits = {
   maxTournaments: number;       // per org
@@ -94,6 +111,24 @@ export const PLAN_LIMITS: Record<TournamentPlan, PlanLimits> = {
     hasMultiAdmin:       true,
     hasDrawShow:         true,
   },
+  // Premium = org-level subscription. Truly unlimited everything; no
+  // per-team upcharge. Returned by getEffectivePlan() only — never stored.
+  premium: {
+    maxTournaments:      Infinity,
+    maxTeams:            Infinity,
+    maxDivisions:        Infinity,
+    maxDays:             Infinity,
+    extraTeamPriceEur:   0,
+    hasCatalog:          true,
+    hasDocuments:        true,
+    hasMessaging:        true,
+    hasFinance:          true,
+    hasLiveTimeline:     true,
+    hasMatchHub:         true,
+    hasEliteFormats:     true,
+    hasMultiAdmin:       true,
+    hasDrawShow:         true,
+  },
 };
 
 // ─── Pricing (EUR cents) ─────────────────────────────────────
@@ -114,6 +149,7 @@ export const PLAN_NAMES: Record<TournamentPlan, string> = {
   starter: "Starter",
   pro:     "Pro",
   elite:   "Elite",
+  premium: "Premium",
 };
 
 // ─── Effective Plan Resolution ───────────────────────────────
@@ -127,7 +163,7 @@ export function getEffectivePlan(
   orgEliteSubStatus: string | null | undefined
 ): TournamentPlan {
   if (orgEliteSubStatus === "active" || orgEliteSubStatus === "trialing") {
-    return "elite";
+    return "premium";
   }
   return tournamentPlan;
 }

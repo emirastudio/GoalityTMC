@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     entityName = tournament.name;
 
     await db.update(tournaments).set({
-      plan: newPlan as TournamentPlan,
+      plan: newPlan as "free" | "starter" | "pro" | "elite",
       planOverrideBy: session.userId,
       planOverrideReason: reason.trim(),
       planOverrideAt: new Date(),
