@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAdminFetch, useTournament } from "@/lib/tournament-context";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
-import { TournamentExtraSettingsBlock } from "@/components/admin/tournament-extra-settings";
 import { CatalogImageBlock } from "@/components/admin/catalog-image-block";
+import { TournamentLocationFields } from "@/components/admin/tournament-location-fields";
 import { StadiumsPageContent } from "@/components/admin/pages/stadiums-page";
 import { Link } from "@/i18n/navigation";
 import {
@@ -463,13 +463,15 @@ const inputStyle = {
 //  ШАГ 1: Основное
 // ─────────────────────────────────────────────────────────────
 
-function StepBasics({ name, setName, year, setYear, startDate, setStartDate, endDate, setEndDate, regDeadline, setRegDeadline, currency, setCurrency }: {
+function StepBasics({ name, setName, year, setYear, startDate, setStartDate, endDate, setEndDate, regDeadline, setRegDeadline, currency, setCurrency, orgSlug, tournamentId }: {
   name: string; setName: (v: string) => void;
   year: number; setYear: (v: number) => void;
   startDate: string; setStartDate: (v: string) => void;
   endDate: string; setEndDate: (v: string) => void;
   regDeadline: string; setRegDeadline: (v: string) => void;
   currency: string; setCurrency: (v: string) => void;
+  orgSlug: string;
+  tournamentId: number;
 }) {
   const t = useTranslations("orgAdmin");
 
@@ -511,6 +513,13 @@ function StepBasics({ name, setName, year, setYear, startDate, setStartDate, end
             <option value="RUB">RUB — Russian Ruble</option>
           </select>
         </Field>
+      </div>
+
+      {/* Location — country + city, saved separately via /settings endpoint */}
+      <div className="pt-2 border-t" style={{ borderColor: "var(--cat-card-border)" }}>
+        <p className="text-sm font-bold mb-2 mt-3" style={{ color: "var(--cat-text)" }}>{t("locationSection")}</p>
+        <p className="text-xs mb-3" style={{ color: "var(--cat-text-muted)" }}>{t("locationSectionHint")}</p>
+        <TournamentLocationFields orgSlug={orgSlug} tournamentId={tournamentId} />
       </div>
 
       {/* Подсказка о следующем шаге */}
@@ -1879,6 +1888,7 @@ export function TournamentSetupPageContent() {
             endDate={endDate} setEndDate={setEndDate}
             regDeadline={regDeadline} setRegDeadline={setRegDeadline}
             currency={currency} setCurrency={setCurrency}
+            orgSlug={orgSlug} tournamentId={tournamentId}
           />
         </HubCard>
 
@@ -2031,9 +2041,6 @@ export function TournamentSetupPageContent() {
             endDate={endDate}
           />
         </HubCard>
-
-        {/* ── Extra settings (location, catalog image) ── */}
-        <TournamentExtraSettingsBlock orgSlug={orgSlug} tournamentId={tournamentId} />
 
         {/* ── Danger Zone ── */}
         <DangerZone orgSlug={orgSlug} tournamentId={tournamentId} tournamentName={name} />
