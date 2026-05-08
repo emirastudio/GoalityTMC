@@ -466,6 +466,7 @@ export default function RegisterPage() {
   /* Search */
   const [query, setQuery]           = useState("");
   const [results, setResults]       = useState<ClubResult[]>([]);
+  const [globalResults, setGlobalResults] = useState<ClubResult[]>([]);
   const [searching, setSearching]   = useState(false);
   const [selectedClub, setSelected] = useState<ClubResult | null>(null);
 
@@ -535,14 +536,24 @@ export default function RegisterPage() {
       .finally(() => setTeamsLoading(false));
   }, [loggedInClub]);
 
-  /* Debounced club search */
+  /* Debounced club search — checks both this tournament's clubs and the
+     global clubs DB so the user can pick an existing club even if it
+     hasn't registered to this tournament yet. */
   useEffect(() => {
-    if (query.length < 2) { setResults([]); return; }
+    if (query.length < 2) { setResults([]); setGlobalResults([]); return; }
     const timer = setTimeout(async () => {
       setSearching(true);
       try {
-        const r = await fetch(`/api/public/t/${orgSlug}/${tournamentSlug}/clubs?q=${encodeURIComponent(query)}`);
-        if (r.ok) setResults(await r.json());
+        const [tournamentRes, globalRes] = await Promise.all([
+          fetch(`/api/public/t/${orgSlug}/${tournamentSlug}/clubs?q=${encodeURIComponent(query)}`),
+          fetch(`/api/public/clubs/search?q=${encodeURIComponent(query)}`),
+        ]);
+        const inTourn = tournamentRes.ok ? await tournamentRes.json() : [];
+        const allGlobal = globalRes.ok ? await globalRes.json() : [];
+        const inTournIds = new Set<number>(inTourn.map((c: { id: number }) => c.id));
+        // Show in the "global" bucket only clubs NOT already in the tournament list.
+        setResults(inTourn);
+        setGlobalResults(allGlobal.filter((c: { id: number }) => !inTournIds.has(c.id)));
       } finally { setSearching(false); }
     }, 350);
     return () => clearTimeout(timer);
@@ -822,7 +833,30 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {query.length >= 2 && !searching && results.length === 0 && (
+      {/* Global clubs that aren't in this tournament yet — pick one to
+          pre-fill the create-club form with its name (badge etc inherited
+          server-side once the user submits team data). */}
+      {globalResults.length > 0 && (
+        <div className="rounded-2xl border overflow-hidden" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+          <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
+            <Search className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
+            <p className="text-[11px] font-black uppercase tracking-wider" style={{ color: "var(--cat-text-muted)" }}>
+              Из глобальной базы — пока не в турнире ({globalResults.length})
+            </p>
+          </div>
+          <div className="p-2 space-y-1">
+            {globalResults.map(club => (
+              <ClubCard
+                key={club.id}
+                club={club}
+                onSelect={() => { setClubName(club.name); setView("create"); setStep(1); }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {query.length >= 2 && !searching && results.length === 0 && globalResults.length === 0 && (
         <div className="rounded-2xl border px-4 py-4 text-center" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
           <p className="text-sm font-semibold mb-1" style={{ color: "var(--cat-text)" }}>Клуб не найден</p>
           <p className="text-[12px]" style={{ color: "var(--cat-text-muted)" }}>Зарегистрируйте новый клуб ниже</p>
