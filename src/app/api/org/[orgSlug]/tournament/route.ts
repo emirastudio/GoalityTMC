@@ -3,13 +3,40 @@ import { getSession } from "@/lib/auth";
 import { authorizeOrg, slugify } from "@/lib/tenant";
 import { db } from "@/db";
 import { tournaments, tournamentFields } from "@/db/schema";
-import { eq, and, isNull, count } from "drizzle-orm";
+import { eq, and, isNull, count, desc } from "drizzle-orm";
 
 type Params = { orgSlug: string };
 
 interface StadiumInput {
   name: string;
   fieldCount: number;
+}
+
+// GET /api/org/[orgSlug]/tournament — list org tournaments (id, name, year)
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<Params> }
+) {
+  const { orgSlug } = await params;
+  const session = await getSession();
+  if (!session || session.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { authorized, organization } = await authorizeOrg(session, orgSlug);
+  if (!authorized || !organization) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const list = await db
+    .select({ id: tournaments.id, name: tournaments.name, year: tournaments.year })
+    .from(tournaments)
+    .where(and(
+      eq(tournaments.organizationId, organization.id),
+      isNull(tournaments.deletedAt),
+    ))
+    .orderBy(desc(tournaments.createdAt));
+
+  return NextResponse.json(list);
 }
 
 // POST /api/org/[orgSlug]/tournament — create new tournament
