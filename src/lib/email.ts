@@ -3,7 +3,7 @@ import { Resend } from "resend";
 // ─── Transport ────────────────────────────────────────────────────────────────
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM    = process.env.EMAIL_FROM ?? "Goality <noreply@goalityfootball.com>";
+const FROM    = process.env.EMAIL_FROM ?? "Goality <noreply@send.goalityfootball.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com";
 
 // Recipient for GDPR notices and internal admin alerts.
