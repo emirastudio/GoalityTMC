@@ -2,11 +2,73 @@ import { db } from "@/db";
 import { organizations, tournaments, tournamentClasses, teams, tournamentRegistrations } from "@/db/schema";
 import { eq, and, count, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { cache } from "react";
+import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { TournamentPublicProvider } from "@/lib/tournament-public-context";
 import { PublicNavHeader } from "@/components/ui/public-nav-header";
 import { TournamentSidebar } from "@/components/tournament/tournament-sidebar";
 import { TournamentMobileTabs } from "@/components/tournament/tournament-mobile-tabs";
+
+const BASE = "https://goalityfootball.com";
+
+const fetchTournamentData = cache(async (orgSlug: string, tournamentSlug: string) => {
+  const org = await db.query.organizations.findFirst({ where: eq(organizations.slug, orgSlug) });
+  if (!org) return null;
+  const tournament = await db.query.tournaments.findFirst({
+    where: and(eq(tournaments.organizationId, org.id), eq(tournaments.slug, tournamentSlug)),
+  });
+  if (!tournament) return null;
+  return { org, tournament };
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; orgSlug: string; tournamentSlug: string }>;
+}): Promise<Metadata> {
+  const { locale, orgSlug, tournamentSlug } = await params;
+  const data = await fetchTournamentData(orgSlug, tournamentSlug);
+  if (!data) return {};
+
+  const { org, tournament } = data;
+  const title = `${tournament.name} ${tournament.year} | ${org.name}`;
+  const description = tournament.description
+    ?? `${tournament.name} — футбольный турнир ${tournament.year}${org.city ? ` в ${org.city}` : ""}. Расписание, результаты, таблицы.`;
+
+  const coverImage = tournament.coverUrl ?? tournament.cardImageUrl ?? `${BASE}/defaults/tournament-cover-default.jpg`;
+  const canonicalPath = `/t/${orgSlug}/${tournamentSlug}`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `${BASE}/${locale}${canonicalPath}`,
+      languages: {
+        "en": `${BASE}/en${canonicalPath}`,
+        "ru": `${BASE}/ru${canonicalPath}`,
+        "et": `${BASE}/et${canonicalPath}`,
+        "es": `${BASE}/es${canonicalPath}`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${BASE}/${locale}${canonicalPath}`,
+      siteName: "Goality TMC",
+      images: [{ url: coverImage, width: 1200, height: 630, alt: tournament.name }],
+      type: "website",
+      locale: locale === "ru" ? "ru_RU" : locale === "et" ? "et_EE" : locale === "es" ? "es_ES" : "en_US",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [coverImage],
+    },
+    robots: { index: true, follow: true },
+  };
+}
 
 type Props = {
   children: React.ReactNode;
@@ -16,12 +78,11 @@ type Props = {
 export default async function TournamentLayout({ children, params }: Props) {
   const { locale, orgSlug, tournamentSlug } = await params;
 
-  const org = await db.query.organizations.findFirst({ where: eq(organizations.slug, orgSlug) });
-  if (!org) redirect(`/${locale}/catalog`);
+  const cached = await fetchTournamentData(orgSlug, tournamentSlug);
+  if (!cached) redirect(`/${locale}/catalog`);
+  const { org, tournament } = cached;
 
-  const tournament = await db.query.tournaments.findFirst({
-    where: and(eq(tournaments.organizationId, org.id), eq(tournaments.slug, tournamentSlug)),
-  });
+  if (!org) redirect(`/${locale}/catalog`);
   if (!tournament) redirect(`/${locale}/catalog`);
 
   const classes = await db.query.tournamentClasses.findMany({
@@ -60,8 +121,33 @@ export default async function TournamentLayout({ children, params }: Props) {
     classes: classesWithCounts,
   };
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    "name": tournament.name,
+    "description": tournament.description ?? undefined,
+    "url": `${BASE}/${locale}/t/${orgSlug}/${tournamentSlug}`,
+    "image": tournament.coverUrl ?? tournament.cardImageUrl ?? undefined,
+    ...(tournament.startDate ? { "startDate": tournament.startDate.toISOString() } : {}),
+    ...(tournament.endDate   ? { "endDate":   tournament.endDate.toISOString()   } : {}),
+    "sport": "Soccer",
+    "organizer": {
+      "@type": "Organization",
+      "name": org.name,
+      ...(org.website ? { "url": org.website } : {}),
+    },
+    ...(org.city || org.country ? {
+      "location": {
+        "@type": "Place",
+        "name": [org.city, org.country].filter(Boolean).join(", "),
+        "address": { "@type": "PostalAddress", "addressLocality": org.city ?? undefined, "addressCountry": org.country ?? undefined },
+      },
+    } : {}),
+  };
+
   return (
     <ThemeProvider defaultTheme="dark">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <TournamentPublicProvider data={data}>
         <div className="min-h-screen" style={{ background: "var(--cat-bg)" }}>
           <PublicNavHeader />
