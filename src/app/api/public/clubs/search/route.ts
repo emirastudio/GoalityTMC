@@ -58,15 +58,15 @@ export async function GET(req: NextRequest) {
       badgeUrl: clubs.badgeUrl,
       isVerified: clubs.isVerified,
       teamCount: sql<number>`count(${teams.id})::int`,
-      score: sql<number>`(${relevanceExpr})::int`,
     })
     .from(clubs)
     .leftJoin(teams, eq(teams.clubId, clubs.id))
     .where(or(...tokenConditions.filter(Boolean).map(c => c!)))
     .groupBy(clubs.id)
-    .orderBy(sql`score DESC`, clubs.name)
+    // Inline the relevance expression — referencing a SELECT alias by name
+    // doesn't work in PG ORDER BY when the SELECT list is grouped.
+    .orderBy(sql`(${relevanceExpr}) DESC`, clubs.name)
     .limit(8);
 
-  // Don't return the score field — internal ranking only.
-  return NextResponse.json(results.map(({ score: _score, ...rest }) => rest));
+  return NextResponse.json(results);
 }
