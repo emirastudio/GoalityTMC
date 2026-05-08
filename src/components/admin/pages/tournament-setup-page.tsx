@@ -1828,7 +1828,7 @@ export function TournamentSetupPageContent() {
     <>
       <SaveSuccessOverlay visible={showSaveOverlay} />
 
-      <div className="max-w-2xl mx-auto space-y-3 pb-16">
+      <div className="max-w-6xl mx-auto space-y-3 pb-16">
 
         {/* ── Tournament header ── */}
         <div className="flex items-center gap-3 mb-2">
