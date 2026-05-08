@@ -61,7 +61,14 @@ type OverrideTarget = {
   currentPlan: string;
 };
 
-const PLANS = ["free", "starter", "pro", "elite"] as const;
+const TOURNAMENT_PLANS = ["free", "starter", "pro", "elite"] as const;
+// Org-level: starter/pro tiers don't apply (they're per-tournament concepts).
+// Only Free (= no Premium) and Premium (stored as 'elite' under the hood)
+// are meaningful at the organization level.
+const ORG_PLANS = [
+  { value: "free",  label: "Free" },
+  { value: "elite", label: "Premium" }, // user-facing label is Premium
+] as const;
 
 function PlanOverrideModal({
   target,
@@ -133,23 +140,48 @@ function PlanOverrideModal({
             <label className="block text-sm font-medium mb-2" style={{ color: "var(--cat-text)" }}>
               {t("overrideCurrentPlan")}: <PlanBadge plan={target.currentPlan} />
             </label>
-            <div className="grid grid-cols-4 gap-2">
-              {PLANS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPlan(p)}
-                  className={`py-2 px-3 rounded-lg text-sm font-medium border transition-all ${
-                    plan === p
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "hover:opacity-80"
-                  }`}
-                  style={plan !== p ? { borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)", background: "transparent" } : {}}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
+            {target.entityType === "organization" ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  {ORG_PLANS.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setPlan(value)}
+                      className={`py-2 px-3 rounded-lg text-sm font-medium border transition-all ${
+                        plan === value
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "hover:opacity-80"
+                      }`}
+                      style={plan !== value ? { borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)", background: "transparent" } : {}}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs mt-2" style={{ color: "var(--cat-text-muted)" }}>
+                  {t("orgPlanHint")}
+                </p>
+              </>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {TOURNAMENT_PLANS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPlan(p)}
+                    className={`py-2 px-3 rounded-lg text-sm font-medium border transition-all ${
+                      plan === p
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "hover:opacity-80"
+                    }`}
+                    style={plan !== p ? { borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)", background: "transparent" } : {}}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           {showDuration && (
             <div>

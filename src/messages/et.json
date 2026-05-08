@@ -2278,6 +2278,7 @@
     "overrideReason": "Põhjus",
     "overrideReasonRequired": "Palun sisesta muutmise põhjus",
     "overrideReasonPlaceholder": "Miks muudame plaani? (kohustuslik auditi jaoks)",
+    "orgPlanHint": "Premium annab Elite-juurdepääsu kõikidele selle organisatsiooni turniiridele. Starter ja Pro on turniiripõhised tasemed ega kehti organisatsiooni tasandil.",
     "overrideApply": "Rakenda",
     "overrideSaving": "Salvestamine...",
     "overrideCancel": "Tühista",
