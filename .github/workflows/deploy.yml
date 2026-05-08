@@ -50,7 +50,7 @@ jobs:
             -e "ssh -i ~/.ssh/id_ed25519" \
             ./ root@goality.ee:/home/goality/app/
 
-      - name: Remote pipeline (install + migrate + build + reload)
+      - name: Remote pipeline (install + migrate + build + reload + verify)
         run: |
           DEPLOY_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           DEPLOY_TS=$(date -u +%FT%TZ)
@@ -69,21 +69,70 @@ jobs:
           fi
           timeout 180 pnpm drizzle-kit migrate
 
-          echo "→ Build (clean)..."
+          echo "→ Build (clean) — bake SHA into bundle..."
           rm -rf .next
-          pnpm build
+          NEXT_PUBLIC_DEPLOY_SHA="$DEPLOY_SHA" \
+          NEXT_PUBLIC_BUILT_AT="$DEPLOY_TS" \
+            pnpm build
+
+          echo "→ Kill any non-PM2 process on port 3001 (defensive)..."
+          # Find every PID listening on 3001 — anything that isn't the
+          # current PM2 child of 'goality' is an orphan and must die,
+          # otherwise pm2 reload's new worker fails to bind.
+          PM2_PID=$(pm2 jlist 2>/dev/null | python3 -c '
+          import json, sys
+          procs = json.load(sys.stdin)
+          for p in procs:
+            if p.get("name") == "goality":
+              print(p.get("pid", 0))
+              break
+          ' || echo 0)
+          for pid in $(ss -tlnp 2>/dev/null | grep ":3001 " | grep -oP "pid=\K[0-9]+" | sort -u); do
+            if [[ "$pid" != "$PM2_PID" ]] && [[ "$pid" != "0" ]]; then
+              echo "  killing orphan pid $pid (pm2 pid is $PM2_PID)"
+              kill "$pid" 2>/dev/null || true
+            fi
+          done
 
           echo "→ Reload PM2..."
           pm2 reload goality --update-env
 
-          echo "→ Smoke test..."
+          echo "→ Wait for PM2 status = online + restart count stable..."
           for i in 1 2 3 4 5 6 7 8 9 10; do
-            if curl -fsS --max-time 3 http://127.0.0.1:3001/ >/dev/null 2>&1; then
-              echo "  ✓ app responding (attempt $i)"
+            STATUS=$(pm2 jlist 2>/dev/null | python3 -c '
+          import json, sys
+          procs = json.load(sys.stdin)
+          for p in procs:
+            if p.get("name") == "goality":
+              env = p.get("pm2_env", {}) or {}
+              print(env.get("status", "unknown"))
+              break
+          else:
+            print("not_found")
+          ')
+            if [[ "$STATUS" == "online" ]]; then
+              echo "  ✓ pm2 status: online"
               break
             fi
             if [[ $i -eq 10 ]]; then
-              echo "✗ app not responding after 30s"
+              echo "✗ pm2 status stuck at '$STATUS' after 30s — see 'pm2 logs goality'"
+              pm2 logs goality --lines 30 --nostream
+              exit 1
+            fi
+            sleep 3
+          done
+
+          echo "→ Smoke test the NEW build via /api/version (verifies SHA, not just port)..."
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            VERSION_JSON=$(curl -fsS --max-time 5 http://127.0.0.1:3001/api/version 2>/dev/null || echo '{}')
+            SERVING_SHA=$(echo "$VERSION_JSON" | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d.get("sha","?"))' 2>/dev/null || echo "?")
+            if [[ "$SERVING_SHA" == "$DEPLOY_SHA" ]]; then
+              echo "  ✓ /api/version reports $SERVING_SHA — matches deploy"
+              break
+            fi
+            if [[ $i -eq 10 ]]; then
+              echo "✗ /api/version SHA mismatch after 30s. Expected $DEPLOY_SHA, got $SERVING_SHA"
+              echo "  This usually means an orphan process on 3001 is serving stale code."
               exit 1
             fi
             sleep 3
@@ -91,4 +140,5 @@ jobs:
 
           mkdir -p /home/goality/deploys
           echo "${DEPLOY_TS}  ${DEPLOY_SHA}  github-actions" >> /home/goality/deploys/log.tsv
+          echo "✓ Deploy verified — $DEPLOY_SHA is live"
           EOF
