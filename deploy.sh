@@ -18,8 +18,8 @@ REMOTE_HOST=root@goality.ee
 REMOTE_PATH=/home/goality/app
 PM2_NAME=goality
 EXPECTED_BRANCH=main
-HEALTH_URL=http://127.0.0.1:3000/api/admin/platform/health
-SMOKE_URL=http://127.0.0.1:3000/
+HEALTH_URL=http://127.0.0.1:3001/api/admin/platform/health
+SMOKE_URL=http://127.0.0.1:3001/
 
 # ─── 1. Local safety checks ───────────────────────────────────────────────────
 echo "→ Local safety checks..."
