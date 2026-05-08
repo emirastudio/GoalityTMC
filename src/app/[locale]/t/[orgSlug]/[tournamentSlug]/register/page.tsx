@@ -162,6 +162,11 @@ function CountrySelect({ label, value, onChange, required }: {
 /* ─── Club card ─────────────────────────────────────────────────────────── */
 function ClubCard({ club, onSelect }: { club: ClubResult; onSelect: () => void }) {
   const initials = club.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+  // Some legacy clubs in the DB carry badgeUrl pointing to /uploads/kc/...
+  // files that no longer exist. Fall back to the initials avatar on 404 so
+  // the row never shows a broken-image icon.
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = !!club.badgeUrl && !imgFailed;
   return (
     <button type="button" onClick={onSelect}
       className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all hover:scale-[1.01] group"
@@ -174,9 +179,14 @@ function ClubCard({ club, onSelect }: { club: ClubResult; onSelect: () => void }
         (e.currentTarget as HTMLElement).style.borderColor = "var(--cat-card-border)";
         (e.currentTarget as HTMLElement).style.background = "var(--cat-tag-bg)";
       }}>
-      {club.badgeUrl ? (
-        <img src={club.badgeUrl} alt="" className="w-10 h-10 rounded-xl object-contain p-0.5 shrink-0"
-          style={{ background: "var(--cat-card-bg)" }} />
+      {showImage ? (
+        <img
+          src={club.badgeUrl!}
+          alt=""
+          className="w-10 h-10 rounded-xl object-contain p-0.5 shrink-0"
+          style={{ background: "var(--cat-card-bg)" }}
+          onError={() => setImgFailed(true)}
+        />
       ) : (
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0"
           style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
