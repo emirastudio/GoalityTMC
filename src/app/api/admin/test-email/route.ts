@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, isError } from "@/lib/api-auth";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 /**
  * Super-admin only mailer diagnostic.
  *
- *   POST /api/admin/test-email   { to: "privacy@goality.app" }
+ *   POST /api/admin/test-email   { to: "privacy@goalityfootball.com" }
  *
- * Sends a plain probe message through the same SMTP transport the app
- * uses for everything else. Returns the full nodemailer result so we can
- * see accepted / rejected recipients. NEVER exposes SMTP credentials.
+ * Sends a plain probe message via Resend. Returns the Resend response
+ * id and any error so we can verify deliverability without exposing
+ * the API key.
  */
 export async function POST(req: NextRequest) {
   const session = await requireAdmin();
@@ -23,39 +23,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "to is required" }, { status: 400 });
   }
 
-  const port = Number(process.env.SMTP_PORT ?? 587);
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port,
-    secure: port === 465,
-    requireTLS: port === 587,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    tls: { rejectUnauthorized: false },
-  });
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({ ok: false, error: "RESEND_API_KEY is not set" }, { status: 500 });
+  }
 
-  const FROM = process.env.SMTP_FROM ?? "Goality <goal@goality.app>";
+  const FROM = process.env.EMAIL_FROM ?? "Goality <noreply@goalityfootball.com>";
+  const resend = new Resend(apiKey);
 
   try {
-    const info = await transporter.sendMail({
+    const { data, error } = await resend.emails.send({
       from: FROM,
-      to,
+      to: [to],
       subject: `Goality mail probe — ${new Date().toISOString()}`,
       text:
-        `This is a probe message sent from the Goality application server to verify SMTP delivery.\n\n` +
-        `Source: ${process.env.SMTP_HOST} (${process.env.SMTP_USER})\n` +
+        `This is a probe message sent from the Goality application server to verify Resend delivery.\n\n` +
+        `From: ${FROM}\n` +
         `Sent at: ${new Date().toISOString()}\n`,
     });
+
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message ?? String(error) }, { status: 502 });
+    }
+
     return NextResponse.json({
       ok: true,
-      messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected,
-      pending: info.pending,
-      response: info.response,
-      envelope: info.envelope,
+      id: data?.id,
+      from: FROM,
+      to,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

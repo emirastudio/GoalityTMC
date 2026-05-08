@@ -713,3 +713,63 @@ export async function sendDrawShareLink({
     }),
   });
 }
+
+
+// ─── Referee match assignment ─────────────────────────────────────────────────
+export async function sendRefereeMatchAssignment({
+  to,
+  refereeName,
+  tournamentName,
+  matchTime,
+  homeTeam,
+  awayTeam,
+  venue,
+  panelUrl,
+  role,
+}: {
+  to: string;
+  refereeName: string;
+  tournamentName: string;
+  matchTime: string | null;
+  homeTeam: string | null;
+  awayTeam: string | null;
+  venue?: string | null;
+  panelUrl?: string | null;
+  role?: string | null;
+}) {
+  const home = homeTeam ?? "TBD";
+  const away = awayTeam ?? "TBD";
+  const fixture = `${home} vs ${away}`;
+  const roleLine = role ? ` (${role})` : "";
+  const subject = `Match assignment${roleLine} — ${fixture}${matchTime ? ` (${matchTime})` : ""}`;
+
+  await send({
+    to: `${refereeName} <${to}>`,
+    subject,
+    text:
+      `Hi ${refereeName},\n\n` +
+      `You have been assigned${roleLine} for the following match:\n\n` +
+      `Tournament: ${tournamentName}\n` +
+      `Match: ${fixture}\n` +
+      (matchTime ? `Time: ${matchTime}\n` : "") +
+      (venue ? `Venue: ${venue}\n` : "") +
+      (panelUrl ? `\nOpen your referee panel: ${panelUrl}\n` : "") +
+      `\nGoality Team`,
+    html: base({
+      preheader: `Match assignment: ${fixture}${matchTime ? ` at ${matchTime}` : ""}`,
+      body: `
+        ${h1("New match assignment 🟩")}
+        ${p(`Hi <strong>${refereeName}</strong>, you've been assigned${roleLine} to officiate the following match.`)}
+        ${infoTable(
+          infoRow("Tournament", tournamentName) +
+          infoRow("Match", fixture) +
+          (matchTime ? infoRow("Time", matchTime) : "") +
+          (venue ? infoRow("Venue", venue) : "") +
+          (role ? infoRow("Role", role) : "")
+        )}
+        ${panelUrl ? p("Use the button below to open your mobile referee panel — log results, mark availability, and view all your assigned fixtures.") : ""}
+      `,
+      cta: panelUrl ? { label: "Open Referee Panel →", url: panelUrl } : undefined,
+    }),
+  });
+}
