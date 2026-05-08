@@ -789,18 +789,20 @@ export function StadiumsPageContent({ onCountChange }: { onCountChange?: (count:
         </div>
       )}
 
-      {/* Stadium cards */}
-      {stadiums.map(stadium => (
-        <StadiumCard
-          key={stadium.id}
-          stadium={stadium}
-          apiBase={apiBase}
-          onUpdated={handleUpdated}
-          onDeleted={handleDeleted}
-          onFieldAdded={handleFieldAdded}
-          onFieldDeleted={handleFieldDeleted}
-        />
-      ))}
+      {/* Stadium cards — 2-column grid on wider screens, 1 column on mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {stadiums.map(stadium => (
+          <StadiumCard
+            key={stadium.id}
+            stadium={stadium}
+            apiBase={apiBase}
+            onUpdated={handleUpdated}
+            onDeleted={handleDeleted}
+            onFieldAdded={handleFieldAdded}
+            onFieldDeleted={handleFieldDeleted}
+          />
+        ))}
+      </div>
 
       {/* Add stadium */}
       <AddStadiumForm apiBase={apiBase} onAdded={s => setStadiums(prev => [...prev, s])} />
