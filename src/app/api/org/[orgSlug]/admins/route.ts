@@ -171,7 +171,7 @@ async function resolveOrgPlan(orgId: number): Promise<TournamentPlan> {
     .select({ plan: tournaments.plan })
     .from(tournaments)
     .where(eq(tournaments.organizationId, orgId));
-  const rank: Record<TournamentPlan, number> = { free: 0, starter: 1, pro: 2, elite: 3 };
+  const rank: Record<TournamentPlan, number> = { free: 0, starter: 1, pro: 2, elite: 3, premium: 4 };
   let best: TournamentPlan = "free";
   for (const r of rows) {
     const p = (r.plan as TournamentPlan) ?? "free";

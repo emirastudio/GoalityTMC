@@ -30,7 +30,8 @@ type TournamentInfo = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PLAN_ORDER: TournamentPlan[] = ["free", "starter", "pro", "elite"];
+type PerTournamentPlan = Exclude<TournamentPlan, "premium">;
+const PLAN_ORDER: PerTournamentPlan[] = ["free", "starter", "pro", "elite"];
 const EXTRA_DIVISION_PRICE = 9; // €9
 
 const PLAN_STYLE: Record<TournamentPlan, {
@@ -62,6 +63,17 @@ const PLAN_STYLE: Record<TournamentPlan, {
     featureKeys: ["planProFeat1", "planProFeat2", "planProFeat3", "planProFeat4", "planProFeat5", "planProFeat6", "planProFeat7"],
   },
   elite: {
+    icon: Crown,
+    gradient: "linear-gradient(135deg, #EA580C, #C2410C)",
+    border: "#FED7AA",
+    badge: "#EA580C",
+    featureKeys: ["planEliteFeat1", "planEliteFeat2", "planEliteFeat3", "planEliteFeat4", "planEliteFeat5", "planEliteFeat6"],
+  },
+  // Premium = org-level subscription rendered the same as Elite — admins
+  // who land on the per-tournament billing page while their org has Premium
+  // see the existing Elite styling. They can't actually buy a per-tournament
+  // plan because Premium already covers it.
+  premium: {
     icon: Crown,
     gradient: "linear-gradient(135deg, #EA580C, #C2410C)",
     border: "#FED7AA",
@@ -128,7 +140,8 @@ export default function TournamentBillingPage() {
   const [tournament, setTournament] = useState<TournamentInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<TournamentPlan>("starter");
+  // Per-tournament plan picker — Premium is org-level, never selectable here.
+  const [selectedPlan, setSelectedPlan] = useState<PerTournamentPlan>("starter");
   const [extraTeams, setExtraTeams] = useState(0);
   const [extraDivisions, setExtraDivisions] = useState(0);
   const [error, setError] = useState("");
@@ -148,18 +161,22 @@ export default function TournamentBillingPage() {
       .then((d: TournamentInfo) => {
         setTournament(d);
         // Pre-select next plan if on free/starter
-        const planIdx = PLAN_ORDER.indexOf(d.plan);
+        // tournament.plan from DB is one of {free,starter,pro,elite} — never "premium"
+        // (Premium is org-level, runtime-only).
+        const dbPlan = d.plan as PerTournamentPlan;
+        const planIdx = PLAN_ORDER.indexOf(dbPlan);
         if (planIdx < PLAN_ORDER.length - 1) {
           setSelectedPlan(PLAN_ORDER[Math.min(planIdx + 1, PLAN_ORDER.length - 1)]);
         } else {
-          setSelectedPlan(d.plan);
+          setSelectedPlan(dbPlan);
         }
       })
       .catch(() => setError(t("loadError")))
       .finally(() => setLoading(false));
   }, [tournamentId, orgSlug]);
 
-  const currentPlan = tournament?.plan ?? "free";
+  // tournament.plan stored in DB is always one of the 4 per-tournament tiers.
+  const currentPlan: PerTournamentPlan = (tournament?.plan as PerTournamentPlan) ?? "free";
   const currentIdx = PLAN_ORDER.indexOf(currentPlan);
   const selectedIdx = PLAN_ORDER.indexOf(selectedPlan);
   const isUpgrade = selectedIdx > currentIdx;
@@ -283,7 +300,7 @@ export default function TournamentBillingPage() {
               {t("selectPlan")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {(["starter", "pro", "elite"] as TournamentPlan[]).map(plan => {
+              {(["starter", "pro", "elite"] as PerTournamentPlan[]).map(plan => {
                 const meta = PLAN_STYLE[plan];
                 const limits = PLAN_LIMITS[plan];
                 const price = (PLAN_PRICES_EUR_CENTS[plan as keyof typeof PLAN_PRICES_EUR_CENTS] ?? 0) / 100;

@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
     tournamentId,
     organizationId: session.organizationId!,
     stripeCheckoutSessionId: checkoutSession.id,
-    plan: tournament.plan as TournamentPlan,
+    plan: tournament.plan as "free" | "starter" | "pro" | "elite",
     extraTeams: teamsOwed,
     extraDivisions: divisionsOwed,
     amountEurCents: totalCents,

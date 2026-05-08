@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   const { tournamentId, plan, extraTeams = 0, extraDivisions = 0, waiverAcceptedAt, waiverVersion } = body as {
     tournamentId: number;
-    plan: TournamentPlan;
+    plan: Exclude<TournamentPlan, "premium">; // per-tournament plan only — Premium is org-level, not bought here
     extraTeams?: number;
     extraDivisions?: number;
     waiverAcceptedAt?: string;
