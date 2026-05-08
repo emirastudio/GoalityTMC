@@ -12,15 +12,18 @@ export function TournamentsPageClient({
   orgSlug,
   locale,
   existingCount,
+  hasPremium = false,
 }: {
   orgSlug: string;
   locale: string;
   existingCount: number;
+  hasPremium?: boolean;
 }) {
   const t = useTranslations("orgAdmin");
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(searchParams.get("create") === "true");
-  const requiresPlan = existingCount >= 1;
+  // Premium org-level subscription removes the single-tournament limit.
+  const requiresPlan = !hasPremium && existingCount >= 1;
 
   return (
     <>

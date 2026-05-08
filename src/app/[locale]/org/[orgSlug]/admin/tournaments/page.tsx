@@ -30,6 +30,14 @@ export default async function TournamentsPage({ params }: Props) {
   );
   const activeCount = activeTournaments.length;
 
+  // Premium subscription on the organization removes the single-tournament
+  // limit of the Free plan — every new tournament is automatically Elite-grade
+  // via getEffectivePlan, so the plan-picker step in the create modal isn't
+  // needed.
+  const hasPremium =
+    organization.eliteSubStatus === "active" ||
+    organization.eliteSubStatus === "trialing";
+
   // Free seat = oldest active tournament
   const freeSeatId = activeTournaments.length > 0
     ? [...activeTournaments].sort((a, b) => new Date((a as any).createdAt).getTime() - new Date((b as any).createdAt).getTime())[0].id
@@ -81,7 +89,7 @@ export default async function TournamentsPage({ params }: Props) {
       </div>
 
       {/* Client: "New Tournament" button + modal */}
-      <TournamentsPageClient orgSlug={orgSlug} locale={locale} existingCount={activeCount} />
+      <TournamentsPageClient orgSlug={orgSlug} locale={locale} existingCount={activeCount} hasPremium={hasPremium} />
 
       {/* Tournaments list */}
       {tournaments.length > 0 ? (
