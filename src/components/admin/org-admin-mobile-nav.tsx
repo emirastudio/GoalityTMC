@@ -69,7 +69,6 @@ export function OrgAdminMobileNav({ orgSlug, orgName, orgLogo }: Props) {
     { key: "payments",          icon: CreditCard,        href: `${base}/payments`,           exact: false, color: "#f59e0b" },
     { key: "messagesLabel",     icon: MessageSquare,     href: `${base}/messages`,           exact: false, color: "#8b5cf6" },
     { key: "setup",             icon: SlidersHorizontal, href: `${base}/setup`,              exact: false, color: "#8b5cf6" },
-    { key: "settings",         icon: Settings,          href: `${base}/settings`,           exact: false, color: "#8b5cf6" },
   ] : [];
 
   function closeAndNav() {

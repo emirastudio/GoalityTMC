@@ -2208,7 +2208,17 @@
     "regCtaLiveTitle": "El registro está abierto",
     "regCtaCompleteSetupTitle": "Termina la configuración primero",
     "regCtaCompleteSetupDesc": "Antes de abrir el registro, añade al menos una división, los campos y un formato.",
-    "regCtaCompleteSetupBtn": "Completar configuración"
+    "regCtaCompleteSetupBtn": "Completar configuración",
+    "extraSettingsLoadError": "No se pudieron cargar los ajustes adicionales",
+    "extraSettingsSaveError": "Error al guardar",
+    "locationSection": "Ubicación",
+    "locationSectionHint": "País y ciudad del torneo",
+    "countryPlaceholder": "— Selecciona país —",
+    "cityPlaceholder": "Ciudad",
+    "saved": "Guardado",
+    "catalogImageSection": "Imagen del catálogo",
+    "catalogImageHint": "Se muestra en la tarjeta del torneo en el catálogo. Recomendado 700×400 (16:9). Si no se sube, se usa la portada.",
+    "catalogImageUpload": "Subir imagen para el catálogo"
   },
   "divisionWizard": {
     "title": "Nueva División",
