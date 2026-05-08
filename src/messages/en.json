@@ -2202,7 +2202,17 @@
     "regCtaLiveTitle": "Registration is open",
     "regCtaCompleteSetupTitle": "Finish setup first",
     "regCtaCompleteSetupDesc": "Add at least one division, fields, and a format before opening registration.",
-    "regCtaCompleteSetupBtn": "Complete setup"
+    "regCtaCompleteSetupBtn": "Complete setup",
+    "extraSettingsLoadError": "Failed to load extra settings",
+    "extraSettingsSaveError": "Failed to save",
+    "locationSection": "Location",
+    "locationSectionHint": "Country and city of the venue",
+    "countryPlaceholder": "— Select country —",
+    "cityPlaceholder": "City",
+    "saved": "Saved",
+    "catalogImageSection": "Catalog image",
+    "catalogImageHint": "Shown on the tournament card in the catalog. Recommended 700×400 (16:9). Falls back to cover if not uploaded.",
+    "catalogImageUpload": "Upload catalog image"
   },
   "divisionWizard": {
     "title": "New Division",

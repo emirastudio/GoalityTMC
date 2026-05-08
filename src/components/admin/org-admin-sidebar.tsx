@@ -517,10 +517,10 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
               bg="rgba(6,182,212,0.10)"
             />
             <NavLink
-              href={`${base}/settings`}
+              href={`${base}/setup`}
               icon={Settings}
               label={tAdmin("settings")}
-              isActive={isActive(`${base}/settings`) && pathname.endsWith("/settings")}
+              isActive={isActive(`${base}/setup`) || (isActive(`${base}/settings`) && pathname.endsWith("/settings"))}
               color="var(--cat-text-muted)"
             />
           </nav>

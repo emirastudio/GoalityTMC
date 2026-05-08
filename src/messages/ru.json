@@ -2202,7 +2202,17 @@
     "regCtaLiveTitle": "Регистрация открыта",
     "regCtaCompleteSetupTitle": "Сначала завершите настройку",
     "regCtaCompleteSetupDesc": "Перед открытием регистрации нужно добавить хотя бы один дивизион, поля и формат.",
-    "regCtaCompleteSetupBtn": "Завершить настройку"
+    "regCtaCompleteSetupBtn": "Завершить настройку",
+    "extraSettingsLoadError": "Не удалось загрузить настройки",
+    "extraSettingsSaveError": "Ошибка сохранения",
+    "locationSection": "Место проведения",
+    "locationSectionHint": "Страна и город турнира",
+    "countryPlaceholder": "— Выберите страну —",
+    "cityPlaceholder": "Город",
+    "saved": "Сохранено",
+    "catalogImageSection": "Картинка в каталоге",
+    "catalogImageHint": "Показывается на карточке турнира в каталоге. Рекомендуется 700×400 (16:9). Если не загружена — используется обложка.",
+    "catalogImageUpload": "Загрузить картинку для каталога"
   },
   "divisionWizard": {
     "title": "Новый дивизион",

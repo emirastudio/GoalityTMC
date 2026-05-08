@@ -94,13 +94,13 @@ export default async function TournamentOverviewPage({ params }: Props) {
 
   const basePath = `/org/${orgSlug}/admin/tournament/${tournamentId}`;
 
-  /* Setup checklist steps */
+  /* Setup checklist steps — all routes consolidated into /setup */
   const checklistSteps: ChecklistStep[] = [
-    { id: "tournament", done: true, href: `${basePath}/settings` },
-    { id: "division",   done: Number(classCount?.value ?? 0) > 0, href: `${basePath}/setup` },
-    { id: "fields",     done: Number(fieldCount?.value ?? 0) > 0,  href: `${basePath}/setup` },
-    { id: "registration", done: !!tournament.registrationOpen,     href: `${basePath}/settings` },
-    { id: "format",     done: Number(stageCount?.value ?? 0) > 0,  href: `${basePath}/setup` },
+    { id: "tournament",   done: true,                                       href: `${basePath}/setup` },
+    { id: "division",     done: Number(classCount?.value ?? 0) > 0,         href: `${basePath}/setup` },
+    { id: "fields",       done: Number(fieldCount?.value ?? 0) > 0,         href: `${basePath}/setup` },
+    { id: "registration", done: !!tournament.registrationOpen,              href: `${basePath}/setup` },
+    { id: "format",       done: Number(stageCount?.value ?? 0) > 0,         href: `${basePath}/setup` },
   ];
 
   /* Public registration URL */
@@ -114,7 +114,6 @@ export default async function TournamentOverviewPage({ params }: Props) {
     { key: "payments",      icon: Wallet,        href: `${basePath}/payments`,       color: "#8B5CF6" },
     { key: "messages",      icon: Mail,          href: `${basePath}/messages`,       color: "#EC4899" },
     { key: "setup",         icon: Wrench,        href: `${basePath}/setup`,          color: "#06B6D4" },
-    { key: "settings",      icon: Settings,      href: `${basePath}/settings`,       color: "#84CC16" },
     { key: "planner",       icon: LayoutGrid,    href: `${basePath}/planner`,        color: "#06B6D4" },
   ];
 

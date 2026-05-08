@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAdminFetch, useTournament } from "@/lib/tournament-context";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
+import { TournamentExtraSettingsBlock } from "@/components/admin/tournament-extra-settings";
 import { StadiumsPageContent } from "@/components/admin/pages/stadiums-page";
 import { Link } from "@/i18n/navigation";
 import {
@@ -2027,6 +2028,9 @@ export function TournamentSetupPageContent() {
             endDate={endDate}
           />
         </HubCard>
+
+        {/* ── Extra settings (location, catalog image) ── */}
+        <TournamentExtraSettingsBlock orgSlug={orgSlug} tournamentId={tournamentId} />
 
         {/* ── Danger Zone ── */}
         <DangerZone orgSlug={orgSlug} tournamentId={tournamentId} tournamentName={name} />

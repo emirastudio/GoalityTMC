@@ -2202,7 +2202,17 @@
     "regCtaLiveTitle": "Registreerimine avatud",
     "regCtaCompleteSetupTitle": "Lõpeta esmalt seadistus",
     "regCtaCompleteSetupDesc": "Enne registreerimise avamist lisa vähemalt üks divisjon, väljad ja formaat.",
-    "regCtaCompleteSetupBtn": "Lõpeta seadistus"
+    "regCtaCompleteSetupBtn": "Lõpeta seadistus",
+    "extraSettingsLoadError": "Lisaseadeid ei õnnestunud laadida",
+    "extraSettingsSaveError": "Salvestamine ebaõnnestus",
+    "locationSection": "Toimumiskoht",
+    "locationSectionHint": "Riik ja linn",
+    "countryPlaceholder": "— Vali riik —",
+    "cityPlaceholder": "Linn",
+    "saved": "Salvestatud",
+    "catalogImageSection": "Kataloogipilt",
+    "catalogImageHint": "Kuvatakse turniirikaardi kataloogis. Soovitav 700×400 (16:9). Kui ei ole laaditud — kasutatakse kaant.",
+    "catalogImageUpload": "Lae kataloogipilt"
   },
   "divisionWizard": {
     "title": "Uus divisjon",
