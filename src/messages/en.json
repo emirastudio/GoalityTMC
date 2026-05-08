@@ -2379,7 +2379,8 @@
     "overviewCsvAccomAcc": "Accom acc.",
     "overviewCsvCheckIn": "Check-in",
     "overviewCsvCheckOut": "Check-out",
-    "overviewCsvTransfer": "Transfer"
+    "overviewCsvTransfer": "Transfer",
+    "tournamentPlanHint": "Per-tournament plans (Starter / Pro / Elite) only apply to this single tournament. For organization-wide access across all tournaments, use the Premium subscription on the organization's page."
   },
   "landing": {
     "navHome": "Home",
