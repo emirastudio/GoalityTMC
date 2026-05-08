@@ -3,3 +3,12 @@ node_modules
 .next
 .env.local
 .env*.local
+.claude
+.forensics
+public/uploads
+stripe-mode.json
+*.log
+.DS_Store
+.vscode
+*.tsbuildinfo
+coverage
