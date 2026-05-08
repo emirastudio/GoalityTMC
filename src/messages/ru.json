@@ -2289,6 +2289,7 @@
     "giftDuration3m": "3 месяца",
     "giftDuration6m": "6 месяцев",
     "giftDuration12m": "1 год",
+    "giftDurationPermanent": "Без срока",
     "giftReasonPlaceholder": "Почему дарим Elite? (например партнёрская сделка, бета-тестер, компенсация)",
     "giftRevokeReasonPlaceholder": "Почему отзываем? (например партнёрство завершено, нарушения)",
     "giftApply": "Подарить Elite",

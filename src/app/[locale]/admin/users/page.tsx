@@ -77,6 +77,10 @@ function PlanOverrideModal({
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // For org+elite, default to 12-month gift; "permanent" sets it to null.
+  const [durationMonths, setDurationMonths] = useState<number | null>(12);
+
+  const showDuration = target.entityType === "organization" && plan === "elite";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -95,6 +99,7 @@ function PlanOverrideModal({
           entityId: target.entityId,
           newPlan: plan,
           reason: reason.trim(),
+          ...(showDuration && durationMonths !== null ? { durationMonths } : {}),
         }),
       });
       const data = await res.json();
@@ -146,6 +151,34 @@ function PlanOverrideModal({
               ))}
             </div>
           </div>
+          {showDuration && (
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: "var(--cat-text)" }}>
+                {t("giftDuration")}
+              </label>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  { months: 1,    labelKey: "giftDuration1m" },
+                  { months: 3,    labelKey: "giftDuration3m" },
+                  { months: 6,    labelKey: "giftDuration6m" },
+                  { months: 12,   labelKey: "giftDuration12m" },
+                  { months: null, labelKey: "giftDurationPermanent" },
+                ].map((d) => (
+                  <button
+                    key={String(d.months)}
+                    type="button"
+                    onClick={() => setDurationMonths(d.months)}
+                    className={`py-2 px-2 rounded-lg text-xs font-medium border transition-all ${
+                      durationMonths === d.months ? "border-blue-500 bg-blue-50 text-blue-700" : "hover:opacity-80"
+                    }`}
+                    style={durationMonths !== d.months ? { borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)", background: "transparent" } : {}}
+                  >
+                    {t(d.labelKey)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--cat-text)" }}>
               {t("overrideReason")} <span className="text-red-500">*</span>
