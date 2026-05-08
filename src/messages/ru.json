@@ -2379,7 +2379,8 @@
     "overviewCsvAccomAcc": "Прожив. сопр.",
     "overviewCsvCheckIn": "Заезд",
     "overviewCsvCheckOut": "Выезд",
-    "overviewCsvTransfer": "Трансфер"
+    "overviewCsvTransfer": "Трансфер",
+    "tournamentPlanHint": "Per-tournament планы (Starter / Pro / Elite) действуют только на этот турнир. Для доступа на все турниры организации — подключи Premium-подписку на странице организации."
   },
   "landing": {
     "navHome": "Главная",

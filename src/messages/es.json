@@ -2385,7 +2385,8 @@
     "overviewCsvAccomAcc": "Aloj. acomp.",
     "overviewCsvCheckIn": "Entrada",
     "overviewCsvCheckOut": "Salida",
-    "overviewCsvTransfer": "Traslado"
+    "overviewCsvTransfer": "Traslado",
+    "tournamentPlanHint": "Los niveles por torneo (Starter / Pro / Elite) solo se aplican a este torneo. Para acceso a todos los torneos de la organización, usa la suscripción Premium en la página de la organización."
   },
   "landing": {
     "navHome": "Inicio",

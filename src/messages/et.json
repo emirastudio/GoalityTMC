@@ -2379,7 +2379,8 @@
     "overviewCsvAccomAcc": "Majutus saatjad",
     "overviewCsvCheckIn": "Sisseregistreerumine",
     "overviewCsvCheckOut": "Väljaregistreerumine",
-    "overviewCsvTransfer": "Transfer"
+    "overviewCsvTransfer": "Transfer",
+    "tournamentPlanHint": "Turniiripõhised tasemed (Starter / Pro / Elite) kehtivad ainult sellele turniirile. Kogu organisatsiooni hõlmava juurdepääsu jaoks kasuta Premium-tellimust organisatsiooni lehel."
   },
   "landing": {
     "navHome": "Avaleht",
