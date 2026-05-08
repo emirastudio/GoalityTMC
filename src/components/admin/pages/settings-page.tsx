@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { CountrySelect } from "@/components/ui/country-select";
 import { CityInput } from "@/components/ui/city-input";
+import { ImageCropperModal } from "@/components/admin/image-cropper-modal";
 
 // ── Константы ─────────────────────────────────────────────────────────────────
 
@@ -255,22 +256,30 @@ function DatePickerCalendar({
 // ── Компонент загрузки фото ────────────────────────────────────────────────────
 
 function ImageUploadButton({
-  url, label, endpoint, onUploaded,
+  url, label, endpoint, onUploaded, aspectRatio, cropAspect,
 }: {
   url: string | null;
   label: string;
   endpoint: string;
   onUploaded: (newUrl: string) => void;
+  /** CSS aspect-ratio (e.g. "1 / 1", "16 / 9", "1920 / 480"). When set,
+   *  the preview renders in real proportions so the admin sees how the
+   *  image will actually look at the target size. */
+  aspectRatio?: string;
+  /** Numeric aspect ratio for the crop modal (e.g. 1, 16/9, 1920/480).
+   *  When set, picking a file opens the crop UI before upload. */
+  cropAspect?: number;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   // Use endpoint as stable unique id for the label/input pair
   const inputId = `img-upload-${endpoint.replace(/\//g, "-")}`;
 
-  async function handleFile(file: File) {
+  async function uploadBlob(blob: Blob, filename = "upload.jpg") {
     setUploading(true);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", blob, filename);
       const res = await fetch(endpoint, { method: "POST", body: fd });
       if (res.ok) {
         const d = await res.json();
@@ -281,25 +290,61 @@ function ImageUploadButton({
     }
   }
 
+  async function handleFile(file: File) {
+    if (cropAspect) {
+      // Read file → data URL → open cropper
+      const reader = new FileReader();
+      reader.onload = (e) => setCropSrc((e.target?.result as string) ?? null);
+      reader.readAsDataURL(file);
+      return;
+    }
+    await uploadBlob(file, file.name);
+  }
+
+  async function handleCropDone(blob: Blob) {
+    setCropSrc(null);
+    await uploadBlob(blob);
+  }
+
   return (
     <label
       htmlFor={inputId}
-      className="relative w-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-6 transition-all hover:opacity-80 cursor-pointer select-none"
+      className="relative w-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all hover:opacity-80 cursor-pointer select-none"
       style={{
         borderColor:  url ? ACCENT : "var(--cat-card-border)",
         background:   url ? `${ACCENT}08` : "var(--cat-tag-bg)",
         overflow:     "hidden",
+        // When aspect ratio is set, container takes that shape (so user sees
+        // the actual target proportions). Without it, fall back to py-6 height.
+        ...(aspectRatio ? { aspectRatio } : { paddingTop: "1.5rem", paddingBottom: "1.5rem" }),
       }}
     >
       {url && (
-        <img src={url} alt={label} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+        // When previewing in real aspect, show the image at full opacity so the
+        // admin actually sees the picture (not just a faint background).
+        <img
+          src={url}
+          alt={label}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: aspectRatio ? 1 : 0.3 }}
+        />
       )}
-      <div className="relative z-10 flex flex-col items-center gap-1 pointer-events-none">
+      <div
+        className="relative z-10 flex flex-col items-center gap-1 pointer-events-none px-3 py-1.5 rounded-lg"
+        style={{
+          // When the preview image is fully visible, give the label its own
+          // pill-style backdrop so it's readable on any photo.
+          background: url && aspectRatio ? "rgba(0,0,0,0.55)" : "transparent",
+        }}
+      >
         {uploading
           ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: ACCENT }} />
-          : <ImageIcon className="w-5 h-5" style={{ color: url ? ACCENT : "var(--cat-text-muted)" }} />
+          : <ImageIcon className="w-5 h-5" style={{ color: url && aspectRatio ? "#fff" : url ? ACCENT : "var(--cat-text-muted)" }} />
         }
-        <span className="text-xs font-semibold" style={{ color: url ? ACCENT : "var(--cat-text-muted)" }}>
+        <span
+          className="text-xs font-semibold"
+          style={{ color: url && aspectRatio ? "#fff" : url ? ACCENT : "var(--cat-text-muted)" }}
+        >
           {url ? "Изменить" : label}
         </span>
       </div>
@@ -314,6 +359,15 @@ function ImageUploadButton({
           if (f) { handleFile(f); e.target.value = ""; }
         }}
       />
+      {cropSrc && cropAspect && (
+        <ImageCropperModal
+          src={cropSrc}
+          aspect={cropAspect}
+          shape="rect"
+          onDone={handleCropDone}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
     </label>
   );
 }
@@ -591,6 +645,8 @@ export function SettingsPageContent() {
               label="Загрузить логотип"
               endpoint={`${apiBase}/logo`}
               onUploaded={url => setLogoUrl(url)}
+              aspectRatio="1 / 1"
+              cropAspect={1}
             />
           </Field>
           <Field label="Обложка">
@@ -599,6 +655,8 @@ export function SettingsPageContent() {
               label="Загрузить обложку"
               endpoint={`${apiBase}/cover`}
               onUploaded={url => setCoverUrl(url)}
+              aspectRatio="1920 / 480"
+              cropAspect={1920 / 480}
             />
           </Field>
         </div>
@@ -610,6 +668,8 @@ export function SettingsPageContent() {
               label="Загрузить картинку для каталога"
               endpoint={`${apiBase}/card-image`}
               onUploaded={url => setCardImage(url)}
+              aspectRatio="700 / 400"
+              cropAspect={700 / 400}
             />
           </Field>
           <p className="text-xs mt-2" style={{ color: "var(--cat-text-muted)" }}>
