@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { entityType, entityId, newPlan, reason } = body ?? {};
+  const { entityType, entityId, newPlan, reason, durationMonths } = body ?? {};
 
   if (!entityType || !entityId || !newPlan || !reason?.trim()) {
     return NextResponse.json({
@@ -31,6 +31,16 @@ export async function POST(req: NextRequest) {
 
   if (!VALID_PLANS.includes(newPlan)) {
     return NextResponse.json({ error: `newPlan must be one of: ${VALID_PLANS.join(", ")}` }, { status: 400 });
+  }
+
+  // Validate optional gift duration (only meaningful for org + elite)
+  let parsedDurationMonths: number | null = null;
+  if (durationMonths !== undefined && durationMonths !== null && durationMonths !== "") {
+    const n = Number(durationMonths);
+    if (!Number.isFinite(n) || n <= 0 || n > 120) {
+      return NextResponse.json({ error: "durationMonths must be a positive number ≤ 120" }, { status: 400 });
+    }
+    parsedDurationMonths = n;
   }
 
   // Get admin info for audit
@@ -84,14 +94,43 @@ export async function POST(req: NextRequest) {
     // To make the override actually gate features, mirror the plan into
     // eliteSubStatus: Elite → "active" (unlocks all features across all
     // tournaments), anything else → "cancelled".
+    //
+    // Compute new eliteSub fields:
+    //   newPlan=elite + durationMonths   → gift: status=active, period_end=now+months, sub_id=null
+    //   newPlan=elite + no duration      → permanent (no period_end change)
+    //   newPlan!=elite                   → cancel any active sub
+    const eliteUpdates: {
+      eliteSubStatus: "active" | "cancelled";
+      eliteSubId?: string | null;
+      eliteSubPeriodEnd?: Date | null;
+    } = {
+      eliteSubStatus: newPlan === "elite" ? "active" : "cancelled",
+    };
+    if (newPlan === "elite" && parsedDurationMonths !== null) {
+      const end = new Date();
+      end.setMonth(end.getMonth() + parsedDurationMonths);
+      eliteUpdates.eliteSubPeriodEnd = end;
+      eliteUpdates.eliteSubId = null; // gift marker (no Stripe subscription)
+    }
+    if (newPlan !== "elite") {
+      eliteUpdates.eliteSubPeriodEnd = null;
+      eliteUpdates.eliteSubId = null;
+    }
+
     await db.update(organizations).set({
       plan: newPlan as "free" | "starter" | "pro" | "elite",
-      eliteSubStatus: newPlan === "elite" ? "active" : "cancelled",
+      ...eliteUpdates,
       updatedAt: new Date(),
     }).where(eq(organizations.id, Number(entityId)));
   }
 
-  // Write audit log
+  // Write audit log. For gift subscriptions, append duration to newPlan
+  // so it shows up in the audit list (e.g. "elite (12mo)").
+  const auditNewPlan =
+    entityType === "organization" && newPlan === "elite" && parsedDurationMonths !== null
+      ? `elite (${parsedDurationMonths}mo)`
+      : newPlan;
+
   await db.insert(planOverrideAudits).values({
     entityType,
     entityId: Number(entityId),
@@ -99,7 +138,7 @@ export async function POST(req: NextRequest) {
     adminId: session.userId,
     adminEmail: adminRow?.email ?? "unknown",
     previousPlan,
-    newPlan,
+    newPlan: auditNewPlan,
     reason: reason.trim(),
     ipAddress: ip,
   });
