@@ -158,10 +158,17 @@ export async function PATCH(req: NextRequest) {
   }
 
   // ── Publish gate: Free plan allows only 1 active (registrationOpen) tournament ──
+  // Premium subscription on the org bumps every tournament to elite, so this
+  // gate must read org.eliteSubStatus too (was passing undefined → bug).
   if (tournamentFields.registrationOpen === true) {
+    const [orgRowForGate] = await db
+      .select({ eliteSubStatus: organizations.eliteSubStatus })
+      .from(organizations)
+      .where(eq(organizations.id, tournament.organizationId))
+      .limit(1);
     const effectivePlan = getEffectivePlan(
       (tournament.plan as TournamentPlan) ?? "free",
-      undefined
+      orgRowForGate?.eliteSubStatus
     );
     if (effectivePlan === "free") {
       const [{ value: activeCount }] = await db
