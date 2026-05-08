@@ -2278,6 +2278,7 @@
     "overrideReason": "Причина",
     "overrideReasonRequired": "Укажите причину изменения плана",
     "overrideReasonPlaceholder": "Почему меняем план? (обязательно для аудита)",
+    "orgPlanHint": "Premium даёт Elite-доступ всем турнирам этой организации. Starter и Pro — это per-tournament планы, на уровне организации не применяются.",
     "overrideApply": "Применить",
     "overrideSaving": "Сохранение...",
     "overrideCancel": "Отмена",

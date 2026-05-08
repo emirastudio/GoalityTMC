@@ -2278,6 +2278,7 @@
     "overrideReason": "Reason",
     "overrideReasonRequired": "Please provide a reason",
     "overrideReasonPlaceholder": "Why are we changing the plan? (required for audit)",
+    "orgPlanHint": "Premium grants Elite-level access to all of this organization's tournaments. Starter and Pro are per-tournament tiers and don't apply at the organization level.",
     "overrideApply": "Apply",
     "overrideSaving": "Saving...",
     "overrideCancel": "Cancel",
