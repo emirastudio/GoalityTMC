@@ -1,6 +1,7 @@
 import { OrgAdminSidebar } from "@/components/admin/org-admin-sidebar";
 import { OrgAdminMobileNav } from "@/components/admin/org-admin-mobile-nav";
 import { ListingAdminSidebar } from "@/components/admin/listing-admin-sidebar";
+import { SuperAdminImpersonationBanner } from "@/components/admin/super-admin-impersonation-banner";
 import { getSession } from "@/lib/auth";
 import { authorizeOrg } from "@/lib/tenant";
 import { redirect } from "next/navigation";
@@ -33,6 +34,9 @@ export default async function OrgAdminLayout({ children, params }: Props) {
   return (
     <ThemeProvider defaultTheme="light">
       <div className="flex flex-col min-h-screen" style={{ background: "var(--cat-bg)" }}>
+        {session.isSuper && (
+          <SuperAdminImpersonationBanner orgName={organization.name} />
+        )}
         <GlobalHeader rightContent={<AdminHeaderActions logoutLabel={t("logOut")} isSuper={!!session.isSuper} currentArea="org" />} />
         <div className="flex flex-1 min-h-0">
           {/* Sidebar */}

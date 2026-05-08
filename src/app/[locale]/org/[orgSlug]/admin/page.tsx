@@ -8,6 +8,7 @@ import { eq, count, sql } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
 import { Trophy, Users, Plus, ChevronRight, Calendar, Wrench, Hourglass, AlertCircle, Lock, Zap, Rocket, Crown, Gift } from "lucide-react";
 import { CancelDeleteButton } from "./cancel-delete-button";
+import { getEffectivePlan, type TournamentPlan } from "@/lib/plan-gates";
 
 type Props = {
   params: Promise<{ locale: string; orgSlug: string }>;
@@ -62,7 +63,11 @@ export default async function OrgDashboardPage({ params, searchParams }: Props) 
   };
 
   function getPlanBadge(tournament: typeof tournamentCards[number]) {
-    const plan = (tournament as any).plan as string ?? "free";
+    // Effective plan = bumped to "elite" when org has an active Elite sub.
+    // Without this, listing badge shows raw tournament.plan and contradicts
+    // the badge inside the tournament admin (which already uses effective).
+    const rawPlan = ((tournament as any).plan as TournamentPlan | undefined) ?? "free";
+    const plan = getEffectivePlan(rawPlan, (organization as any).eliteSubStatus);
     if (plan !== "free") return PLAN_BADGE[plan] ?? PLAN_BADGE.free;
     const isFreeSeat = tournament.id === freeSeatId;
     if (isFreeSeat) return PLAN_BADGE.free;

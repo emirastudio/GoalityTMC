@@ -426,7 +426,9 @@
     "clubs": "Клубы",
     "health": "Состояние системы",
     "clubDashboard": "Дашборд клуба",
-    "referees": "Судьи"
+    "referees": "Судьи",
+    "organizations": "Организации",
+    "deleteRequests": "Запросы на удаление"
   },
   "team": {
     "regNumber": "Регистрационный номер",

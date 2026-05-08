@@ -426,7 +426,9 @@
     "clubs": "Klubid",
     "health": "Süsteemi tervis",
     "clubDashboard": "Klubi töölaud",
-    "referees": "Kohtunikud"
+    "referees": "Kohtunikud",
+    "organizations": "Organisatsioonid",
+    "deleteRequests": "Kustutamistaotlused"
   },
   "team": {
     "regNumber": "Registreerimisnumber",

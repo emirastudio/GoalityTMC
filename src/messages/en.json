@@ -426,7 +426,9 @@
     "clubs": "Clubs",
     "health": "System Health",
     "clubDashboard": "Club Dashboard",
-    "referees": "Referees"
+    "referees": "Referees",
+    "organizations": "Organizations",
+    "deleteRequests": "Delete Requests"
   },
   "team": {
     "regNumber": "Registration number",

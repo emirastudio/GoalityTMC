@@ -426,7 +426,9 @@
     "clubs": "Clubs",
     "health": "Estado del sistema",
     "clubDashboard": "Panel del club",
-    "referees": "Árbitros"
+    "referees": "Árbitros",
+    "organizations": "Organizaciones",
+    "deleteRequests": "Solicitudes de eliminación"
   },
   "team": {
     "regNumber": "Número de registro",
