@@ -2193,7 +2193,16 @@
     "choosePlanForTournament": "Выберите план для этого турнира",
     "continueWithPlan": "Продолжить",
     "cancel": "Отмена",
-    "planner": "Планировщик"
+    "planner": "Планировщик",
+    "regCtaReadyTitle": "Готовы запускать?",
+    "regCtaReadyDesc": "Откройте регистрацию, чтобы клубы могли подавать заявки. В любой момент можно поставить на паузу.",
+    "regCtaOpenBtn": "Открыть регистрацию",
+    "regCtaPauseBtn": "Пауза",
+    "regCtaWorking": "Сохраняем...",
+    "regCtaLiveTitle": "Регистрация открыта",
+    "regCtaCompleteSetupTitle": "Сначала завершите настройку",
+    "regCtaCompleteSetupDesc": "Перед открытием регистрации нужно добавить хотя бы один дивизион, поля и формат.",
+    "regCtaCompleteSetupBtn": "Завершить настройку"
   },
   "divisionWizard": {
     "title": "Новый дивизион",

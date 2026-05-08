@@ -2193,7 +2193,16 @@
     "choosePlanForTournament": "Choose a plan for this tournament",
     "continueWithPlan": "Continue",
     "cancel": "Cancel",
-    "planner": "Schedule Planner"
+    "planner": "Schedule Planner",
+    "regCtaReadyTitle": "Ready to launch?",
+    "regCtaReadyDesc": "Open registration so clubs can sign up. You can pause it anytime.",
+    "regCtaOpenBtn": "Open registration",
+    "regCtaPauseBtn": "Pause",
+    "regCtaWorking": "Working...",
+    "regCtaLiveTitle": "Registration is open",
+    "regCtaCompleteSetupTitle": "Finish setup first",
+    "regCtaCompleteSetupDesc": "Add at least one division, fields, and a format before opening registration.",
+    "regCtaCompleteSetupBtn": "Complete setup"
   },
   "divisionWizard": {
     "title": "New Division",

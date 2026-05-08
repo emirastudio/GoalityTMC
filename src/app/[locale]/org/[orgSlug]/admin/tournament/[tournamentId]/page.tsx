@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
 import { TournamentSetupChecklist, type ChecklistStep } from "@/components/admin/tournament-setup-checklist";
+import { RegistrationCTACard } from "@/components/admin/registration-cta-card";
 import { TournamentProgressBar } from "@/components/tournament/tournament-progress-bar";
 import { QrCodeDownload } from "@/components/admin/qr-code-download";
 
@@ -175,6 +176,20 @@ export default async function TournamentOverviewPage({ params }: Props) {
           <ExternalLink className="w-3.5 h-3.5" /> {t("tournamentPage")}
         </Link>
       </div>
+
+      {/* ── Prominent registration CTA — top of overview ── */}
+      <RegistrationCTACard
+        tournamentId={tournament.id}
+        initialRegistrationOpen={!!tournament.registrationOpen}
+        registerUrl={registerUrl}
+        notReadyHref={
+          // Setup must include at least 1 division and 1 stage to make sense.
+          // (Backend also enforces other gates like extras / free-plan limit.)
+          checklistSteps.some(s => s.id !== "registration" && !s.done)
+            ? `${basePath}/setup`
+            : null
+        }
+      />
 
       {/* ── Setup checklist (hidden when all done) ── */}
       <TournamentSetupChecklist steps={checklistSteps} basePath={basePath} />

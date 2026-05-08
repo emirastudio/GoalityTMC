@@ -2199,7 +2199,16 @@
     "choosePlanForTournament": "Elija un plan para este torneo",
     "continueWithPlan": "Continuar",
     "cancel": "Cancelar",
-    "planner": "Planificador de calendario"
+    "planner": "Planificador de calendario",
+    "regCtaReadyTitle": "¿Listo para lanzar?",
+    "regCtaReadyDesc": "Abre el registro para que los clubes puedan inscribirse. Puedes pausarlo cuando quieras.",
+    "regCtaOpenBtn": "Abrir registro",
+    "regCtaPauseBtn": "Pausar",
+    "regCtaWorking": "Guardando...",
+    "regCtaLiveTitle": "El registro está abierto",
+    "regCtaCompleteSetupTitle": "Termina la configuración primero",
+    "regCtaCompleteSetupDesc": "Antes de abrir el registro, añade al menos una división, los campos y un formato.",
+    "regCtaCompleteSetupBtn": "Completar configuración"
   },
   "divisionWizard": {
     "title": "Nueva División",
