@@ -307,58 +307,62 @@ function ImageUploadButton({
   }
 
   return (
-    <label
-      htmlFor={inputId}
-      className="relative w-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all hover:opacity-80 cursor-pointer select-none"
-      style={{
-        borderColor:  url ? ACCENT : "var(--cat-card-border)",
-        background:   url ? `${ACCENT}08` : "var(--cat-tag-bg)",
-        overflow:     "hidden",
-        // When aspect ratio is set, container takes that shape (so user sees
-        // the actual target proportions). Without it, fall back to py-6 height.
-        ...(aspectRatio ? { aspectRatio } : { paddingTop: "1.5rem", paddingBottom: "1.5rem" }),
-      }}
-    >
-      {url && (
-        // When previewing in real aspect, show the image at full opacity so the
-        // admin actually sees the picture (not just a faint background).
-        <img
-          src={url}
-          alt={label}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ opacity: aspectRatio ? 1 : 0.3 }}
-        />
-      )}
-      <div
-        className="relative z-10 flex flex-col items-center gap-1 pointer-events-none px-3 py-1.5 rounded-lg"
+    <>
+      <label
+        htmlFor={inputId}
+        className="relative w-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all hover:opacity-80 cursor-pointer select-none"
         style={{
-          // When the preview image is fully visible, give the label its own
-          // pill-style backdrop so it's readable on any photo.
-          background: url && aspectRatio ? "rgba(0,0,0,0.55)" : "transparent",
+          borderColor:  url ? ACCENT : "var(--cat-card-border)",
+          background:   url ? `${ACCENT}08` : "var(--cat-tag-bg)",
+          overflow:     "hidden",
+          // When aspect ratio is set, container takes that shape (so user sees
+          // the actual target proportions). Without it, fall back to py-6 height.
+          ...(aspectRatio ? { aspectRatio } : { paddingTop: "1.5rem", paddingBottom: "1.5rem" }),
         }}
       >
-        {uploading
-          ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: ACCENT }} />
-          : <ImageIcon className="w-5 h-5" style={{ color: url && aspectRatio ? "#fff" : url ? ACCENT : "var(--cat-text-muted)" }} />
-        }
-        <span
-          className="text-xs font-semibold"
-          style={{ color: url && aspectRatio ? "#fff" : url ? ACCENT : "var(--cat-text-muted)" }}
+        {url && (
+          // When previewing in real aspect, show the image at full opacity so the
+          // admin actually sees the picture (not just a faint background).
+          <img
+            src={url}
+            alt={label}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ opacity: aspectRatio ? 1 : 0.3 }}
+          />
+        )}
+        <div
+          className="relative z-10 flex flex-col items-center gap-1 pointer-events-none px-3 py-1.5 rounded-lg"
+          style={{
+            // When the preview image is fully visible, give the label its own
+            // pill-style backdrop so it's readable on any photo.
+            background: url && aspectRatio ? "rgba(0,0,0,0.55)" : "transparent",
+          }}
         >
-          {url ? "Изменить" : label}
-        </span>
-      </div>
-      <input
-        id={inputId}
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        disabled={uploading}
-        onChange={e => {
-          const f = e.target.files?.[0];
-          if (f) { handleFile(f); e.target.value = ""; }
-        }}
-      />
+          {uploading
+            ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: ACCENT }} />
+            : <ImageIcon className="w-5 h-5" style={{ color: url && aspectRatio ? "#fff" : url ? ACCENT : "var(--cat-text-muted)" }} />
+          }
+          <span
+            className="text-xs font-semibold"
+            style={{ color: url && aspectRatio ? "#fff" : url ? ACCENT : "var(--cat-text-muted)" }}
+          >
+            {url ? "Изменить" : label}
+          </span>
+        </div>
+        <input
+          id={inputId}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          disabled={uploading}
+          onChange={e => {
+            const f = e.target.files?.[0];
+            if (f) { handleFile(f); e.target.value = ""; }
+          }}
+        />
+      </label>
+      {/* Cropper modal lives OUTSIDE the <label> so drag/click inside the
+          cropper doesn't bubble up and re-trigger the native file picker. */}
       {cropSrc && cropAspect && (
         <ImageCropperModal
           src={cropSrc}
@@ -368,7 +372,7 @@ function ImageUploadButton({
           onCancel={() => setCropSrc(null)}
         />
       )}
-    </label>
+    </>
   );
 }
 
