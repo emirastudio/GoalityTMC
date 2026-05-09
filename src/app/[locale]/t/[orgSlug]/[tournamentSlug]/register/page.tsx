@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -517,6 +517,11 @@ export default function RegisterPage() {
   /* Existing teams of the logged-in club */
   const [existingTeams, setExistingTeams] = useState<ExistingTeam[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
+  // In-flight edit/withdraw on submitted squads (per registrationId).
+  const [editingRegId, setEditingRegId] = useState<number | null>(null);
+  const [editingClassId, setEditingClassId] = useState<string>("");
+  const [editingDisplayName, setEditingDisplayName] = useState<string>("");
+  const [busyRegId, setBusyRegId] = useState<number | null>(null);
 
   /* Wizard */
   const [view, setView]         = useState<View>("search");
@@ -621,20 +626,73 @@ export default function RegisterPage() {
 
   /* Load existing teams when logged-in club detected. Pass tournamentId
      so currentSquads in the response reflects THIS tournament, not the
-     session's last one. Without this we'd render "уже зарегистрирована"
-     against a different tournament. */
-  useEffect(() => {
+     session's last one. */
+  const reloadExistingTeams = useCallback(async () => {
     if (!loggedInClub) return;
     setTeamsLoading(true);
     const url = tournament
       ? `/api/clubs/${loggedInClub.id}/teams?tournamentId=${tournament.id}`
       : `/api/clubs/${loggedInClub.id}/teams`;
-    fetch(url, { credentials: "include" })
-      .then(r => r.ok ? r.json() : [])
-      .then((data: ExistingTeam[]) => setExistingTeams(data))
-      .catch(() => {})
-      .finally(() => setTeamsLoading(false));
+    try {
+      const r = await fetch(url, { credentials: "include" });
+      if (r.ok) setExistingTeams(await r.json());
+    } finally {
+      setTeamsLoading(false);
+    }
   }, [loggedInClub, tournament]);
+  useEffect(() => { reloadExistingTeams(); }, [reloadExistingTeams]);
+
+  /* Withdraw an already-submitted registration. */
+  async function withdrawRegistration(registrationId: number, label: string) {
+    if (!loggedInClub) return;
+    if (!confirm(`Отозвать заявку «${label}»? Команду придётся регистрировать заново если передумаете.`)) return;
+    setBusyRegId(registrationId);
+    try {
+      const r = await fetch(`/api/clubs/${loggedInClub.id}/registrations/${registrationId}`, { method: "DELETE" });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setError(d.error ?? "Не удалось отозвать заявку");
+        return;
+      }
+      await reloadExistingTeams();
+      setEditingRegId(null);
+    } finally {
+      setBusyRegId(null);
+    }
+  }
+
+  /* Open the inline editor for an existing registration. */
+  function startEditingRegistration(registrationId: number, classId: number | null, displayName: string | null) {
+    setEditingRegId(registrationId);
+    setEditingClassId(classId ? String(classId) : "");
+    setEditingDisplayName(displayName ?? "");
+    setError("");
+  }
+
+  /* Save the edited registration. */
+  async function saveEditedRegistration() {
+    if (!loggedInClub || editingRegId === null) return;
+    setBusyRegId(editingRegId);
+    try {
+      const r = await fetch(`/api/clubs/${loggedInClub.id}/registrations/${editingRegId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classId: editingClassId ? parseInt(editingClassId) : undefined,
+          displayName: editingDisplayName || null,
+        }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setError(d.error ?? "Не удалось сохранить");
+        return;
+      }
+      await reloadExistingTeams();
+      setEditingRegId(null);
+    } finally {
+      setBusyRegId(null);
+    }
+  }
 
   /* Load clubTeamsList when an existing club is picked (team-picker step). */
   useEffect(() => {
@@ -1816,11 +1874,6 @@ export default function RegisterPage() {
                               {team.playersCount} игроков
                             </p>
                           )}
-                          {alreadySubmitted && (
-                            <p className="text-[10px] mt-0.5" style={{ color: "var(--cat-accent)" }}>
-                              ✓ Уже зарегистрирована: {submitted.map(s => s.className || `#${s.regNumber}`).join(", ")}
-                            </p>
-                          )}
                         </div>
                         {alreadyAdded ? (
                           <button onClick={() => removeEntry(entry!.key)}
@@ -1828,12 +1881,7 @@ export default function RegisterPage() {
                             style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
                             <X className="w-3 h-3" /> Убрать заявку
                           </button>
-                        ) : alreadySubmitted ? (
-                          <span className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0"
-                            style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
-                            ✓ Заявка подана
-                          </span>
-                        ) : (
+                        ) : alreadySubmitted ? null : (
                           <button onClick={() => addExistingTeam(team)}
                             className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-xl border transition-all hover:opacity-80"
                             style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)", color: "var(--cat-accent)" }}>
@@ -1841,6 +1889,110 @@ export default function RegisterPage() {
                           </button>
                         )}
                       </div>
+
+                      {/* Submitted squads — list each one with Edit / Withdraw. */}
+                      {alreadySubmitted && submitted.map(squad => {
+                        const isEditingThis = editingRegId === squad.registrationId;
+                        const busy = busyRegId === squad.registrationId;
+                        const label = squad.className || squad.displayName || `#${squad.regNumber}`;
+                        return (
+                          <div key={squad.registrationId}
+                            className="mt-2 rounded-xl border p-3"
+                            style={{
+                              background: "rgba(16,185,129,0.06)",
+                              borderColor: isEditingThis ? "var(--cat-accent)" : "rgba(16,185,129,0.25)",
+                            }}>
+                            {!isEditingThis ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md"
+                                  style={{ background: "rgba(16,185,129,0.18)", color: "#10b981" }}>
+                                  ✓ Заявка подана
+                                </span>
+                                <span className="text-[12px] font-semibold" style={{ color: "var(--cat-text)" }}>
+                                  {squad.className}
+                                </span>
+                                {squad.displayName && (
+                                  <span className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                                    · {squad.displayName}
+                                  </span>
+                                )}
+                                {squad.squadAlias && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded"
+                                    style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
+                                    {squad.squadAlias}
+                                  </span>
+                                )}
+                                <div className="ml-auto flex gap-1.5">
+                                  <button type="button"
+                                    onClick={() => startEditingRegistration(squad.registrationId, squad.classId, squad.displayName)}
+                                    disabled={busy}
+                                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80 disabled:opacity-40"
+                                    style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
+                                    Изменить
+                                  </button>
+                                  <button type="button"
+                                    onClick={() => withdrawRegistration(squad.registrationId, label)}
+                                    disabled={busy}
+                                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80 disabled:opacity-40"
+                                    style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+                                    {busy ? "..." : "Отзаявить"}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
+                                    Дивизион
+                                  </p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {classes.map(c => {
+                                      const sel = editingClassId === String(c.id);
+                                      return (
+                                        <button key={c.id} type="button"
+                                          onClick={() => setEditingClassId(String(c.id))}
+                                          className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border transition-all hover:opacity-90"
+                                          style={sel
+                                            ? { background: "var(--cat-accent)", borderColor: "var(--cat-accent)", color: "#000" }
+                                            : { background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)" }}>
+                                          {c.name}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
+                                    Название в турнире
+                                  </p>
+                                  <input type="text"
+                                    value={editingDisplayName}
+                                    onChange={e => setEditingDisplayName(e.target.value)}
+                                    placeholder={loggedInClub.name}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border outline-none"
+                                    style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
+                                  />
+                                </div>
+                                <div className="flex gap-2 pt-1">
+                                  <button type="button"
+                                    onClick={saveEditedRegistration}
+                                    disabled={busy}
+                                    className="px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all hover:opacity-90 disabled:opacity-40"
+                                    style={{ background: "var(--cat-accent)", color: "#000" }}>
+                                    {busy ? "Сохраняем…" : "Сохранить"}
+                                  </button>
+                                  <button type="button"
+                                    onClick={() => setEditingRegId(null)}
+                                    className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all hover:opacity-80"
+                                    style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
+                                    Отмена
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
 
                       {/* Inline registration editor — shows up right under
                           the team row when this team is in teamEntries.
