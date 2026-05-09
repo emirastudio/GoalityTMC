@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clubs, clubUsers, clubUserTeams, teams, registrationAttempts, emailVerifications } from "@/db/schema";
-import { eq, and, isNull, isNotNull, gt, desc } from "drizzle-orm";
+import {
+  clubs, clubUsers, clubUserTeams, teams, registrationAttempts, emailVerifications,
+  tournaments, tournamentClasses, tournamentRegistrations,
+  servicePackages, packageAssignments, inboxMessages, messageRecipients,
+} from "@/db/schema";
+import { eq, and, isNull, isNotNull, gt, desc, max } from "drizzle-orm";
 import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
-import { sendWelcomeEmail, sendCoachJoinedNotification } from "@/lib/email";
+import { sendWelcomeEmail, sendCoachJoinedNotification, sendRegistrationReceived } from "@/lib/email";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -59,6 +63,25 @@ export async function POST(req: NextRequest) {
       const parsed = JSON.parse(newTeamRaw);
       if (parsed && typeof parsed === "object") newTeam = parsed;
     } catch { /* ignore — null fallback */ }
+  }
+  // Tournament registration payload — what the user is signing up for.
+  // teams[]: array of { classId, name? } (one entry per division).
+  const tournamentIdRaw = formData.get("tournamentId") as string | null;
+  const tournamentId = tournamentIdRaw ? parseInt(tournamentIdRaw) : null;
+  const teamsRaw = formData.get("teams") as string | null;
+  let teamEntries: Array<{ classId: number; name?: string }> = [];
+  if (teamsRaw) {
+    try {
+      const parsed = JSON.parse(teamsRaw);
+      if (Array.isArray(parsed)) {
+        teamEntries = parsed
+          .filter((e) => e && typeof e === "object" && Number.isFinite(parseInt(String(e.classId))))
+          .map((e) => ({
+            classId: parseInt(String(e.classId)),
+            name: typeof e.name === "string" ? e.name : undefined,
+          }));
+      }
+    } catch { /* ignore */ }
   }
 
   console.log(`[REGISTER] attempt — club="${clubName}" email="${contactEmail}" ip=${ip}`);
@@ -233,6 +256,137 @@ export async function POST(req: NextRequest) {
 
   await logAttempt({ ...base, hasLogo, status: "success", clubId: club.id });
 
+  // ── Tournament registration (the actual divisions the user is joining) ──
+  // Frontend's step 4 sends teams[] = [{classId, name?}, ...]. For each
+  // entry we materialise a team (deriving birthYear from the class's
+  // minBirthYear) and a tournament_registrations row, then assign the
+  // tournament's default service package and create a welcome inbox
+  // message + receipt email — the same outputs the existing
+  // /api/clubs/[clubId]/tournament-register endpoint produces.
+  const tournamentRegistrationsCreated: Array<{ teamId: number; teamName: string; registrationId: number; classId: number; regNumber: number }> = [];
+  if (tournamentId && teamEntries.length > 0) {
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+    if (!tournament) {
+      console.warn(`[REGISTER] tournamentId=${tournamentId} not found — skipping registrations`);
+    } else if (!tournament.registrationOpen) {
+      console.warn(`[REGISTER] tournament ${tournamentId} registration closed — skipping`);
+    } else {
+      // Validate classIds belong to this tournament.
+      const validClasses = await db
+        .select({ id: tournamentClasses.id, name: tournamentClasses.name, minBirthYear: tournamentClasses.minBirthYear, maxBirthYear: tournamentClasses.maxBirthYear })
+        .from(tournamentClasses)
+        .where(eq(tournamentClasses.tournamentId, tournamentId));
+      const classById = new Map(validClasses.map((c) => [c.id, c]));
+
+      const [maxReg] = await db
+        .select({ maxReg: max(tournamentRegistrations.regNumber) })
+        .from(tournamentRegistrations)
+        .where(eq(tournamentRegistrations.tournamentId, tournamentId));
+      let nextRegNumber = (maxReg?.maxReg ?? 10000) + 1;
+
+      const [defaultPackage] = await db
+        .select()
+        .from(servicePackages)
+        .where(and(eq(servicePackages.tournamentId, tournamentId), eq(servicePackages.isDefault, true)));
+
+      for (const entry of teamEntries) {
+        const cls = classById.get(entry.classId);
+        if (!cls) continue; // class doesn't belong to this tournament — skip
+
+        // Materialise a team. Existing-club path with a single picked
+        // coach team reuses that team; otherwise create per-class.
+        let teamId = coachTeamId;
+        let teamName = entry.name?.trim() || club.name;
+        if (!teamId) {
+          const [newTeamRow] = await db
+            .insert(teams)
+            .values({
+              clubId: club.id,
+              name: entry.name?.trim() || null,
+              birthYear: cls.minBirthYear ?? null,
+              gender: "male",
+            })
+            .returning();
+          teamId = newTeamRow.id;
+          teamName = newTeamRow.name ?? `${club.name} ${cls.minBirthYear ?? cls.name}`;
+          // Backfill: junction row when this is the user's only team
+          // (no junction yet because they're an admin-of-a-new-club).
+          // We skip if there are multiple new teams — the user is club
+          // admin and shouldn't be locked to a single team.
+          if (teamEntries.length === 1 && !existingClubId) {
+            await db.insert(clubUserTeams).values({
+              clubUserId: newUser.id,
+              teamId,
+              status: "approved",
+            }).onConflictDoNothing();
+          }
+        }
+
+        const [registration] = await db
+          .insert(tournamentRegistrations)
+          .values({
+            teamId,
+            tournamentId,
+            classId: cls.id,
+            regNumber: nextRegNumber,
+            status: "open",
+            squadAlias: "",
+            displayName: null,
+          })
+          .returning();
+
+        if (defaultPackage) {
+          await db.insert(packageAssignments).values({
+            registrationId: registration.id,
+            packageId: defaultPackage.id,
+          });
+        }
+
+        tournamentRegistrationsCreated.push({
+          teamId,
+          teamName,
+          registrationId: registration.id,
+          classId: cls.id,
+          regNumber: nextRegNumber,
+        });
+        nextRegNumber++;
+      }
+
+      // Welcome inbox message routed to all freshly-created registrations.
+      if (tournamentRegistrationsCreated.length > 0) {
+        const welcomeBody =
+          `Dear ${club.name},\n\nYour teams have been successfully registered!\n\nPlease complete your registration by filling in:\n` +
+          `✅ Players — add all players\n✅ Staff — add coaching staff\n✅ Travel — arrival and departure details\n\n` +
+          `If you have any questions, use the Inbox to contact the organizer.\n\nGoality TMC`;
+        const [message] = await db
+          .insert(inboxMessages)
+          .values({
+            tournamentId,
+            subject: "Welcome! Your registration is confirmed",
+            body: welcomeBody,
+            sentBy: 0,
+            sendToAll: false,
+          })
+          .returning();
+        for (const reg of tournamentRegistrationsCreated) {
+          await db.insert(messageRecipients).values({
+            messageId: message.id,
+            registrationId: reg.registrationId,
+          });
+        }
+
+        // Receipt email — fire & forget.
+        const teamNamesForEmail = tournamentRegistrationsCreated.map((r) => r.teamName).join(", ");
+        sendRegistrationReceived({
+          to: contactEmail,
+          clubName: club.name,
+          teamName: teamNamesForEmail,
+          tournamentName: tournament.name,
+        }).catch((e) => console.error("[EMAIL] Registration received send failed:", e));
+      }
+    }
+  }
+
   // Welcome email (fire & forget) — uses the actual club name (which may
   // differ from the form input when an existing club was picked).
   sendWelcomeEmail({ to: contactEmail, clubName: club.name, contactName }).catch(
@@ -249,6 +403,11 @@ export async function POST(req: NextRequest) {
   });
   await setSessionCookie(token);
 
-  console.log(`[REGISTER] SUCCESS — club="${club.name}" clubId=${club.id} userId=${newUser.id} teamId=${coachTeamId ?? "—"}`);
-  return NextResponse.json({ ok: true, clubId: club.id, teamId: coachTeamId });
+  console.log(`[REGISTER] SUCCESS — club="${club.name}" clubId=${club.id} userId=${newUser.id} teamId=${coachTeamId ?? "—"} regs=${tournamentRegistrationsCreated.length}`);
+  return NextResponse.json({
+    ok: true,
+    clubId: club.id,
+    teamId: coachTeamId,
+    registrations: tournamentRegistrationsCreated,
+  });
 }
