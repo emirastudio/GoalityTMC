@@ -392,6 +392,66 @@ export default async function ClubDashboardPage() {
         )}
       </div>
 
+      {/* ── Pending applications across all tournaments ──
+           Shown only when there's at least one row with status open or
+           rejected — gives the coach an at-a-glance view of which
+           registrations are still waiting on the organizer or were
+           denied (with a path forward). */}
+      {(() => {
+        const teamMap = new Map(clubTeams.map((tm) => [tm.id, tm]));
+        const attention = regsWithTournaments
+          .filter((r) => r.status === "open" || r.status === "rejected");
+        if (attention.length === 0) return null;
+        return (
+          <div className="rounded-2xl p-6 border"
+            style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.35)" }}>
+            <h2 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: "var(--cat-text)" }}>
+              <span className="text-amber-500">⚠</span> Заявки требуют внимания ({attention.length})
+            </h2>
+            <p className="text-xs mb-3" style={{ color: "var(--cat-text-muted)" }}>
+              На рассмотрении организатором или отклонены — отслеживайте статус и пишите организатору при необходимости.
+            </p>
+            <ul className="space-y-2">
+              {attention.map((reg) => {
+                const tm = teamMap.get(reg.teamId);
+                const teamLabel = tm?.name ?? club.name ?? `Team #${reg.teamId}`;
+                const yearLabel = tm?.birthYear ? ` ${tm.birthYear}` : "";
+                const isOpen = reg.status === "open";
+                return (
+                  <li key={reg.regId}
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl border"
+                    style={{
+                      background: "var(--cat-card-bg)",
+                      borderColor: "var(--cat-card-border)",
+                    }}>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-md shrink-0"
+                      style={isOpen
+                        ? { background: "rgba(245,158,11,0.15)", color: "#f59e0b" }
+                        : { background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+                      {isOpen ? "🕓 На рассмотрении" : "✕ Отклонена"}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
+                        {teamLabel}{yearLabel}
+                      </p>
+                      <p className="text-[11px] truncate" style={{ color: "var(--cat-text-muted)" }}>
+                        {reg.tournamentName}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/t/${reg.tournamentSlug}/register`}
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
+                      style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
+                      {isOpen ? "Открыть заявку" : "Подробнее"} →
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })()}
+
       {/* ── Section 3: My Tournaments ── */}
       <div
         className="rounded-2xl p-6 border"
@@ -455,23 +515,43 @@ export default async function ClubDashboardPage() {
                     <ExternalLink className="w-3 h-3" />
                     {t("openPortal")}
                   </Link>
-                  {/* Status badges */}
-                  {info.statuses.includes("confirmed") && (
-                    <span
-                      className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                      style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}
-                    >
-                      Confirmed
-                    </span>
-                  )}
-                  {info.statuses.includes("draft") && !info.statuses.includes("confirmed") && (
-                    <span
-                      className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                      style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}
-                    >
-                      Draft
-                    </span>
-                  )}
+                  {/* Per-status counts. The coach sees at a glance how
+                      many of their teams are confirmed / pending /
+                      rejected for this tournament. */}
+                  {(() => {
+                    const counts = info.statuses.reduce<Record<string, number>>(
+                      (acc, s) => { acc[s] = (acc[s] ?? 0) + 1; return acc; },
+                      {},
+                    );
+                    return (
+                      <div className="flex flex-wrap gap-1">
+                        {counts.confirmed && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                            style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
+                            ✓ {counts.confirmed}
+                          </span>
+                        )}
+                        {counts.open && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                            style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+                            🕓 {counts.open}
+                          </span>
+                        )}
+                        {counts.rejected && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                            style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+                            ✕ {counts.rejected}
+                          </span>
+                        )}
+                        {counts.cancelled && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                            style={{ background: "rgba(100,116,139,0.15)", color: "#64748b" }}>
+                            — {counts.cancelled}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             ))}
