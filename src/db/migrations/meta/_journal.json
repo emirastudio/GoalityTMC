@@ -204,6 +204,13 @@
       "when": 1775169991661,
       "tag": "0028_referee_token",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1775170051661,
+      "tag": "0029_club_user_teams",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { LayoutDashboard, Building2, Search, LogOut, Trophy } from "lucide-react";
+import { CoachTeamSwitcher } from "@/components/club/coach-team-switcher";
 
 type Props = {
   clubName: string;
@@ -61,8 +62,13 @@ export function ClubSidebar({ clubName, clubBadge }: Props) {
         </div>
       </div>
 
+      {/* Coach multi-team switcher (only renders if user has 2+ teams) */}
+      <div className="pt-3">
+        <CoachTeamSwitcher />
+      </div>
+
       {/* Navigation */}
-      <nav className="px-2 pt-3 space-y-0.5 flex-1">
+      <nav className="px-2 pt-1 space-y-0.5 flex-1">
         {NAV_ITEMS.map(({ key, icon: Icon, href, exact }) => {
           const active = isActive(href, exact);
           return (

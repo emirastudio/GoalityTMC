@@ -435,6 +435,26 @@ export const clubUsers = pgTable("club_users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ─── Club User ↔ Teams (many-to-many) ───────────────────
+// Один тренер может управлять несколькими командами клуба.
+// clubUsers.teamId хранит сейчас активную команду (для JWT-сессии).
+export const clubUserTeams = pgTable(
+  "club_user_teams",
+  {
+    id: serial("id").primaryKey(),
+    clubUserId: integer("club_user_id")
+      .references(() => clubUsers.id, { onDelete: "cascade" })
+      .notNull(),
+    teamId: integer("team_id")
+      .references(() => teams.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniq: uniqueIndex("club_user_teams_user_team_uq").on(table.clubUserId, table.teamId),
+  })
+);
+
 // ─── Team Invites ───────────────────────────────────────
 export const teamInvites = pgTable("team_invites", {
   id: serial("id").primaryKey(),
