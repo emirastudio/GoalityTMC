@@ -10,6 +10,7 @@ import {
   CalendarDays, MapPin, ChevronRight,
 } from "lucide-react";
 import { InvitePanel } from "@/components/club/invite-panel";
+import { TournamentLogo } from "@/components/ui/tournament-logo";
 
 const GENDER_COLORS: Record<string, string> = {
   male: "#3B82F6",
@@ -490,14 +491,8 @@ export default async function ClubDashboardPage() {
           <div className="divide-y" style={{ borderColor: "var(--cat-divider)" }}>
             {openTournamentsEnriched.map(tourn => (
               <div key={tourn.id} className="flex items-center gap-4 px-6 py-3.5">
-                {/* Logo / initials */}
-                <div className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center overflow-hidden"
-                  style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-card-border)" }}>
-                  {tourn.logoUrl
-                    ? <img src={tourn.logoUrl} alt={tourn.name} className="w-full h-full object-contain" />
-                    : <Trophy className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
-                  }
-                </div>
+                {/* Logo with onError fallback to Trophy icon */}
+                <TournamentLogo src={tourn.logoUrl} alt={tourn.name} sizePx={40} iconPx={20} />
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
