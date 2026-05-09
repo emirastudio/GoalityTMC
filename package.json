@@ -38,11 +38,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-easy-crop": "^5.5.7",
-<<<<<<< Updated upstream
     "resend": "^6.12.3",
-=======
-    "resend": "^6.12.2",
->>>>>>> Stashed changes
     "sanitize-html": "^2.17.2",
     "stripe": "^22.0.0"
   },

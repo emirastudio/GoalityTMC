@@ -20,27 +20,9 @@ import {
 
 import { Resend } from "resend";
 
-<<<<<<< Updated upstream
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.EMAIL_FROM ?? "Goality <noreply@goalityfootball.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goality.app";
-=======
-const smtpPort = Number(process.env.SMTP_PORT ?? 587);
-const mailer = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: smtpPort,
-  secure: smtpPort === 465,
-  requireTLS: smtpPort === 587,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: { rejectUnauthorized: false },
-});
-
-const FROM = process.env.SMTP_FROM ?? "Goality <goal@goality.app>";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com";
->>>>>>> Stashed changes
 
 const MAX_ATTEMPTS = 5;
 const BATCH_SIZE = 20;
