@@ -483,6 +483,10 @@ export default function RegisterPage() {
   // its id so we can re-use the club row on submit instead of creating a
   // duplicate. Cleared if the user types a new clubName manually.
   const [pickedGlobalClubId, setPickedGlobalClubId] = useState<number | null>(null);
+  // Soft suggestion when the user is typing a clubName in step 1 of the
+  // create-flow that exactly matches an existing global club — nudges them
+  // to pick that one instead of creating yet another duplicate.
+  const [duplicateClubHint, setDuplicateClubHint] = useState<ClubResult | null>(null);
 
   /* Join request */
   const [joinName,  setJoinName]  = useState("");
