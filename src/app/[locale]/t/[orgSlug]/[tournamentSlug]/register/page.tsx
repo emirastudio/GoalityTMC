@@ -63,23 +63,14 @@ type TeamRegistrationEntry = {
   displayName: string;     // name in this tournament
 };
 
-const ROLES = [
-  { value: "coach",   label: "Тренер / Coach" },
-  { value: "manager", label: "Менеджер" },
-  { value: "parent",  label: "Родитель / Parent" },
-  { value: "other",   label: "Другое / Other" },
-];
+// Role labels are localised inline at render time via tr("roleCoach") etc.
 
 const DIV_COLORS = [
   "#3B82F6","#10B981","#8B5CF6","#F59E0B",
   "#EF4444","#06B6D4","#EC4899","#84CC16",
 ];
 
-const GENDER_LABELS: Record<string, string> = {
-  male: "♂ Мальчики",
-  female: "♀ Девочки",
-  mixed: "⚥ Смешанные",
-};
+// Gender labels rendered locale-aware in <TeamIdentityBadge>.
 
 const GENDER_COLORS: Record<string, string> = {
   male: "#3B82F6",
@@ -199,6 +190,7 @@ function CountrySelect({ label, value, onChange, required }: {
 
 /* ─── Club card ─────────────────────────────────────────────────────────── */
 function ClubCard({ club, onSelect }: { club: ClubResult; onSelect: () => void }) {
+  const tr = useTranslations("tournamentRegister");
   const initials = club.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
   // Some legacy clubs in the DB carry badgeUrl pointing to /uploads/kc/...
   // files that no longer exist. Fall back to the initials avatar on 404 so
@@ -243,7 +235,7 @@ function ClubCard({ club, onSelect }: { club: ClubResult; onSelect: () => void }
           className="text-[10px] font-bold px-2 py-1 rounded-md shrink-0"
           style={{ background: "rgba(59,130,246,0.12)", color: "#3b82f6" }}
         >
-          🔐 Войти
+          {tr("loginPill")}
         </span>
       )}
       <ChevronRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -254,6 +246,8 @@ function ClubCard({ club, onSelect }: { club: ClubResult; onSelect: () => void }
 
 /* ─── Team identity badge ────────────────────────────────────────────────── */
 function TeamIdentityBadge({ team, clubName }: { team: ExistingTeam; clubName?: string }) {
+  const tr = useTranslations("tournamentRegister");
+  const genderLabel = team.gender === "male" ? `♂ ${tr("boys")}` : team.gender === "female" ? `♀ ${tr("girls")}` : `⚥ ${tr("mixed")}`;
   // Display name priority:
   //   1. Team's custom name (the user explicitly typed something — e.g.
   //      "FCI Tallinn" override on FCI Levadia club).
@@ -274,12 +268,12 @@ function TeamIdentityBadge({ team, clubName }: { team: ExistingTeam; clubName?: 
       ) : (
         <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
           style={{ background: `${gColor}18`, color: gColor, border: `1px solid ${gColor}30` }}>
-          <User className="w-3 h-3" /> Взрослые
+          <User className="w-3 h-3" /> {tr("boys")}
         </span>
       )}
       <span className="text-[11px] px-1.5 py-0.5 rounded-md shrink-0"
         style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
-        {GENDER_LABELS[team.gender]}
+        {genderLabel}
       </span>
       {displayName && (
         <span className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{displayName}</span>
@@ -304,6 +298,7 @@ function ExistingTeamEntry({
   onUpdate: (patch: Partial<TeamRegistrationEntry>) => void;
   onRemove: () => void;
 }) {
+  const tr = useTranslations("tournamentRegister");
   const [showAlias, setShowAlias] = useState(false);
   const classInfo = classes.find(c => String(c.id) === entry.classId);
   const classColor = DIV_COLORS[classes.findIndex(c => String(c.id) === entry.classId) % DIV_COLORS.length] ?? "#64748b";
@@ -325,7 +320,7 @@ function ExistingTeamEntry({
         {/* Division picker */}
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-            Дивизион в турнире *
+            {tr("divisionInTournament")} *
           </label>
           <div className="grid gap-1.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}>
             {classes.map((cls, i) => {
@@ -351,7 +346,7 @@ function ExistingTeamEntry({
         {/* Display name in tournament */}
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-            Название в этом турнире
+            {tr("nameInTournament")}
           </label>
           <input type="text" value={entry.displayName}
             onChange={e => onUpdate({ displayName: e.target.value })}
@@ -367,12 +362,12 @@ function ExistingTeamEntry({
             className="flex items-center gap-1.5 text-[11px] font-semibold hover:opacity-70 transition-opacity"
             style={{ color: "var(--cat-text-muted)" }}>
             <Tag className="w-3 h-3" />
-            {showAlias ? "Убрать псевдоним состава" : "+ Псевдоним состава (2-й состав: Black/White/A/B)"}
+            {showAlias ? tr("removeAlias") : tr("addAlias")}
           </button>
           {showAlias && (
             <input type="text" value={entry.squadAlias}
               onChange={e => onUpdate({ squadAlias: e.target.value })}
-              placeholder="Black, White, A, B..."
+              placeholder={tr("aliasPlaceholder")}
               className="mt-2 w-full rounded-xl px-3 py-2 text-sm border outline-none"
               style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
             />
@@ -392,6 +387,7 @@ function NewTeamForm({
   onAdd: (entry: TeamRegistrationEntry) => void;
   onCancel: () => void;
 }) {
+  const tr = useTranslations("tournamentRegister");
   const [birthYear, setBirthYear] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "mixed">("male");
   const [classId, setClassId] = useState("");
@@ -416,7 +412,7 @@ function NewTeamForm({
     <div className="rounded-2xl border p-4 space-y-3"
       style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-accent)", boxShadow: "0 0 0 1px var(--cat-accent)20" }}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-black" style={{ color: "var(--cat-text)" }}>Новая команда</p>
+        <p className="text-sm font-black" style={{ color: "var(--cat-text)" }}>{tr("createNewTeam").replace(/^\+\s*/, "")}</p>
         <button onClick={onCancel} className="w-6 h-6 rounded-lg flex items-center justify-center opacity-40 hover:opacity-100"
           style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
           <X className="w-3.5 h-3.5" />
@@ -427,18 +423,18 @@ function NewTeamForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-            Год рождения
+            {tr("newTeamYear")}
           </label>
           <select value={birthYear} onChange={e => setBirthYear(e.target.value)}
             className="w-full rounded-xl px-3 py-2.5 text-sm border outline-none"
             style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}>
-            <option value="">— Взрослые —</option>
+            <option value="">— —</option>
             {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-            Пол
+            {tr("newTeamGender")}
           </label>
           <div className="grid grid-cols-3 gap-1">
             {(["male", "female", "mixed"] as const).map(g => (
@@ -459,7 +455,7 @@ function NewTeamForm({
       {/* Division */}
       <div>
         <label className="text-[10px] font-black uppercase tracking-widest mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-          Дивизион *
+          {tr("divisionInTournament")} *
         </label>
         <div className="grid gap-1.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))" }}>
           {classes.map((cls, i) => {
@@ -484,7 +480,7 @@ function NewTeamForm({
       {/* Display name */}
       <div>
         <label className="text-[10px] font-black uppercase tracking-widest mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-          Название в турнире
+          {tr("nameInTournament")}
         </label>
         <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
           placeholder={`${clubName}${birthYear ? ` ${birthYear}` : ""}`}
@@ -496,7 +492,7 @@ function NewTeamForm({
       <button onClick={submit} disabled={!classId}
         className="w-full py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 disabled:opacity-40 transition-opacity hover:opacity-90"
         style={{ background: "var(--cat-accent)", color: "#000" }}>
-        <Plus className="w-4 h-4" /> Добавить команду
+        <Plus className="w-4 h-4" /> {tr("addNewTeam")}
       </button>
     </div>
   );
@@ -507,6 +503,9 @@ export default function RegisterPage() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("tournament");
+  // Namespace for the registration flow itself (this page). Keys are
+  // additive — existing legacy keys still come from `tournament`.
+  const tr = useTranslations("tournamentRegister");
   const orgSlug   = params.orgSlug as string;
   const tournamentSlug = params.tournamentSlug as string;
 
@@ -650,13 +649,13 @@ export default function RegisterPage() {
   /* Withdraw an already-submitted registration. */
   async function withdrawRegistration(registrationId: number, label: string) {
     if (!loggedInClub) return;
-    if (!confirm(`Отозвать заявку «${label}»? Команду придётся регистрировать заново если передумаете.`)) return;
+    if (!confirm(tr("withdrawConfirm", { label }))) return;
     setBusyRegId(registrationId);
     try {
       const r = await fetch(`/api/clubs/${loggedInClub.id}/registrations/${registrationId}`, { method: "DELETE" });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setError(d.error ?? "Не удалось отозвать заявку");
+        setError(d.error ?? tr("withdrawError"));
         return;
       }
       await reloadExistingTeams();
@@ -689,7 +688,7 @@ export default function RegisterPage() {
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setError(d.error ?? "Не удалось сохранить");
+        setError(d.error ?? tr("saveError"));
         return;
       }
       await reloadExistingTeams();
@@ -826,7 +825,7 @@ export default function RegisterPage() {
     setVerifyError("");
     const email = contactEmail.trim();
     if (!email.includes("@") || email.length < 5) {
-      setVerifyError("Введите корректный email");
+      setVerifyError(tr("verifyEnterEmail"));
       return;
     }
     setVerifyPhase("sending");
@@ -838,20 +837,20 @@ export default function RegisterPage() {
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setVerifyError(d.error ?? "Не удалось отправить код. Попробуйте позже.");
+        setVerifyError(d.error ?? tr("verifySendError"));
         setVerifyPhase("idle");
         return;
       }
       setVerifyPhase("sent");
     } catch {
-      setVerifyError("Сетевая ошибка");
+      setVerifyError(tr("networkError"));
       setVerifyPhase("idle");
     }
   }
   async function checkVerifyCode() {
     setVerifyError("");
     if (!/^\d{6}$/.test(verifyCode)) {
-      setVerifyError("Код состоит из 6 цифр");
+      setVerifyError(tr("verifyCodeFormat"));
       return;
     }
     setVerifyPhase("checking");
@@ -863,14 +862,14 @@ export default function RegisterPage() {
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
-        setVerifyError(d.error ?? "Неверный код");
+        setVerifyError(d.error ?? tr("verifyCodeWrong"));
         setVerifyPhase("sent");
         return;
       }
       setEmailVerified(true);
       setVerifyPhase("idle");
     } catch {
-      setVerifyError("Сетевая ошибка");
+      setVerifyError(tr("networkError"));
       setVerifyPhase("sent");
     }
   }
@@ -883,7 +882,7 @@ export default function RegisterPage() {
   async function inlineLogin() {
     setLoginError("");
     if (!loginEmail.trim() || !loginPassword) {
-      setLoginError("Введите email и пароль");
+      setLoginError(tr("loginErrorEmpty"));
       return;
     }
     setLoginBusy(true);
@@ -907,7 +906,7 @@ export default function RegisterPage() {
         }),
       });
       if (!r.ok) {
-        setLoginError("Неверный email или пароль");
+        setLoginError(tr("loginErrorInvalid"));
         return;
       }
       // Re-hit /me to populate loggedInClub from the fresh cookie. The
@@ -938,7 +937,7 @@ export default function RegisterPage() {
   /* Join request submit */
   async function handleJoin() {
     setJoinError("");
-    if (!joinName.trim() || !joinEmail.trim()) { setJoinError("Заполните имя и email"); return; }
+    if (!joinName.trim() || !joinEmail.trim()) { setJoinError(tr("joinFillNameEmail")); return; }
     setJoining(true);
     try {
       const r = await fetch("/api/public/clubs/join-request", {
@@ -946,7 +945,7 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clubId: selectedClub!.id, requesterName: joinName, requesterEmail: joinEmail, role: joinRole }),
       });
-      if (!r.ok) { setJoinError("Ошибка. Попробуйте снова."); return; }
+      if (!r.ok) { setJoinError(tr("joinSubmitError")); return; }
       setView("done-join");
     } finally { setJoining(false); }
   }
@@ -957,8 +956,8 @@ export default function RegisterPage() {
 
     /* ── LOGGED-IN CLUB: only register teams in this tournament ── */
     if (loggedInClub) {
-      if (teamEntries.length === 0) { setError("Выберите хотя бы одну команду"); return; }
-      if (teamEntries.some(e => !e.classId)) { setError("Выберите дивизион для каждой команды"); return; }
+      if (teamEntries.length === 0) { setError(tr("selectAtLeastOne")); return; }
+      if (teamEntries.some(e => !e.classId)) { setError(tr("pickDivisionForEach")); return; }
 
       setSubmitting(true);
       try {
@@ -1074,8 +1073,8 @@ export default function RegisterPage() {
 
   if (notFound) return (
     <div className="py-20 text-center">
-      <p style={{ color: "var(--cat-text-secondary)" }}>Турнир не найден</p>
-      <Link href="/catalog" className="text-sm mt-2 block hover:underline" style={{ color: "var(--cat-accent)" }}>← Каталог</Link>
+      <p style={{ color: "var(--cat-text-secondary)" }}>{tr("tournamentNotFound")}</p>
+      <Link href="/catalog" className="text-sm mt-2 block hover:underline" style={{ color: "var(--cat-accent)" }}>← Catalog</Link>
     </div>
   );
 
@@ -1086,8 +1085,8 @@ export default function RegisterPage() {
         style={{ background: "var(--cat-tag-bg)" }}>
         <Shield className="w-8 h-8" style={{ color: "var(--cat-text-muted)" }} />
       </div>
-      <h2 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>Регистрация закрыта</h2>
-      <p className="text-sm" style={{ color: "var(--cat-text-secondary)" }}>Приём заявок на этот турнир завершён.</p>
+      <h2 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>{tr("tournamentClosed")}</h2>
+      <p className="text-sm" style={{ color: "var(--cat-text-secondary)" }}>{tr("tournamentClosedDesc")}</p>
       <Link href={`/t/${orgSlug}/${tournamentSlug}`}
         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80"
         style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)" }}>
@@ -1103,10 +1102,9 @@ export default function RegisterPage() {
         style={{ background: "var(--cat-badge-open-bg)", border: "2px solid var(--cat-badge-open-border)" }}>
         <CheckCircle className="w-10 h-10" style={{ color: "var(--cat-accent)" }} />
       </div>
-      <h2 className="text-2xl font-black" style={{ color: "var(--cat-text)" }}>Запрос отправлен!</h2>
+      <h2 className="text-2xl font-black" style={{ color: "var(--cat-text)" }}>{tr("joinSuccess")}</h2>
       <p className="text-sm leading-relaxed" style={{ color: "var(--cat-text-secondary)" }}>
-        Организатор и администратор клуба <strong style={{ color: "var(--cat-text)" }}>{selectedClub?.name}</strong> получили ваш запрос.
-        Вам напишут на <strong style={{ color: "var(--cat-text)" }}>{joinEmail}</strong>.
+        {tr("joinSuccessDesc")}
       </p>
       <Link href={`/t/${orgSlug}/${tournamentSlug}`}
         className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-opacity hover:opacity-90"
@@ -1137,7 +1135,7 @@ export default function RegisterPage() {
         <Link href="/team/overview"
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-opacity hover:opacity-90"
           style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
-          <LogIn className="w-4 h-4" /> Перейти к управлению командами
+          <LogIn className="w-4 h-4" /> {tr("openClubCabinetBtn")}
         </Link>
         <Link href={`/t/${orgSlug}/${tournamentSlug}`}
           className="text-sm hover:underline" style={{ color: "var(--cat-text-muted)" }}>
@@ -1157,14 +1155,14 @@ export default function RegisterPage() {
             <Building2 className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
           </div>
           <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: "var(--cat-accent)" }}>
-            Регистрация клуба
+            {tr("regClubLabel")}
           </span>
         </div>
         <h1 className="text-2xl font-black" style={{ color: "var(--cat-text)" }}>
-          Найдите ваш клуб
+          {tr("findYourClub")}
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--cat-text-secondary)" }}>
-          Возможно, ваш клуб уже зарегистрирован в <strong style={{ color: "var(--cat-text)" }}>{tournament!.name}</strong>. Проверьте сначала.
+          {tr("findYourClubDesc", { tournamentName: tournament!.name })}
         </p>
       </div>
 
@@ -1174,7 +1172,7 @@ export default function RegisterPage() {
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Название клуба или email..."
+          placeholder={tr("searchPlaceholder")}
           className="w-full pl-10 pr-4 py-3 rounded-xl border text-sm outline-none transition-all"
           style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
           onFocus={e => { e.currentTarget.style.borderColor = "var(--cat-accent)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--cat-input-focus-glow)"; }}
@@ -1191,7 +1189,7 @@ export default function RegisterPage() {
           <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
             <Users className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
             <p className="text-[11px] font-black uppercase tracking-wider" style={{ color: "var(--cat-text-muted)" }}>
-              Клубы в этом турнире ({results.length})
+              {tr("clubsInTournament", { count: results.length })}
             </p>
           </div>
           <div className="p-2 space-y-1">
@@ -1210,7 +1208,7 @@ export default function RegisterPage() {
           <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
             <Search className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
             <p className="text-[11px] font-black uppercase tracking-wider" style={{ color: "var(--cat-text-muted)" }}>
-              Из глобальной базы — пока не в турнире ({globalResults.length})
+              {tr("fromGlobalDb", { count: globalResults.length })}
             </p>
           </div>
           <div className="p-2 space-y-1">
@@ -1245,14 +1243,14 @@ export default function RegisterPage() {
 
       {query.length >= 2 && !searching && results.length === 0 && globalResults.length === 0 && (
         <div className="rounded-2xl border px-4 py-4 text-center" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-          <p className="text-sm font-semibold mb-1" style={{ color: "var(--cat-text)" }}>Клуб не найден</p>
-          <p className="text-[12px]" style={{ color: "var(--cat-text-muted)" }}>Зарегистрируйте новый клуб ниже</p>
+          <p className="text-sm font-semibold mb-1" style={{ color: "var(--cat-text)" }}>{tr("noClubFound")}</p>
+          <p className="text-[12px]" style={{ color: "var(--cat-text-muted)" }}>{tr("noClubFoundDesc")}</p>
         </div>
       )}
 
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px" style={{ background: "var(--cat-divider)" }} />
-        <span className="text-[11px] font-semibold" style={{ color: "var(--cat-text-faint)" }}>или</span>
+        <span className="text-[11px] font-semibold" style={{ color: "var(--cat-text-faint)" }}>{tr("or")}</span>
         <div className="flex-1 h-px" style={{ background: "var(--cat-divider)" }} />
       </div>
 
@@ -1268,8 +1266,8 @@ export default function RegisterPage() {
             <Plus className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
           </div>
           <div className="text-left">
-            <p className="text-sm font-black" style={{ color: "var(--cat-text)" }}>Зарегистрировать новый клуб</p>
-            <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>Создайте клуб и зарегистрируйте команды</p>
+            <p className="text-sm font-black" style={{ color: "var(--cat-text)" }}>{tr("registerNewClub")}</p>
+            <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>{tr("registerNewClubDesc")}</p>
           </div>
         </div>
         <ChevronRight className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
@@ -1288,15 +1286,15 @@ export default function RegisterPage() {
       <button onClick={() => setView("search")}
         className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
         style={{ color: "var(--cat-text-muted)" }}>
-        <ArrowLeft className="w-4 h-4" /> Назад
+        <ArrowLeft className="w-4 h-4" /> {tr("back")}
       </button>
 
       <div>
         <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: "var(--cat-accent)" }}>
-          Запрос на вступление
+          {tr("joinTitle")}
         </span>
         <h1 className="text-2xl font-black mt-1" style={{ color: "var(--cat-text)" }}>
-          Вступить в клуб
+          {tr("joinTitle")}
         </h1>
       </div>
 
@@ -1315,7 +1313,7 @@ export default function RegisterPage() {
             <p className="font-black" style={{ color: "var(--cat-text)" }}>{selectedClub.name}</p>
             <p className="text-[12px]" style={{ color: "var(--cat-text-secondary)" }}>
               {[selectedClub.city, selectedClub.country].filter(Boolean).join(", ")}
-              {selectedClub.teamCount > 0 && ` · ${selectedClub.teamCount} команд в турнире`}
+              {selectedClub.teamCount > 0 && ` · ${tr("clubsInTournament", { count: selectedClub.teamCount })}`}
             </p>
           </div>
         </div>
@@ -1323,22 +1321,22 @@ export default function RegisterPage() {
 
       <div className="rounded-2xl border p-5 space-y-4"
         style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-        <Field label="Ваше имя" value={joinName} onChange={setJoinName} placeholder="John Smith" required />
-        <Field label="Email" type="email" value={joinEmail} onChange={setJoinEmail} placeholder="john@club.example" required />
+        <Field label={tr("joinName")} value={joinName} onChange={setJoinName} placeholder="John Smith" required />
+        <Field label={tr("joinEmail")} type="email" value={joinEmail} onChange={setJoinEmail} placeholder="john@club.example" required />
         <div>
           <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-            Ваша роль
+            {tr("joinRoleLabel")}
           </label>
           <div className="grid grid-cols-2 gap-2">
-            {ROLES.map(r => (
-              <button key={r.value} type="button" onClick={() => setJoinRole(r.value)}
+            {(["coach", "manager", "parent", "other"] as const).map(role => (
+              <button key={role} type="button" onClick={() => setJoinRole(role)}
                 className="px-3 py-2 rounded-xl text-[12px] font-semibold border transition-all"
-                style={joinRole === r.value ? {
+                style={joinRole === role ? {
                   background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)", color: "var(--cat-accent)",
                 } : {
                   background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)",
                 }}>
-                {r.label}
+                {tr(role === "coach" ? "roleCoach" : role === "manager" ? "roleManager" : role === "parent" ? "roleParent" : "roleOther")}
               </button>
             ))}
           </div>
@@ -1352,11 +1350,11 @@ export default function RegisterPage() {
       <button onClick={handleJoin} disabled={joining}
         className="w-full py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
         style={{ background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))", color: "var(--cat-accent-text)" }}>
-        {joining ? <><Loader2 className="w-4 h-4 animate-spin" /> Отправка...</> : <>Отправить запрос <ArrowRight className="w-4 h-4" /></>}
+        {joining ? <><Loader2 className="w-4 h-4 animate-spin" /> {tr("joinSubmitting")}</> : <>{tr("joinSubmit")} <ArrowRight className="w-4 h-4" /></>}
       </button>
 
       <p className="text-[11px] text-center" style={{ color: "var(--cat-text-faint)" }}>
-        Организатор турнира получит ваш запрос и свяжется с вами
+        {tr("joinNote")}
       </p>
     </div>
   );
@@ -1371,34 +1369,34 @@ export default function RegisterPage() {
       }}
         className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
         style={{ color: "var(--cat-text-muted)", visibility: loggedInClub ? "hidden" : "visible" }}>
-        <ArrowLeft className="w-4 h-4" /> {isFirstStep ? "Назад к поиску" : "Назад"}
+        <ArrowLeft className="w-4 h-4" /> {isFirstStep ? tr("backToSearch") : tr("back")}
       </button>
 
       <div>
         <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: "var(--cat-accent)" }}>
           {loggedInClub
-            ? `${loggedInClub.name} · Регистрация`
+            ? `${loggedInClub.name} · ${tr("regClubLabel")}`
             : pickedGlobalClubId !== null
-              ? `${clubName} · Шаг ${stepIdx + 1} из ${flowSteps.length}`
-              : `Новый клуб · Шаг ${stepIdx + 1} из ${flowSteps.length}`}
+              ? `${clubName} · ${tr("stepLabel", { n: stepIdx + 1, total: flowSteps.length })}`
+              : `${tr("newClub")} · ${tr("stepLabel", { n: stepIdx + 1, total: flowSteps.length })}`}
         </span>
         <h1 className="text-2xl font-black mt-1" style={{ color: "var(--cat-text)" }}>
-          {loggedInClub ? `Команды для ${tournament!.name}` : (
-            step === 1 ? "Данные клуба"
-              : step === 2 ? "Ваша команда"
-              : step === 3 ? "Ваш аккаунт"
-              : "Команды для регистрации"
+          {loggedInClub ? `${tr("stepTournament")} — ${tournament!.name}` : (
+            step === 1 ? tr("stepClubInfo")
+              : step === 2 ? tr("stepTeam")
+              : step === 3 ? tr("stepAccount")
+              : tr("stepTournament")
           )}
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--cat-text-secondary)" }}>
           {loggedInClub
-            ? "Выберите команды клуба или создайте новую"
-            : (step === 1 ? "Расскажите о вашем клубе"
-              : step === 2 ? `Какую команду клуба «${clubName}» вы тренируете?`
+            ? tr("stepHeaderTournamentSubLoggedIn")
+            : (step === 1 ? tr("stepHeaderClubInfoSub")
+              : step === 2 ? tr("stepHeaderTeamSub", { clubName })
               : step === 3 ? (pickedGlobalClubId !== null
-                  ? `Создайте вход в личный кабинет клуба «${clubName}»`
-                  : "Создайте вход в личный кабинет клуба")
-              : `Выберите дивизионы в турнире ${tournament!.name}`)}
+                  ? tr("stepHeaderAccountSubLoginExisting", { clubName })
+                  : tr("stepHeaderAccountSubSignup"))
+              : tr("stepHeaderTournamentSubNewClub", { tournamentName: tournament!.name }))}
         </p>
       </div>
 
@@ -1450,10 +1448,10 @@ export default function RegisterPage() {
               <span className="text-lg shrink-0 leading-none mt-0.5">⚠️</span>
               <span className="flex-1 min-w-0">
                 <span className="text-sm font-bold block" style={{ color: "var(--cat-text)" }}>
-                  Такой клуб уже есть: {duplicateClubHint.name}
+                  {tr("duplicateHint", { name: duplicateClubHint.name })}
                 </span>
                 <span className="text-xs block mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-                  {[duplicateClubHint.city, duplicateClubHint.country].filter(Boolean).join(", ")} · нажмите чтобы использовать его, не создавая дубликат
+                  {tr("duplicateHintAction", { location: [duplicateClubHint.city, duplicateClubHint.country].filter(Boolean).join(", ") })}
                 </span>
               </span>
             </button>
@@ -1476,14 +1474,14 @@ export default function RegisterPage() {
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
           {clubTeamsLoading ? (
             <div className="py-6 flex items-center justify-center" style={{ color: "var(--cat-text-muted)" }}>
-              <Loader2 className="w-4 h-4 animate-spin mr-2" /> Загружаем команды клуба…
+              <Loader2 className="w-4 h-4 animate-spin mr-2" /> {tr("loadingClubTeams")}
             </div>
           ) : (
             <>
               {clubTeamsList.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
-                    Существующие команды клуба
+                    {tr("clubTeamsHeader")}
                   </p>
                   {clubTeamsList.map(t => {
                     const sel = !newTeamMode && joinTeamId === t.id;
@@ -1525,12 +1523,12 @@ export default function RegisterPage() {
 
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
-                            {t.name ?? clubName ?? (t.birthYear ? `Команда ${t.birthYear}` : "Команда без года")}
+                            {t.name ?? clubName ?? (t.birthYear ? tr("teamYear", { year: t.birthYear }) : tr("teamWithoutYear"))}
                           </p>
                           <p className="text-[11px]" style={{ color: noYear ? "#f59e0b" : "var(--cat-text-muted)" }}>
                             {noYear
-                              ? "⚠ Год не указан — попросите админа клуба исправить или создайте новую команду"
-                              : `${t.birthYear} · ${t.gender === "male" ? "Мальчики" : t.gender === "female" ? "Девочки" : "Смешанная"}`}
+                              ? tr("noBirthYearWarn")
+                              : `${t.birthYear} · ${t.gender === "male" ? tr("boys") : t.gender === "female" ? tr("girls") : tr("mixed")}`}
                           </p>
                         </div>
                       </button>
@@ -1555,10 +1553,10 @@ export default function RegisterPage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>
-                    + Создать новую команду
+                    {tr("createNewTeam")}
                   </p>
                   <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-                    Если вашей команды ещё нет в клубе — добавьте её
+                    {tr("createNewTeamHint")}
                   </p>
                 </div>
               </button>
@@ -1569,13 +1567,13 @@ export default function RegisterPage() {
                   style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-                      Название команды
+                      {tr("newTeamName")}
                     </label>
                     <input
                       type="text"
                       value={newTeamName}
                       onChange={e => setNewTeamName(e.target.value)}
-                      placeholder={clubName || "Название"}
+                      placeholder={clubName || tr("newTeamName")}
                       className="w-full rounded-xl px-3 py-2 text-sm border outline-none"
                       style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
                     />
@@ -1583,7 +1581,7 @@ export default function RegisterPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-                        Год рождения<span className="text-red-400 ml-0.5">*</span>
+                        {tr("newTeamYear")}<span className="text-red-400 ml-0.5">*</span>
                       </label>
                       <input
                         type="number"
@@ -1597,7 +1595,7 @@ export default function RegisterPage() {
                     </div>
                     <div>
                       <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-                        Пол
+                        {tr("newTeamGender")}
                       </label>
                       <div className="flex gap-1">
                         {(["male", "female", "mixed"] as const).map(g => (
@@ -1617,7 +1615,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
                   <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-                    Год рождения обязателен — это базовая идентичность команды. Своё название можно оставить пустым (отобразится «{clubName} {newTeamBirthYear || "год"}»).
+                    {tr("newTeamHint", { clubName, year: newTeamBirthYear || "—" })}
                   </p>
                 </div>
               )}
@@ -1643,7 +1641,7 @@ export default function RegisterPage() {
                   color: authMode === "login" ? "#000" : "var(--cat-text-muted)",
                 }}
               >
-                У меня уже есть аккаунт
+                {tr("authHaveAccount")}
               </button>
               <button
                 type="button"
@@ -1654,7 +1652,7 @@ export default function RegisterPage() {
                   color: authMode === "signup" ? "#000" : "var(--cat-text-muted)",
                 }}
               >
-                Создать аккаунт
+                {tr("authCreateAccount")}
               </button>
             </div>
           )}
@@ -1663,7 +1661,7 @@ export default function RegisterPage() {
           {pickedGlobalClubId !== null && authMode === "login" && (
             <div className="space-y-3">
               <p className="text-[12px]" style={{ color: "var(--cat-text-secondary)" }}>
-                Войдите под своим аккаунтом — после входа сразу перейдёте к выбору команд для турнира.
+                {tr("authSignInDesc")}
               </p>
               <Field label={t("emailLabel")} type="email" value={loginEmail} onChange={setLoginEmail} placeholder="coach@club.example" required />
               <Field label={t("passwordLabel")} type="password" value={loginPassword} onChange={setLoginPassword} placeholder="••••••••" required />
@@ -1677,10 +1675,10 @@ export default function RegisterPage() {
                 className="w-full rounded-xl py-3 text-sm font-black transition-all hover:opacity-90 disabled:opacity-40"
                 style={{ background: "var(--cat-accent)", color: "#000" }}
               >
-                {loginBusy ? "Входим…" : "Войти"}
+                {loginBusy ? tr("loginInProgress") : tr("loginButton")}
               </button>
               <p className="text-[11px] text-center" style={{ color: "var(--cat-text-muted)" }}>
-                Забыли пароль? <a href="/forgot-password" className="underline" style={{ color: "var(--cat-accent)" }}>Восстановить</a>
+                {tr("loginForgotPassword")} <a href="/forgot-password" className="underline" style={{ color: "var(--cat-accent)" }}>{tr("loginRestore")}</a>
               </p>
             </div>
           )}
@@ -1692,8 +1690,8 @@ export default function RegisterPage() {
             <Shield className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
             <p className="text-[11px]" style={{ color: "var(--cat-text-secondary)" }}>
               {pickedGlobalClubHasAdmin
-                ? "Создайте свой аккаунт — у клуба уже есть администратор, ваш аккаунт будет добавлен как тренер."
-                : t("loginCredentialsHint")}
+                ? tr("signupClubAlreadyHasAdmin")
+                : tr("loginCredentialsHint")}
             </p>
           </div>
           <Field label={t("contactPerson")} value={contactName} onChange={setContactName} placeholder="John Smith" required />
@@ -1722,7 +1720,7 @@ export default function RegisterPage() {
               {emailVerified ? (
                 <span className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
                   style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
-                  ✓ Подтверждён
+                  {tr("verifyButtonVerified")}
                 </span>
               ) : (
                 <button
@@ -1732,7 +1730,7 @@ export default function RegisterPage() {
                   className="px-3 py-2 rounded-xl text-xs font-bold shrink-0 transition-all hover:opacity-90 disabled:opacity-40"
                   style={{ background: "var(--cat-accent)", color: "#000" }}
                 >
-                  {verifyPhase === "sending" ? "Отправляем…" : verifyPhase === "sent" ? "Отправить ещё раз" : "Отправить код"}
+                  {verifyPhase === "sending" ? tr("verifyButtonSending") : verifyPhase === "sent" ? tr("verifyButtonResend") : tr("verifyButtonSend")}
                 </button>
               )}
             </div>
@@ -1740,7 +1738,7 @@ export default function RegisterPage() {
               <div className="mt-3 p-3 rounded-xl border space-y-2"
                 style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
                 <p className="text-[12px]" style={{ color: "var(--cat-text-secondary)" }}>
-                  Код отправлен на <strong style={{ color: "var(--cat-text)" }}>{contactEmail}</strong>. Проверьте почту (и папку «Спам»).
+                  {tr("verifyCodeSentTo", { email: contactEmail })}
                 </p>
                 <div className="flex gap-2">
                   <input
@@ -1761,7 +1759,7 @@ export default function RegisterPage() {
                     className="px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all hover:opacity-90 disabled:opacity-40"
                     style={{ background: "var(--cat-accent)", color: "#000" }}
                   >
-                    {verifyPhase === "checking" ? "Проверяем…" : "Проверить"}
+                    {verifyPhase === "checking" ? tr("verifyChecking") : tr("verifyCheck")}
                   </button>
                 </div>
               </div>
@@ -1771,13 +1769,13 @@ export default function RegisterPage() {
             )}
             {!emailVerified && verifyPhase === "idle" && (
               <p className="mt-1.5 text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-                Подтвердите email — на него организаторы будут присылать важную информацию о турнире.
+                {tr("verifyDescription")}
               </p>
             )}
           </div>
 
           <Field label={t("passwordLabel")} type="password" value={password} onChange={setPassword}
-            placeholder="Минимум 6 символов" hint={t("passwordMinHint")} required />
+            placeholder={tr("passwordPlaceholder")} hint={tr("passwordMinHint")} required />
           </>
           )}
         </div>
@@ -1788,7 +1786,7 @@ export default function RegisterPage() {
         <div className="space-y-3">
           {classes.length === 0 ? (
             <div className="rounded-2xl border p-8 text-center" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-              <p style={{ color: "var(--cat-text-muted)" }}>Дивизионы не настроены организатором</p>
+              <p style={{ color: "var(--cat-text-muted)" }}>{tr("noClassesYet")}</p>
             </div>
           ) : (
             classes.map((cls, i) => {
@@ -1821,7 +1819,7 @@ export default function RegisterPage() {
                     <div className="px-4 pb-3">
                       <input type="text" value={teamEntry?.name ?? ""}
                         onChange={e => updateTeamName(String(cls.id), e.target.value)}
-                        placeholder={`Название команды (необязательно) · ${clubName || "FC Club"}`}
+                        placeholder={tr("teamNamePlaceholder", { clubName: clubName || "FC Club" })}
                         className="w-full rounded-xl px-3 py-2 text-[12px] border outline-none"
                         style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
                         onClick={e => e.stopPropagation()}
@@ -1837,7 +1835,7 @@ export default function RegisterPage() {
               style={{ background: "var(--cat-badge-open-bg)" }}>
               <Trophy className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
               <p className="text-[12px] font-semibold" style={{ color: "var(--cat-text)" }}>
-                Выбрано: <strong>{newClubTeams.length}</strong> {newClubTeams.length === 1 ? "команда" : newClubTeams.length < 5 ? "команды" : "команд"}
+                {tr("selectedTeams", { count: newClubTeams.length })}
               </p>
             </div>
           )}
@@ -1862,10 +1860,10 @@ export default function RegisterPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
-                  Управление командами на турнире
+                  {tr("openClubCabinet")}
                 </p>
                 <p className="text-[11px] truncate" style={{ color: "var(--cat-text-muted)" }}>
-                  Игроки, тренеры, поездка, переписка с организатором
+                  {tr("openClubCabinetDesc")}
                 </p>
               </div>
             </div>
@@ -1884,7 +1882,7 @@ export default function RegisterPage() {
               <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
                 <Users className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
                 <p className="text-[11px] font-black uppercase tracking-wider" style={{ color: "var(--cat-text-muted)" }}>
-                  Команды клуба ({existingTeams.length})
+                  {tr("clubTeamsTitle", { count: existingTeams.length })}
                 </p>
               </div>
               <div className="divide-y" style={{ borderColor: "var(--cat-divider)" }}>
@@ -1910,13 +1908,13 @@ export default function RegisterPage() {
                           <button onClick={() => removeEntry(entry!.key)}
                             className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80"
                             style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
-                            <X className="w-3 h-3" /> Убрать заявку
+                            <X className="w-3 h-3" /> {tr("removeApplication")}
                           </button>
                         ) : alreadySubmitted ? null : (
                           <button onClick={() => addExistingTeam(team)}
                             className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-xl border transition-all hover:opacity-80"
                             style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)", color: "var(--cat-accent)" }}>
-                            <Plus className="w-3.5 h-3.5" /> Заявить на турнир
+                            <Plus className="w-3.5 h-3.5" /> {tr("joinTournamentBtn")}
                           </button>
                         )}
                       </div>
@@ -1931,13 +1929,13 @@ export default function RegisterPage() {
                         const label = squad.className || squad.displayName || `#${squad.regNumber}`;
                         const statusViz =
                           squad.status === "confirmed"
-                            ? { icon: "✓", text: "Подтверждена организатором", color: "#10b981", bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.35)" }
+                            ? { icon: "✓", text: tr("statusConfirmed"), color: "#10b981", bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.35)" }
                             : squad.status === "open"
-                              ? { icon: "🕓", text: "На рассмотрении организатором", color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.35)" }
+                              ? { icon: "🕓", text: tr("statusOpen"), color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.35)" }
                               : squad.status === "rejected"
-                                ? { icon: "✕", text: "Отклонена организатором", color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.35)" }
+                                ? { icon: "✕", text: tr("statusRejected"), color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.35)" }
                                 : squad.status === "draft"
-                                  ? { icon: "📝", text: "Черновик", color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", border: "var(--cat-card-border)" }
+                                  ? { icon: "📝", text: tr("statusDraft"), color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", border: "var(--cat-card-border)" }
                                   : { icon: "•", text: squad.status, color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", border: "var(--cat-card-border)" };
                         return (
                           <div key={squad.registrationId}
@@ -1968,32 +1966,30 @@ export default function RegisterPage() {
                                 )}
                                 {squad.regNumber && (
                                   <span className="text-[10px]" style={{ color: "var(--cat-text-faint)" }}>
-                                    №{squad.regNumber}
+                                    {tr("regNumberPrefix")}{squad.regNumber}
                                   </span>
                                 )}
                                 <div className="ml-auto flex gap-1.5">
                                   <button type="button"
                                     onClick={() => startEditingRegistration(squad.registrationId, squad.classId, squad.displayName)}
                                     disabled={busy || squad.status === "confirmed"}
-                                    title={squad.status === "confirmed" ? "Подтверждённую заявку нельзя изменить — попросите организатора" : ""}
+                                    title={squad.status === "confirmed" ? tr("editingDisabledConfirmed") : ""}
                                     className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
                                     style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
-                                    Изменить
+                                    {tr("edit")}
                                   </button>
                                   <button type="button"
                                     onClick={() => withdrawRegistration(squad.registrationId, label)}
                                     disabled={busy}
                                     className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80 disabled:opacity-40"
                                     style={{ background: "rgba(239,68,68,0.10)", color: "#ef4444" }}>
-                                    {busy ? "..." : "Отзаявить"}
+                                    {busy ? "..." : tr("withdraw")}
                                   </button>
                                 </div>
-                                {/* Organizer note — most useful on a
-                                    rejected card (the reason "почему"). */}
                                 {squad.notes && (
                                   <div className="basis-full mt-2 px-3 py-2 rounded-lg text-[12px]"
                                     style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)", borderLeft: `3px solid ${statusViz.border}` }}>
-                                    <span className="font-bold" style={{ color: statusViz.color }}>Комментарий организатора:</span>{" "}
+                                    <span className="font-bold" style={{ color: statusViz.color }}>{tr("organizerNote")}:</span>{" "}
                                     {squad.notes}
                                   </div>
                                 )}
@@ -2002,7 +1998,7 @@ export default function RegisterPage() {
                               <div className="space-y-2">
                                 <div>
                                   <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
-                                    Дивизион
+                                    {tr("divisionInTournament")}
                                   </p>
                                   <div className="flex flex-wrap gap-1.5">
                                     {classes.map(c => {
@@ -2022,7 +2018,7 @@ export default function RegisterPage() {
                                 </div>
                                 <div>
                                   <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
-                                    Название в турнире
+                                    {tr("nameInTournament")}
                                   </p>
                                   <input type="text"
                                     value={editingDisplayName}
@@ -2038,13 +2034,13 @@ export default function RegisterPage() {
                                     disabled={busy}
                                     className="px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all hover:opacity-90 disabled:opacity-40"
                                     style={{ background: "var(--cat-accent)", color: "#000" }}>
-                                    {busy ? "Сохраняем…" : "Сохранить"}
+                                    {busy ? tr("saving") : tr("save")}
                                   </button>
                                   <button type="button"
                                     onClick={() => setEditingRegId(null)}
                                     className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all hover:opacity-80"
                                     style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
-                                    Отмена
+                                    {tr("cancel")}
                                   </button>
                                 </div>
                               </div>
@@ -2061,7 +2057,7 @@ export default function RegisterPage() {
                         <div className="mt-3 pl-1 space-y-3">
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
-                              Дивизион в турнире<span className="text-red-400 ml-0.5">*</span>
+                              {tr("divisionInTournament")}<span className="text-red-400 ml-0.5">*</span>
                             </p>
                             <div className="flex flex-wrap gap-1.5">
                               {classes.map(c => {
@@ -2086,7 +2082,7 @@ export default function RegisterPage() {
                           </div>
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
-                              Название в этом турнире
+                              {tr("nameInTournament")}
                             </p>
                             <input type="text"
                               value={entry!.displayName ?? ""}
@@ -2098,7 +2094,7 @@ export default function RegisterPage() {
                             <input type="text"
                               value={entry!.squadAlias ?? ""}
                               onChange={e => updateEntry(entry!.key, { squadAlias: e.target.value })}
-                              placeholder="Псевдоним состава (Black/White) — необязательно"
+                              placeholder={tr("aliasPlaceholder")}
                               className="mt-2 w-full rounded-xl px-3 py-2 text-[12px] border outline-none"
                               style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text-secondary)" }}
                             />
@@ -2113,8 +2109,8 @@ export default function RegisterPage() {
           ) : (
             <div className="px-4 py-6 rounded-2xl border text-center"
               style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-              <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>У клуба нет постоянных команд</p>
-              <p className="text-[11px] mt-1" style={{ color: "var(--cat-text-faint)" }}>Создайте команду ниже</p>
+              <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>{tr("noClubTeams")}</p>
+              <p className="text-[11px] mt-1" style={{ color: "var(--cat-text-faint)" }}>{tr("createTeamBelow")}</p>
             </div>
           )}
 
@@ -2123,7 +2119,7 @@ export default function RegisterPage() {
           {teamEntries.some(e => !e.teamId) && (
             <div className="space-y-3">
               <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: "var(--cat-text-muted)" }}>
-                Новые команды ({teamEntries.filter(e => !e.teamId).length})
+                {tr("newTeams", { count: teamEntries.filter(e => !e.teamId).length })}
               </p>
               {teamEntries.filter(e => !e.teamId).map(entry => {
                 const team = { id: 0, name: null, birthYear: entry.birthYear ?? null, gender: entry.gender, totalTournaments: 0, playersCount: 0 };
@@ -2150,7 +2146,7 @@ export default function RegisterPage() {
             <button onClick={() => setShowNewTeamForm(true)}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed text-sm font-bold transition-all hover:opacity-70"
               style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-muted)" }}>
-              <Plus className="w-4 h-4" /> Добавить новую команду
+              <Plus className="w-4 h-4" /> {tr("addNewTeam")}
             </button>
           )}
 
@@ -2160,10 +2156,10 @@ export default function RegisterPage() {
               style={{ background: "var(--cat-badge-open-bg)" }}>
               <Trophy className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
               <p className="text-[12px] font-semibold" style={{ color: "var(--cat-text)" }}>
-                К регистрации: <strong>{teamEntries.length}</strong> {teamEntries.length === 1 ? "команда" : teamEntries.length < 5 ? "команды" : "команд"}
+                {tr("selectedTeamsCount", { count: teamEntries.length })}
               </p>
               {teamEntries.some(e => !e.classId) && (
-                <span className="text-[11px] text-amber-500 font-semibold ml-auto">⚠ Выберите дивизион</span>
+                <span className="text-[11px] text-amber-500 font-semibold ml-auto">{tr("pickDivisionWarn")}</span>
               )}
             </div>
           )}
@@ -2188,7 +2184,7 @@ export default function RegisterPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-90"
               style={{ background: "var(--cat-accent)", color: "#000" }}
             >
-              🔐 Войти под {contactEmail || "этим email"}
+              {tr("logInUnderEmail", { email: contactEmail || tr("logInUnderEmailFallback") })}
             </button>
           )}
         </div>
@@ -2204,7 +2200,7 @@ export default function RegisterPage() {
             disabled={!canGoNext()}
             className="flex-1 py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))", color: "var(--cat-accent-text)" }}>
-            Далее <ArrowRight className="w-4 h-4" />
+            {tr("next")} <ArrowRight className="w-4 h-4" />
           </button>
         ) : (
           <button
