@@ -859,7 +859,13 @@ export default function RegisterPage() {
               <ClubCard
                 key={club.id}
                 club={club}
-                onSelect={() => { setClubName(club.name); setView("create"); setStep(1); }}
+                onSelect={() => {
+                  setClubName(club.name);
+                  setCountry(club.country ?? "");
+                  setCity(club.city ?? "");
+                  setView("create");
+                  setStep(1);
+                }}
               />
             ))}
           </div>
@@ -947,7 +953,7 @@ export default function RegisterPage() {
       <div className="rounded-2xl border p-5 space-y-4"
         style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
         <Field label="Ваше имя" value={joinName} onChange={setJoinName} placeholder="Иван Иванов" required />
-        <Field label="Email" type="email" value={joinEmail} onChange={setJoinEmail} placeholder="ivan@club.ee" required />
+        <Field label="Email" type="email" value={joinEmail} onChange={setJoinEmail} placeholder="john@club.example" required />
         <div>
           <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
             Ваша роль
@@ -1038,14 +1044,14 @@ export default function RegisterPage() {
               <p className="text-[10px] mt-1" style={{ color: "var(--cat-text-faint)" }}>PNG, JPG · макс 2МБ</p>
             </div>
           </div>
-          <Field label={t("clubName")} value={clubName} onChange={setClubName} placeholder="FC Tallinn" required />
+          <Field label={t("clubName")} value={clubName} onChange={setClubName} placeholder="FC Barcelona" required />
           <div className="grid grid-cols-2 gap-3">
             <CountrySelect label={t("country")} value={country} onChange={setCountry} required />
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
                 {t("city")}<span className="text-red-400 ml-0.5">*</span>
               </label>
-              <CityInput value={city} onChange={setCity} country={country} placeholder="Tallinn" variant="onboarding" />
+              <CityInput value={city} onChange={setCity} country={country} placeholder="Barcelona" variant="onboarding" />
             </div>
           </div>
         </div>
@@ -1061,8 +1067,8 @@ export default function RegisterPage() {
               {t("loginCredentialsHint")}
             </p>
           </div>
-          <Field label={t("contactPerson")} value={contactName} onChange={setContactName} placeholder="Ivan Ivanov" required />
-          <Field label={t("emailLabel")} type="email" value={contactEmail} onChange={setContactEmail} placeholder="coach@club.ee" required />
+          <Field label={t("contactPerson")} value={contactName} onChange={setContactName} placeholder="John Smith" required />
+          <Field label={t("emailLabel")} type="email" value={contactEmail} onChange={setContactEmail} placeholder="coach@club.example" required />
           <Field label={t("passwordLabel")} type="password" value={password} onChange={setPassword}
             placeholder="Минимум 6 символов" hint={t("passwordMinHint")} required />
         </div>
