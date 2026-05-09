@@ -1130,14 +1130,14 @@ export default function RegisterPage() {
         {t("registrationSuccessDesc", { tournament: tournament!.name, email: contactEmail })}
       </p>
       <div className="flex flex-col gap-2 items-center">
-        {/* /api/clubs/register has already set the session cookie, so go
-            straight to the dashboard — the user just typed a password and
-            verified an email two clicks ago, asking them to log in again
-            is friction with no upside. */}
-        <Link href="/club/dashboard"
+        {/* /api/clubs/register has already set the session cookie, and
+            /team/overview is the operational area for the tournament
+            we just registered for. /club/dashboard would force an
+            onboarding redirect for fresh clubs — wrong rabbit hole. */}
+        <Link href="/team/overview"
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-opacity hover:opacity-90"
           style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
-          <LogIn className="w-4 h-4" /> Открыть кабинет клуба
+          <LogIn className="w-4 h-4" /> Перейти к управлению командами
         </Link>
         <Link href={`/t/${orgSlug}/${tournamentSlug}`}
           className="text-sm hover:underline" style={{ color: "var(--cat-text-muted)" }}>
@@ -1862,7 +1862,7 @@ export default function RegisterPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
-                  Перейти в кабинет команд турнира
+                  Управление командами на турнире
                 </p>
                 <p className="text-[11px] truncate" style={{ color: "var(--cat-text-muted)" }}>
                   Игроки, тренеры, поездка, переписка с организатором
