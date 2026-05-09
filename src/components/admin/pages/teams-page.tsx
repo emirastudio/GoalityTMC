@@ -757,7 +757,10 @@ export function TeamsPageContent() {
                           <td className="px-3 py-3">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
-                                {team.displayName ?? team.name ?? (team.birthYear ? String(team.birthYear) : "—")}
+                                {/* Same chain as everywhere else: per-tournament
+                                    displayName → custom team name → club brand
+                                    → birthYear. Year alone reads like a placeholder. */}
+                                {team.displayName ?? team.name ?? team.club?.name ?? (team.birthYear ? String(team.birthYear) : "—")}
                               </span>
                               {team.squadAlias && (
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"

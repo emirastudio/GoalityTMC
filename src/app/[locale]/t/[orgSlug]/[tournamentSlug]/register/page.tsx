@@ -1525,7 +1525,7 @@ export default function RegisterPage() {
 
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
-                            {t.name ?? (t.birthYear ? `Команда ${t.birthYear}` : "Команда без года")}
+                            {t.name ?? clubName ?? (t.birthYear ? `Команда ${t.birthYear}` : "Команда без года")}
                           </p>
                           <p className="text-[11px]" style={{ color: noYear ? "#f59e0b" : "var(--cat-text-muted)" }}>
                             {noYear
