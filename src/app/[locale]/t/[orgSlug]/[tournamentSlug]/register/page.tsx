@@ -1201,7 +1201,7 @@ export default function RegisterPage() {
 
       <div className="rounded-2xl border p-5 space-y-4"
         style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-        <Field label="Ваше имя" value={joinName} onChange={setJoinName} placeholder="Иван Иванов" required />
+        <Field label="Ваше имя" value={joinName} onChange={setJoinName} placeholder="John Smith" required />
         <Field label="Email" type="email" value={joinEmail} onChange={setJoinEmail} placeholder="john@club.example" required />
         <div>
           <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
