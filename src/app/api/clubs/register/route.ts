@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clubs, clubUsers, registrationAttempts, emailVerifications } from "@/db/schema";
+import { clubs, clubUsers, clubUserTeams, teams, registrationAttempts, emailVerifications } from "@/db/schema";
 import { eq, and, isNull, isNotNull, gt, desc } from "drizzle-orm";
 import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
 import { sendWelcomeEmail } from "@/lib/email";
@@ -44,6 +44,22 @@ export async function POST(req: NextRequest) {
   // for now (full team scoping will land in a follow-up PR).
   const existingClubIdRaw = formData.get("existingClubId") as string | null;
   const existingClubId = existingClubIdRaw ? parseInt(existingClubIdRaw) : null;
+  // When an EXISTING club is picked the new coach must declare which
+  // team they're joining (or creating). One of the two below is set:
+  //   joinTeamId: number    — pick an existing team of the club
+  //   newTeam: { name?, birthYear?, gender? } — create a new team
+  // For new-club registrations these are both null (the user becomes
+  // the first club admin and creates teams via the tournament step).
+  const joinTeamIdRaw = formData.get("joinTeamId") as string | null;
+  const joinTeamId = joinTeamIdRaw ? parseInt(joinTeamIdRaw) : null;
+  const newTeamRaw = formData.get("newTeam") as string | null;
+  let newTeam: { name?: string | null; birthYear?: number | null; gender?: "male" | "female" | "mixed" } | null = null;
+  if (newTeamRaw) {
+    try {
+      const parsed = JSON.parse(newTeamRaw);
+      if (parsed && typeof parsed === "object") newTeam = parsed;
+    } catch { /* ignore — null fallback */ }
+  }
 
   console.log(`[REGISTER] attempt — club="${clubName}" email="${contactEmail}" ip=${ip}`);
   const base = { clubName, contactEmail, contactName, country, city, ip, userAgent: ua };
@@ -123,9 +139,62 @@ export async function POST(req: NextRequest) {
     club = { id: created.id, name: created.name };
   }
 
+  // Determine what role this clubUser gets:
+  //   - new-club path → first admin of the new club (teamId = null)
+  //   - existing-club path → must pick or create a team (teamId set,
+  //     junction row inserted). The new user is a team coach, NOT a
+  //     second club admin.
+  let coachTeamId: number | null = null;
+  if (existingClubId) {
+    if (joinTeamId) {
+      // Validate the team belongs to this club.
+      const [t] = await db.select().from(teams).where(eq(teams.id, joinTeamId));
+      if (!t || t.clubId !== club.id) {
+        await logAttempt({ ...base, status: "fail_team_mismatch", failReason: `joinTeamId=${joinTeamId}` });
+        return NextResponse.json({ error: "Selected team does not belong to this club." }, { status: 400 });
+      }
+      coachTeamId = t.id;
+    } else if (newTeam) {
+      const [created] = await db
+        .insert(teams)
+        .values({
+          clubId: club.id,
+          name: newTeam.name?.toString().trim() || null,
+          birthYear: newTeam.birthYear ?? null,
+          gender: (newTeam.gender ?? "male") as "male" | "female" | "mixed",
+        })
+        .returning();
+      coachTeamId = created.id;
+    } else {
+      await logAttempt({ ...base, status: "fail_no_team", failReason: "joinTeamId/newTeam required" });
+      return NextResponse.json(
+        { error: "Pick an existing team or create a new one." },
+        { status: 400 }
+      );
+    }
+  }
+
   // Создаём пользователя клуба
   const passwordHash = await hashPassword(password);
-  await db.insert(clubUsers).values({ clubId: club.id, email: contactEmail, name: contactName, passwordHash, accessLevel: "write" });
+  const [newUser] = await db
+    .insert(clubUsers)
+    .values({
+      clubId: club.id,
+      email: contactEmail,
+      name: contactName,
+      passwordHash,
+      accessLevel: "write",
+      teamId: coachTeamId,
+    })
+    .returning();
+
+  // Junction row when this is a team coach (existing-club path).
+  if (coachTeamId) {
+    await db
+      .insert(clubUserTeams)
+      .values({ clubUserId: newUser.id, teamId: coachTeamId })
+      .onConflictDoNothing();
+  }
 
   // Consume the email verification — single-use.
   await db
@@ -141,10 +210,16 @@ export async function POST(req: NextRequest) {
     (e) => console.error("[EMAIL] Welcome send failed:", e),
   );
 
-  // Авто-логин
-  const token = createToken({ userId: club.id, role: "club", clubId: club.id });
+  // Auto-login as the freshly-created clubUser. (Bug fix: previous code
+  // signed `userId: club.id` which is the CLUB id, not the user id.)
+  const token = createToken({
+    userId: newUser.id,
+    role: "club",
+    clubId: club.id,
+    ...(coachTeamId ? { teamId: coachTeamId } : {}),
+  });
   await setSessionCookie(token);
 
-  console.log(`[REGISTER] SUCCESS — club="${clubName}" clubId=${club.id}`);
-  return NextResponse.json({ ok: true, clubId: club.id });
+  console.log(`[REGISTER] SUCCESS — club="${club.name}" clubId=${club.id} userId=${newUser.id} teamId=${coachTeamId ?? "—"}`);
+  return NextResponse.json({ ok: true, clubId: club.id, teamId: coachTeamId });
 }

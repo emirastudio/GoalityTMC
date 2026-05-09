@@ -19,7 +19,12 @@ type ClassData = { id: number; name: string; format: string | null; minBirthYear
 type ClubResult = { id: number; name: string; city: string | null; country: string | null; badgeUrl: string | null; contactName: string | null; teamCount: number; hasAdmin?: boolean };
 
 type View = "search" | "join" | "create" | "done-join" | "done-create";
-type Step = 1 | 2 | 3; // club info → account → teams
+// Step IDs (semantic, not positional):
+//   1 — Club info  (new-club path only)
+//   2 — Team       (existing-club path only — pick or create a team)
+//   3 — Account    (login or signup, both paths)
+//   4 — Tournament (divisions for the actual registration)
+type Step = 1 | 2 | 3 | 4;
 
 // Existing team in the club (from API)
 type ExistingTeam = {
@@ -494,6 +499,17 @@ export default function RegisterPage() {
   // True when the picked club already has admin(s) — controls default
   // tab on the auth step (login first vs signup first).
   const [pickedGlobalClubHasAdmin, setPickedGlobalClubHasAdmin] = useState(false);
+  // Team-picker state (only the existing-club path uses these). Either
+  // joinTeamId is set (existing team) OR newTeam is filled (creating
+  // a brand-new team for this coach).
+  type ClubTeamLite = { id: number; name: string | null; birthYear: number | null; gender: string; label: string };
+  const [clubTeamsList, setClubTeamsList] = useState<ClubTeamLite[]>([]);
+  const [clubTeamsLoading, setClubTeamsLoading] = useState(false);
+  const [joinTeamId, setJoinTeamId] = useState<number | null>(null);
+  const [newTeamMode, setNewTeamMode] = useState(false);
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamBirthYear, setNewTeamBirthYear] = useState("");
+  const [newTeamGender, setNewTeamGender] = useState<"male" | "female" | "mixed">("male");
   // Tab on step 2 when an existing club is picked: "login" lets a coach
   // who already has access sign in; "signup" creates a fresh clubUser
   // tied to the same club.
@@ -560,7 +576,7 @@ export default function RegisterPage() {
           setCountry(d.club.country ?? "");
           setCity(d.club.city ?? "");
           setView("create");
-          setStep(3);
+          setStep(4); // tournament step (logged-in clubs skip every other step)
         }
         setSessionChecked(true);
       })
@@ -577,6 +593,20 @@ export default function RegisterPage() {
       .catch(() => {})
       .finally(() => setTeamsLoading(false));
   }, [loggedInClub]);
+
+  /* Load clubTeamsList when an existing club is picked (team-picker step). */
+  useEffect(() => {
+    if (pickedGlobalClubId === null) {
+      setClubTeamsList([]);
+      return;
+    }
+    setClubTeamsLoading(true);
+    fetch(`/api/public/clubs/${pickedGlobalClubId}/teams`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: ClubTeamLite[]) => setClubTeamsList(data))
+      .catch(() => {})
+      .finally(() => setClubTeamsLoading(false));
+  }, [pickedGlobalClubId]);
 
   /* While the user is typing a clubName in the create-club step (and hasn't
      already picked from the global list), softly check whether their input
@@ -743,10 +773,23 @@ export default function RegisterPage() {
     }
     setLoginBusy(true);
     try {
+      const attachToTeamId = joinTeamId !== null ? joinTeamId : undefined;
+      const attachNewTeam = !attachToTeamId && newTeamMode
+        ? {
+            name: newTeamName.trim() || null,
+            birthYear: newTeamBirthYear ? parseInt(newTeamBirthYear) : null,
+            gender: newTeamGender,
+          }
+        : undefined;
       const r = await fetch("/api/auth/club-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword }),
+        body: JSON.stringify({
+          email: loginEmail.trim(),
+          password: loginPassword,
+          ...(attachToTeamId ? { attachToTeamId } : {}),
+          ...(attachNewTeam ? { attachNewTeam } : {}),
+        }),
       });
       if (!r.ok) {
         setLoginError("Неверный email или пароль");
@@ -762,7 +805,7 @@ export default function RegisterPage() {
         setClubName(me.club.name);
         setCountry(me.club.country ?? "");
         setCity(me.club.city ?? "");
-        setStep(3);
+        setStep(4); // jump straight to tournament-divisions step
       }
     } finally {
       setLoginBusy(false);
@@ -851,6 +894,16 @@ export default function RegisterPage() {
     // Reuse the global club row instead of creating a duplicate
     if (pickedGlobalClubId !== null) {
       fd.append("existingClubId", String(pickedGlobalClubId));
+      // Existing-club path: must declare which team the new coach joins.
+      if (joinTeamId !== null) {
+        fd.append("joinTeamId", String(joinTeamId));
+      } else if (newTeamMode) {
+        fd.append("newTeam", JSON.stringify({
+          name: newTeamName.trim() || null,
+          birthYear: newTeamBirthYear ? parseInt(newTeamBirthYear) : null,
+          gender: newTeamGender,
+        }));
+      }
     }
 
     setSubmitting(true);
@@ -865,11 +918,30 @@ export default function RegisterPage() {
     } finally { setSubmitting(false); }
   }
 
+  /* Step flow per path. Logical step ids: 1=club info, 2=team picker,
+     3=account, 4=tournament. Existing-club path skips club info, new-club
+     path skips team picker. */
+  const flowSteps: Step[] = pickedGlobalClubId !== null ? [2, 3, 4] : [1, 3, 4];
+  const stepIdx = flowSteps.indexOf(step);
+  function gotoNext() { const next = flowSteps[stepIdx + 1]; if (next !== undefined) setStep(next); }
+  function gotoPrev() { const prev = flowSteps[stepIdx - 1]; if (prev !== undefined) setStep(prev); }
+  const isFirstStep = stepIdx <= 0;
+  const isLastStep = stepIdx === flowSteps.length - 1;
+
   /* Validate steps */
   function canGoNext(): boolean {
     if (step === 1) return !!clubName.trim() && !!country.trim() && !!city.trim();
-    if (step === 2) return !!contactName.trim() && !!contactEmail.trim() && password.length >= 6 && emailVerified;
-    if (step === 3) {
+    if (step === 2) {
+      // Team picker: must have either an existing team selected OR
+      // a complete new-team form (at minimum birthYear OR custom name).
+      if (joinTeamId !== null) return true;
+      if (newTeamMode) {
+        return !!newTeamName.trim() || !!newTeamBirthYear.trim();
+      }
+      return false;
+    }
+    if (step === 3) return !!contactName.trim() && !!contactEmail.trim() && password.length >= 6 && emailVerified;
+    if (step === 4) {
       if (loggedInClub) return teamEntries.length > 0 && teamEntries.every(e => !!e.classId);
       return newClubTeams.length > 0;
     }
@@ -1038,8 +1110,10 @@ export default function RegisterPage() {
                   setPickedGlobalClubId(club.id);
                   setPickedGlobalClubHasAdmin(!!club.hasAdmin);
                   setAuthMode(club.hasAdmin ? "login" : "signup");
+                  setJoinTeamId(null);
+                  setNewTeamMode(false);
                   setView("create");
-                  setStep(2);
+                  setStep(2); // team-picker
                 }}
               />
             ))}
@@ -1170,14 +1244,12 @@ export default function RegisterPage() {
     <div className="max-w-lg mx-auto py-6 space-y-5">
       <button onClick={() => {
         if (loggedInClub) return; // logged-in club can't go back in wizard
-        // For an existing-club pick we jumped past step 1, so going
-        // back from step 2 returns to search (not to the empty step 1).
-        const minStep: Step = pickedGlobalClubId !== null ? 2 : 1;
-        step === minStep ? setView("search") : setStep(s => (s - 1) as Step);
+        if (isFirstStep) { setView("search"); return; }
+        gotoPrev();
       }}
         className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
         style={{ color: "var(--cat-text-muted)", visibility: loggedInClub ? "hidden" : "visible" }}>
-        <ArrowLeft className="w-4 h-4" /> {step === (pickedGlobalClubId !== null ? 2 : 1) ? "Назад к поиску" : "Назад"}
+        <ArrowLeft className="w-4 h-4" /> {isFirstStep ? "Назад к поиску" : "Назад"}
       </button>
 
       <div>
@@ -1185,30 +1257,30 @@ export default function RegisterPage() {
           {loggedInClub
             ? `${loggedInClub.name} · Регистрация`
             : pickedGlobalClubId !== null
-              ? `${clubName} · Шаг ${step - 1} из 2`
-              : `Новый клуб · Шаг ${step} из 3`}
+              ? `${clubName} · Шаг ${stepIdx + 1} из ${flowSteps.length}`
+              : `Новый клуб · Шаг ${stepIdx + 1} из ${flowSteps.length}`}
         </span>
         <h1 className="text-2xl font-black mt-1" style={{ color: "var(--cat-text)" }}>
           {loggedInClub ? `Команды для ${tournament!.name}` : (
-            step === 1 ? "Данные клуба" : step === 2 ? "Ваш аккаунт" : "Команды для регистрации"
+            step === 1 ? "Данные клуба"
+              : step === 2 ? "Ваша команда"
+              : step === 3 ? "Ваш аккаунт"
+              : "Команды для регистрации"
           )}
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--cat-text-secondary)" }}>
           {loggedInClub
             ? "Выберите команды клуба или создайте новую"
             : (step === 1 ? "Расскажите о вашем клубе"
-              : step === 2 ? (pickedGlobalClubId !== null
+              : step === 2 ? `Какую команду клуба «${clubName}» вы тренируете?`
+              : step === 3 ? (pickedGlobalClubId !== null
                   ? `Создайте вход в личный кабинет клуба «${clubName}»`
                   : "Создайте вход в личный кабинет клуба")
               : `Выберите дивизионы в турнире ${tournament!.name}`)}
         </p>
       </div>
 
-      {!loggedInClub && (
-        pickedGlobalClubId !== null
-          ? <StepBar step={step - 1} total={2} />
-          : <StepBar step={step} total={3} />
-      )}
+      {!loggedInClub && <StepBar step={stepIdx + 1} total={flowSteps.length} />}
 
       {/* ── Step 1: Club info ── */}
       {!loggedInClub && step === 1 && (
@@ -1245,8 +1317,10 @@ export default function RegisterPage() {
                 setClubName(duplicateClubHint.name);
                 setCountry(duplicateClubHint.country ?? country);
                 setCity(duplicateClubHint.city ?? city);
+                setJoinTeamId(null);
+                setNewTeamMode(false);
                 setDuplicateClubHint(null);
-                setStep(2);
+                setStep(2); // team-picker
               }}
               className="w-full flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all hover:scale-[1.005]"
               style={{ background: "rgba(245,158,11,0.08)", borderColor: "rgba(245,158,11,0.35)" }}
@@ -1274,8 +1348,141 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* ── Step 2: Account ── */}
+      {/* ── Step 2: Team picker (existing-club path only) ── */}
       {!loggedInClub && step === 2 && (
+        <div className="rounded-2xl border p-5 space-y-3"
+          style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+          {clubTeamsLoading ? (
+            <div className="py-6 flex items-center justify-center" style={{ color: "var(--cat-text-muted)" }}>
+              <Loader2 className="w-4 h-4 animate-spin mr-2" /> Загружаем команды клуба…
+            </div>
+          ) : (
+            <>
+              {clubTeamsList.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
+                    Существующие команды клуба
+                  </p>
+                  {clubTeamsList.map(t => {
+                    const sel = !newTeamMode && joinTeamId === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => { setJoinTeamId(t.id); setNewTeamMode(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all"
+                        style={{
+                          background: sel ? "var(--cat-badge-open-bg)" : "var(--cat-tag-bg)",
+                          borderColor: sel ? "var(--cat-accent)" : "var(--cat-card-border)",
+                        }}
+                      >
+                        <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
+                          style={{ borderColor: sel ? "var(--cat-accent)" : "var(--cat-input-border)" }}>
+                          {sel && <div className="w-2 h-2 rounded-full" style={{ background: "var(--cat-accent)" }} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
+                            {t.label}
+                          </p>
+                          <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                            {[t.birthYear, t.gender === "male" ? "♂" : t.gender === "female" ? "♀" : "⚥"].filter(Boolean).join(" · ")}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Create-new-team toggle */}
+              <button
+                type="button"
+                onClick={() => { setNewTeamMode(v => !v); setJoinTeamId(null); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all border-dashed"
+                style={{
+                  background: newTeamMode ? "var(--cat-badge-open-bg)" : "transparent",
+                  borderColor: newTeamMode ? "var(--cat-accent)" : "var(--cat-card-border)",
+                }}
+              >
+                <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
+                  style={{ borderColor: newTeamMode ? "var(--cat-accent)" : "var(--cat-input-border)" }}>
+                  {newTeamMode && <div className="w-2 h-2 rounded-full" style={{ background: "var(--cat-accent)" }} />}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>
+                    + Создать новую команду
+                  </p>
+                  <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                    Если вашей команды ещё нет в клубе — добавьте её
+                  </p>
+                </div>
+              </button>
+
+              {/* New-team form */}
+              {newTeamMode && (
+                <div className="space-y-3 p-4 rounded-xl border"
+                  style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
+                      Название команды
+                    </label>
+                    <input
+                      type="text"
+                      value={newTeamName}
+                      onChange={e => setNewTeamName(e.target.value)}
+                      placeholder={clubName || "Название"}
+                      className="w-full rounded-xl px-3 py-2 text-sm border outline-none"
+                      style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
+                        Год рождения
+                      </label>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={newTeamBirthYear}
+                        onChange={e => setNewTeamBirthYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        placeholder="2015"
+                        className="w-full rounded-xl px-3 py-2 text-sm border outline-none"
+                        style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
+                        Пол
+                      </label>
+                      <div className="flex gap-1">
+                        {(["male", "female", "mixed"] as const).map(g => (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => setNewTeamGender(g)}
+                            className="flex-1 rounded-xl py-2 text-xs font-semibold border transition-all"
+                            style={newTeamGender === g
+                              ? { background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-accent)", color: "var(--cat-accent)" }
+                              : { background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text-muted)" }}
+                          >
+                            {g === "male" ? "♂" : g === "female" ? "♀" : "⚥"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                    Минимум — название или год рождения. Дивизионы для турнира выберете на следующих шагах.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Step 3: Account (login or signup) ── */}
+      {!loggedInClub && step === 3 && (
         <div className="rounded-2xl border p-5 space-y-4"
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
           {/* Login/signup tabs — only when an existing club is picked.
@@ -1431,8 +1638,8 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* ── Step 3: Teams (NEW CLUB) ── */}
-      {!loggedInClub && step === 3 && (
+      {/* ── Step 4: Tournament classes (NEW CLUB) ── */}
+      {!loggedInClub && step === 4 && (
         <div className="space-y-3">
           {classes.length === 0 ? (
             <div className="rounded-2xl border p-8 text-center" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
@@ -1492,7 +1699,7 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* ── Step 3: Teams (LOGGED-IN CLUB) ── */}
+      {/* ── Step 4: Tournament classes (LOGGED-IN CLUB) ── */}
       {loggedInClub && (
         <div className="space-y-4">
           {/* Existing teams of this club */}
@@ -1629,12 +1836,13 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* Navigation — hide "Далее" on the login tab (the inline "Войти"
-          button submits its own form) */}
-      <div className="flex gap-3" hidden={!loggedInClub && step === 2 && pickedGlobalClubId !== null && authMode === "login"}>
-        {!loggedInClub && step < 3 ? (
+      {/* Navigation — hide "Далее" on the login tab (inline "Войти" submits
+          its own form). The last step ("Команды для регистрации") submits
+          the whole registration via handleCreate. */}
+      <div className="flex gap-3" hidden={!loggedInClub && step === 3 && pickedGlobalClubId !== null && authMode === "login"}>
+        {!loggedInClub && !isLastStep ? (
           <button
-            onClick={() => canGoNext() && setStep(s => (s + 1) as Step)}
+            onClick={() => canGoNext() && gotoNext()}
             disabled={!canGoNext()}
             className="flex-1 py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))", color: "var(--cat-accent-text)" }}>
