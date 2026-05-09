@@ -17,13 +17,25 @@ async function send(opts: {
   text?: string;
   replyTo?: string;
 }) {
+  // Headers improve deliverability and reduce spam-folder placement:
+  //   List-Unsubscribe / List-Unsubscribe-Post — required by Gmail and
+  //     Apple Mail bulk-sender policy (Feb 2024+); when present, the
+  //     mailbox renders a one-click "Unsubscribe" link and trusts the
+  //     sender as legit transactional / opted-in.
+  //   List-ID — namespace this kind of mail so user "Mark as not junk"
+  //     trains the filter for the whole stream, not just one message.
   const { error } = await resend.emails.send({
     from: FROM,
     to: Array.isArray(opts.to) ? opts.to : [opts.to],
     subject: opts.subject,
     html: opts.html,
     ...(opts.text ? { text: opts.text } : {}),
-    ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
+    replyTo: opts.replyTo ?? "support@goalityfootball.com",
+    headers: {
+      "List-Unsubscribe": `<${APP_URL}/unsubscribe>, <mailto:unsubscribe@goalityfootball.com>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      "List-ID": "Goality Notifications <notifications.goalityfootball.com>",
+    },
   });
   if (error) throw error;
 }

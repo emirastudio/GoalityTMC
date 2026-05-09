@@ -90,7 +90,9 @@ export const EMAIL_STRINGS = {
 
   // ─── Registration confirmed ────────────────────────────────
   regConfirmed: {
-    subject:    { en: "✅ Confirmed — {teamName} is in {tournamentName}!",                                ru: "✅ Подтверждено — {teamName} в {tournamentName}!",                                            et: "✅ Kinnitatud — {teamName} on {tournamentName}!",                                              es: "✅ Confirmado — {teamName} está en {tournamentName}!" },
+    // No emoji in subject — Apple Mail Junk filter is allergic to the
+    // ✅ glyph in transactional mail and routes batches to spam.
+    subject:    { en: "Confirmed — {teamName} is in {tournamentName}",                                  ru: "Подтверждено — {teamName} в турнире {tournamentName}",                                      et: "Kinnitatud — {teamName} on {tournamentName} osaleja",                                          es: "Confirmado — {teamName} está en {tournamentName}" },
     bannerTitle:{ en: "You're confirmed!",                                                                 ru: "Вы подтверждены!",                                                                            et: "Olete kinnitatud!",                                                                            es: "¡Estás confirmado!" },
     bannerSub:  { en: "{teamName} has a spot in {tournamentName}",                                         ru: "Команда {teamName} получила место в {tournamentName}",                                        et: "Meeskond {teamName} on {tournamentName} osaleja",                                              es: "{teamName} tiene un lugar en {tournamentName}" },
     body1:      { en: "Hi <strong>{clubName}</strong>,",                                                   ru: "Здравствуйте, <strong>{clubName}</strong>!",                                                  et: "Tere <strong>{clubName}</strong>!",                                                            es: "Hola <strong>{clubName}</strong>," },
