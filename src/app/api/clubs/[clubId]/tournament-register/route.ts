@@ -229,6 +229,34 @@ export async function POST(
     // Build displayName for this registration
     const displayName = entry.displayName?.trim() || null;
 
+    // Pre-flight: refuse with a clear human message if (team, tournament,
+    // alias) already exists. The DB has a unique index on this triple,
+    // and a blind insert raises a 23505 that surfaces to the user as a
+    // generic "Registration failed". Better to spell it out.
+    const [conflict] = await db
+      .select({ id: tournamentRegistrations.id, classId: tournamentRegistrations.classId })
+      .from(tournamentRegistrations)
+      .where(
+        and(
+          eq(tournamentRegistrations.teamId, teamId),
+          eq(tournamentRegistrations.tournamentId, tournamentId),
+          eq(tournamentRegistrations.squadAlias, alias),
+        )
+      )
+      .limit(1);
+    if (conflict) {
+      return NextResponse.json(
+        {
+          error: alias
+            ? `Команда «${teamName}» уже подавала заявку с псевдонимом «${alias}». Используйте другой псевдоним или отмените существующую заявку.`
+            : `Команда «${teamName}» уже зарегистрирована в этом турнире. Чтобы добавить второй состав — задайте псевдоним (Black/White/A/B), либо отмените существующую заявку.`,
+          code: "DUPLICATE_REGISTRATION",
+          conflict: { registrationId: conflict.id, teamId, classId: conflict.classId },
+        },
+        { status: 409 },
+      );
+    }
+
     const [registration] = await db
       .insert(tournamentRegistrations)
       .values({

@@ -34,6 +34,19 @@ type ExistingTeam = {
   gender: "male" | "female" | "mixed";
   totalTournaments: number;
   playersCount: number;
+  // Server-side state for the currently selected tournament. Populated
+  // by /api/clubs/[clubId]/teams using session.tournamentId. When this
+  // array is non-empty the team has at least one registration already
+  // — UI shows "Уже зарегистрирована" instead of "+ Заявить".
+  currentSquads?: Array<{
+    registrationId: number;
+    squadAlias: string;
+    displayName: string | null;
+    classId: number | null;
+    className: string;
+    regNumber: number | null;
+    status: "draft" | "open" | "confirmed" | "cancelled";
+  }>;
 };
 
 // One entry in the "teams to register" list (for logged-in club)
@@ -606,16 +619,22 @@ export default function RegisterPage() {
       .catch(() => setSessionChecked(true));
   }, []);
 
-  /* Load existing teams when logged-in club detected */
+  /* Load existing teams when logged-in club detected. Pass tournamentId
+     so currentSquads in the response reflects THIS tournament, not the
+     session's last one. Without this we'd render "уже зарегистрирована"
+     against a different tournament. */
   useEffect(() => {
     if (!loggedInClub) return;
     setTeamsLoading(true);
-    fetch(`/api/clubs/${loggedInClub.id}/teams`, { credentials: "include" })
+    const url = tournament
+      ? `/api/clubs/${loggedInClub.id}/teams?tournamentId=${tournament.id}`
+      : `/api/clubs/${loggedInClub.id}/teams`;
+    fetch(url, { credentials: "include" })
       .then(r => r.ok ? r.json() : [])
       .then((data: ExistingTeam[]) => setExistingTeams(data))
       .catch(() => {})
       .finally(() => setTeamsLoading(false));
-  }, [loggedInClub]);
+  }, [loggedInClub, tournament]);
 
   /* Load clubTeamsList when an existing club is picked (team-picker step). */
   useEffect(() => {
@@ -1783,6 +1802,8 @@ export default function RegisterPage() {
                 {existingTeams.map(team => {
                   const entry = teamEntries.find(e => e.teamId === team.id);
                   const alreadyAdded = !!entry;
+                  const submitted = (team.currentSquads ?? []).filter(s => s.status !== "cancelled");
+                  const alreadySubmitted = submitted.length > 0;
                   return (
                     <div key={team.id}
                       className="px-4 py-3 transition-all"
@@ -1795,6 +1816,11 @@ export default function RegisterPage() {
                               {team.playersCount} игроков
                             </p>
                           )}
+                          {alreadySubmitted && (
+                            <p className="text-[10px] mt-0.5" style={{ color: "var(--cat-accent)" }}>
+                              ✓ Уже зарегистрирована: {submitted.map(s => s.className || `#${s.regNumber}`).join(", ")}
+                            </p>
+                          )}
                         </div>
                         {alreadyAdded ? (
                           <button onClick={() => removeEntry(entry!.key)}
@@ -1802,6 +1828,11 @@ export default function RegisterPage() {
                             style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
                             <X className="w-3 h-3" /> Убрать заявку
                           </button>
+                        ) : alreadySubmitted ? (
+                          <span className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0"
+                            style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+                            ✓ Заявка подана
+                          </span>
                         ) : (
                           <button onClick={() => addExistingTeam(team)}
                             className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-xl border transition-all hover:opacity-80"

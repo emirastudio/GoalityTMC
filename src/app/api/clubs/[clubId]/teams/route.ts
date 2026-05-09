@@ -57,9 +57,14 @@ export async function GET(
         .from(people)
         .where(and(eq(people.teamId, team.id), eq(people.personType, "staff")));
 
-      // Регистрация в текущем турнире (все записи — бывает несколько составов)
-      const currentRegs = session.tournamentId
-        ? team.registrations.filter((r) => r.tournamentId === session.tournamentId)
+      // Tournament context — query-param overrides session so the public
+      // registration page always shows the right tournament's squads.
+      const ctxTournamentId = (() => {
+        const q = parseInt(req.nextUrl.searchParams.get("tournamentId") ?? "");
+        return Number.isFinite(q) ? q : session.tournamentId;
+      })();
+      const currentRegs = ctxTournamentId
+        ? team.registrations.filter((r) => r.tournamentId === ctxTournamentId)
         : [];
       // Для совместимости: первая регистрация как "основная"
       const currentReg = currentRegs[0] ?? null;
