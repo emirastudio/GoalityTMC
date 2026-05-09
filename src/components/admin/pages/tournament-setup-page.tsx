@@ -115,7 +115,6 @@ interface TournamentInfoData {
 type StepKey = "basics" | "media" | "divisions" | "format" | "venue" | "products" | "info" | "publish";
 
 const FORMATS = ["5x5", "6x6", "7x7", "8x8", "9x9", "11x11"];
-const CATEGORIES = ["registration", "accommodation", "transfer", "meals", "extra"];
 
 function toDateInput(val: string | null): string {
   if (!val) return "";
@@ -1217,104 +1216,6 @@ function StepProducts({ orgSlug, tournamentId }: { orgSlug: string; tournamentId
           Там можно собирать пакеты, назначать индивидуальные сделки и видеть оплату — это богаче, чем простой список.
         </p>
       </div>
-    </div>
-  );
-}
-
-// Legacy v2 editor — kept here only so the rest of the file still
-// references TournamentProduct types without breaking. Not rendered.
-function StepProductsV2Legacy({ products, setProducts }: {
-  products: TournamentProduct[];
-  setProducts: (v: TournamentProduct[]) => void;
-}) {
-  const t = useTranslations("orgAdmin");
-  const active = products.filter(p => !p._deleted);
-
-  const addProduct = () => {
-    setProducts([...products, { name: "", category: "registration", price: "0", perPerson: false, isRequired: false, sortOrder: active.length }]);
-  };
-
-  const update = (idx: number, patch: Partial<TournamentProduct>) => {
-    const updated = [...products];
-    const realIdx = products.indexOf(active[idx]);
-    updated[realIdx] = { ...updated[realIdx], ...patch };
-    setProducts(updated);
-  };
-
-  const remove = (idx: number) => {
-    const updated = [...products];
-    const realIdx = products.indexOf(active[idx]);
-    if (updated[realIdx].id) {
-      updated[realIdx] = { ...updated[realIdx], _deleted: true };
-    } else {
-      updated.splice(realIdx, 1);
-    }
-    setProducts(updated);
-  };
-
-  const categoryColor: Record<string, string> = {
-    registration: "#10b981",
-    accommodation: "#3b82f6",
-    transfer: "#f59e0b",
-    meals: "#ef4444",
-    extra: "#8b5cf6",
-  };
-
-  return (
-    <div className="space-y-5">
-      <StepHeader icon={ShoppingBag} title={t("stepProducts")} description={t("stepProductsHint")} />
-
-      <div className="space-y-3">
-        {active.map((prod, idx) => (
-          <div key={idx} className="rounded-2xl border p-4"
-            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", borderLeftWidth: 3, borderLeftColor: categoryColor[prod.category] ?? "var(--cat-accent)" }}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ background: `${categoryColor[prod.category]}20`, color: categoryColor[prod.category] }}>
-                {t(`category_${prod.category}`)}
-              </span>
-              <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{prod.name || t("newProduct")}</span>
-              <button onClick={() => remove(idx)} className="ml-auto p-1.5 rounded-lg hover:opacity-70"
-                style={{ color: "var(--badge-error-text)", background: "var(--badge-error-bg)" }}>
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="sm:col-span-2">
-                <Field label={t("productName")}>
-                  <input className={inputCls} style={inputStyle} value={prod.name} onChange={e => update(idx, { name: e.target.value })} placeholder={t("productNamePlaceholder")} />
-                </Field>
-              </div>
-              <Field label={t("category")}>
-                <select className={inputCls} style={inputStyle} value={prod.category} onChange={e => update(idx, { category: e.target.value })}>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{t(`category_${c}`)}</option>)}
-                </select>
-              </Field>
-              <Field label={t("price")}>
-                <input type="number" className={inputCls} style={inputStyle} value={prod.price} onChange={e => update(idx, { price: e.target.value })} min="0" step="0.01" />
-              </Field>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={prod.isRequired} onChange={e => update(idx, { isRequired: e.target.checked })}
-                    className="rounded" />
-                  <span className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>{t("required")}</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={prod.perPerson} onChange={e => update(idx, { perPerson: e.target.checked })}
-                    className="rounded" />
-                  <span className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>{t("perPerson")}</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button onClick={addProduct}
-        className="w-full rounded-2xl border-2 border-dashed py-4 flex items-center justify-center gap-2 text-sm font-semibold transition-all hover:opacity-80"
-        style={{ borderColor: "var(--cat-accent)", color: "var(--cat-accent)" }}>
-        <Plus className="w-4 h-4" /> {t("addProduct")}
-      </button>
     </div>
   );
 }

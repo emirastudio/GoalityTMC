@@ -93,7 +93,10 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { classes, products, ...tournamentFields } = body;
+  // `products` (legacy v2) is intentionally ignored — services live in v3
+  // `offerings` now (managed at /admin/tournament/[id]/offerings).
+  const { classes, products: _ignoredProducts, ...tournamentFields } = body;
+  void _ignoredProducts;
 
   // ── Plan gate: check division limit before saving classes ──────────────
   if (Array.isArray(classes)) {
@@ -281,54 +284,7 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  // Upsert / delete products
-  if (Array.isArray(products)) {
-    for (const prod of products) {
-      if (prod._deleted) {
-        if (prod.id) {
-          await db.delete(tournamentProducts).where(eq(tournamentProducts.id, prod.id));
-        }
-        continue;
-      }
-      if (prod.id) {
-        await db
-          .update(tournamentProducts)
-          .set({
-            name: prod.name,
-            nameRu: prod.nameRu,
-            nameEt: prod.nameEt,
-            description: prod.description,
-            descriptionRu: prod.descriptionRu,
-            descriptionEt: prod.descriptionEt,
-            price: String(prod.price),
-            currency: prod.currency,
-            category: prod.category,
-            isRequired: prod.isRequired,
-            includedQuantity: prod.includedQuantity,
-            perPerson: prod.perPerson,
-            sortOrder: prod.sortOrder,
-          })
-          .where(eq(tournamentProducts.id, prod.id));
-      } else {
-        await db.insert(tournamentProducts).values({
-          tournamentId: tournament.id,
-          name: prod.name,
-          nameRu: prod.nameRu,
-          nameEt: prod.nameEt,
-          description: prod.description,
-          descriptionRu: prod.descriptionRu,
-          descriptionEt: prod.descriptionEt,
-          price: String(prod.price),
-          currency: prod.currency ?? "EUR",
-          category: prod.category,
-          isRequired: prod.isRequired ?? false,
-          includedQuantity: prod.includedQuantity ?? 0,
-          perPerson: prod.perPerson ?? false,
-          sortOrder: prod.sortOrder ?? 0,
-        });
-      }
-    }
-  }
+  // (Legacy v2 product upsert removed — see /admin/tournament/[id]/offerings.)
 
   // Return updated tournament
   const updated = await db.query.tournaments.findFirst({
