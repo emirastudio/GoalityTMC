@@ -479,6 +479,10 @@ export default function RegisterPage() {
   const [globalResults, setGlobalResults] = useState<ClubResult[]>([]);
   const [searching, setSearching]   = useState(false);
   const [selectedClub, setSelected] = useState<ClubResult | null>(null);
+  // When the user picks an existing club from the global search, remember
+  // its id so we can re-use the club row on submit instead of creating a
+  // duplicate. Cleared if the user types a new clubName manually.
+  const [pickedGlobalClubId, setPickedGlobalClubId] = useState<number | null>(null);
 
   /* Join request */
   const [joinName,  setJoinName]  = useState("");
@@ -687,6 +691,10 @@ export default function RegisterPage() {
       name: tm.name.trim() || undefined,
     }))));
     if (logo) fd.append("logo", logo);
+    // Reuse the global club row instead of creating a duplicate
+    if (pickedGlobalClubId !== null) {
+      fd.append("existingClubId", String(pickedGlobalClubId));
+    }
 
     setSubmitting(true);
     try {
@@ -863,6 +871,7 @@ export default function RegisterPage() {
                   setClubName(club.name);
                   setCountry(club.country ?? "");
                   setCity(club.city ?? "");
+                  setPickedGlobalClubId(club.id);
                   setView("create");
                   setStep(1);
                 }}

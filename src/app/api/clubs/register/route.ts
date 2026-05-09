@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
   const contactPhone = formData.get("contactPhone") as string;
   const password = formData.get("password") as string;
   const logoFile = formData.get("logo") as File | null;
+  // When the user picked an existing club from the global search results,
+  // the frontend sends its id here. We re-use that club instead of creating
+  // a duplicate. The new clubUser still gets created as a write-access admin
+  // for now (full team scoping will land in a follow-up PR).
+  const existingClubIdRaw = formData.get("existingClubId") as string | null;
+  const existingClubId = existingClubIdRaw ? parseInt(existingClubIdRaw) : null;
 
   console.log(`[REGISTER] attempt — club="${clubName}" email="${contactEmail}" ip=${ip}`);
   const base = { clubName, contactEmail, contactName, country, city, ip, userAgent: ua };
@@ -54,29 +60,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "An account with this email already exists. Please log in." }, { status: 409 });
   }
 
-  // Logo upload
-  let badgeUrl: string | null = null;
-  const hasLogo = !!(logoFile && logoFile.size > 0);
-  if (hasLogo) {
-    const allowed = ["image/png", "image/jpeg", "image/gif", "image/webp"];
-    if (allowed.includes(logoFile!.type) && logoFile!.size <= 10 * 1024 * 1024) {
-      const ext = logoFile!.name.split(".").pop() ?? "png";
-      const filename = `club-${Date.now()}.${ext}`;
-      const uploadDir = path.join(process.cwd(), "public", "uploads", "badges");
-      await mkdir(uploadDir, { recursive: true });
-      await writeFile(path.join(uploadDir, filename), Buffer.from(await logoFile!.arrayBuffer()));
-      badgeUrl = `/uploads/badges/${filename}`;
+  let club: { id: number; name: string };
+  let hasLogo = false;
+
+  if (existingClubId) {
+    // ── Existing-club path: re-use the global club row, skip logo / slug ──
+    const found = await db.query.clubs.findFirst({ where: eq(clubs.id, existingClubId) });
+    if (!found) {
+      await logAttempt({ ...base, status: "fail_existing_club_not_found", failReason: `clubId=${existingClubId}` });
+      return NextResponse.json({ error: "Selected club no longer exists. Search again." }, { status: 404 });
     }
+    club = { id: found.id, name: found.name };
+    console.log(`[REGISTER] existing-club path — clubId=${club.id} ("${club.name}")`);
+  } else {
+    // ── New-club path: original flow ──
+    let badgeUrl: string | null = null;
+    hasLogo = !!(logoFile && logoFile.size > 0);
+    if (hasLogo) {
+      const allowed = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+      if (allowed.includes(logoFile!.type) && logoFile!.size <= 10 * 1024 * 1024) {
+        const ext = logoFile!.name.split(".").pop() ?? "png";
+        const filename = `club-${Date.now()}.${ext}`;
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "badges");
+        await mkdir(uploadDir, { recursive: true });
+        await writeFile(path.join(uploadDir, filename), Buffer.from(await logoFile!.arrayBuffer()));
+        badgeUrl = `/uploads/badges/${filename}`;
+      }
+    }
+
+    // Slug из названия клуба
+    const baseSlug = clubName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+    // Создаём глобальный клуб
+    const [created] = await db.insert(clubs).values({
+      name: clubName, slug: `${baseSlug}-${Date.now()}`,
+      country, city, badgeUrl, contactName, contactEmail, contactPhone,
+    }).returning();
+    club = { id: created.id, name: created.name };
   }
-
-  // Slug из названия клуба
-  const baseSlug = clubName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-
-  // Создаём глобальный клуб
-  const [club] = await db.insert(clubs).values({
-    name: clubName, slug: `${baseSlug}-${Date.now()}`,
-    country, city, badgeUrl, contactName, contactEmail, contactPhone,
-  }).returning();
 
   // Создаём пользователя клуба
   const passwordHash = await hashPassword(password);
@@ -84,8 +105,9 @@ export async function POST(req: NextRequest) {
 
   await logAttempt({ ...base, hasLogo, status: "success", clubId: club.id });
 
-  // Welcome email (fire & forget)
-  sendWelcomeEmail({ to: contactEmail, clubName, contactName }).catch(
+  // Welcome email (fire & forget) — uses the actual club name (which may
+  // differ from the form input when an existing club was picked).
+  sendWelcomeEmail({ to: contactEmail, clubName: club.name, contactName }).catch(
     (e) => console.error("[EMAIL] Welcome send failed:", e),
   );
 
