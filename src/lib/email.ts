@@ -3,7 +3,11 @@ import { Resend } from "resend";
 // ─── Transport ────────────────────────────────────────────────────────────────
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+<<<<<<< Updated upstream
 const FROM    = process.env.EMAIL_FROM ?? "Goality <noreply@send.goalityfootball.com>";
+=======
+const FROM    = process.env.EMAIL_FROM ?? "Goality <noreply@goality.app>";
+>>>>>>> Stashed changes
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com";
 
 // Recipient for GDPR notices and internal admin alerts.
@@ -199,7 +203,12 @@ export async function sendWelcomeEmail({
   const name = contactName || "there";
   const url = loginUrl ?? `${APP_URL}/en/login`;
 
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to,
     subject: `Welcome to Goality — ${clubName} is ready 🎉`,
     text: `Hi ${name},\n\nWelcome to Goality! Your club "${clubName}" has been successfully registered.\n\nLog in at: ${url}\n\nGoality Team`,
@@ -236,7 +245,12 @@ export async function sendPasswordReset({
   toName: string;
   resetLink: string;
 }) {
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to: `${toName} <${to}>`,
     subject: "Reset your Goality password",
     text: `Hi ${toName},\n\nClick the link to reset your password (valid for 1 hour):\n${resetLink}\n\nIf you didn't request this, ignore this email.\n\nGoality Team`,
@@ -268,7 +282,12 @@ export async function sendClubInvite({
 }) {
   const inviter = inviterName ? `<strong>${inviterName}</strong>` : "the club administrator";
 
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to,
     subject: `You've been invited to join ${clubName} on Goality`,
     text: `You've been invited to join ${clubName} as a manager on Goality.\n\nAccept invitation: ${inviteLink}\n\nLink valid for 7 days.\n\nGoality Team`,
@@ -303,7 +322,12 @@ export async function sendOrgAdminInvite({
   inviterName?: string | null;
 }) {
   const inviter = inviterName ? `<strong>${inviterName}</strong>` : "An administrator";
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to,
     subject: `You've been invited to administer ${orgName} on Goality`,
     text: `${inviter} has invited you to become an administrator of ${orgName} on Goality.\n\nAccept invitation: ${inviteLink}\n\nLink valid for 7 days.\n\nGoality Team`,
@@ -338,7 +362,12 @@ export async function sendRegistrationReceived({
   tournamentName: string;
   tournamentOrganizer?: string | null;
 }) {
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to,
     subject: `Application received — ${tournamentName}`,
     text: `Hi ${clubName},\n\nYour registration for "${teamName}" in "${tournamentName}" has been received.\n\nThe organizer will review it shortly.\n\nGoality Team`,
@@ -382,7 +411,12 @@ export async function sendRegistrationConfirmed({
 }) {
   const portalUrl = `${APP_URL}/en/team/overview`;
 
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to,
     subject: `✅ Confirmed — ${teamName} is in ${tournamentName}!`,
     text: `Hi ${clubName},\n\nGreat news! ${teamName} has been confirmed for ${tournamentName}.\n\n${notes ? `Note from organizer: ${notes}\n\n` : ""}Open your team portal: ${portalUrl}\n\nGoality Team`,
@@ -434,7 +468,12 @@ export async function sendRegistrationRejected({
   tournamentName: string;
   notes?: string | null;
 }) {
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to,
     subject: `Update on your application — ${tournamentName}`,
     text: `Hi ${clubName},\n\nUnfortunately, ${teamName}'s application for ${tournamentName} was not accepted at this time.\n\n${notes ? `Message from organizer: ${notes}\n\n` : ""}You can browse other tournaments at: ${APP_URL}/en/catalog\n\nGoality Team`,
@@ -481,7 +520,12 @@ export async function sendOrganizerMessage({
   body: string;
   tournamentName?: string | null;
 }) {
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to: `${toName} <${to}>`,
     subject: `Message from organizer: ${subject}`,
     text: `Hi ${toName},\n\nYou have a new message from the organizer.\n\n${subject}\n\n${msgBody}\n\nOpen inbox: ${APP_URL}/en/team/inbox\n\nGoality Team`,
@@ -533,7 +577,12 @@ export async function sendQuestionConfirmation({
 }: {
   to: string; toName: string; subject: string; teamName: string;
 }) {
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to: `${toName} <${to}>`,
     subject: `Question received: ${subject}`,
     text: `Hi ${toName},\n\nWe received your question from ${teamName}: "${subject}".\nWe'll get back to you shortly.\n\nGoality Team`,
@@ -558,7 +607,12 @@ export async function sendDeletionRequest({
 }: {
   clubName: string; contactName: string; contactEmail: string; teamNames: string[];
 }) {
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to: PRIVACY_TO,
     subject: `Account deletion request — ${clubName}`,
     html: base({
@@ -586,7 +640,12 @@ export async function sendOrgDeletionRequest({
   tournamentCount: number;
   activeTournaments: string[];
 }) {
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to: PRIVACY_TO,
     replyTo: contactEmail,
     subject: `Organisation deletion request — ${orgName}`,
@@ -611,8 +670,14 @@ export async function sendNewQuestionNotification({
 }: {
   teamName: string; subject: string; body: string; questionId: number;
 }) {
+<<<<<<< Updated upstream
   await send({
     to: PRIVACY_TO,
+=======
+  await resend.emails.send({
+    from: FROM,
+    to: FROM,
+>>>>>>> Stashed changes
     subject: `New question from ${teamName}: ${subject}`,
     html: base({
       preheader: `New question #${questionId} from ${teamName}`,
@@ -627,6 +692,70 @@ export async function sendNewQuestionNotification({
                     font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap;">${body}</div>
         ${muted("Reply in the admin panel.")}
       `,
+    }),
+  });
+}
+
+// ─── Referee Match Assignment ─────────────────────────────────────────────────
+export async function sendRefereeMatchAssignment({
+  to,
+  refereeName,
+  tournamentName,
+  matchTime,
+  homeTeam,
+  awayTeam,
+  venue,
+  panelUrl,
+  role,
+}: {
+  to: string;
+  refereeName: string;
+  tournamentName: string;
+  matchTime: string | null;
+  homeTeam: string | null;
+  awayTeam: string | null;
+  venue: string | null;
+  panelUrl: string;
+  role: string;
+}) {
+  const matchLabel =
+    homeTeam && awayTeam ? `${homeTeam} vs ${awayTeam}` : "TBD";
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Match assignment — ${tournamentName}`,
+    text:
+      `Hi ${refereeName},\n\n` +
+      `You have been assigned to a match in ${tournamentName}.\n\n` +
+      `Match: ${matchLabel}\n` +
+      (matchTime ? `Time: ${matchTime}\n` : "") +
+      (venue ? `Venue: ${venue}\n` : "") +
+      `Role: ${role}\n\n` +
+      `Open your referee panel: ${panelUrl}\n\n` +
+      `Goality Team`,
+    html: base({
+      preheader: `You have been assigned to a match in ${tournamentName}.`,
+      body: `
+        <div style="text-align:center;margin-bottom:8px;">
+          <div style="display:inline-block;width:56px;height:56px;background:#fef3c7;border-radius:16px;
+                      text-align:center;line-height:56px;font-size:26px;">🟡</div>
+        </div>
+        ${h1("Match Assignment")}
+        ${p(`Hi <strong>${refereeName}</strong>,`)}
+        ${p(`You have been assigned to referee a match in <strong>${tournamentName}</strong>.`)}
+
+        ${infoTable(
+          infoRow("Match", matchLabel) +
+          (matchTime ? infoRow("Time", matchTime) : "") +
+          (venue ? infoRow("Venue", venue) : "") +
+          infoRow("Role", role) +
+          infoRow("Tournament", tournamentName),
+        )}
+
+        ${p("Open your referee panel to see all your assigned matches and manage scores.")}
+      `,
+      cta: { label: "Open Referee Panel →", url: panelUrl, color: "#e8b84b" },
     }),
   });
 }
@@ -669,7 +798,12 @@ export async function sendDrawShareLink({
       }).format(new Date(scheduledAt))
     : null;
 
+<<<<<<< Updated upstream
   await send({
+=======
+  await resend.emails.send({
+    from: FROM,
+>>>>>>> Stashed changes
     to,
     subject: scheduledAt
       ? `🎬 ${headline}${sub ? " · " + sub : ""} — premiere link inside`

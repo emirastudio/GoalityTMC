@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
 import { TournamentSetupChecklist, type ChecklistStep } from "@/components/admin/tournament-setup-checklist";
+<<<<<<< Updated upstream
 import { RegistrationCTACard } from "@/components/admin/registration-cta-card";
+=======
+>>>>>>> Stashed changes
 import { TournamentProgressBar } from "@/components/tournament/tournament-progress-bar";
 import { QrCodeDownload } from "@/components/admin/qr-code-download";
 

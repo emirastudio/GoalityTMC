@@ -10,6 +10,7 @@ import {
   CalendarDays, MapPin, ChevronRight,
 } from "lucide-react";
 import { InvitePanel } from "@/components/club/invite-panel";
+import { MemberRemoveButton } from "@/components/club/member-remove-button";
 
 const GENDER_COLORS: Record<string, string> = {
   male: "#3B82F6",
@@ -373,6 +374,13 @@ export default async function ClubDashboardPage() {
                 >
                   {m.teamId ? t("managerTeam") : t("clubAdmin")}
                 </span>
+                {m.id !== session.userId && (
+                  <MemberRemoveButton
+                    clubId={session.clubId}
+                    memberId={m.id}
+                    label={m.name ?? m.email}
+                  />
+                )}
               </div>
             ))}
           </div>

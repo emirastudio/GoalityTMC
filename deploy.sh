@@ -12,7 +12,15 @@
 #
 # Use deploy-staging.sh for /home/goality/staging on port 3002.
 
+<<<<<<< Updated upstream
 set -euo pipefail
+=======
+echo "→ Installing dependencies..."
+ssh root@goality.ee "cd /home/goality/app && pnpm install --frozen-lockfile"
+
+echo "→ Building (clean)..."
+ssh root@goality.ee "cd /home/goality/app && rm -rf .next && pnpm build"
+>>>>>>> Stashed changes
 
 REMOTE_HOST=root@goality.ee
 REMOTE_PATH=/home/goality/app

@@ -69,8 +69,13 @@ importers:
         specifier: ^5.5.7
         version: 5.5.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       resend:
+<<<<<<< Updated upstream
         specifier: ^6.12.3
         version: 6.12.3
+=======
+        specifier: ^6.12.2
+        version: 6.12.2
+>>>>>>> Stashed changes
       sanitize-html:
         specifier: ^2.17.2
         version: 2.17.2
@@ -2975,8 +2980,13 @@ packages:
     resolution: {integrity: sha512-dYqgNSZbDwkaJ2ceRd9ojCGjBq+mOm9LmtXnAnEGyHhN/5R7iDW2TRw3h+o/jCFxus3P2LfWIIiwowAjANm7IA==}
     engines: {node: '>= 0.4'}
 
+<<<<<<< Updated upstream
   resend@6.12.3:
     resolution: {integrity: sha512-FkEi6YPnVL96/LvH8+QP7NaeaBy5brYXwlRqUCqZZeNL0/iyKij18IPmyPXYauT/2ODn1JG04qKz+qlJfzqzTw==}
+=======
+  resend@6.12.2:
+    resolution: {integrity: sha512-xwgmU4b0OqoabJsIoK/x0Whk0Fcs3bpbK4i/DEWPiE5hYJHyHl0TbB6QbI3gIr+bLdLUJ1GYm/fe41aVFuHXgw==}
+>>>>>>> Stashed changes
     engines: {node: '>=20'}
     peerDependencies:
       '@react-email/render': '*'
@@ -3177,8 +3187,13 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+<<<<<<< Updated upstream
   svix@1.92.2:
     resolution: {integrity: sha512-ZmuA3UVvlnF9EgxlzmPtF7CKjQb64Z6OFlyfdDfU0sdcC7dJa+3aOYX5B9mA+RS6ch1AxBa4UP/l6KmqfGtWBQ==}
+=======
+  svix@1.90.0:
+    resolution: {integrity: sha512-ljkZuyy2+IBEoESkIpn8sLM+sxJHQcPxlZFxU+nVDhltNfUMisMBzWX/UR8SjEnzoI28ZjCzMbmYAPwSTucoMw==}
+>>>>>>> Stashed changes
 
   tailwindcss@4.2.2:
     resolution: {integrity: sha512-KWBIxs1Xb6NoLdMVqhbhgwZf2PGBpPEiwOqgI4pFIYbNTfBXiKYyWoTsXgBQ9WFg/OlhnvHaY+AEpW7wSmFo2Q==}
@@ -3288,6 +3303,10 @@ packages:
     resolution: {integrity: sha512-nLxlC/RH+le6g3amA508Itnn/00mE+J22ui21QhOWo5V9hCEC43+WtnRAITbJW0ztVZphev5X9gvOf2/Dk9PLA==}
     peerDependencies:
       react: ^17.0.0 || ^18.0.0 || >=19.0.0-rc <19.0.0 || ^19.0.0
+
+  uuid@10.0.0:
+    resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    hasBin: true
 
   vite@8.0.8:
     resolution: {integrity: sha512-dbU7/iLVa8KZALJyLOBOQ88nOXtNG8vxKuOT4I2mD+Ya70KPceF4IAmDsmU0h1Qsn5bPrvsY9HJstCRh3hG6Uw==}
@@ -6059,10 +6078,17 @@ snapshots:
       gopd: 1.2.0
       set-function-name: 2.0.2
 
+<<<<<<< Updated upstream
   resend@6.12.3:
     dependencies:
       postal-mime: 2.7.4
       svix: 1.92.2
+=======
+  resend@6.12.2:
+    dependencies:
+      postal-mime: 2.7.4
+      svix: 1.90.0
+>>>>>>> Stashed changes
 
   resolve-from@4.0.0: {}
 
@@ -6334,9 +6360,16 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
+<<<<<<< Updated upstream
   svix@1.92.2:
     dependencies:
       standardwebhooks: 1.0.0
+=======
+  svix@1.90.0:
+    dependencies:
+      standardwebhooks: 1.0.0
+      uuid: 10.0.0
+>>>>>>> Stashed changes
 
   tailwindcss@4.2.2: {}
 
@@ -6483,6 +6516,8 @@ snapshots:
       icu-minify: 4.8.3
       intl-messageformat: 11.2.0
       react: 19.2.4
+
+  uuid@10.0.0: {}
 
   vite@8.0.8(@types/node@20.19.37)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0):
     dependencies:
