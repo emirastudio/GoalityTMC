@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clubs, clubUsers, registrationAttempts } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { clubs, clubUsers, registrationAttempts, emailVerifications } from "@/db/schema";
+import { eq, and, isNull, isNotNull, gt, desc } from "drizzle-orm";
 import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
 import { sendWelcomeEmail } from "@/lib/email";
 import { writeFile, mkdir } from "fs/promises";
@@ -60,6 +60,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "An account with this email already exists. Please log in." }, { status: 409 });
   }
 
+  // Email-verification gate: a recent, verified, un-consumed row must
+  // exist for this email. Window is 30 min from verified_at.
+  const verifyWindow = new Date(Date.now() - 30 * 60 * 1000);
+  const [verification] = await db
+    .select()
+    .from(emailVerifications)
+    .where(
+      and(
+        eq(emailVerifications.email, contactEmail),
+        isNotNull(emailVerifications.verifiedAt),
+        isNull(emailVerifications.usedAt),
+        gt(emailVerifications.verifiedAt, verifyWindow),
+      )
+    )
+    .orderBy(desc(emailVerifications.verifiedAt))
+    .limit(1);
+  if (!verification) {
+    await logAttempt({ ...base, status: "fail_email_unverified", failReason: "email not verified" });
+    return NextResponse.json(
+      { error: "Please verify your email before completing registration." },
+      { status: 400 }
+    );
+  }
+
   let club: { id: number; name: string };
   let hasLogo = false;
 
@@ -102,6 +126,12 @@ export async function POST(req: NextRequest) {
   // Создаём пользователя клуба
   const passwordHash = await hashPassword(password);
   await db.insert(clubUsers).values({ clubId: club.id, email: contactEmail, name: contactName, passwordHash, accessLevel: "write" });
+
+  // Consume the email verification — single-use.
+  await db
+    .update(emailVerifications)
+    .set({ usedAt: new Date() })
+    .where(eq(emailVerifications.id, verification.id));
 
   await logAttempt({ ...base, hasLogo, status: "success", clubId: club.id });
 

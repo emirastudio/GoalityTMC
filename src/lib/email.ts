@@ -257,6 +257,42 @@ export async function sendPasswordReset({
   });
 }
 
+// ─── 2b. Email Verification Code (registration) ──────────────────────────────
+// Sent before a clubUser is created so we know the email is real and the
+// person registering has access to it (organizers send tournament info
+// there). The code is also visible in the email subject for quick scan.
+export async function sendEmailVerificationCode({
+  to,
+  code,
+}: {
+  to: string;
+  code: string;
+}) {
+  await send({
+    to,
+    subject: `Your Goality verification code: ${code}`,
+    text: `Your verification code is ${code}.\n\nIt expires in 15 minutes. If you didn't request this, ignore the email.\n\nGoality Team`,
+    html: base({
+      preheader: `Verification code ${code} — valid for 15 minutes.`,
+      body: `
+        <div style="text-align:center;margin-bottom:8px;">
+          <div style="display:inline-block;width:56px;height:56px;background:#dcfce7;border-radius:16px;
+                      text-align:center;line-height:56px;font-size:26px;">✉️</div>
+        </div>
+        ${h1("Confirm your email")}
+        ${p("Use this code to finish creating your Goality account:")}
+        <div style="margin:24px 0;text-align:center;">
+          <div style="display:inline-block;font-family:'Courier New',monospace;font-size:36px;letter-spacing:12px;
+                      font-weight:700;color:#0a0f1e;background:#f0f2f5;border-radius:12px;padding:18px 28px;">
+            ${code}
+          </div>
+        </div>
+        ${muted("This code expires in <strong>15 minutes</strong>. If you didn't request it, you can safely ignore this email — no account will be created.")}
+      `,
+    }),
+  });
+}
+
 // ─── 3. Club Invite (Manager / Coach) ────────────────────────────────────────
 export async function sendClubInvite({
   to, clubName, inviteLink, inviterName,

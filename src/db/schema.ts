@@ -435,6 +435,22 @@ export const clubUsers = pgTable("club_users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ─── Email Verifications ────────────────────────────────
+// One-time codes sent to an email to prove ownership before a
+// clubUser is created. Stored hashed (bcrypt). The register
+// endpoint refuses to create an account unless a recent (≤30
+// min) verified row exists for the same email.
+export const emailVerifications = pgTable("email_verifications", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  codeHash: text("code_hash").notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  verifiedAt: timestamp("verified_at"),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ─── Club User ↔ Teams (many-to-many) ───────────────────
 // Один тренер может управлять несколькими командами клуба.
 // clubUsers.teamId хранит сейчас активную команду (для JWT-сессии).

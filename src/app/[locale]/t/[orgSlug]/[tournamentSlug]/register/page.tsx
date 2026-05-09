@@ -513,6 +513,11 @@ export default function RegisterPage() {
   /* Create — account */
   const [contactName, setContactName]   = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  // Email verification state — required before step 2 → 3.
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [verifyPhase, setVerifyPhase] = useState<"idle" | "sending" | "sent" | "checking">("idle");
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyError, setVerifyError] = useState("");
   const [password, setPassword]         = useState("");
 
   /* NEW CLUB — teams (classId + name, original flow) */
@@ -650,6 +655,70 @@ export default function RegisterPage() {
     setNewClubTeams(prev => prev.map(t => t.classId === classId ? { ...t, name } : t));
   }
 
+  /* Email verification — reset state if user edits the email after a code
+     was sent or after the address was verified. */
+  function onEmailChange(v: string) {
+    setContactEmail(v);
+    if (verifyPhase !== "idle" || emailVerified) {
+      setEmailVerified(false);
+      setVerifyPhase("idle");
+      setVerifyCode("");
+      setVerifyError("");
+    }
+  }
+  async function sendVerifyCode() {
+    setVerifyError("");
+    const email = contactEmail.trim();
+    if (!email.includes("@") || email.length < 5) {
+      setVerifyError("Введите корректный email");
+      return;
+    }
+    setVerifyPhase("sending");
+    try {
+      const r = await fetch("/api/auth/email-verify/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setVerifyError(d.error ?? "Не удалось отправить код. Попробуйте позже.");
+        setVerifyPhase("idle");
+        return;
+      }
+      setVerifyPhase("sent");
+    } catch {
+      setVerifyError("Сетевая ошибка");
+      setVerifyPhase("idle");
+    }
+  }
+  async function checkVerifyCode() {
+    setVerifyError("");
+    if (!/^\d{6}$/.test(verifyCode)) {
+      setVerifyError("Код состоит из 6 цифр");
+      return;
+    }
+    setVerifyPhase("checking");
+    try {
+      const r = await fetch("/api/auth/email-verify/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: contactEmail.trim(), code: verifyCode }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setVerifyError(d.error ?? "Неверный код");
+        setVerifyPhase("sent");
+        return;
+      }
+      setEmailVerified(true);
+      setVerifyPhase("idle");
+    } catch {
+      setVerifyError("Сетевая ошибка");
+      setVerifyPhase("sent");
+    }
+  }
+
   /* Logo */
   function handleLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -749,7 +818,7 @@ export default function RegisterPage() {
   /* Validate steps */
   function canGoNext(): boolean {
     if (step === 1) return !!clubName.trim() && !!country.trim() && !!city.trim();
-    if (step === 2) return !!contactName.trim() && !!contactEmail.trim() && password.length >= 6;
+    if (step === 2) return !!contactName.trim() && !!contactEmail.trim() && password.length >= 6 && emailVerified;
     if (step === 3) {
       if (loggedInClub) return teamEntries.length > 0 && teamEntries.every(e => !!e.classId);
       return newClubTeams.length > 0;
@@ -1172,7 +1241,85 @@ export default function RegisterPage() {
             </p>
           </div>
           <Field label={t("contactPerson")} value={contactName} onChange={setContactName} placeholder="John Smith" required />
-          <Field label={t("emailLabel")} type="email" value={contactEmail} onChange={setContactEmail} placeholder="coach@club.example" required />
+
+          {/* Email + 6-digit verification — required before continuing.
+              Backend (/api/clubs/register) refuses to create an account
+              without a recent verified row for this address. */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
+              {t("emailLabel")}<span className="text-red-400 ml-0.5">*</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={e => onEmailChange(e.target.value)}
+                placeholder="coach@club.example"
+                disabled={emailVerified}
+                className="flex-1 rounded-xl px-3 py-2 text-sm border outline-none transition-all"
+                style={{
+                  background: emailVerified ? "var(--cat-tag-bg)" : "var(--cat-input-bg)",
+                  borderColor: emailVerified ? "rgba(16,185,129,0.5)" : "var(--cat-input-border)",
+                  color: "var(--cat-text)",
+                }}
+              />
+              {emailVerified ? (
+                <span className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
+                  style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
+                  ✓ Подтверждён
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={sendVerifyCode}
+                  disabled={verifyPhase === "sending" || !contactEmail.trim().includes("@")}
+                  className="px-3 py-2 rounded-xl text-xs font-bold shrink-0 transition-all hover:opacity-90 disabled:opacity-40"
+                  style={{ background: "var(--cat-accent)", color: "#000" }}
+                >
+                  {verifyPhase === "sending" ? "Отправляем…" : verifyPhase === "sent" ? "Отправить ещё раз" : "Отправить код"}
+                </button>
+              )}
+            </div>
+            {!emailVerified && (verifyPhase === "sent" || verifyPhase === "checking") && (
+              <div className="mt-3 p-3 rounded-xl border space-y-2"
+                style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+                <p className="text-[12px]" style={{ color: "var(--cat-text-secondary)" }}>
+                  Код отправлен на <strong style={{ color: "var(--cat-text)" }}>{contactEmail}</strong>. Проверьте почту (и папку «Спам»).
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={verifyCode}
+                    onChange={e => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="000000"
+                    className="flex-1 rounded-xl px-3 py-2 text-base border outline-none font-mono tracking-[0.5em] text-center"
+                    style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={checkVerifyCode}
+                    disabled={verifyPhase === "checking" || verifyCode.length !== 6}
+                    className="px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all hover:opacity-90 disabled:opacity-40"
+                    style={{ background: "var(--cat-accent)", color: "#000" }}
+                  >
+                    {verifyPhase === "checking" ? "Проверяем…" : "Проверить"}
+                  </button>
+                </div>
+              </div>
+            )}
+            {verifyError && (
+              <p className="mt-2 text-[11px]" style={{ color: "#ef4444" }}>{verifyError}</p>
+            )}
+            {!emailVerified && verifyPhase === "idle" && (
+              <p className="mt-1.5 text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                Подтвердите email — на него организаторы будут присылать важную информацию о турнире.
+              </p>
+            )}
+          </div>
+
           <Field label={t("passwordLabel")} type="password" value={password} onChange={setPassword}
             placeholder="Минимум 6 символов" hint={t("passwordMinHint")} required />
         </div>
