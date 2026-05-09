@@ -557,6 +557,94 @@ export async function sendRegistrationRejected({
   });
 }
 
+// ─── 6b. Batched confirmations ───────────────────────────────────────────────
+// Sent when an organizer approves several teams in a tight window
+// (see lib/email-batch.ts). One email instead of N — keeps the inbox
+// clean and avoids the "5 identical messages in 30s" pattern that
+// trips Apple Mail's Junk filter.
+export async function sendRegistrationConfirmedBatch({
+  to, clubName, tournamentName, tournamentSlug, teams, locale: rawLocale,
+}: {
+  to: string;
+  clubName: string;
+  tournamentName: string;
+  tournamentSlug?: string | null;
+  teams: Array<{ teamLabel: string; className?: string | null; notes?: string | null }>;
+  locale?: string | null;
+}) {
+  void tournamentSlug;
+  const locale = normaliseLocale(rawLocale);
+  const C = EMAIL_STRINGS.regConfirmedBatch;
+  const portalUrl = `${APP_URL}/${locale}/team/overview`;
+  const count = teams.length;
+  const teamRowsHtml = teams.map((t) => {
+    const note = t.notes ? `<div style="margin-top:4px;font-size:12px;color:#374151;">${t.notes}</div>` : "";
+    const cls = t.className ? `<span style="color:#6b7280;font-size:12px;"> · ${t.className}</span>` : "";
+    return `<li style="margin:6px 0;color:#0a0f1e;font-size:14px;"><strong>${t.teamLabel}</strong>${cls}${note}</li>`;
+  }).join("");
+  const teamRowsText = teams.map((t) =>
+    `• ${t.teamLabel}${t.className ? ` · ${t.className}` : ""}${t.notes ? `\n   ${t.notes}` : ""}`
+  ).join("\n");
+  await send({
+    to,
+    subject: t(C, "subject", locale, { count, tournamentName }),
+    text: `${stripTags(t(C, "body2", locale, { clubName, count, tournamentName }))}\n\n${teamRowsText}\n\n${portalUrl}`,
+    html: base({
+      preheader: t(C, "preheader", locale, { count, tournamentName }),
+      body: `
+        <div style="background:linear-gradient(135deg,#064e3b,#065f46);border-radius:12px;
+                    padding:20px 24px;margin-bottom:4px;text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">🎉</div>
+          <p style="margin:0;font-size:18px;font-weight:800;color:#ffffff;">${t(C, "bannerTitle", locale, { count })}</p>
+          <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.7);">${t(C, "bannerSub", locale, { tournamentName })}</p>
+        </div>
+        ${p(t(C, "body1", locale, { clubName }))}
+        ${p(t(C, "body2", locale, { count, tournamentName }))}
+        <ul style="margin:12px 0 0;padding-left:20px;">${teamRowsHtml}</ul>
+        ${p(t(C, "footer", locale))}
+      `,
+      cta: { label: t(C, "cta", locale), url: portalUrl, color: "#10b981" },
+    }),
+  });
+}
+
+export async function sendRegistrationRejectedBatch({
+  to, clubName, tournamentName, teams, locale: rawLocale,
+}: {
+  to: string;
+  clubName: string;
+  tournamentName: string;
+  teams: Array<{ teamLabel: string; className?: string | null; notes?: string | null }>;
+  locale?: string | null;
+}) {
+  const locale = normaliseLocale(rawLocale);
+  const J = EMAIL_STRINGS.regRejectedBatch;
+  const count = teams.length;
+  const teamRowsHtml = teams.map((tm) => {
+    const note = tm.notes ? `<div style="margin-top:4px;font-size:12px;color:#374151;">${tm.notes}</div>` : "";
+    const cls = tm.className ? `<span style="color:#6b7280;font-size:12px;"> · ${tm.className}</span>` : "";
+    return `<li style="margin:6px 0;color:#0a0f1e;font-size:14px;"><strong>${tm.teamLabel}</strong>${cls}${note}</li>`;
+  }).join("");
+  const teamRowsText = teams.map((tm) =>
+    `• ${tm.teamLabel}${tm.className ? ` · ${tm.className}` : ""}${tm.notes ? `\n   ${tm.notes}` : ""}`
+  ).join("\n");
+  await send({
+    to,
+    subject: t(J, "subject", locale, { count, tournamentName }),
+    text: `${stripTags(t(J, "body", locale, { clubName, count, tournamentName }))}\n\n${teamRowsText}`,
+    html: base({
+      preheader: t(J, "preheader", locale, { count, tournamentName }),
+      body: `
+        ${h1(t(J, "title", locale))}
+        ${p(t(J, "body", locale, { clubName, count, tournamentName }))}
+        <ul style="margin:12px 0 0;padding-left:20px;">${teamRowsHtml}</ul>
+        ${p(t(J, "body2", locale))}
+      `,
+      cta: { label: t(J, "cta", locale), url: `${APP_URL}/${locale}/catalog`, color: "#6366f1" },
+    }),
+  });
+}
+
 // ─── 7. Message from Organizer ────────────────────────────────────────────────
 export async function sendOrganizerMessage({
   to, toName, clubName, teamName, subject, body: msgBody, tournamentName,

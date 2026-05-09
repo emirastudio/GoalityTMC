@@ -3,7 +3,8 @@ import { db } from "@/db";
 import { teams, tournamentRegistrations, clubs, tournaments } from "@/db/schema";
 import { requireAdmin, isError } from "@/lib/api-auth";
 import { eq } from "drizzle-orm";
-import { sendRegistrationConfirmed, sendRegistrationRejected } from "@/lib/email";
+import { scheduleStatusEmail } from "@/lib/email-batch";
+import { tournamentClasses } from "@/db/schema";
 
 // DELETE удаляет команду глобально (каскадно удаляет все её регистрации)
 export async function DELETE(
@@ -85,49 +86,48 @@ export async function PATCH(
 
   // ── Email notification on status change ────────────────────
   if (body.status === "confirmed" || body.status === "rejected") {
-    console.log(`[EMAIL] status notify start: teamId=${tid} status=${body.status}`);
+    console.log(`[EMAIL] status change scheduled: teamId=${tid} status=${body.status}`);
     (async () => {
       try {
-        // Use eslint-disable for the "any" cast — drizzle relations
-        // are dynamic, the runtime shape is correct.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const club = (team as any)?.club ?? null;
         const reg = team?.registrations?.[0];
         const tournament = reg?.tournamentId
           ? await db.query.tournaments.findFirst({ where: eq(tournaments.id, reg.tournamentId) })
           : null;
+        const className = reg?.classId
+          ? (await db.query.tournamentClasses.findFirst({ where: eq(tournamentClasses.id, reg.classId) }))?.name ?? null
+          : null;
 
         if (!team) {
           console.warn(`[EMAIL] notify skipped — team not found teamId=${tid}`);
           return;
         }
-        if (!club?.contactEmail) {
-          console.warn(`[EMAIL] notify skipped — no contactEmail for clubId=${club?.id ?? "null"} teamId=${tid}`);
+        if (!club?.contactEmail || !tournament || !reg) {
+          console.warn(`[EMAIL] notify skipped — missing contactEmail/tournament/reg for teamId=${tid}`);
           return;
         }
 
-        // Display name priority — same chain we use everywhere else.
-        // Email subject reads better with a real label than "Your team".
         const teamLabel = team.name ?? club.name ?? `Team #${team.id}`;
 
-        const payload = {
+        // Hand off to the email-batch debouncer — five clicks of
+        // "Принять" within 30 s collapse into one summary email.
+        scheduleStatusEmail({
+          clubId: club.id,
+          tournamentId: tournament.id,
+          status: body.status,
           to: club.contactEmail,
           clubName: club.name,
-          teamName: teamLabel,
-          tournamentName: tournament?.name ?? "the tournament",
-          notes: body.notes ?? null,
+          tournamentName: tournament.name,
           locale: club.preferredLocale ?? "en",
-        };
-
-        console.log(`[EMAIL] sending ${body.status} → ${club.contactEmail} (team=${teamLabel}, tournament=${tournament?.name}, locale=${payload.locale})`);
-        if (body.status === "confirmed") {
-          await sendRegistrationConfirmed({ ...payload, tournamentSlug: tournament?.slug });
-        } else {
-          await sendRegistrationRejected(payload);
-        }
-        console.log(`[EMAIL] ${body.status} sent OK to ${club.contactEmail}`);
+          teamId: team.id,
+          teamLabel,
+          className,
+          notes: body.notes ?? null,
+          tournamentSlug: tournament.slug,
+        });
       } catch (e) {
-        console.error("[EMAIL] Status notification failed:", e);
+        console.error("[EMAIL] Status notification scheduling failed:", e);
       }
     })();
   }
