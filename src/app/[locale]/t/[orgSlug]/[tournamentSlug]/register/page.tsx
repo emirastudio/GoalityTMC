@@ -1216,7 +1216,7 @@ export default function RegisterPage() {
                     <div className="px-4 pb-3">
                       <input type="text" value={teamEntry?.name ?? ""}
                         onChange={e => updateTeamName(String(cls.id), e.target.value)}
-                        placeholder={`Название команды (необязательно) · ${clubName || "FC Club"} ${cls.name}`}
+                        placeholder={`Название команды (необязательно) · ${clubName || "FC Club"}`}
                         className="w-full rounded-xl px-3 py-2 text-[12px] border outline-none"
                         style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
                         onClick={e => e.stopPropagation()}
