@@ -212,6 +212,8 @@ function AddRow({ classes, defaultClassId, onAdd }: {
 
   return (
     <tr style={{ background: "rgba(43,254,186,0.03)" }}>
+      {/* Empty checkbox cell — keeps column alignment with the bulk-select column. */}
+      <td className="px-3 py-2" style={{ borderTop: "1px dashed var(--cat-card-border)" }} />
       {/* # */}
       <td className="px-3 py-2" style={{ borderTop: "1px dashed var(--cat-card-border)" }}>
         <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>—</span>
@@ -410,6 +412,10 @@ export function TeamsPageContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"table" | "paste">("table");
+  // Bulk-approve / bulk-reject — selectedIds tracks ticked rows; the
+  // toolbar appears only when at least one is checked.
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [statusDropdown, setStatusDropdown] = useState<number | null>(null);
   const [classDropdown, setClassDropdown] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -512,6 +518,73 @@ export function TeamsPageContent() {
       return;
     }
     await handleStatusChange(teamId, "rejected", reason);
+  }
+
+  /* Bulk approve / reject — for organizers handling 50 applications at
+     once. Hits the same PATCH endpoint per id; the email-batch
+     debouncer (lib/email-batch.ts) collapses the resulting N
+     notifications into one summary message per club, so the inbox
+     burst that triggered Apple Junk earlier is avoided automatically. */
+  function toggleSelected(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function selectAllVisible(ids: number[]) {
+    setSelectedIds((prev) => {
+      const allOn = ids.every((id) => prev.has(id));
+      if (allOn) {
+        const next = new Set(prev);
+        ids.forEach((id) => next.delete(id));
+        return next;
+      }
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+  async function bulkApprove() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Принять ${selectedIds.size} заявок? Каждой команде придёт письмо-подтверждение.`)) return;
+    setBulkBusy(true);
+    try {
+      for (const id of selectedIds) {
+        await adminFetch(`/api/admin/teams/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "confirmed" }),
+        });
+      }
+      clearSelection();
+      fetchTeams();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+  async function bulkReject() {
+    if (selectedIds.size === 0) return;
+    const reason = prompt(`Отклонить ${selectedIds.size} заявок. Укажите общую причину — попадёт в письмо каждой команде:`)?.trim();
+    if (reason === undefined) return;
+    if (!reason) { alert("Причина обязательна — она поможет командам."); return; }
+    setBulkBusy(true);
+    try {
+      for (const id of selectedIds) {
+        await adminFetch(`/api/admin/teams/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "rejected", notes: reason }),
+        });
+      }
+      clearSelection();
+      fetchTeams();
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   async function handleClassChange(teamId: number, registrationId: number, classId: number | null) {
@@ -665,6 +738,37 @@ export function TeamsPageContent() {
               </div>
             </div>
 
+            {/* Bulk-action toolbar — only visible when at least one
+                row is ticked. Disappears after the action completes. */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border"
+                style={{
+                  background: "var(--cat-badge-open-bg)",
+                  borderColor: "var(--cat-badge-open-border)",
+                }}>
+                <span className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
+                  Выбрано: {selectedIds.size}
+                </span>
+                <button type="button" onClick={clearSelection}
+                  className="text-xs hover:opacity-70"
+                  style={{ color: "var(--cat-text-muted)" }}>
+                  Снять выделение
+                </button>
+                <div className="ml-auto flex gap-2">
+                  <button type="button" onClick={bulkApprove} disabled={bulkBusy}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40"
+                    style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
+                    <Check className="w-3.5 h-3.5" /> {bulkBusy ? "…" : `Принять ${selectedIds.size}`}
+                  </button>
+                  <button type="button" onClick={bulkReject} disabled={bulkBusy}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40"
+                    style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+                    <X className="w-3.5 h-3.5" /> Отклонить {selectedIds.size}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-12"
                 style={{ color: "var(--cat-text-muted)" }}>
@@ -675,6 +779,18 @@ export function TeamsPageContent() {
                 <table className="w-full">
                   <thead>
                     <tr style={{ borderBottom: "1px solid var(--cat-card-border)" }}>
+                      <th className="px-3 py-3 text-left" style={{ width: 36 }}>
+                        {/* Header checkbox — toggle every visible row's
+                            selection so the organizer can "select all open"
+                            and bulk-approve a whole catalog in one go. */}
+                        <input
+                          type="checkbox"
+                          checked={filtered.length > 0 && filtered.every((tt) => selectedIds.has(tt.id))}
+                          onChange={() => selectAllVisible(filtered.map((tt) => tt.id))}
+                          onClick={(e) => e.stopPropagation()}
+                          className="rounded cursor-pointer"
+                        />
+                      </th>
                       <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)", width: 60 }}>#</th>
                       <th className="px-2 py-3 text-left text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)", width: 44 }}>{t("clubCol")}</th>
                       <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("teamCol")}</th>
@@ -690,11 +806,25 @@ export function TeamsPageContent() {
                   <tbody>
                     {filtered.map(team => {
                       const balance = parseFloat(team.balance);
+                      const isSelected = selectedIds.has(team.id);
                       return (
                         <tr key={team.id}
                           onClick={() => navigateToTeam(team)}
                           className="group cursor-pointer transition-all hover:opacity-80"
-                          style={{ borderBottom: "1px solid var(--cat-card-border)" }}>
+                          style={{
+                            borderBottom: "1px solid var(--cat-card-border)",
+                            background: isSelected ? "var(--cat-badge-open-bg)" : undefined,
+                          }}>
+
+                          {/* Bulk-select checkbox */}
+                          <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelected(team.id)}
+                              className="rounded cursor-pointer"
+                            />
+                          </td>
 
                           {/* # */}
                           <td className="px-3 py-3">
