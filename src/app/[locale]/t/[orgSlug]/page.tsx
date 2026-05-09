@@ -5,16 +5,18 @@ import { eq, and, isNull } from "drizzle-orm";
 
 // Short tournament link: /<locale>/t/<slug>
 //
-// Resolves the (globally unique, see migration 0032) tournament slug,
-// finds its org, and 302-redirects to the canonical long URL. Soft-
-// deleted tournaments fall through to 404. This file is the public
-// face of every shareable short link — QR codes, posters, etc.
+// Lives at /[orgSlug]/page.tsx (1-segment route under /t/). Next.js
+// requires identical dynamic-param names at the same path depth, so
+// the "orgSlug" param is reused here as the TOURNAMENT slug. We
+// resolve the globally unique tournament slug (see migration 0032),
+// find its org, and 302-redirect to the canonical long URL. Soft-
+// deleted tournaments fall through to 404.
 export default async function ShortTournamentRoot({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }>;
+  params: Promise<{ locale: string; orgSlug: string }>;
 }) {
-  const { locale, slug } = await params;
+  const { locale, orgSlug: slug } = await params;
 
   const t = await db.query.tournaments.findFirst({
     where: and(eq(tournaments.slug, slug), isNull(tournaments.deletedAt)),

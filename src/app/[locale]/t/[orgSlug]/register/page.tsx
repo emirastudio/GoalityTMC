@@ -5,15 +5,16 @@ import { eq, and, isNull } from "drizzle-orm";
 
 // Short registration link: /<locale>/t/<slug>/register
 //
-// Resolves the global slug → canonical /<locale>/t/<orgSlug>/<slug>/register.
-// This is the URL we hand out to clubs (printed posters, club emails,
-// social posts) — much shorter than the canonical and safe to share.
+// The "orgSlug" param is reused here as the TOURNAMENT slug (Next.js
+// rule: same dynamic-param name at the same path depth). Resolves the
+// global slug → canonical /<locale>/t/<orgSlug>/<slug>/register. The
+// shareable URL we hand out — short, posters/QR-friendly.
 export default async function ShortTournamentRegister({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }>;
+  params: Promise<{ locale: string; orgSlug: string }>;
 }) {
-  const { locale, slug } = await params;
+  const { locale, orgSlug: slug } = await params;
 
   const t = await db.query.tournaments.findFirst({
     where: and(eq(tournaments.slug, slug), isNull(tournaments.deletedAt)),
