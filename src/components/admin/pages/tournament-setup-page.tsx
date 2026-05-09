@@ -1167,7 +1167,63 @@ function StepVenue({ fields, setFields }: {
 //  ШАГ 6: Продукты и сборы
 // ─────────────────────────────────────────────────────────────
 
-function StepProducts({ products, setProducts }: {
+// Replaces the legacy v2 inline editor — products / packages now live
+// in the v3 offerings tables (see migration 0022) and are managed at
+// /admin/tournament/[id]/offerings. Setup just points there so there's
+// a single source of truth.
+function StepProducts({ orgSlug, tournamentId }: { orgSlug: string; tournamentId: number }) {
+  const t = useTranslations("orgAdmin");
+  const [v3Count, setV3Count] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/offerings`)
+      .then(r => r.ok ? r.json() : null)
+      .then((d) => {
+        if (Array.isArray(d?.offerings)) setV3Count(d.offerings.length);
+        else if (Array.isArray(d)) setV3Count(d.length);
+      })
+      .catch(() => {});
+  }, [orgSlug, tournamentId]);
+
+  return (
+    <div className="space-y-4">
+      <StepHeader icon={ShoppingBag} title={t("stepProducts")} description={t("stepProductsHint")} />
+      <Link
+        href={`/org/${orgSlug}/admin/tournament/${tournamentId}/offerings`}
+        className="block rounded-2xl border p-5 transition-all hover:scale-[1.005]"
+        style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "var(--cat-badge-open-bg)" }}>
+            <ShoppingBag className="w-5 h-5" style={{ color: "var(--cat-accent)" }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>
+              Каталог услуг и пакеты
+            </p>
+            <p className="text-[12px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+              {v3Count === null ? "—" : v3Count === 0 ? "Услуг пока нет" : `Услуг настроено: ${v3Count}`}
+              {" · открыть для редактирования →"}
+            </p>
+          </div>
+        </div>
+      </Link>
+      <div className="rounded-2xl border px-4 py-3 flex items-start gap-3"
+        style={{ background: "rgba(59,130,246,0.06)", borderColor: "rgba(59,130,246,0.2)" }}>
+        <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#3b82f6" }} />
+        <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
+          Услуги (взнос, проживание, питание, трансфер) и пакеты теперь живут в разделе <strong>Offerings</strong>.
+          Там можно собирать пакеты, назначать индивидуальные сделки и видеть оплату — это богаче, чем простой список.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Legacy v2 editor — kept here only so the rest of the file still
+// references TournamentProduct types without breaking. Not rendered.
+function StepProductsV2Legacy({ products, setProducts }: {
   products: TournamentProduct[];
   setProducts: (v: TournamentProduct[]) => void;
 }) {
@@ -1997,11 +2053,11 @@ export function TournamentSetupPageContent() {
           summary={summaries.products}
           isOpen={openSection === "products"}
           onToggle={() => toggleSection("products")}
-          onSave={async () => { await saveMain({ products: products.filter(p => !p._deleted).map((p, i) => ({ ...p, sortOrder: i })) }); }}
+          onSave={async () => { /* read-only — products live in /offerings */ }}
           onAfterSave={() => setOpenSection("info")}
-          saving={saving}
+          saving={false}
         >
-          <StepProducts products={products} setProducts={setProducts} />
+          <StepProducts orgSlug={orgSlug} tournamentId={tournamentId} />
         </HubCard>
 
         {/* ── 7. Info ── */}
