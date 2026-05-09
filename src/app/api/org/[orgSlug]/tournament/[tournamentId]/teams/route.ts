@@ -47,9 +47,13 @@ export async function GET(
 
   const result = regs.map((reg) => {
     const club = clubMap.get(reg.teamId);
-    // Priority: displayName (reg) → team.name → birthYear-derived
+    // Priority: displayName (reg) → team.name → club.name → birthYear.
+    // The club fallback matters most: a coach who didn't customise team
+    // name should still be visible as "FC Barcelona" in the organizer's
+    // list, not as a bare year.
     const displayName = reg.displayName
       ?? reg.team?.name
+      ?? club?.clubName
       ?? (reg.team?.birthYear ? String(reg.team.birthYear) : null);
     return {
       id: reg.teamId,

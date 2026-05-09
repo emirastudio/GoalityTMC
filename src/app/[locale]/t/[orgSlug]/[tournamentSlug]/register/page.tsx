@@ -235,8 +235,16 @@ function ClubCard({ club, onSelect }: { club: ClubResult; onSelect: () => void }
 }
 
 /* ─── Team identity badge ────────────────────────────────────────────────── */
-function TeamIdentityBadge({ team }: { team: ExistingTeam }) {
-  const label = team.name ?? (team.birthYear ? `${team.birthYear}` : "Взрослые");
+function TeamIdentityBadge({ team, clubName }: { team: ExistingTeam; clubName?: string }) {
+  // Display name priority:
+  //   1. Team's custom name (the user explicitly typed something — e.g.
+  //      "FCI Tallinn" override on FCI Levadia club).
+  //   2. Club name fallback — the natural label when the coach didn't
+  //      bother customising. Most teams just want to be "<Club Name>"
+  //      across every division.
+  // The birth-year + gender pills carry the per-team identity, so the
+  // textual label can safely be the club brand.
+  const displayName = team.name ?? clubName ?? null;
   const gColor = GENDER_COLORS[team.gender] ?? "#64748b";
   return (
     <div className="flex items-center gap-2 min-w-0">
@@ -255,8 +263,8 @@ function TeamIdentityBadge({ team }: { team: ExistingTeam }) {
         style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
         {GENDER_LABELS[team.gender]}
       </span>
-      {team.name && (
-        <span className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{team.name}</span>
+      {displayName && (
+        <span className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{displayName}</span>
       )}
       {team.totalTournaments > 0 && (
         <span className="text-[10px]" style={{ color: "var(--cat-text-faint)" }}>
@@ -287,7 +295,7 @@ function ExistingTeamEntry({
       style={{ background: "var(--cat-card-bg)", borderColor: entry.classId ? classColor : "var(--cat-card-border)" }}>
       {/* Team identity header */}
       <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: "1px solid var(--cat-divider)" }}>
-        <TeamIdentityBadge team={team} />
+        <TeamIdentityBadge team={team} clubName={clubName} />
         <div className="flex-1" />
         <button onClick={onRemove} className="w-6 h-6 rounded-lg flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
           style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>
@@ -1781,7 +1789,7 @@ export default function RegisterPage() {
                       style={{ background: alreadyAdded ? "var(--cat-badge-open-bg)" : undefined }}>
                       <div className="flex items-center gap-3">
                         <div className="flex-1 min-w-0">
-                          <TeamIdentityBadge team={team} />
+                          <TeamIdentityBadge team={team} clubName={loggedInClub.name} />
                           {team.playersCount > 0 && (
                             <p className="text-[10px] mt-0.5 ml-0" style={{ color: "var(--cat-text-faint)" }}>
                               {team.playersCount} игроков

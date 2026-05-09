@@ -455,7 +455,7 @@ export function TeamsPageContent() {
   const filtered = teams.filter(team => {
     if (search) {
       const q = search.toLowerCase();
-      const label = team.displayName ?? team.name ?? (team.birthYear ? String(team.birthYear) : "");
+      const label = team.displayName ?? team.name ?? team.club?.name ?? (team.birthYear ? String(team.birthYear) : "");
       return label.toLowerCase().includes(q) ||
         team.club?.name?.toLowerCase().includes(q) ||
         team.regNumber?.toString().includes(q) ||
