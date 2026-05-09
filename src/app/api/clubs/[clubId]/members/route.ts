@@ -47,6 +47,7 @@ export async function GET(
         .select({
           clubUserId: clubUserTeams.clubUserId,
           teamId: clubUserTeams.teamId,
+          status: clubUserTeams.status,
           teamName: teams.name,
           birthYear: teams.birthYear,
           gender: teams.gender,
@@ -67,7 +68,9 @@ export async function GET(
     const userTeams = (byUser.get(u.id) ?? []).map((r) => ({
       id: r.teamId,
       label: r.teamName ?? `${r.gender} ${r.birthYear ?? ""}`.trim(),
+      status: r.status as "pending" | "approved",
     }));
+    const hasPending = userTeams.some((t) => t.status === "pending");
     return {
       id: u.id,
       email: u.email,
@@ -75,6 +78,7 @@ export async function GET(
       role: u.teamId === null && userTeams.length === 0 ? "club_admin" : "team_coach",
       activeTeamId: u.teamId,
       teams: userTeams,
+      hasPending,
       isSelf: u.id === session.userId,
       accessLevel: u.accessLevel,
       createdAt: u.createdAt,

@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { clubs, clubUsers, clubUserTeams, teams, registrationAttempts, emailVerifications } from "@/db/schema";
 import { eq, and, isNull, isNotNull, gt, desc } from "drizzle-orm";
 import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendCoachJoinedNotification } from "@/lib/email";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -145,15 +145,21 @@ export async function POST(req: NextRequest) {
   //     junction row inserted). The new user is a team coach, NOT a
   //     second club admin.
   let coachTeamId: number | null = null;
+  // For an existing-club JOIN we mark the junction "pending" so the
+  // club admin can later confirm. For a brand-new TEAM the joining
+  // coach made themselves, no admin approval applies → "approved".
+  let coachJunctionStatus: "pending" | "approved" = "approved";
+  let teamLabelForEmail: string | null = null;
   if (existingClubId) {
     if (joinTeamId) {
-      // Validate the team belongs to this club.
       const [t] = await db.select().from(teams).where(eq(teams.id, joinTeamId));
       if (!t || t.clubId !== club.id) {
         await logAttempt({ ...base, status: "fail_team_mismatch", failReason: `joinTeamId=${joinTeamId}` });
         return NextResponse.json({ error: "Selected team does not belong to this club." }, { status: 400 });
       }
       coachTeamId = t.id;
+      coachJunctionStatus = "pending";
+      teamLabelForEmail = t.name ?? `${t.birthYear ?? ""} ${t.gender}`.trim();
     } else if (newTeam) {
       const [created] = await db
         .insert(teams)
@@ -165,6 +171,8 @@ export async function POST(req: NextRequest) {
         })
         .returning();
       coachTeamId = created.id;
+      coachJunctionStatus = "approved";
+      teamLabelForEmail = created.name ?? `${created.birthYear ?? ""} ${created.gender}`.trim();
     } else {
       await logAttempt({ ...base, status: "fail_no_team", failReason: "joinTeamId/newTeam required" });
       return NextResponse.json(
@@ -192,8 +200,29 @@ export async function POST(req: NextRequest) {
   if (coachTeamId) {
     await db
       .insert(clubUserTeams)
-      .values({ clubUserId: newUser.id, teamId: coachTeamId })
+      .values({ clubUserId: newUser.id, teamId: coachTeamId, status: coachJunctionStatus })
       .onConflictDoNothing();
+
+    // Notify all club admins (clubUsers with team_id IS NULL) of the new
+    // arrival — fire-and-forget, never block the registration response.
+    if (coachJunctionStatus === "pending") {
+      const admins = await db
+        .select({ email: clubUsers.email })
+        .from(clubUsers)
+        .where(and(eq(clubUsers.clubId, club.id), isNull(clubUsers.teamId)));
+      const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com"}/en/club/dashboard`;
+      for (const admin of admins) {
+        if (!admin.email) continue;
+        sendCoachJoinedNotification({
+          to: admin.email,
+          clubName: club.name,
+          coachName: contactName,
+          coachEmail: contactEmail,
+          teamLabel: teamLabelForEmail ?? "—",
+          dashboardLink,
+        }).catch((e) => console.error("[EMAIL] coach-joined notify failed:", e));
+      }
+    }
   }
 
   // Consume the email verification — single-use.

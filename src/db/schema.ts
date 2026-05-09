@@ -464,6 +464,11 @@ export const clubUserTeams = pgTable(
     teamId: integer("team_id")
       .references(() => teams.id, { onDelete: "cascade" })
       .notNull(),
+    // 'pending' = добавился сам через регистрацию, ждёт одобрения
+    //              админа клуба (доступа НЕ блокирует — это просто
+    //              маркер для модерации).
+    // 'approved' = создан админом или одобрен.
+    status: text("status").default("approved").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({

@@ -293,6 +293,49 @@ export async function sendEmailVerificationCode({
   });
 }
 
+// ─── 2c. New coach joined the club (admin-side notification) ─────────────────
+// Sent to every club admin (clubUsers with team_id IS NULL) when a new
+// coach signs up for one of the club's teams via the public registration
+// flow. The coach gets full access immediately — this email is purely a
+// moderation hint so the admin can verify the person is who they claim
+// and either approve or kick via /club/dashboard.
+export async function sendCoachJoinedNotification({
+  to,
+  clubName,
+  coachName,
+  coachEmail,
+  teamLabel,
+  dashboardLink,
+}: {
+  to: string;
+  clubName: string;
+  coachName: string | null;
+  coachEmail: string;
+  teamLabel: string;
+  dashboardLink: string;
+}) {
+  const who = coachName ? `${coachName} (${coachEmail})` : coachEmail;
+  await send({
+    to,
+    subject: `New coach joined ${clubName}: ${who}`,
+    text: `${who} just joined ${clubName} as coach of ${teamLabel}.\n\nThey can already register and manage that team for tournaments — confirm or remove them at: ${dashboardLink}\n\nGoality Team`,
+    html: base({
+      preheader: `${who} joined ${clubName} — confirm or remove on the dashboard.`,
+      body: `
+        <div style="text-align:center;margin-bottom:8px;">
+          <div style="display:inline-block;width:56px;height:56px;background:#dbeafe;border-radius:16px;
+                      text-align:center;line-height:56px;font-size:26px;">👤</div>
+        </div>
+        ${h1("New coach joined your club")}
+        ${p(`<strong>${coachName ?? coachEmail}</strong> just joined <strong>${clubName}</strong> as coach of <strong>${teamLabel}</strong>.`)}
+        ${p(`Email: <a href="mailto:${coachEmail}" style="color:#0a0f1e;">${coachEmail}</a>`)}
+        ${muted("They can already register and manage this team for tournaments. If you don't recognise them, you can remove them from the club dashboard. The person who registers a team is responsible for it.")}
+      `,
+      cta: { label: "Open Club Dashboard", url: dashboardLink, color: "#0a0f1e" },
+    }),
+  });
+}
+
 // ─── 3. Club Invite (Manager / Coach) ────────────────────────────────────────
 export async function sendClubInvite({
   to, clubName, inviteLink, inviterName,

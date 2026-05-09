@@ -12,6 +12,7 @@ import {
 import { InvitePanel } from "@/components/club/invite-panel";
 import { TournamentLogo } from "@/components/ui/tournament-logo";
 import { MemberRemoveButton } from "@/components/club/member-remove-button";
+import { PendingCoachesPanel } from "@/components/club/pending-coaches-panel";
 
 const GENDER_COLORS: Record<string, string> = {
   male: "#3B82F6",
@@ -302,6 +303,9 @@ export default async function ClubDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* ── Pending coaches (only renders if there are any) ── */}
+      <PendingCoachesPanel clubId={session.clubId!} />
 
       {/* ── Section 3: Team Managers ── */}
       <div

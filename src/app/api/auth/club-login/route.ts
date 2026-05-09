@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { db } from "@/db";
 import { clubUsers, clubUserTeams, clubs, tournaments, organizations, adminUsers, teams, tournamentRegistrations } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, isNull, desc } from "drizzle-orm";
 import { verifyPassword, createToken, setSessionCookie } from "@/lib/auth";
+import { sendCoachJoinedNotification } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
@@ -69,9 +70,15 @@ export async function POST(req: NextRequest) {
   // Attach to team if requested (registration wizard flow). Only honoured
   // when the team belongs to the user's own club. Silent no-op otherwise.
   let attachedTeamId: number | null = null;
+  let attachStatus: "pending" | "approved" = "approved";
+  let attachedTeamLabel: string | null = null;
   if (attachToTeamId) {
     const [t] = await db.select().from(teams).where(eq(teams.id, attachToTeamId));
-    if (t && t.clubId === user.clubId) attachedTeamId = t.id;
+    if (t && t.clubId === user.clubId) {
+      attachedTeamId = t.id;
+      attachStatus = "pending";
+      attachedTeamLabel = t.name ?? `${t.birthYear ?? ""} ${t.gender}`.trim();
+    }
   } else if (attachNewTeam) {
     const [created] = await db
       .insert(teams)
@@ -83,17 +90,40 @@ export async function POST(req: NextRequest) {
       })
       .returning();
     attachedTeamId = created.id;
+    attachStatus = "approved";
+    attachedTeamLabel = created.name ?? `${created.birthYear ?? ""} ${created.gender}`.trim();
   }
   if (attachedTeamId) {
     await db
       .insert(clubUserTeams)
-      .values({ clubUserId: user.id, teamId: attachedTeamId })
+      .values({ clubUserId: user.id, teamId: attachedTeamId, status: attachStatus })
       .onConflictDoNothing();
     // Persist as currently active team.
     await db
       .update(clubUsers)
       .set({ teamId: attachedTeamId })
       .where(eq(clubUsers.id, user.id));
+
+    // Notify club admins on a pending attach (existing team).
+    if (attachStatus === "pending") {
+      const club = await db.query.clubs.findFirst({ where: eq(clubs.id, user.clubId) });
+      const admins = await db
+        .select({ email: clubUsers.email })
+        .from(clubUsers)
+        .where(and(eq(clubUsers.clubId, user.clubId), isNull(clubUsers.teamId)));
+      const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com"}/en/club/dashboard`;
+      for (const admin of admins) {
+        if (!admin.email || admin.email.toLowerCase() === user.email.toLowerCase()) continue;
+        sendCoachJoinedNotification({
+          to: admin.email,
+          clubName: club?.name ?? "—",
+          coachName: user.name ?? null,
+          coachEmail: user.email,
+          teamLabel: attachedTeamLabel ?? "—",
+          dashboardLink,
+        }).catch((e) => console.error("[EMAIL] coach-joined notify failed:", e));
+      }
+    }
   }
 
   // Если у клубного пользователя есть super_admin аккаунт — ставим флаг

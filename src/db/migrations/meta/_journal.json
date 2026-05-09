@@ -218,6 +218,13 @@
       "when": 1775170111661,
       "tag": "0030_email_verifications",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1775170171661,
+      "tag": "0031_club_user_teams_status",
+      "breakpoints": true
     }
   ]
 }
