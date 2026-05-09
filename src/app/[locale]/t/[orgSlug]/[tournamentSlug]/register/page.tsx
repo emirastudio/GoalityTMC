@@ -676,12 +676,22 @@ export default function RegisterPage() {
   function addExistingTeam(team: ExistingTeam) {
     // Avoid duplicate (same teamId)
     if (teamEntries.some(e => e.teamId === team.id)) return;
+    // Auto-pick the class whose birth-year band contains the team's
+    // birthYear. Falls back to the empty string when nothing matches
+    // (e.g. team has no birthYear set or band-less class) — the user
+    // sees the class picker and chooses manually.
+    const autoClassId = team.birthYear
+      ? classes.find((c) =>
+          (c.minBirthYear ?? -Infinity) <= team.birthYear! &&
+          (c.maxBirthYear ?? Infinity) >= team.birthYear!
+        )?.id
+      : undefined;
     setTeamEntries(prev => [...prev, {
       key: `existing-${team.id}-${Date.now()}`,
       teamId: team.id,
       gender: team.gender,
       birthYear: team.birthYear ?? undefined,
-      classId: "",
+      classId: autoClassId ? String(autoClassId) : "",
       squadAlias: "",
       displayName: "",
     }]);
@@ -1763,30 +1773,87 @@ export default function RegisterPage() {
               </div>
               <div className="divide-y" style={{ borderColor: "var(--cat-divider)" }}>
                 {existingTeams.map(team => {
-                  const alreadyAdded = teamEntries.some(e => e.teamId === team.id);
+                  const entry = teamEntries.find(e => e.teamId === team.id);
+                  const alreadyAdded = !!entry;
                   return (
                     <div key={team.id}
-                      className="flex items-center gap-3 px-4 py-3 transition-all"
+                      className="px-4 py-3 transition-all"
                       style={{ background: alreadyAdded ? "var(--cat-badge-open-bg)" : undefined }}>
-                      <div className="flex-1 min-w-0">
-                        <TeamIdentityBadge team={team} />
-                        {team.playersCount > 0 && (
-                          <p className="text-[10px] mt-0.5 ml-0" style={{ color: "var(--cat-text-faint)" }}>
-                            {team.playersCount} игроков
-                          </p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <TeamIdentityBadge team={team} />
+                          {team.playersCount > 0 && (
+                            <p className="text-[10px] mt-0.5 ml-0" style={{ color: "var(--cat-text-faint)" }}>
+                              {team.playersCount} игроков
+                            </p>
+                          )}
+                        </div>
+                        {alreadyAdded ? (
+                          <button onClick={() => removeEntry(entry!.key)}
+                            className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80"
+                            style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+                            <X className="w-3 h-3" /> Убрать заявку
+                          </button>
+                        ) : (
+                          <button onClick={() => addExistingTeam(team)}
+                            className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-xl border transition-all hover:opacity-80"
+                            style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)", color: "var(--cat-accent)" }}>
+                            <Plus className="w-3.5 h-3.5" /> Заявить на турнир
+                          </button>
                         )}
                       </div>
-                      {alreadyAdded ? (
-                        <span className="text-[11px] font-bold px-2 py-1 rounded-lg"
-                          style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
-                          Добавлена ✓
-                        </span>
-                      ) : (
-                        <button onClick={() => addExistingTeam(team)}
-                          className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-xl border transition-all hover:opacity-80"
-                          style={{ background: "var(--cat-badge-open-bg)", borderColor: "var(--cat-badge-open-border)", color: "var(--cat-accent)" }}>
-                          <Plus className="w-3.5 h-3.5" /> Заявить
-                        </button>
+
+                      {/* Inline registration editor — shows up right under
+                          the team row when this team is in teamEntries.
+                          Class auto-picked from birth year, name pre-fills
+                          to "<Club> <Year>", but both are editable. */}
+                      {alreadyAdded && (
+                        <div className="mt-3 pl-1 space-y-3">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
+                              Дивизион в турнире<span className="text-red-400 ml-0.5">*</span>
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {classes.map(c => {
+                                const sel = entry!.classId === String(c.id);
+                                const matchesYear = team.birthYear &&
+                                  (c.minBirthYear ?? -Infinity) <= team.birthYear &&
+                                  (c.maxBirthYear ?? Infinity) >= team.birthYear;
+                                return (
+                                  <button key={c.id} type="button"
+                                    onClick={() => updateEntry(entry!.key, { classId: String(c.id) })}
+                                    className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border transition-all hover:opacity-90"
+                                    style={sel
+                                      ? { background: "var(--cat-accent)", borderColor: "var(--cat-accent)", color: "#000" }
+                                      : { background: "var(--cat-tag-bg)", borderColor: matchesYear ? "var(--cat-accent)" : "var(--cat-card-border)", color: "var(--cat-text-secondary)" }
+                                    }>
+                                    {c.name}
+                                    {matchesYear && !sel && <span className="ml-1" style={{ color: "var(--cat-accent)" }}>★</span>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
+                              Название в этом турнире
+                            </p>
+                            <input type="text"
+                              value={entry!.displayName ?? ""}
+                              onChange={e => updateEntry(entry!.key, { displayName: e.target.value })}
+                              placeholder={`${loggedInClub.name}`}
+                              className="w-full rounded-xl px-3 py-2 text-sm border outline-none"
+                              style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text)" }}
+                            />
+                            <input type="text"
+                              value={entry!.squadAlias ?? ""}
+                              onChange={e => updateEntry(entry!.key, { squadAlias: e.target.value })}
+                              placeholder="Псевдоним состава (Black/White) — необязательно"
+                              className="mt-2 w-full rounded-xl px-3 py-2 text-[12px] border outline-none"
+                              style={{ background: "var(--cat-input-bg)", borderColor: "var(--cat-input-border)", color: "var(--cat-text-secondary)" }}
+                            />
+                          </div>
+                        </div>
                       )}
                     </div>
                   );
@@ -1801,19 +1868,15 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Selected entries with class picker */}
-          {teamEntries.length > 0 && (
+          {/* Brand-new teams (not in existingTeams) — filled-out entries
+              still need to be visible somewhere; show only those. */}
+          {teamEntries.some(e => !e.teamId) && (
             <div className="space-y-3">
               <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: "var(--cat-text-muted)" }}>
-                Заявки ({teamEntries.length})
+                Новые команды ({teamEntries.filter(e => !e.teamId).length})
               </p>
-              {teamEntries.map(entry => {
-                const team = entry.teamId
-                  ? existingTeams.find(t => t.id === entry.teamId) ?? {
-                      id: entry.teamId!, name: null, birthYear: entry.birthYear ?? null,
-                      gender: entry.gender, totalTournaments: 0, playersCount: 0
-                    }
-                  : { id: 0, name: null, birthYear: entry.birthYear ?? null, gender: entry.gender, totalTournaments: 0, playersCount: 0 };
+              {teamEntries.filter(e => !e.teamId).map(entry => {
+                const team = { id: 0, name: null, birthYear: entry.birthYear ?? null, gender: entry.gender, totalTournaments: 0, playersCount: 0 };
                 return (
                   <ExistingTeamEntry key={entry.key}
                     team={team} entry={entry} classes={classes} clubName={loggedInClub.name}
