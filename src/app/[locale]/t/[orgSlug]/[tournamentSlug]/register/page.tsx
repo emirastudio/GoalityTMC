@@ -491,6 +491,17 @@ export default function RegisterPage() {
   // its id so we can re-use the club row on submit instead of creating a
   // duplicate. Cleared if the user types a new clubName manually.
   const [pickedGlobalClubId, setPickedGlobalClubId] = useState<number | null>(null);
+  // True when the picked club already has admin(s) — controls default
+  // tab on the auth step (login first vs signup first).
+  const [pickedGlobalClubHasAdmin, setPickedGlobalClubHasAdmin] = useState(false);
+  // Tab on step 2 when an existing club is picked: "login" lets a coach
+  // who already has access sign in; "signup" creates a fresh clubUser
+  // tied to the same club.
+  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
   // Soft suggestion when the user is typing a clubName in step 1 of the
   // create-flow that exactly matches an existing global club — nudges them
   // to pick that one instead of creating yet another duplicate.
@@ -716,6 +727,45 @@ export default function RegisterPage() {
     } catch {
       setVerifyError("Сетевая ошибка");
       setVerifyPhase("sent");
+    }
+  }
+
+  /* Inline login during registration — when the picked club already has
+     an admin, let the returning coach sign in without leaving the page.
+     On success we switch to loggedInClub mode (the same code path as the
+     global "already-signed-in" branch in the session-check effect),
+     which renders the team-picker step directly. */
+  async function inlineLogin() {
+    setLoginError("");
+    if (!loginEmail.trim() || !loginPassword) {
+      setLoginError("Введите email и пароль");
+      return;
+    }
+    setLoginBusy(true);
+    try {
+      const r = await fetch("/api/auth/club-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword }),
+      });
+      if (!r.ok) {
+        setLoginError("Неверный email или пароль");
+        return;
+      }
+      // Re-hit /me to populate loggedInClub from the fresh cookie. The
+      // useEffect in this component already does that on mount, but we
+      // need it now without a remount.
+      const meRes = await fetch("/api/auth/me");
+      const me = await meRes.json().catch(() => null);
+      if (me?.authenticated && me.role === "club" && me.club) {
+        setLoggedInClub(me.club);
+        setClubName(me.club.name);
+        setCountry(me.club.country ?? "");
+        setCity(me.club.city ?? "");
+        setStep(3);
+      }
+    } finally {
+      setLoginBusy(false);
     }
   }
 
@@ -975,21 +1025,19 @@ export default function RegisterPage() {
                 key={club.id}
                 club={club}
                 onSelect={() => {
-                  // Club already has an admin → wizard would create a
-                  // duplicate account. Send the user to the login page
-                  // with `next` so they come straight back here after.
-                  if (club.hasAdmin) {
-                    const next = `/t/${orgSlug}/${tournamentSlug}/register`;
-                    router.push(`/login?next=${encodeURIComponent(next)}&clubId=${club.id}`);
-                    return;
-                  }
-                  // No admin yet — first person to register becomes the
-                  // club admin. Skip the "club info" wizard step since
-                  // we already know name/country/city/badge.
+                  // Skip the club-info wizard step — we already know
+                  // name/country/city/badge from the global DB. The
+                  // auth step itself offers two tabs: "log in" for an
+                  // existing account or "sign up" to create a fresh
+                  // clubUser tied to this same club. If the club has
+                  // an admin, default to login (most common case for a
+                  // returning coach); otherwise default to signup.
                   setClubName(club.name);
                   setCountry(club.country ?? "");
                   setCity(club.city ?? "");
                   setPickedGlobalClubId(club.id);
+                  setPickedGlobalClubHasAdmin(!!club.hasAdmin);
+                  setAuthMode(club.hasAdmin ? "login" : "signup");
                   setView("create");
                   setStep(2);
                 }}
@@ -1189,15 +1237,11 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => {
-                // Same routing rule as the global-bucket pick: if the
-                // matched club already has an admin, send the user to
-                // login instead of letting them create a duplicate.
-                if (duplicateClubHint.hasAdmin) {
-                  const next = `/t/${orgSlug}/${tournamentSlug}/register`;
-                  router.push(`/login?next=${encodeURIComponent(next)}&clubId=${duplicateClubHint.id}`);
-                  return;
-                }
+                // Same flow as the global-bucket pick: jump to step 2
+                // and let the user choose login vs signup there.
                 setPickedGlobalClubId(duplicateClubHint.id);
+                setPickedGlobalClubHasAdmin(!!duplicateClubHint.hasAdmin);
+                setAuthMode(duplicateClubHint.hasAdmin ? "login" : "signup");
                 setClubName(duplicateClubHint.name);
                 setCountry(duplicateClubHint.country ?? country);
                 setCity(duplicateClubHint.city ?? city);
@@ -1234,10 +1278,70 @@ export default function RegisterPage() {
       {!loggedInClub && step === 2 && (
         <div className="rounded-2xl border p-5 space-y-4"
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+          {/* Login/signup tabs — only when an existing club is picked.
+              For "Зарегистрировать новый клуб" the user must sign up. */}
+          {pickedGlobalClubId !== null && (
+            <div className="flex gap-2 p-1 rounded-xl" style={{ background: "var(--cat-tag-bg)" }}>
+              <button
+                type="button"
+                onClick={() => setAuthMode("login")}
+                className="flex-1 rounded-lg py-2 text-sm font-bold transition-all"
+                style={{
+                  background: authMode === "login" ? "var(--cat-accent)" : "transparent",
+                  color: authMode === "login" ? "#000" : "var(--cat-text-muted)",
+                }}
+              >
+                У меня уже есть аккаунт
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode("signup")}
+                className="flex-1 rounded-lg py-2 text-sm font-bold transition-all"
+                style={{
+                  background: authMode === "signup" ? "var(--cat-accent)" : "transparent",
+                  color: authMode === "signup" ? "#000" : "var(--cat-text-muted)",
+                }}
+              >
+                Создать аккаунт
+              </button>
+            </div>
+          )}
+
+          {/* Inline login form — replaces the redirect to /login. */}
+          {pickedGlobalClubId !== null && authMode === "login" && (
+            <div className="space-y-3">
+              <p className="text-[12px]" style={{ color: "var(--cat-text-secondary)" }}>
+                Войдите под своим аккаунтом — после входа сразу перейдёте к выбору команд для турнира.
+              </p>
+              <Field label={t("emailLabel")} type="email" value={loginEmail} onChange={setLoginEmail} placeholder="coach@club.example" required />
+              <Field label={t("passwordLabel")} type="password" value={loginPassword} onChange={setLoginPassword} placeholder="••••••••" required />
+              {loginError && (
+                <p className="text-[11px]" style={{ color: "#ef4444" }}>{loginError}</p>
+              )}
+              <button
+                type="button"
+                onClick={inlineLogin}
+                disabled={loginBusy}
+                className="w-full rounded-xl py-3 text-sm font-black transition-all hover:opacity-90 disabled:opacity-40"
+                style={{ background: "var(--cat-accent)", color: "#000" }}
+              >
+                {loginBusy ? "Входим…" : "Войти"}
+              </button>
+              <p className="text-[11px] text-center" style={{ color: "var(--cat-text-muted)" }}>
+                Забыли пароль? <a href="/forgot-password" className="underline" style={{ color: "var(--cat-accent)" }}>Восстановить</a>
+              </p>
+            </div>
+          )}
+
+          {/* Signup form — same as before, gated by email verification. */}
+          {(pickedGlobalClubId === null || authMode === "signup") && (
+          <>
           <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "var(--cat-tag-bg)" }}>
             <Shield className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
             <p className="text-[11px]" style={{ color: "var(--cat-text-secondary)" }}>
-              {t("loginCredentialsHint")}
+              {pickedGlobalClubHasAdmin
+                ? "Создайте свой аккаунт — у клуба уже есть администратор, ваш аккаунт будет добавлен как тренер."
+                : t("loginCredentialsHint")}
             </p>
           </div>
           <Field label={t("contactPerson")} value={contactName} onChange={setContactName} placeholder="John Smith" required />
@@ -1322,6 +1426,8 @@ export default function RegisterPage() {
 
           <Field label={t("passwordLabel")} type="password" value={password} onChange={setPassword}
             placeholder="Минимум 6 символов" hint={t("passwordMinHint")} required />
+          </>
+          )}
         </div>
       )}
 
@@ -1523,8 +1629,9 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex gap-3">
+      {/* Navigation — hide "Далее" on the login tab (the inline "Войти"
+          button submits its own form) */}
+      <div className="flex gap-3" hidden={!loggedInClub && step === 2 && pickedGlobalClubId !== null && authMode === "login"}>
         {!loggedInClub && step < 3 ? (
           <button
             onClick={() => canGoNext() && setStep(s => (s + 1) as Step)}
