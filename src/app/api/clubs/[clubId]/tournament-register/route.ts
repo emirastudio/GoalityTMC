@@ -55,6 +55,27 @@ export async function POST(
     teams: TeamEntry[];
   };
 
+  // Team-admin scoping: a coach scoped to a single team cannot register OTHER
+  // teams of the club, and cannot create brand-new teams during registration
+  // — only the existing team they manage may be registered to a new tournament
+  // or class.
+  if (session.teamId) {
+    for (const entry of teamEntries) {
+      if (!entry.teamId) {
+        return NextResponse.json(
+          { error: "Team admins cannot create new teams. Ask the club admin." },
+          { status: 403 }
+        );
+      }
+      if (entry.teamId !== session.teamId) {
+        return NextResponse.json(
+          { error: "Team admins can only register their own team." },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   // 2. Validate tournament
   if (!tournamentId) {
     return NextResponse.json({ error: "tournamentId is required" }, { status: 400 });

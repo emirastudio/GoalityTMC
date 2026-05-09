@@ -25,9 +25,13 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Глобальные команды клуба с историей регистраций
+  // Команды клуба, отфильтрованные по правам пользователя:
+  //   - clubUser.teamId == null  → клуб-админ видит ВСЕ команды клуба
+  //   - clubUser.teamId == N      → тренер видит ТОЛЬКО свою команду
   const clubTeams = await db.query.teams.findMany({
-    where: eq(teams.clubId, cid),
+    where: session.teamId
+      ? and(eq(teams.clubId, cid), eq(teams.id, session.teamId))
+      : eq(teams.clubId, cid),
     orderBy: (t, { asc, desc }) => [desc(t.birthYear), asc(t.gender), asc(t.createdAt)],
     with: {
       registrations: {
@@ -122,6 +126,12 @@ export async function POST(
 
   if (session.clubId !== cid) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Team-admin (session.teamId set) cannot create new teams in the club —
+  // only club-admin can. Coaches manage their existing team only.
+  if (session.teamId) {
+    return NextResponse.json({ error: "Team admins cannot create new teams" }, { status: 403 });
   }
 
   const body = await req.json();
