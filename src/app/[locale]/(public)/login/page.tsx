@@ -48,10 +48,13 @@ export default function LoginPage() {
   // register flow). Only same-app paths are honoured.
   const nextRaw = searchParams.get("next");
   const safeNext = nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : null;
+  // ?email=<addr> pre-fills the email field — used when the register
+  // page bounces a coach here after "email already exists".
+  const prefillEmail = searchParams.get("email");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"club" | "organizer">("club");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefillEmail ?? "");
   const [emailHint, setEmailHint] = useState<EmailHint | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

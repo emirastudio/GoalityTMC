@@ -1354,8 +1354,25 @@ export default function RegisterPage() {
 
       {/* Error */}
       {error && (
-        <div className="px-4 py-3 rounded-xl text-sm text-red-400" style={{ background: "rgba(239,68,68,0.1)" }}>
-          {error}
+        <div className="px-4 py-3 rounded-xl text-sm space-y-2" style={{ background: "rgba(239,68,68,0.1)" }}>
+          <p className="text-red-400">{error}</p>
+          {/* If the backend says the email is already registered, offer
+              a one-click jump to /login pre-filled with the typed email
+              and a `next` back to this page. */}
+          {/already exists/i.test(error) && (
+            <button
+              type="button"
+              onClick={() => {
+                const next = `/t/${orgSlug}/${tournamentSlug}/register`;
+                const url = `/login?next=${encodeURIComponent(next)}${contactEmail ? `&email=${encodeURIComponent(contactEmail)}` : ""}`;
+                router.push(url);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-90"
+              style={{ background: "var(--cat-accent)", color: "#000" }}
+            >
+              🔐 Войти под {contactEmail || "этим email"}
+            </button>
+          )}
         </div>
       )}
 
