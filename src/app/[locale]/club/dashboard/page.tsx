@@ -377,7 +377,7 @@ export default async function ClubDashboardPage() {
                 </span>
                 {m.id !== session.userId && (
                   <MemberRemoveButton
-                    clubId={session.clubId}
+                    clubId={session.clubId!}
                     memberId={m.id}
                     label={m.name ?? m.email}
                   />
