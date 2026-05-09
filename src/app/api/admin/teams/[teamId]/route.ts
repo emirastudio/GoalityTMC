@@ -85,29 +85,46 @@ export async function PATCH(
 
   // ── Email notification on status change ────────────────────
   if (body.status === "confirmed" || body.status === "rejected") {
+    console.log(`[EMAIL] status notify start: teamId=${tid} status=${body.status}`);
     (async () => {
       try {
+        // Use eslint-disable for the "any" cast — drizzle relations
+        // are dynamic, the runtime shape is correct.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const club = (team as any)?.club ?? null;
         const reg = team?.registrations?.[0];
         const tournament = reg?.tournamentId
           ? await db.query.tournaments.findFirst({ where: eq(tournaments.id, reg.tournamentId) })
           : null;
 
-        if (!club?.contactEmail || !team) return;
+        if (!team) {
+          console.warn(`[EMAIL] notify skipped — team not found teamId=${tid}`);
+          return;
+        }
+        if (!club?.contactEmail) {
+          console.warn(`[EMAIL] notify skipped — no contactEmail for clubId=${club?.id ?? "null"} teamId=${tid}`);
+          return;
+        }
+
+        // Display name priority — same chain we use everywhere else.
+        // Email subject reads better with a real label than "Your team".
+        const teamLabel = team.name ?? club.name ?? `Team #${team.id}`;
 
         const payload = {
           to: club.contactEmail,
           clubName: club.name,
-          teamName: team.name ?? "Your team",
+          teamName: teamLabel,
           tournamentName: tournament?.name ?? "the tournament",
           notes: body.notes ?? null,
         };
 
+        console.log(`[EMAIL] sending ${body.status} → ${club.contactEmail} (team=${teamLabel}, tournament=${tournament?.name})`);
         if (body.status === "confirmed") {
           await sendRegistrationConfirmed({ ...payload, tournamentSlug: tournament?.slug });
         } else {
           await sendRegistrationRejected(payload);
         }
+        console.log(`[EMAIL] ${body.status} sent OK to ${club.contactEmail}`);
       } catch (e) {
         console.error("[EMAIL] Status notification failed:", e);
       }
