@@ -140,6 +140,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         orgName: organization.name,
         inviteLink,
         inviterName: inviter?.name ?? null,
+        locale: organization.defaultLocale,
       });
       emailSent = true;
     } catch (err) {

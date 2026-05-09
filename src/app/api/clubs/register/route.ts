@@ -32,6 +32,17 @@ async function logAttempt(data: {
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown";
   const ua = req.headers.get("user-agent") ?? "unknown";
+  // Capture the user's UI locale at signup so every notification we
+  // ever send to this club is rendered in their language. NEXT_LOCALE
+  // is set by next-intl middleware; falls back to the Accept-Language
+  // header's first hit, then "en".
+  const userLocale = (() => {
+    const cookieLocale = req.cookies.get("NEXT_LOCALE")?.value;
+    if (cookieLocale && /^(en|ru|et|es)$/.test(cookieLocale)) return cookieLocale;
+    const accept = req.headers.get("accept-language") ?? "";
+    const first = accept.split(",")[0]?.split("-")[0]?.toLowerCase() ?? "";
+    return ["en", "ru", "et", "es"].includes(first) ? first : "en";
+  })();
   const formData = await req.formData();
 
   const clubName = formData.get("clubName") as string;
@@ -123,7 +134,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let club: { id: number; name: string };
+  let club: { id: number; name: string; preferredLocale: string };
   let hasLogo = false;
 
   if (existingClubId) {
@@ -133,7 +144,7 @@ export async function POST(req: NextRequest) {
       await logAttempt({ ...base, status: "fail_existing_club_not_found", failReason: `clubId=${existingClubId}` });
       return NextResponse.json({ error: "Selected club no longer exists. Search again." }, { status: 404 });
     }
-    club = { id: found.id, name: found.name };
+    club = { id: found.id, name: found.name, preferredLocale: found.preferredLocale ?? userLocale };
     console.log(`[REGISTER] existing-club path — clubId=${club.id} ("${club.name}")`);
   } else {
     // ── New-club path: original flow ──
@@ -158,8 +169,9 @@ export async function POST(req: NextRequest) {
     const [created] = await db.insert(clubs).values({
       name: clubName, slug: `${baseSlug}-${Date.now()}`,
       country, city, badgeUrl, contactName, contactEmail, contactPhone,
+      preferredLocale: userLocale,
     }).returning();
-    club = { id: created.id, name: created.name };
+    club = { id: created.id, name: created.name, preferredLocale: created.preferredLocale ?? userLocale };
   }
 
   // Determine what role this clubUser gets:
@@ -233,7 +245,10 @@ export async function POST(req: NextRequest) {
         .select({ email: clubUsers.email })
         .from(clubUsers)
         .where(and(eq(clubUsers.clubId, club.id), isNull(clubUsers.teamId)));
-      const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com"}/en/club/dashboard`;
+      // Use the club's preferred locale (set on first signup of this
+      // club) for the admin notification.
+      const adminLocale = club.preferredLocale;
+      const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com"}/${adminLocale}/club/dashboard`;
       for (const admin of admins) {
         if (!admin.email) continue;
         sendCoachJoinedNotification({
@@ -243,6 +258,7 @@ export async function POST(req: NextRequest) {
           coachEmail: contactEmail,
           teamLabel: teamLabelForEmail ?? "—",
           dashboardLink,
+          locale: adminLocale,
         }).catch((e) => console.error("[EMAIL] coach-joined notify failed:", e));
       }
     }
@@ -382,6 +398,7 @@ export async function POST(req: NextRequest) {
           clubName: club.name,
           teamName: teamNamesForEmail,
           tournamentName: tournament.name,
+          locale: club.preferredLocale,
         }).catch((e) => console.error("[EMAIL] Registration received send failed:", e));
       }
     }
@@ -389,7 +406,7 @@ export async function POST(req: NextRequest) {
 
   // Welcome email (fire & forget) — uses the actual club name (which may
   // differ from the form input when an existing club was picked).
-  sendWelcomeEmail({ to: contactEmail, clubName: club.name, contactName }).catch(
+  sendWelcomeEmail({ to: contactEmail, clubName: club.name, contactName, locale: club.preferredLocale }).catch(
     (e) => console.error("[EMAIL] Welcome send failed:", e),
   );
 

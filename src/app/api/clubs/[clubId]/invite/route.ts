@@ -54,7 +54,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   // Отправить email если указан и SMTP настроен
   if (invitedEmail && process.env.SMTP_HOST) {
     try {
-      await sendClubInvite({ to: invitedEmail, clubName: club.name, inviteLink });
+      await sendClubInvite({ to: invitedEmail, clubName: club.name, inviteLink, locale: club.preferredLocale });
     } catch (err) {
       console.error("Failed to send invite email:", err);
       // Не ломаем ответ — ссылка всё равно создана

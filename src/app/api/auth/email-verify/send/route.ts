@@ -44,7 +44,10 @@ export async function POST(req: NextRequest) {
   // Best-effort send — failures still return ok=true so we don't reveal
   // whether the email is well-formed/deliverable. The user retries via UI.
   try {
-    await sendEmailVerificationCode({ to: email, code });
+    // Locale picked from the request: NEXT_LOCALE cookie set by next-intl
+    // middleware. Verification code goes out in the user's UI language.
+    const locale = req.cookies.get("NEXT_LOCALE")?.value;
+    await sendEmailVerificationCode({ to: email, code, locale });
   } catch (e) {
     console.error("[EMAIL-VERIFY] send failed:", e);
   }

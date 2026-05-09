@@ -116,9 +116,10 @@ export async function PATCH(
           teamName: teamLabel,
           tournamentName: tournament?.name ?? "the tournament",
           notes: body.notes ?? null,
+          locale: club.preferredLocale ?? "en",
         };
 
-        console.log(`[EMAIL] sending ${body.status} → ${club.contactEmail} (team=${teamLabel}, tournament=${tournament?.name})`);
+        console.log(`[EMAIL] sending ${body.status} → ${club.contactEmail} (team=${teamLabel}, tournament=${tournament?.name}, locale=${payload.locale})`);
         if (body.status === "confirmed") {
           await sendRegistrationConfirmed({ ...payload, tournamentSlug: tournament?.slug });
         } else {

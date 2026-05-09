@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { EMAIL_STRINGS, t, normaliseLocale } from "./email-i18n";
 
 // ─── Transport ────────────────────────────────────────────────────────────────
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -189,70 +190,66 @@ function infoTable(rows: string) {
 
 // ─── 1. Welcome Email ─────────────────────────────────────────────────────────
 export async function sendWelcomeEmail({
-  to, clubName, contactName, loginUrl,
+  to, clubName, contactName, loginUrl, locale: rawLocale,
 }: {
   to: string;
   clubName: string;
   contactName?: string | null;
   loginUrl?: string;
+  locale?: string | null;
 }) {
+  const locale = normaliseLocale(rawLocale);
   const name = contactName || "there";
-  const url = loginUrl ?? `${APP_URL}/en/login`;
+  const url = loginUrl ?? `${APP_URL}/${locale}/login`;
+  const W = EMAIL_STRINGS.welcome;
 
   await send({
     to,
-    subject: `Welcome to Goality — ${clubName} is ready 🎉`,
-    text: `Hi ${name},\n\nWelcome to Goality! Your club "${clubName}" has been successfully registered.\n\nLog in at: ${url}\n\nGoality Team`,
+    subject: t(W, "subject", locale, { clubName }),
+    text: `${t(W, "hi", locale, { name })}\n\n${stripTags(t(W, "body1", locale, { clubName }))}\n\n${url}\n\n${t(W, "signature", locale)}`,
     html: base({
-      preheader: `Welcome to Goality, ${name}! Your club is ready.`,
+      preheader: t(W, "preheader", locale),
       body: `
-        ${h1("Welcome to Goality! 👋")}
-        ${p(`Hi <strong>${name}</strong>, you're all set.`)}
-        ${p(`Your club <strong>${clubName}</strong> has been successfully created on Goality. You can now complete your profile, find tournaments, and manage your teams — all in one place.`)}
-
-        ${infoTable(
-          infoRow("Club name", clubName) +
-          infoRow("Account email", to) +
-          infoRow("Platform", "Goality TMC")
-        )}
-
-        ${p("Here's what to do next:")}
-        <ul style="margin:12px 0 0;padding-left:20px;font-size:15px;color:#374151;line-height:2;">
-          <li>Complete your club profile (logo, website, contacts)</li>
-          <li>Browse the tournament catalog</li>
-          <li>Register your teams for events</li>
-        </ul>
+        ${h1("Goality")}
+        ${p(t(W, "hi", locale, { name }))}
+        ${p(t(W, "body1", locale, { clubName }))}
       `,
-      cta: { label: "Open Club Dashboard →", url },
+      cta: { label: t(W, "cta", locale), url },
     }),
   });
 }
 
+function stripTags(html: string): string {
+  return html.replace(/<[^>]+>/g, "");
+}
+
 // ─── 2. Password Reset ────────────────────────────────────────────────────────
 export async function sendPasswordReset({
-  to, toName, resetLink,
+  to, toName, resetLink, locale: rawLocale,
 }: {
   to: string;
   toName: string;
   resetLink: string;
+  locale?: string | null;
 }) {
+  const locale = normaliseLocale(rawLocale);
+  const P = EMAIL_STRINGS.passwordReset;
   await send({
     to: `${toName} <${to}>`,
-    subject: "Reset your Goality password",
-    text: `Hi ${toName},\n\nClick the link to reset your password (valid for 1 hour):\n${resetLink}\n\nIf you didn't request this, ignore this email.\n\nGoality Team`,
+    subject: t(P, "subject", locale),
+    text: `${stripTags(t(P, "body1", locale, { name: toName }))}\n\n${resetLink}\n\n${stripTags(t(P, "expires", locale))}`,
     html: base({
-      preheader: "Reset your Goality password — link valid for 1 hour.",
+      preheader: t(P, "preheader", locale),
       body: `
         <div style="text-align:center;margin-bottom:8px;">
           <div style="display:inline-block;width:56px;height:56px;background:#fef3c7;border-radius:16px;
                       text-align:center;line-height:56px;font-size:26px;">🔑</div>
         </div>
-        ${h1("Password Reset Request")}
-        ${p(`Hi <strong>${toName}</strong>,`)}
-        ${p("We received a request to reset the password for your Goality account. Click the button below to set a new password.")}
-        ${muted("This link expires in <strong>1 hour</strong>. If you didn't request a reset, you can safely ignore this email — your password won't change.")}
+        ${h1(t(P, "title", locale))}
+        ${p(t(P, "body1", locale, { name: toName }))}
+        ${muted(t(P, "expires", locale))}
       `,
-      cta: { label: "Reset My Password", url: resetLink, color: "#0a0f1e" },
+      cta: { label: t(P, "cta", locale), url: resetLink, color: "#0a0f1e" },
     }),
   });
 }
@@ -264,30 +261,34 @@ export async function sendPasswordReset({
 export async function sendEmailVerificationCode({
   to,
   code,
+  locale: rawLocale,
 }: {
   to: string;
   code: string;
+  locale?: string | null;
 }) {
+  const locale = normaliseLocale(rawLocale);
+  const V = EMAIL_STRINGS.verifyCode;
   await send({
     to,
-    subject: `Your Goality verification code: ${code}`,
-    text: `Your verification code is ${code}.\n\nIt expires in 15 minutes. If you didn't request this, ignore the email.\n\nGoality Team`,
+    subject: t(V, "subject", locale, { code }),
+    text: t(V, "fallbackText", locale, { code }),
     html: base({
-      preheader: `Verification code ${code} — valid for 15 minutes.`,
+      preheader: t(V, "preheader", locale, { code }),
       body: `
         <div style="text-align:center;margin-bottom:8px;">
           <div style="display:inline-block;width:56px;height:56px;background:#dcfce7;border-radius:16px;
                       text-align:center;line-height:56px;font-size:26px;">✉️</div>
         </div>
-        ${h1("Confirm your email")}
-        ${p("Use this code to finish creating your Goality account:")}
+        ${h1(t(V, "title", locale))}
+        ${p(t(V, "body1", locale))}
         <div style="margin:24px 0;text-align:center;">
           <div style="display:inline-block;font-family:'Courier New',monospace;font-size:36px;letter-spacing:12px;
                       font-weight:700;color:#0a0f1e;background:#f0f2f5;border-radius:12px;padding:18px 28px;">
             ${code}
           </div>
         </div>
-        ${muted("This code expires in <strong>15 minutes</strong>. If you didn't request it, you can safely ignore this email — no account will be created.")}
+        ${muted(t(V, "expires", locale))}
       `,
     }),
   });
@@ -306,6 +307,7 @@ export async function sendCoachJoinedNotification({
   coachEmail,
   teamLabel,
   dashboardLink,
+  locale: rawLocale,
 }: {
   to: string;
   clubName: string;
@@ -313,144 +315,140 @@ export async function sendCoachJoinedNotification({
   coachEmail: string;
   teamLabel: string;
   dashboardLink: string;
+  locale?: string | null;
 }) {
+  const locale = normaliseLocale(rawLocale);
+  const C = EMAIL_STRINGS.coachJoined;
   const who = coachName ? `${coachName} (${coachEmail})` : coachEmail;
+  const coach = coachName ?? coachEmail;
   await send({
     to,
-    subject: `New coach joined ${clubName}: ${who}`,
-    text: `${who} just joined ${clubName} as coach of ${teamLabel}.\n\nThey can already register and manage that team for tournaments — confirm or remove them at: ${dashboardLink}\n\nGoality Team`,
+    subject: t(C, "subject", locale, { clubName, who }),
+    text: `${stripTags(t(C, "body", locale, { coach, clubName, teamLabel }))}\n\n${stripTags(t(C, "note", locale))}\n\n${dashboardLink}`,
     html: base({
-      preheader: `${who} joined ${clubName} — confirm or remove on the dashboard.`,
+      preheader: t(C, "preheader", locale, { who, clubName }),
       body: `
         <div style="text-align:center;margin-bottom:8px;">
           <div style="display:inline-block;width:56px;height:56px;background:#dbeafe;border-radius:16px;
                       text-align:center;line-height:56px;font-size:26px;">👤</div>
         </div>
-        ${h1("New coach joined your club")}
-        ${p(`<strong>${coachName ?? coachEmail}</strong> just joined <strong>${clubName}</strong> as coach of <strong>${teamLabel}</strong>.`)}
-        ${p(`Email: <a href="mailto:${coachEmail}" style="color:#0a0f1e;">${coachEmail}</a>`)}
-        ${muted("They can already register and manage this team for tournaments. If you don't recognise them, you can remove them from the club dashboard. The person who registers a team is responsible for it.")}
+        ${h1(t(C, "title", locale))}
+        ${p(t(C, "body", locale, { coach, clubName, teamLabel }))}
+        ${p(`${t(C, "emailLabel", locale)}: <a href="mailto:${coachEmail}" style="color:#0a0f1e;">${coachEmail}</a>`)}
+        ${muted(t(C, "note", locale))}
       `,
-      cta: { label: "Open Club Dashboard", url: dashboardLink, color: "#0a0f1e" },
+      cta: { label: t(C, "cta", locale), url: dashboardLink, color: "#0a0f1e" },
     }),
   });
 }
 
 // ─── 3. Club Invite (Manager / Coach) ────────────────────────────────────────
 export async function sendClubInvite({
-  to, clubName, inviteLink, inviterName,
+  to, clubName, inviteLink, inviterName, locale: rawLocale,
 }: {
   to: string;
   clubName: string;
   inviteLink: string;
   inviterName?: string | null;
+  locale?: string | null;
 }) {
-  const inviter = inviterName ? `<strong>${inviterName}</strong>` : "the club administrator";
+  const locale = normaliseLocale(rawLocale);
+  const I = EMAIL_STRINGS.clubInvite;
+  const inviter = inviterName ? `<strong>${inviterName}</strong>` : (locale === "ru" ? "администратор клуба" : locale === "et" ? "klubi haldur" : locale === "es" ? "el administrador del club" : "the club administrator");
 
   await send({
     to,
-    subject: `You've been invited to join ${clubName} on Goality`,
-    text: `You've been invited to join ${clubName} as a manager on Goality.\n\nAccept invitation: ${inviteLink}\n\nLink valid for 7 days.\n\nGoality Team`,
+    subject: t(I, "subject", locale, { clubName }),
+    text: `${stripTags(t(I, "body", locale, { inviter: inviterName ?? "—", clubName }))}\n\n${inviteLink}\n\n${t(I, "expires", locale)}`,
     html: base({
-      preheader: `${inviter} invited you to join ${clubName} on Goality.`,
+      preheader: t(I, "preheader", locale, { clubName }),
       body: `
         <div style="text-align:center;margin-bottom:8px;">
           <div style="display:inline-block;width:56px;height:56px;background:#e8f5e9;border-radius:16px;
                       text-align:center;line-height:56px;font-size:26px;">🤝</div>
         </div>
-        ${h1("You're Invited!")}
-        ${p(`${inviter} has invited you to join <strong>${clubName}</strong> as a manager on Goality.`)}
-        ${p("Create your free account and you'll be able to manage teams, communicate with tournament organizers, and much more.")}
-        ${infoTable(
-          infoRow("Club", clubName) +
-          infoRow("Role", "Team Manager / Coach") +
-          infoRow("Link expires", "7 days from now")
-        )}
+        ${h1(t(I, "title", locale, { clubName }))}
+        ${p(t(I, "body", locale, { inviter, clubName }))}
+        ${muted(t(I, "expires", locale))}
       `,
-      cta: { label: "Accept Invitation →", url: inviteLink },
+      cta: { label: t(I, "cta", locale), url: inviteLink },
     }),
   });
 }
 
 // ─── Org admin invite (Pro+Elite multi-admin) ─────────────────────────────────
 export async function sendOrgAdminInvite({
-  to, orgName, inviteLink, inviterName,
+  to, orgName, inviteLink, inviterName, locale: rawLocale,
 }: {
   to: string;
   orgName: string;
   inviteLink: string;
   inviterName?: string | null;
+  locale?: string | null;
 }) {
-  const inviter = inviterName ? `<strong>${inviterName}</strong>` : "An administrator";
+  const locale = normaliseLocale(rawLocale);
+  const O = EMAIL_STRINGS.orgAdminInvite;
+  const inviter = inviterName ? `<strong>${inviterName}</strong>` : (locale === "ru" ? "администратор" : locale === "et" ? "haldur" : locale === "es" ? "un administrador" : "An administrator");
   await send({
     to,
-    subject: `You've been invited to administer ${orgName} on Goality`,
-    text: `${inviter} has invited you to become an administrator of ${orgName} on Goality.\n\nAccept invitation: ${inviteLink}\n\nLink valid for 7 days.\n\nGoality Team`,
+    subject: t(O, "subject", locale, { orgName }),
+    text: `${stripTags(t(O, "body", locale, { inviter: inviterName ?? "—", orgName }))}\n\n${inviteLink}\n\n${t(O, "expires", locale)}`,
     html: base({
-      preheader: `${inviter} invited you to administer ${orgName} on Goality.`,
+      preheader: t(O, "preheader", locale, { orgName }),
       body: `
         <div style="text-align:center;margin-bottom:8px;">
           <div style="display:inline-block;width:56px;height:56px;background:#eef2ff;border-radius:16px;
                       text-align:center;line-height:56px;font-size:26px;">🛡️</div>
         </div>
-        ${h1("Administrator invitation")}
-        ${p(`${inviter} has invited you to administer <strong>${orgName}</strong> on Goality.`)}
-        ${p("You'll be able to manage tournaments, teams, schedules and billing on behalf of the organisation.")}
-        ${infoTable(
-          infoRow("Organisation", orgName) +
-          infoRow("Role", "Administrator") +
-          infoRow("Link expires", "7 days from now")
-        )}
+        ${h1(t(O, "title", locale))}
+        ${p(t(O, "body", locale, { inviter, orgName }))}
+        ${muted(t(O, "expires", locale))}
       `,
-      cta: { label: "Accept invitation →", url: inviteLink },
+      cta: { label: t(O, "cta", locale), url: inviteLink },
     }),
   });
 }
 
 // ─── 4. Tournament Registration Received ─────────────────────────────────────
 export async function sendRegistrationReceived({
-  to, clubName, teamName, tournamentName, tournamentOrganizer,
+  to, clubName, teamName, tournamentName, tournamentOrganizer, locale: rawLocale,
 }: {
   to: string;
   clubName: string;
   teamName: string;
   tournamentName: string;
   tournamentOrganizer?: string | null;
+  locale?: string | null;
 }) {
+  // tournamentOrganizer reserved for future surface in the meta block —
+  // currently the body doesn't reference it, so just void to keep eslint
+  // happy without a noop assignment.
+  void tournamentOrganizer;
+  const locale = normaliseLocale(rawLocale);
+  const R = EMAIL_STRINGS.regReceived;
   await send({
     to,
-    subject: `Application received — ${tournamentName}`,
-    text: `Hi ${clubName},\n\nYour registration for "${teamName}" in "${tournamentName}" has been received.\n\nThe organizer will review it shortly.\n\nGoality Team`,
+    subject: t(R, "subject", locale, { tournamentName }),
+    text: `${stripTags(t(R, "body", locale, { clubName, teamName, tournamentName }))}\n\n${stripTags(t(R, "body2", locale))}`,
     html: base({
-      preheader: `Your application for ${tournamentName} has been received.`,
+      preheader: t(R, "preheader", locale, { tournamentName }),
       body: `
         <div style="text-align:center;margin-bottom:8px;">
           <div style="display:inline-block;width:56px;height:56px;background:#e0f2fe;border-radius:16px;
                       text-align:center;line-height:56px;font-size:26px;">📋</div>
         </div>
-        ${h1("Application Received")}
-        ${p(`Hi <strong>${clubName}</strong>,`)}
-        ${p(`Your registration for <strong>${teamName}</strong> in <strong>${tournamentName}</strong> has been successfully submitted and is now under review.`)}
-
-        ${infoTable(
-          infoRow("Club", clubName) +
-          infoRow("Team", teamName) +
-          infoRow("Tournament", tournamentName) +
-          (tournamentOrganizer ? infoRow("Organizer", tournamentOrganizer) : "") +
-          infoRow("Status", badge("Under Review", "#92400e", "#fef3c7"))
-        )}
-
-        ${p("The organizer will review your application and confirm or update your status. You'll receive an email notification as soon as there's an update.")}
-        ${muted("You can check the status anytime in your club dashboard.")}
+        ${h1(t(R, "title", locale))}
+        ${p(t(R, "body", locale, { clubName, teamName, tournamentName }))}
+        ${muted(t(R, "body2", locale))}
       `,
-      cta: { label: "View Application Status →", url: `${APP_URL}/en/club/dashboard` },
+      cta: { label: t(R, "cta", locale), url: `${APP_URL}/${locale}/team/overview` },
     }),
   });
 }
 
 // ─── 5. Registration Confirmed ────────────────────────────────────────────────
 export async function sendRegistrationConfirmed({
-  to, clubName, teamName, tournamentName, tournamentSlug, notes,
+  to, clubName, teamName, tournamentName, tournamentSlug, notes, locale: rawLocale,
 }: {
   to: string;
   clubName: string;
@@ -458,92 +456,91 @@ export async function sendRegistrationConfirmed({
   tournamentName: string;
   tournamentSlug?: string | null;
   notes?: string | null;
+  locale?: string | null;
 }) {
-  const portalUrl = `${APP_URL}/en/team/overview`;
+  void tournamentSlug;
+  const locale = normaliseLocale(rawLocale);
+  const C = EMAIL_STRINGS.regConfirmed;
+  const portalUrl = `${APP_URL}/${locale}/team/overview`;
 
   await send({
     to,
-    subject: `✅ Confirmed — ${teamName} is in ${tournamentName}!`,
-    text: `Hi ${clubName},\n\nGreat news! ${teamName} has been confirmed for ${tournamentName}.\n\n${notes ? `Note from organizer: ${notes}\n\n` : ""}Open your team portal: ${portalUrl}\n\nGoality Team`,
+    subject: t(C, "subject", locale, { teamName, tournamentName }),
+    text: `${stripTags(t(C, "body2", locale, { teamName, tournamentName }))}\n\n${notes ? `${t(C, "noteLabel", locale)}: ${notes}\n\n` : ""}${portalUrl}`,
     html: base({
-      preheader: `Great news! ${teamName} has been confirmed for ${tournamentName}.`,
+      preheader: t(C, "preheader", locale, { teamName, tournamentName }),
       body: `
         <!-- Success banner -->
         <div style="background:linear-gradient(135deg,#064e3b,#065f46);border-radius:12px;
                     padding:20px 24px;margin-bottom:4px;text-align:center;">
           <div style="font-size:32px;margin-bottom:8px;">🎉</div>
-          <p style="margin:0;font-size:18px;font-weight:800;color:#ffffff;">You're confirmed!</p>
-          <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.7);">${teamName} has a spot in ${tournamentName}</p>
+          <p style="margin:0;font-size:18px;font-weight:800;color:#ffffff;">${t(C, "bannerTitle", locale)}</p>
+          <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.7);">${t(C, "bannerSub", locale, { teamName, tournamentName })}</p>
         </div>
 
-        ${p(`Hi <strong>${clubName}</strong>,`)}
-        ${p(`Great news — <strong>${teamName}</strong> has been officially confirmed for <strong>${tournamentName}</strong>! Your team is in.`)}
+        ${p(t(C, "body1", locale, { clubName }))}
+        ${p(t(C, "body2", locale, { teamName, tournamentName }))}
 
         ${infoTable(
-          infoRow("Club", clubName) +
-          infoRow("Team", teamName) +
-          infoRow("Tournament", tournamentName) +
-          infoRow("Status", badge("Confirmed", "#065f46", "#d1fae5"))
+          infoRow(t(C, "rowClub", locale), clubName) +
+          infoRow(t(C, "rowTeam", locale), teamName) +
+          infoRow(t(C, "rowTournament", locale), tournamentName) +
+          infoRow(t(C, "rowStatus", locale), badge(t(C, "statusBadge", locale), "#065f46", "#d1fae5"))
         )}
 
         ${notes ? `
         <!-- Organizer note -->
         <div style="margin-top:24px;padding:16px 20px;background:#f0fdf4;border-left:4px solid #10b981;border-radius:0 8px 8px 0;">
           <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:0.5px;">
-            Note from organizer
+            ${t(C, "noteLabel", locale)}
           </p>
           <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">${notes}</p>
         </div>
         ` : ""}
 
-        ${p("Open your team portal to access all tournament details, schedule, and communicate with the organizer.")}
+        ${p(t(C, "footer", locale))}
       `,
-      cta: { label: "Open Team Portal →", url: portalUrl, color: "#10b981" },
+      cta: { label: t(C, "cta", locale), url: portalUrl, color: "#10b981" },
     }),
   });
 }
 
 // ─── 6. Registration Rejected ─────────────────────────────────────────────────
 export async function sendRegistrationRejected({
-  to, clubName, teamName, tournamentName, notes,
+  to, clubName, teamName, tournamentName, notes, locale: rawLocale,
 }: {
   to: string;
   clubName: string;
   teamName: string;
   tournamentName: string;
   notes?: string | null;
+  locale?: string | null;
 }) {
+  const locale = normaliseLocale(rawLocale);
+  const J = EMAIL_STRINGS.regRejected;
   await send({
     to,
-    subject: `Update on your application — ${tournamentName}`,
-    text: `Hi ${clubName},\n\nUnfortunately, ${teamName}'s application for ${tournamentName} was not accepted at this time.\n\n${notes ? `Message from organizer: ${notes}\n\n` : ""}You can browse other tournaments at: ${APP_URL}/en/catalog\n\nGoality Team`,
+    subject: t(J, "subject", locale, { tournamentName }),
+    text: `${stripTags(t(J, "body", locale, { clubName, teamName, tournamentName }))}\n\n${notes ? `${t(J, "noteLabel", locale)}: ${notes}\n\n` : ""}${APP_URL}/${locale}/catalog`,
     html: base({
-      preheader: `An update on ${teamName}'s application for ${tournamentName}.`,
+      preheader: t(J, "preheader", locale, { teamName, tournamentName }),
       body: `
-        ${h1("Application Update")}
-        ${p(`Hi <strong>${clubName}</strong>,`)}
-        ${p(`We're sorry to let you know that <strong>${teamName}</strong>'s application for <strong>${tournamentName}</strong> was not accepted at this time. The organizer may have reached capacity or had other requirements.`)}
-
-        ${infoTable(
-          infoRow("Club", clubName) +
-          infoRow("Team", teamName) +
-          infoRow("Tournament", tournamentName) +
-          infoRow("Status", badge("Not Accepted", "#991b1b", "#fee2e2"))
-        )}
+        ${h1(t(J, "title", locale))}
+        ${p(t(J, "body", locale, { clubName, teamName, tournamentName }))}
 
         ${notes ? `
         <!-- Organizer note -->
         <div style="margin-top:24px;padding:16px 20px;background:#fff7ed;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;">
           <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;">
-            Message from organizer
+            ${t(J, "noteLabel", locale)}
           </p>
           <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">${notes}</p>
         </div>
         ` : ""}
 
-        ${p("Don't be discouraged — there are many great tournaments on Goality. Browse our catalog to find the right fit for your team.")}
+        ${p(t(J, "body2", locale))}
       `,
-      cta: { label: "Browse Other Tournaments →", url: `${APP_URL}/en/catalog`, color: "#6366f1" },
+      cta: { label: t(J, "cta", locale), url: `${APP_URL}/${locale}/catalog`, color: "#6366f1" },
     }),
   });
 }

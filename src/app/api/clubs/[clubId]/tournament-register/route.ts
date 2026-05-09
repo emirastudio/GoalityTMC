@@ -354,6 +354,7 @@ export async function POST(
       clubName: club.name,
       teamName: teamNames,
       tournamentName: tournament.name,
+      locale: club.preferredLocale,
     }).catch((e) => console.error("[EMAIL] Registration received send failed:", e));
   }
 

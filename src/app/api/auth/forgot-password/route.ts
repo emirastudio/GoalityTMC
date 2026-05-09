@@ -43,11 +43,12 @@ export async function POST(req: NextRequest) {
     { expiresIn: "1h" }
   );
 
-  const resetLink = `${APP_URL}/en/reset-password/${resetToken}`;
+  const locale = club?.preferredLocale ?? "en";
+  const resetLink = `${APP_URL}/${locale}/reset-password/${resetToken}`;
   const toName = user.name ?? club?.name ?? "Club";
 
   try {
-    await sendPasswordReset({ to: user.email, toName, resetLink });
+    await sendPasswordReset({ to: user.email, toName, resetLink, locale });
   } catch (err) {
     console.error("Failed to send password reset email:", err);
     // Still return ok — don't leak errors

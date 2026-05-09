@@ -418,6 +418,9 @@ export const clubs = pgTable("clubs", {
   onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
   verifiedAt: timestamp("verified_at"),
+  // Captured from NEXT_LOCALE on signup. Drives email language for
+  // every notification routed to clubs.contactEmail.
+  preferredLocale: text("preferred_locale").default("en").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -1034,6 +1037,9 @@ export const adminUsers = pgTable("admin_users", {
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
   role: adminRoleEnum("role").default("admin").notNull(),
+  // See clubs.preferredLocale — same purpose for organizer / super
+  // admin emails (org-admin invite, deletion alerts, etc.).
+  preferredLocale: text("preferred_locale").default("en").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
