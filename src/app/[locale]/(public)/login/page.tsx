@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -40,6 +41,13 @@ type EmailHint = {
 export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // ?next=<path> — when set, redirect there after successful login.
+  // Used by the tournament-register page when picking an existing club
+  // that already has an admin (the user logs in and lands back on the
+  // register flow). Only same-app paths are honoured.
+  const nextRaw = searchParams.get("next");
+  const safeNext = nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : null;
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"club" | "organizer">("club");
@@ -79,6 +87,12 @@ export default function LoginPage() {
 
     if (res.ok) {
       const data = await res.json();
+      if (safeNext) {
+        // Honour ?next= if present and safe (same-app path only).
+        // window.location to ensure server components see the new cookie.
+        window.location.href = safeNext;
+        return;
+      }
       if (mode === "organizer") {
         if (data.organizationSlug) router.push(`/org/${data.organizationSlug}/admin`);
         else if (data.isSuper) router.push("/admin/dashboard");

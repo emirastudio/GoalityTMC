@@ -16,7 +16,7 @@ import { CityInput } from "@/components/ui/city-input";
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 type TData = { id: number; name: string; slug: string; registrationOpen: boolean; currency: string };
 type ClassData = { id: number; name: string; format: string | null; minBirthYear: number | null; maxBirthYear: number | null };
-type ClubResult = { id: number; name: string; city: string | null; country: string | null; badgeUrl: string | null; contactName: string | null; teamCount: number };
+type ClubResult = { id: number; name: string; city: string | null; country: string | null; badgeUrl: string | null; contactName: string | null; teamCount: number; hasAdmin?: boolean };
 
 type View = "search" | "join" | "create" | "done-join" | "done-create";
 type Step = 1 | 2 | 3; // club info → account → teams
@@ -200,6 +200,14 @@ function ClubCard({ club, onSelect }: { club: ClubResult; onSelect: () => void }
           {club.teamCount > 0 && ` · ${club.teamCount} команд`}
         </p>
       </div>
+      {club.hasAdmin && (
+        <span
+          className="text-[10px] font-bold px-2 py-1 rounded-md shrink-0"
+          style={{ background: "rgba(59,130,246,0.12)", color: "#3b82f6" }}
+        >
+          🔐 Войти
+        </span>
+      )}
       <ChevronRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
         style={{ color: "var(--cat-accent)" }} />
     </button>
@@ -898,10 +906,17 @@ export default function RegisterPage() {
                 key={club.id}
                 club={club}
                 onSelect={() => {
-                  // User picked an existing club from the global DB —
-                  // we already have name/country/city/badge, so skip
-                  // the "club info" wizard step and jump straight to
-                  // creating an account (or teams if logged in).
+                  // Club already has an admin → wizard would create a
+                  // duplicate account. Send the user to the login page
+                  // with `next` so they come straight back here after.
+                  if (club.hasAdmin) {
+                    const next = `/t/${orgSlug}/${tournamentSlug}/register`;
+                    router.push(`/login?next=${encodeURIComponent(next)}&clubId=${club.id}`);
+                    return;
+                  }
+                  // No admin yet — first person to register becomes the
+                  // club admin. Skip the "club info" wizard step since
+                  // we already know name/country/city/badge.
                   setClubName(club.name);
                   setCountry(club.country ?? "");
                   setCity(club.city ?? "");
@@ -1105,10 +1120,20 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => {
+                // Same routing rule as the global-bucket pick: if the
+                // matched club already has an admin, send the user to
+                // login instead of letting them create a duplicate.
+                if (duplicateClubHint.hasAdmin) {
+                  const next = `/t/${orgSlug}/${tournamentSlug}/register`;
+                  router.push(`/login?next=${encodeURIComponent(next)}&clubId=${duplicateClubHint.id}`);
+                  return;
+                }
                 setPickedGlobalClubId(duplicateClubHint.id);
+                setClubName(duplicateClubHint.name);
                 setCountry(duplicateClubHint.country ?? country);
                 setCity(duplicateClubHint.city ?? city);
                 setDuplicateClubHint(null);
+                setStep(2);
               }}
               className="w-full flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all hover:scale-[1.005]"
               style={{ background: "rgba(245,158,11,0.08)", borderColor: "rgba(245,158,11,0.35)" }}

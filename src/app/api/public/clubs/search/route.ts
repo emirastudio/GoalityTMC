@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clubs, teams } from "@/db/schema";
+import { clubs, clubUsers, teams } from "@/db/schema";
 import { sql, eq, or, ilike } from "drizzle-orm";
 
 /**
@@ -57,10 +57,14 @@ export async function GET(req: NextRequest) {
       city: clubs.city,
       badgeUrl: clubs.badgeUrl,
       isVerified: clubs.isVerified,
-      teamCount: sql<number>`count(${teams.id})::int`,
+      teamCount: sql<number>`count(distinct ${teams.id})::int`,
+      // hasAdmin = at least one clubUser exists. If true, the registration
+      // page should send the user to "log in" instead of "create account".
+      hasAdmin: sql<boolean>`bool_or(${clubUsers.id} is not null)`,
     })
     .from(clubs)
     .leftJoin(teams, eq(teams.clubId, clubs.id))
+    .leftJoin(clubUsers, eq(clubUsers.clubId, clubs.id))
     .where(or(...tokenConditions.filter(Boolean).map(c => c!)))
     .groupBy(clubs.id)
     // Inline the relevance expression — referencing a SELECT alias by name
