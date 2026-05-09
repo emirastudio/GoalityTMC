@@ -1,0 +1,37 @@
+name: Health watch
+
+# Hourly business-invariant probe. Runs the registration-integrity
+# endpoint against prod and fails the workflow if any anomaly slipped
+# in between deploys. Failed runs surface as red "Health watch" badges
+# on the repo and trigger GitHub's default failure notifications.
+#
+# Window is 4h (a bit > probe period) so we don't lose visibility
+# during a single missed run.
+
+on:
+  schedule:
+    - cron: "5 * * * *"   # ~5 minutes past every hour
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Hit /api/health/registration-integrity
+        run: |
+          set -euo pipefail
+          URL="https://goalityfootball.com/api/health/registration-integrity?windowMinutes=240"
+          BODY=$(curl -fsS --max-time 15 "$URL" || echo '{}')
+          OK=$(echo "$BODY" | python3 -c 'import json,sys
+try:
+  print(str(json.load(sys.stdin).get("ok", False)).lower())
+except Exception:
+  print("false")')
+          echo "Body: $BODY"
+          if [[ "$OK" != "true" ]]; then
+            echo "::error::Registration-integrity anomaly detected"
+            exit 1
+          fi
+          CHECKED=$(echo "$BODY" | python3 -c 'import json,sys;print(json.load(sys.stdin).get("checkedAttempts",0))')
+          echo "✓ Integrity OK — checked $CHECKED attempts"
