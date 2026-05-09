@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { tournaments, organizations, teams, tournamentClasses, tournamentRegistrations, listingTournaments } from "@/db/schema";
-import { eq, count, sql, or } from "drizzle-orm";
+import { eq, and, count, sql, or } from "drizzle-orm";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { PublicNavHeader } from "@/components/ui/public-nav-header";
 import { CatalogClient, type TournamentEntry } from "./catalog-client";
@@ -44,13 +44,20 @@ async function getEnrichedTournaments(): Promise<TournamentEntry[]> {
       const cls = await db.query.tournamentClasses.findMany({
         where: eq(tournamentClasses.tournamentId, tournament.id),
       });
+      // Public catalog — confirmed-only counts (matches the rest of
+      // the public surface). Pending applications shouldn't inflate
+      // the "social proof" team/club counter on the catalog tile.
+      const confirmedOnly = and(
+        eq(tournamentRegistrations.tournamentId, tournament.id),
+        eq(tournamentRegistrations.status, "confirmed"),
+      );
       const [tc] = await db.select({ count: count() }).from(tournamentRegistrations)
-        .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+        .where(confirmedOnly);
       const [cc] = await db
         .select({ count: sql<number>`COUNT(DISTINCT ${teams.clubId})` })
         .from(tournamentRegistrations)
         .innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
-        .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+        .where(confirmedOnly);
 
       return {
         tournament: {

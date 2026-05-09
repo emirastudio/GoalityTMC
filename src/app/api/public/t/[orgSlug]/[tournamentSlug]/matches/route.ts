@@ -55,11 +55,16 @@ export async function GET(
   // Filter by classId: find teams in this class via tournamentRegistrations, then filter matches
   if (classId) {
     const regsForClass = await db
+      // Confirmed-only filter for parity with the rest of the public
+      // surface — pending teams shouldn't appear in class-filtered
+      // schedule even on edge cases where organizer-created matches
+      // exist before approval.
       .select({ teamId: tournamentRegistrations.teamId })
       .from(tournamentRegistrations)
       .where(and(
         eq(tournamentRegistrations.tournamentId, tournament.id),
-        eq(tournamentRegistrations.classId, parseInt(classId))
+        eq(tournamentRegistrations.classId, parseInt(classId)),
+        eq(tournamentRegistrations.status, "confirmed"),
       ));
     const teamIds = regsForClass.map(r => r.teamId);
     if (teamIds.length === 0) return NextResponse.json([]);

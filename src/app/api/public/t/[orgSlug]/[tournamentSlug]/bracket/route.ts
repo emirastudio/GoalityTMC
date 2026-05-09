@@ -31,11 +31,13 @@ export async function GET(
   let classTeamIds: number[] | null = null;
   if (classId) {
     const regsForClass = await db
+      // Confirmed-only — pending teams don't appear in bracket.
       .select({ teamId: tournamentRegistrations.teamId })
       .from(tournamentRegistrations)
       .where(and(
         eq(tournamentRegistrations.tournamentId, tournament.id),
-        eq(tournamentRegistrations.classId, parseInt(classId))
+        eq(tournamentRegistrations.classId, parseInt(classId)),
+        eq(tournamentRegistrations.status, "confirmed"),
       ));
     if (regsForClass.length === 0) return NextResponse.json([]);
     classTeamIds = regsForClass.map(r => r.teamId);
