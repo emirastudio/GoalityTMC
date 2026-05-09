@@ -1890,25 +1890,36 @@ export default function RegisterPage() {
                         )}
                       </div>
 
-                      {/* Submitted squads — list each one with Edit / Withdraw. */}
+                      {/* Submitted squads — one block per server-side
+                          tournament_registration. Status drives the visual:
+                          open=amber "ждём ответа", confirmed=green
+                          "подтверждена", anything else = neutral. */}
                       {alreadySubmitted && submitted.map(squad => {
                         const isEditingThis = editingRegId === squad.registrationId;
                         const busy = busyRegId === squad.registrationId;
                         const label = squad.className || squad.displayName || `#${squad.regNumber}`;
+                        const statusViz =
+                          squad.status === "confirmed"
+                            ? { icon: "✓", text: "Подтверждена организатором", color: "#10b981", bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.35)" }
+                            : squad.status === "open"
+                              ? { icon: "🕓", text: "На рассмотрении организатором", color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.35)" }
+                              : squad.status === "draft"
+                                ? { icon: "📝", text: "Черновик", color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", border: "var(--cat-card-border)" }
+                                : { icon: "•", text: squad.status, color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", border: "var(--cat-card-border)" };
                         return (
                           <div key={squad.registrationId}
                             className="mt-2 rounded-xl border p-3"
                             style={{
-                              background: "rgba(16,185,129,0.06)",
-                              borderColor: isEditingThis ? "var(--cat-accent)" : "rgba(16,185,129,0.25)",
+                              background: statusViz.bg,
+                              borderColor: isEditingThis ? "var(--cat-accent)" : statusViz.border,
                             }}>
                             {!isEditingThis ? (
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md"
-                                  style={{ background: "rgba(16,185,129,0.18)", color: "#10b981" }}>
-                                  ✓ Заявка подана
+                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1"
+                                  style={{ background: statusViz.bg, color: statusViz.color, border: `1px solid ${statusViz.border}` }}>
+                                  <span aria-hidden>{statusViz.icon}</span> {statusViz.text}
                                 </span>
-                                <span className="text-[12px] font-semibold" style={{ color: "var(--cat-text)" }}>
+                                <span className="text-[12px] font-bold" style={{ color: "var(--cat-text)" }}>
                                   {squad.className}
                                 </span>
                                 {squad.displayName && (
@@ -1922,11 +1933,17 @@ export default function RegisterPage() {
                                     {squad.squadAlias}
                                   </span>
                                 )}
+                                {squad.regNumber && (
+                                  <span className="text-[10px]" style={{ color: "var(--cat-text-faint)" }}>
+                                    №{squad.regNumber}
+                                  </span>
+                                )}
                                 <div className="ml-auto flex gap-1.5">
                                   <button type="button"
                                     onClick={() => startEditingRegistration(squad.registrationId, squad.classId, squad.displayName)}
-                                    disabled={busy}
-                                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80 disabled:opacity-40"
+                                    disabled={busy || squad.status === "confirmed"}
+                                    title={squad.status === "confirmed" ? "Подтверждённую заявку нельзя изменить — попросите организатора" : ""}
+                                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
                                     style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
                                     Изменить
                                   </button>
@@ -1934,7 +1951,7 @@ export default function RegisterPage() {
                                     onClick={() => withdrawRegistration(squad.registrationId, label)}
                                     disabled={busy}
                                     className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80 disabled:opacity-40"
-                                    style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+                                    style={{ background: "rgba(239,68,68,0.10)", color: "#ef4444" }}>
                                     {busy ? "..." : "Отзаявить"}
                                   </button>
                                 </div>
