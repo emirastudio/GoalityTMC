@@ -933,10 +933,12 @@ export default function RegisterPage() {
     if (step === 1) return !!clubName.trim() && !!country.trim() && !!city.trim();
     if (step === 2) {
       // Team picker: must have either an existing team selected OR
-      // a complete new-team form (at minimum birthYear OR custom name).
+      // a complete new-team form. Birth year is REQUIRED — it's the
+      // canonical identity of a team (club + year + gender).
       if (joinTeamId !== null) return true;
       if (newTeamMode) {
-        return !!newTeamName.trim() || !!newTeamBirthYear.trim();
+        const yr = parseInt(newTeamBirthYear);
+        return Number.isFinite(yr) && yr >= 1990 && yr <= new Date().getFullYear();
       }
       return false;
     }
@@ -1365,6 +1367,9 @@ export default function RegisterPage() {
                   </p>
                   {clubTeamsList.map(t => {
                     const sel = !newTeamMode && joinTeamId === t.id;
+                    const genderIcon = t.gender === "male" ? "♂" : t.gender === "female" ? "♀" : "⚥";
+                    const genderColor = t.gender === "male" ? "#3B82F6" : t.gender === "female" ? "#EC4899" : "#8B5CF6";
+                    const noYear = t.birthYear === null;
                     return (
                       <button
                         key={t.id}
@@ -1380,12 +1385,32 @@ export default function RegisterPage() {
                           style={{ borderColor: sel ? "var(--cat-accent)" : "var(--cat-input-border)" }}>
                           {sel && <div className="w-2 h-2 rounded-full" style={{ background: "var(--cat-accent)" }} />}
                         </div>
+
+                        {/* Year-of-birth tile — primary identity */}
+                        <div
+                          className="shrink-0 rounded-xl flex flex-col items-center justify-center w-14 h-14"
+                          style={{
+                            background: noYear ? "rgba(245,158,11,0.12)" : "var(--cat-card-bg)",
+                            border: `1px solid ${noYear ? "rgba(245,158,11,0.4)" : "var(--cat-card-border)"}`,
+                            color: noYear ? "#f59e0b" : "var(--cat-text)",
+                          }}
+                        >
+                          <span className="text-[18px] font-black leading-none">
+                            {t.birthYear ?? "?"}
+                          </span>
+                          <span className="text-[14px] leading-none mt-0.5" style={{ color: genderColor }}>
+                            {genderIcon}
+                          </span>
+                        </div>
+
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
-                            {t.label}
+                            {t.name ?? (t.birthYear ? `Команда ${t.birthYear}` : "Команда без года")}
                           </p>
-                          <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-                            {[t.birthYear, t.gender === "male" ? "♂" : t.gender === "female" ? "♀" : "⚥"].filter(Boolean).join(" · ")}
+                          <p className="text-[11px]" style={{ color: noYear ? "#f59e0b" : "var(--cat-text-muted)" }}>
+                            {noYear
+                              ? "⚠ Год не указан — попросите админа клуба исправить или создайте новую команду"
+                              : `${t.birthYear} · ${t.gender === "male" ? "Мальчики" : t.gender === "female" ? "Девочки" : "Смешанная"}`}
                           </p>
                         </div>
                       </button>
@@ -1438,7 +1463,7 @@ export default function RegisterPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--cat-text-muted)" }}>
-                        Год рождения
+                        Год рождения<span className="text-red-400 ml-0.5">*</span>
                       </label>
                       <input
                         type="number"
@@ -1472,7 +1497,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
                   <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-                    Минимум — название или год рождения. Дивизионы для турнира выберете на следующих шагах.
+                    Год рождения обязателен — это базовая идентичность команды. Своё название можно оставить пустым (отобразится «{clubName} {newTeamBirthYear || "год"}»).
                   </p>
                 </div>
               )}

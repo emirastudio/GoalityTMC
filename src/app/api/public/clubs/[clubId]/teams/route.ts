@@ -37,12 +37,20 @@ export async function GET(
         });
         className = cls?.name ?? "";
       }
+      // Identity priority for the picker label:
+      //   1. Custom name + year (e.g. "Academy A · 2015")
+      //   2. Year only (the canonical identity in our model)
+      //   3. Custom name only
+      //   4. Fallback to "—" so the row is never gender-only
+      const yearStr = team.birthYear ? String(team.birthYear) : null;
+      const label = team.name && yearStr ? `${team.name} · ${yearStr}`
+        : yearStr ?? team.name ?? "—";
       return {
         id: team.id,
         name: team.name,
         birthYear: team.birthYear,
         gender: team.gender,
-        label: team.name ?? `${team.birthYear ?? ""} ${team.gender}`.trim(),
+        label,
         className,
       };
     })
