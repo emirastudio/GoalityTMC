@@ -7,7 +7,7 @@ import {
   tournamentRegistrations,
   registrationAttempts,
 } from "@/db/schema";
-import { eq, gt, and } from "drizzle-orm";
+import { eq, gt, lt, and, between } from "drizzle-orm";
 
 // GET /api/health/registration-integrity?windowMinutes=120
 //
@@ -21,9 +21,16 @@ import { eq, gt, and } from "drizzle-orm";
 //   1. Every successful registration_attempts row in the last
 //      `windowMinutes` minutes points to a club that still exists and
 //      has at least one clubUser.
-//   2. Each such club has at least one tournament_registration
-//      (otherwise the registration is a phantom — the regression we
-//      hit on 2026-05-09 silently dropped these).
+//   2. At least one tournament_registration was created for that
+//      club's teams in a tight window around the attempt
+//      (T-2min … T+10min). This catches the AT-CREATION-TIME failure
+//      mode (which is the regression we hit) without false-positives
+//      for clubs that legitimately drift to zero regs over time:
+//      tournaments end, organizers reject teams, clubs withdraw, etc.
+//
+// Attempts younger than `graceMinutes` (default 5) are skipped so a
+// real registration in flight (multi-second tournament-registration
+// loop) is never flagged as an anomaly.
 //
 // Returns 200 with { ok: true } when everything is fine, 500 with
 // { ok: false, anomalies: [...] } otherwise. Optional auth: when
@@ -43,7 +50,13 @@ export async function GET(req: NextRequest) {
     1,
     Math.min(7 * 24 * 60, parseInt(req.nextUrl.searchParams.get("windowMinutes") ?? "120"))
   );
-  const since = new Date(Date.now() - windowMinutes * 60 * 1000);
+  const graceMinutes = Math.max(
+    1,
+    Math.min(60, parseInt(req.nextUrl.searchParams.get("graceMinutes") ?? "5"))
+  );
+  const now = Date.now();
+  const since = new Date(now - windowMinutes * 60 * 1000);
+  const cutoff = new Date(now - graceMinutes * 60 * 1000);
 
   type Anomaly = {
     kind: "missing_club" | "missing_user" | "missing_registration";
@@ -55,6 +68,9 @@ export async function GET(req: NextRequest) {
   };
   const anomalies: Anomaly[] = [];
 
+  // Restrict to attempts old enough that any in-flight registration
+  // would already have settled (graceMinutes) but still inside the
+  // probe window.
   const recent = await db
     .select({
       id: registrationAttempts.id,
@@ -64,7 +80,13 @@ export async function GET(req: NextRequest) {
       createdAt: registrationAttempts.createdAt,
     })
     .from(registrationAttempts)
-    .where(and(eq(registrationAttempts.status, "success"), gt(registrationAttempts.createdAt, since)));
+    .where(
+      and(
+        eq(registrationAttempts.status, "success"),
+        gt(registrationAttempts.createdAt, since),
+        lt(registrationAttempts.createdAt, cutoff),
+      )
+    );
 
   for (const row of recent) {
     if (!row.clubId) continue; // shouldn't happen for status=success
@@ -95,11 +117,23 @@ export async function GET(req: NextRequest) {
         createdAt: row.createdAt.toISOString(),
       });
     }
+    // Look for a tournament_registration created in a tight window
+    // around the attempt — this is the precise failure mode of the
+    // 2026-05-09 regression. Old clubs whose registrations have since
+    // been deleted/closed/rejected don't trigger this — what's been
+    // recorded at attempt time is what we care about.
+    const lo = new Date(row.createdAt.getTime() - 2 * 60 * 1000);
+    const hi = new Date(row.createdAt.getTime() + 10 * 60 * 1000);
     const [reg] = await db
       .select({ id: tournamentRegistrations.id })
       .from(tournamentRegistrations)
       .innerJoin(teams, eq(teams.id, tournamentRegistrations.teamId))
-      .where(eq(teams.clubId, row.clubId))
+      .where(
+        and(
+          eq(teams.clubId, row.clubId),
+          between(tournamentRegistrations.createdAt, lo, hi),
+        )
+      )
       .limit(1);
     if (!reg) {
       anomalies.push({
