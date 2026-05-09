@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { tournamentClasses, tournamentRegistrations } from "@/db/schema";
-import { eq, count } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { Shield } from "lucide-react";
 import { DivisionTabNav } from "@/components/tournament/division-tab-nav";
 import { getTranslations } from "next-intl/server";
@@ -20,10 +20,15 @@ export default async function DivisionLayout({ children, params }: Props) {
     where: eq(tournamentClasses.id, parseInt(classId)),
   });
 
+  // Public division header — confirmed-only (matches tournament-level
+  // counts and the public teams list).
   const [teamCountRow] = await db
     .select({ count: count() })
     .from(tournamentRegistrations)
-    .where(eq(tournamentRegistrations.classId, parseInt(classId)));
+    .where(and(
+      eq(tournamentRegistrations.classId, parseInt(classId)),
+      eq(tournamentRegistrations.status, "confirmed"),
+    ));
 
   const teamCount = Number(teamCountRow?.count ?? 0);
   const color = ACCENT_COLOR;

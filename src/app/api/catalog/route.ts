@@ -19,17 +19,23 @@ export async function GET() {
         where: eq(organizations.id, tournament.organizationId),
       });
 
-      // Count teams and clubs via tournamentRegistrations
+      // Public catalog should only count CONFIRMED registrations.
+      // Pending/rejected/cancelled rows shouldn't inflate the
+      // "32 teams · 8 clubs" social proof on a tournament card.
+      const confirmedFilter = and(
+        eq(tournamentRegistrations.tournamentId, tournament.id),
+        eq(tournamentRegistrations.status, "confirmed"),
+      );
       const [teamCount] = await db
         .select({ value: count() })
         .from(tournamentRegistrations)
-        .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+        .where(confirmedFilter);
 
       const [clubCount] = await db
         .select({ value: sql<number>`COUNT(DISTINCT ${teams.clubId})` })
         .from(tournamentRegistrations)
         .innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
-        .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+        .where(confirmedFilter);
 
       // Get classes
       const classes = await db.query.tournamentClasses.findMany({
