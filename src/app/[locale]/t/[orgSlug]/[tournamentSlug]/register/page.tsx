@@ -550,6 +550,32 @@ export default function RegisterPage() {
       .finally(() => setTeamsLoading(false));
   }, [loggedInClub]);
 
+  /* While the user is typing a clubName in the create-club step (and hasn't
+     already picked from the global list), softly check whether their input
+     matches an existing global club. If yes — show a hint they can click
+     to switch to the existing club instead of creating a duplicate. */
+  useEffect(() => {
+    if (view !== "create" || step !== 1 || pickedGlobalClubId !== null || clubName.trim().length < 3) {
+      setDuplicateClubHint(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/public/clubs/search?q=${encodeURIComponent(clubName.trim())}`);
+        if (!r.ok) return;
+        const list: ClubResult[] = await r.json();
+        const norm = (s: string) => s.trim().toLowerCase();
+        const target = norm(clubName);
+        // Exact-name match (case-insensitive). If user typed country/city,
+        // narrow further; otherwise the first exact-name hit wins.
+        const exact = list.find(c => norm(c.name) === target
+          && (!country || (c.country && norm(c.country) === norm(country))));
+        setDuplicateClubHint(exact ?? null);
+      } catch {/* ignore */}
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [clubName, country, view, step, pickedGlobalClubId]);
+
   /* Debounced club search — checks both this tournament's clubs and the
      global clubs DB so the user can pick an existing club even if it
      hasn't registered to this tournament yet. */
@@ -1054,6 +1080,29 @@ export default function RegisterPage() {
             </div>
           </div>
           <Field label={t("clubName")} value={clubName} onChange={setClubName} placeholder="FC Barcelona" required />
+          {duplicateClubHint && (
+            <button
+              type="button"
+              onClick={() => {
+                setPickedGlobalClubId(duplicateClubHint.id);
+                setCountry(duplicateClubHint.country ?? country);
+                setCity(duplicateClubHint.city ?? city);
+                setDuplicateClubHint(null);
+              }}
+              className="w-full flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all hover:scale-[1.005]"
+              style={{ background: "rgba(245,158,11,0.08)", borderColor: "rgba(245,158,11,0.35)" }}
+            >
+              <span className="text-lg shrink-0 leading-none mt-0.5">⚠️</span>
+              <span className="flex-1 min-w-0">
+                <span className="text-sm font-bold block" style={{ color: "var(--cat-text)" }}>
+                  Такой клуб уже есть: {duplicateClubHint.name}
+                </span>
+                <span className="text-xs block mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+                  {[duplicateClubHint.city, duplicateClubHint.country].filter(Boolean).join(", ")} · нажмите чтобы использовать его, не создавая дубликат
+                </span>
+              </span>
+            </button>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <CountrySelect label={t("country")} value={country} onChange={setCountry} required />
             <div>
