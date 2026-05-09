@@ -38,8 +38,22 @@ export function UserAvatarMenu({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Still loading — show nothing to avoid flash
-  if (me === null) return null;
+  // While the /me probe is in flight, render an invisible placeholder
+  // sized like the eventual content. Returning `null` made the header
+  // collapse → expand on every navigation (visible flicker).
+  if (me === null) {
+    return (
+      <div
+        aria-hidden
+        style={{
+          width: 96,
+          height: 32,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+      />
+    );
+  }
 
   // Not authenticated — show Sign in + Get started
   if (!me.authenticated) {

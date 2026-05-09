@@ -201,6 +201,17 @@ export function AdminHeaderActions({
 }) {
   return (
     <div className="flex items-center gap-3">
+      {/* From the per-tournament team area we surface a one-click way
+          back to the club-level pages (other tournaments, profile). */}
+      {currentArea === "team" && (
+        <a
+          href="/club/dashboard"
+          className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70 cursor-pointer"
+          style={{ color: "var(--cat-text-muted)" }}
+        >
+          Кабинет клуба
+        </a>
+      )}
       {isSuper && <DevNavWidget currentArea={currentArea} />}
       <form action="/api/auth/logout" method="POST">
         <button

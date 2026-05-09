@@ -122,7 +122,11 @@ function StepBar({ step, total }: { step: number; total: number }) {
 function DoneCreateAutoRedirect() {
   useEffect(() => {
     const id = setTimeout(() => {
-      window.location.href = "/club/dashboard";
+      // /team/overview is the tournament-aware operational area —
+      // the user has just registered teams here, that's where they
+      // want to land. /club/dashboard would force an onboarding
+      // detour for clubs without the global onboarding completed.
+      window.location.href = "/team/overview";
     }, 1200);
     return () => clearTimeout(id);
   }, []);
@@ -1843,10 +1847,12 @@ export default function RegisterPage() {
       {/* ── Step 4: Tournament classes (LOGGED-IN CLUB) ── */}
       {loggedInClub && (
         <div className="space-y-4">
-          {/* Quick link to the club dashboard — for roster, players,
-              staff, travel & inbox. The current page is only for
-              tournament-registration management. */}
-          <Link href="/club/dashboard"
+          {/* Quick link to the operational team area for THIS tournament.
+              /team/overview is tournament-aware, while /club/dashboard
+              forces an onboarding redirect for clubs without it
+              completed — and that's the wrong rabbit hole right after
+              you've finished a tournament registration. */}
+          <Link href="/team/overview"
             className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border transition-all hover:scale-[1.005] group"
             style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
             <div className="flex items-center gap-3 min-w-0">
@@ -1856,7 +1862,7 @@ export default function RegisterPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
-                  Перейти в кабинет клуба
+                  Перейти в кабинет команд турнира
                 </p>
                 <p className="text-[11px] truncate" style={{ color: "var(--cat-text-muted)" }}>
                   Игроки, тренеры, поездка, переписка с организатором
