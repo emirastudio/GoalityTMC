@@ -29,13 +29,16 @@ export async function GET(
     orderBy: (c, { asc }) => [asc(c.minBirthYear)],
   });
 
-  // Load registrations for this tournament (with team and club data via joins)
+  // Public list = ONLY teams the organizer has confirmed. Pending
+  // ('open'), rejected and cancelled rows stay invisible to the world
+  // until the organizer flips them to 'confirmed' on /admin/.../teams.
+  const baseWhere = and(
+    eq(tournamentRegistrations.tournamentId, tournament.id),
+    eq(tournamentRegistrations.status, "confirmed"),
+  );
   const regsWhere = classIdParam
-    ? and(
-        eq(tournamentRegistrations.tournamentId, tournament.id),
-        eq(tournamentRegistrations.classId, parseInt(classIdParam))
-      )
-    : eq(tournamentRegistrations.tournamentId, tournament.id);
+    ? and(baseWhere, eq(tournamentRegistrations.classId, parseInt(classIdParam)))
+    : baseWhere;
 
   const allRegs = await db.query.tournamentRegistrations.findMany({
     where: regsWhere,
@@ -61,7 +64,13 @@ export async function GET(
       return {
         id: reg.team?.id ?? reg.teamId,
         regNumber: reg.regNumber,
-        name: reg.team?.name ?? reg.displayName ?? "",
+        // Display priority: registration.displayName (per-tournament
+        // override) → team.name (custom team override) → club.name
+        // (the natural brand) → birthYear as last resort.
+        name: reg.displayName
+          ?? reg.team?.name
+          ?? (allClubs.find((c) => c.id === reg.team?.clubId)?.name)
+          ?? (reg.team?.birthYear ? String(reg.team.birthYear) : ""),
         status: reg.status,
         classId: reg.classId,
         club: club
@@ -81,7 +90,13 @@ export async function GET(
         return {
           id: reg.team?.id ?? reg.teamId,
           regNumber: reg.regNumber,
-          name: reg.team?.name ?? reg.displayName ?? "",
+          // Display priority: registration.displayName (per-tournament
+        // override) → team.name (custom team override) → club.name
+        // (the natural brand) → birthYear as last resort.
+        name: reg.displayName
+          ?? reg.team?.name
+          ?? (allClubs.find((c) => c.id === reg.team?.clubId)?.name)
+          ?? (reg.team?.birthYear ? String(reg.team.birthYear) : ""),
           status: reg.status,
           club: club
             ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
@@ -105,7 +120,13 @@ export async function GET(
       return {
         id: reg.team?.id ?? reg.teamId,
         regNumber: reg.regNumber,
-        name: reg.team?.name ?? reg.displayName ?? "",
+        // Display priority: registration.displayName (per-tournament
+        // override) → team.name (custom team override) → club.name
+        // (the natural brand) → birthYear as last resort.
+        name: reg.displayName
+          ?? reg.team?.name
+          ?? (allClubs.find((c) => c.id === reg.team?.clubId)?.name)
+          ?? (reg.team?.birthYear ? String(reg.team.birthYear) : ""),
         status: reg.status,
         club: club
           ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
