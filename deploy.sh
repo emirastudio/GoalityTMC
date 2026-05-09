@@ -139,11 +139,7 @@ done
 
 echo "→ Business-invariant check: /api/health/registration-integrity..."
 INTEGRITY_JSON=\$(curl -fsS --max-time 10 "http://127.0.0.1:3001/api/health/registration-integrity?windowMinutes=120" 2>/dev/null || echo '{}')
-INTEGRITY_OK=\$(echo "\$INTEGRITY_JSON" | python3 -c 'import json,sys
-try:
-  print(str(json.load(sys.stdin).get("ok", False)).lower())
-except Exception:
-  print("false")' 2>/dev/null || echo "false")
+INTEGRITY_OK=\$(echo "\$INTEGRITY_JSON" | jq -r '.ok // false' 2>/dev/null || echo "false")
 if [[ "\$INTEGRITY_OK" != "true" ]]; then
   echo "✗ Registration-integrity check FAILED:"
   echo "\$INTEGRITY_JSON"

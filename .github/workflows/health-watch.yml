@@ -23,15 +23,11 @@ jobs:
           set -euo pipefail
           URL="https://goalityfootball.com/api/health/registration-integrity?windowMinutes=240"
           BODY=$(curl -fsS --max-time 15 "$URL" || echo '{}')
-          OK=$(echo "$BODY" | python3 -c 'import json,sys
-try:
-  print(str(json.load(sys.stdin).get("ok", False)).lower())
-except Exception:
-  print("false")')
           echo "Body: $BODY"
+          OK=$(echo "$BODY" | jq -r '.ok // false')
           if [[ "$OK" != "true" ]]; then
             echo "::error::Registration-integrity anomaly detected"
             exit 1
           fi
-          CHECKED=$(echo "$BODY" | python3 -c 'import json,sys;print(json.load(sys.stdin).get("checkedAttempts",0))')
+          CHECKED=$(echo "$BODY" | jq -r '.checkedAttempts // 0')
           echo "✓ Integrity OK — checked $CHECKED attempts"
