@@ -26,10 +26,11 @@ export const purchaseStatusEnum = pgEnum("purchase_status", ["pending", "complet
 export const teamGenderEnum = pgEnum("team_gender", ["male", "female", "mixed"]);
 
 export const teamStatusEnum = pgEnum("team_status", [
-  "draft",
-  "open",
-  "confirmed",
-  "cancelled",
+  "draft",       // internal scratch
+  "open",        // заявка подана, организатор её ещё не рассмотрел
+  "confirmed",   // организатор подтвердил
+  "rejected",    // организатор отказал (с причиной в registrations.notes)
+  "cancelled",   // клуб сам отозвал
 ]);
 
 export const accessLevelEnum = pgEnum("access_level", ["read", "write"]);

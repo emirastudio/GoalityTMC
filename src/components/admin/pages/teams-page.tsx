@@ -40,14 +40,21 @@ interface TournamentInfo {
   registrationOpen: boolean;
 }
 
+// Honest semantics for the organizer's view:
+//   open      = pending decision   → amber (action required)
+//   confirmed = accepted           → green
+//   rejected  = denied by organizer → red
+//   cancelled = withdrawn by club  → grey
+//   draft     = internal scratch   → grey
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   draft:     { bg: "rgba(100,116,139,0.1)", text: "#64748b", border: "rgba(100,116,139,0.3)" },
-  open:      { bg: "rgba(16,185,129,0.1)",  text: "#10b981", border: "rgba(16,185,129,0.3)" },
-  confirmed: { bg: "rgba(245,158,11,0.1)",  text: "#f59e0b", border: "rgba(245,158,11,0.3)" },
-  cancelled: { bg: "rgba(239,68,68,0.1)",   text: "#ef4444", border: "rgba(239,68,68,0.3)" },
+  open:      { bg: "rgba(245,158,11,0.1)",  text: "#f59e0b", border: "rgba(245,158,11,0.3)" },
+  confirmed: { bg: "rgba(16,185,129,0.1)",  text: "#10b981", border: "rgba(16,185,129,0.3)" },
+  rejected:  { bg: "rgba(239,68,68,0.1)",   text: "#ef4444", border: "rgba(239,68,68,0.3)" },
+  cancelled: { bg: "rgba(100,116,139,0.1)", text: "#64748b", border: "rgba(100,116,139,0.3)" },
 };
 
-const ALL_STATUSES = ["open", "confirmed", "cancelled"] as const;
+const ALL_STATUSES = ["open", "confirmed", "rejected", "cancelled"] as const;
 
 // ─── Status Badge ──────────────────────────────────────────────────────────────
 
@@ -477,16 +484,34 @@ export function TeamsPageContent() {
     return false;
   }
 
-  async function handleStatusChange(teamId: number, status: string) {
+  async function handleStatusChange(teamId: number, status: string, notes?: string) {
     setStatusDropdown(null);
     try {
       await adminFetch(`/api/admin/teams/${teamId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, ...(notes !== undefined ? { notes } : {}) }),
       });
       fetchTeams();
     } catch { /* */ }
+  }
+
+  /* One-click approve & reject for the "open" pile. Approve goes
+     through with no extra prompt (positive flow). Reject opens a
+     small native prompt asking for a reason — the reason is sent
+     to the team via the existing rejection email (notes field). */
+  async function approveTeam(teamId: number, label: string) {
+    if (!confirm(`Принять заявку «${label}» в турнир? Команде придёт письмо-подтверждение со ссылкой в кабинет.`)) return;
+    await handleStatusChange(teamId, "confirmed");
+  }
+  async function rejectTeam(teamId: number, label: string) {
+    const reason = prompt(`Отклонить заявку «${label}». Укажите причину — она будет в письме команде:`)?.trim();
+    if (reason === undefined) return; // user cancelled
+    if (!reason) {
+      alert("Причина обязательна — она поможет команде понять и пересмотреть заявку.");
+      return;
+    }
+    await handleStatusChange(teamId, "rejected", reason);
   }
 
   async function handleClassChange(teamId: number, registrationId: number, classId: number | null) {
@@ -836,16 +861,45 @@ export function TeamsPageContent() {
 
                           {/* Actions */}
                           <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => handleCopyInvite(team.club?.id, team.id)}
-                                title={t("copyLink")}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:opacity-70"
-                                style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
-                                {copiedId === team.id
-                                  ? <Check className="w-3.5 h-3.5" />
-                                  : <Link2 className="w-3.5 h-3.5" />}
-                              </button>
+                            <div className="flex items-center gap-1.5">
+                              {/* Inline approve/reject for pending teams.
+                                  Always visible (not opacity-0) — the
+                                  organizer's primary job on this row. */}
+                              {team.status === "open" && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      const label = team.displayName ?? team.name ?? team.club?.name ?? `#${team.id}`;
+                                      approveTeam(team.id, label);
+                                    }}
+                                    title="Принять заявку"
+                                    className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all hover:opacity-90 flex items-center gap-1"
+                                    style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
+                                    <Check className="w-3 h-3" /> Принять
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      const label = team.displayName ?? team.name ?? team.club?.name ?? `#${team.id}`;
+                                      rejectTeam(team.id, label);
+                                    }}
+                                    title="Отклонить заявку с причиной"
+                                    className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all hover:opacity-90 flex items-center gap-1"
+                                    style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+                                    <X className="w-3 h-3" /> Отклонить
+                                  </button>
+                                </>
+                              )}
+                              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => handleCopyInvite(team.club?.id, team.id)}
+                                  title={t("copyLink")}
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:opacity-70"
+                                  style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
+                                  {copiedId === team.id
+                                    ? <Check className="w-3.5 h-3.5" />
+                                    : <Link2 className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
                             </div>
                           </td>
                         </tr>

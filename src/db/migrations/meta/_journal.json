@@ -232,6 +232,13 @@
       "when": 1775170231661,
       "tag": "0032_tournaments_global_slug",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1775170291661,
+      "tag": "0033_team_status_rejected",
+      "breakpoints": true
     }
   ]
 }

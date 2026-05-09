@@ -100,6 +100,9 @@ export async function GET(
           className: r.class?.name ?? "",
           regNumber: r.regNumber,
           status: r.status,
+          // Organizer's note — used as the rejection reason or any
+          // confirm comment. Surfaced on the team's registration card.
+          notes: r.notes ?? null,
         })),
         // Краткая история: в скольких турнирах участвовала
         totalTournaments: team.registrations

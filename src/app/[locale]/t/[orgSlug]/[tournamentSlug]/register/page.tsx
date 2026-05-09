@@ -45,7 +45,8 @@ type ExistingTeam = {
     classId: number | null;
     className: string;
     regNumber: number | null;
-    status: "draft" | "open" | "confirmed" | "cancelled";
+    status: "draft" | "open" | "confirmed" | "rejected" | "cancelled";
+    notes?: string | null;
   }>;
 };
 
@@ -1927,9 +1928,11 @@ export default function RegisterPage() {
                             ? { icon: "✓", text: "Подтверждена организатором", color: "#10b981", bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.35)" }
                             : squad.status === "open"
                               ? { icon: "🕓", text: "На рассмотрении организатором", color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.35)" }
-                              : squad.status === "draft"
-                                ? { icon: "📝", text: "Черновик", color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", border: "var(--cat-card-border)" }
-                                : { icon: "•", text: squad.status, color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", border: "var(--cat-card-border)" };
+                              : squad.status === "rejected"
+                                ? { icon: "✕", text: "Отклонена организатором", color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.35)" }
+                                : squad.status === "draft"
+                                  ? { icon: "📝", text: "Черновик", color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", border: "var(--cat-card-border)" }
+                                  : { icon: "•", text: squad.status, color: "var(--cat-text-muted)", bg: "var(--cat-tag-bg)", border: "var(--cat-card-border)" };
                         return (
                           <div key={squad.registrationId}
                             className="mt-2 rounded-xl border p-3"
@@ -1979,6 +1982,15 @@ export default function RegisterPage() {
                                     {busy ? "..." : "Отзаявить"}
                                   </button>
                                 </div>
+                                {/* Organizer note — most useful on a
+                                    rejected card (the reason "почему"). */}
+                                {squad.notes && (
+                                  <div className="basis-full mt-2 px-3 py-2 rounded-lg text-[12px]"
+                                    style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)", borderLeft: `3px solid ${statusViz.border}` }}>
+                                    <span className="font-bold" style={{ color: statusViz.color }}>Комментарий организатора:</span>{" "}
+                                    {squad.notes}
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <div className="space-y-2">
