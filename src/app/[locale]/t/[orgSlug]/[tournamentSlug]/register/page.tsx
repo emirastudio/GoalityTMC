@@ -100,6 +100,21 @@ function StepBar({ step, total }: { step: number; total: number }) {
   );
 }
 
+/* ─── Auto-redirect after successful create ──────────────────────────────── */
+// The register endpoint already set the session cookie — the user has
+// nothing to do here. Bounce to the dashboard ~1.2s later so they get a
+// glimpse of the "Заявка отправлена!" confirmation but aren't blocked
+// behind a button click.
+function DoneCreateAutoRedirect() {
+  useEffect(() => {
+    const id = setTimeout(() => {
+      window.location.href = "/club/dashboard";
+    }, 1200);
+    return () => clearTimeout(id);
+  }, []);
+  return null;
+}
+
 /* ─── Styled input ───────────────────────────────────────────────────────── */
 function Field({
   label, value, onChange, placeholder, type = "text", hint, required,
@@ -1003,6 +1018,7 @@ export default function RegisterPage() {
 
   if (view === "done-create") return (
     <div className="py-16 text-center space-y-5 max-w-md mx-auto">
+      <DoneCreateAutoRedirect />
       <div className="relative w-20 h-20 mx-auto">
         <div className="w-20 h-20 rounded-full flex items-center justify-center"
           style={{ background: "var(--cat-badge-open-bg)", border: "2px solid var(--cat-badge-open-border)" }}>
@@ -1014,10 +1030,14 @@ export default function RegisterPage() {
         {t("registrationSuccessDesc", { tournament: tournament!.name, email: contactEmail })}
       </p>
       <div className="flex flex-col gap-2 items-center">
-        <Link href="/login"
+        {/* /api/clubs/register has already set the session cookie, so go
+            straight to the dashboard — the user just typed a password and
+            verified an email two clicks ago, asking them to log in again
+            is friction with no upside. */}
+        <Link href="/club/dashboard"
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-opacity hover:opacity-90"
           style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}>
-          <LogIn className="w-4 h-4" /> Войти в кабинет клуба
+          <LogIn className="w-4 h-4" /> Открыть кабинет клуба
         </Link>
         <Link href={`/t/${orgSlug}/${tournamentSlug}`}
           className="text-sm hover:underline" style={{ color: "var(--cat-text-muted)" }}>
