@@ -27,25 +27,34 @@ export async function GET(
     orderBy: (c, { asc }) => [asc(c.minBirthYear)],
   });
 
-  // Count registered clubs and teams via tournamentRegistrations
+  // Count only CONFIRMED registrations — same rule as the public
+  // teams list. Pending/rejected/cancelled rows stay invisible.
+  const confirmedFilter = and(
+    eq(tournamentRegistrations.tournamentId, tournament.id),
+    eq(tournamentRegistrations.status, "confirmed"),
+  );
   const [clubCount] = await db
     .select({ count: sql<number>`COUNT(DISTINCT ${teams.clubId})` })
     .from(tournamentRegistrations)
     .innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
-    .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+    .where(confirmedFilter);
 
   const [teamCount] = await db
     .select({ count: count() })
     .from(tournamentRegistrations)
-    .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+    .where(confirmedFilter);
 
-  // Per-class team counts
+  // Per-class team counts (also confirmed-only)
   const classesWithCounts = await Promise.all(
     classes.map(async (cls) => {
       const [tc] = await db
         .select({ count: count() })
         .from(tournamentRegistrations)
-        .where(and(eq(tournamentRegistrations.tournamentId, tournament.id), eq(tournamentRegistrations.classId, cls.id)));
+        .where(and(
+          eq(tournamentRegistrations.tournamentId, tournament.id),
+          eq(tournamentRegistrations.classId, cls.id),
+          eq(tournamentRegistrations.status, "confirmed"),
+        ));
       return {
         id: cls.id,
         name: cls.name,

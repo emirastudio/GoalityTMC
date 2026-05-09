@@ -45,7 +45,8 @@ export async function GET(
   });
   if (!team) return NextResponse.json({ error: "Team not found" }, { status: 404 });
 
-  // 3. Fetch registration for this team in this tournament (with class)
+  // 3. Fetch CONFIRMED registration for this team. A pending team
+  //    shouldn't be world-readable via direct link either.
   const [registration] = await db
     .select({
       id: tournamentRegistrations.id,
@@ -60,10 +61,14 @@ export async function GET(
     .where(
       and(
         eq(tournamentRegistrations.teamId, tid),
-        eq(tournamentRegistrations.tournamentId, tournament.id)
+        eq(tournamentRegistrations.tournamentId, tournament.id),
+        eq(tournamentRegistrations.status, "confirmed"),
       )
     )
     .limit(1);
+  if (!registration) {
+    return NextResponse.json({ error: "Team not registered for this tournament" }, { status: 404 });
+  }
 
   // 4. Find which group this team is in (for this tournament)
   let groupStandings: {

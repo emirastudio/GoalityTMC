@@ -20,12 +20,15 @@ export async function GET(req: NextRequest, { params }: Params) {
     });
     if (!tournament) return NextResponse.json([]);
 
-    // Находим клубы, у которых есть регистрация в этом турнире
-    // Шаг 1: команды с регистрацией в турнире
+    // Находим клубы у которых есть ПОДТВЕРЖДЁННАЯ регистрация
+    // в этом турнире. Pending заявки публично не светим.
     const regs = await db
       .select({ teamId: tournamentRegistrations.teamId })
       .from(tournamentRegistrations)
-      .where(eq(tournamentRegistrations.tournamentId, tournament.id));
+      .where(and(
+        eq(tournamentRegistrations.tournamentId, tournament.id),
+        eq(tournamentRegistrations.status, "confirmed"),
+      ));
 
     if (regs.length === 0) return NextResponse.json([]);
 
@@ -64,7 +67,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         const [tc] = await db.select({ count: count() }).from(tournamentRegistrations)
           .where(and(
             eq(tournamentRegistrations.tournamentId, tournament.id),
-            inArray(tournamentRegistrations.teamId, clubTeamIds)
+            eq(tournamentRegistrations.status, "confirmed"),
+            inArray(tournamentRegistrations.teamId, clubTeamIds),
           ));
         teamCount = Number(tc?.count ?? 0);
       }

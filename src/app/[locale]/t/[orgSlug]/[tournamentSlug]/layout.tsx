@@ -90,12 +90,30 @@ export default async function TournamentLayout({ children, params }: Props) {
     orderBy: (c, { asc }) => [asc(c.minBirthYear)],
   });
 
-  const [clubCount] = await db.select({ count: sql<number>`COUNT(DISTINCT ${teams.clubId})` }).from(tournamentRegistrations).innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id)).where(eq(tournamentRegistrations.tournamentId, tournament.id));
-  const [teamCount] = await db.select({ count: count() }).from(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, tournament.id));
+  // Public counts MUST track the public list — only confirmed
+  // registrations should be visible. Same status filter as
+  // /api/public/t/[orgSlug]/[tournamentSlug]/teams.
+  const [clubCount] = await db.select({ count: sql<number>`COUNT(DISTINCT ${teams.clubId})` })
+    .from(tournamentRegistrations)
+    .innerJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
+    .where(and(
+      eq(tournamentRegistrations.tournamentId, tournament.id),
+      eq(tournamentRegistrations.status, "confirmed"),
+    ));
+  const [teamCount] = await db.select({ count: count() })
+    .from(tournamentRegistrations)
+    .where(and(
+      eq(tournamentRegistrations.tournamentId, tournament.id),
+      eq(tournamentRegistrations.status, "confirmed"),
+    ));
 
   const classesWithCounts = await Promise.all(classes.map(async (cls) => {
     const [tc] = await db.select({ count: count() }).from(tournamentRegistrations)
-      .where(and(eq(tournamentRegistrations.tournamentId, tournament.id), eq(tournamentRegistrations.classId, cls.id)));
+      .where(and(
+        eq(tournamentRegistrations.tournamentId, tournament.id),
+        eq(tournamentRegistrations.classId, cls.id),
+        eq(tournamentRegistrations.status, "confirmed"),
+      ));
     return {
       id: cls.id,
       name: cls.name,
