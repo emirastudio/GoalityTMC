@@ -1842,6 +1842,30 @@ export default function RegisterPage() {
       {/* ── Step 4: Tournament classes (LOGGED-IN CLUB) ── */}
       {loggedInClub && (
         <div className="space-y-4">
+          {/* Quick link to the club dashboard — for roster, players,
+              staff, travel & inbox. The current page is only for
+              tournament-registration management. */}
+          <Link href="/club/dashboard"
+            className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border transition-all hover:scale-[1.005] group"
+            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "var(--cat-badge-open-bg)" }}>
+                <Building2 className="w-4 h-4" style={{ color: "var(--cat-accent)" }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
+                  Перейти в кабинет клуба
+                </p>
+                <p className="text-[11px] truncate" style={{ color: "var(--cat-text-muted)" }}>
+                  Игроки, тренеры, поездка, переписка с организатором
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5"
+              style={{ color: "var(--cat-accent)" }} />
+          </Link>
+
           {/* Existing teams of this club */}
           {teamsLoading ? (
             <div className="flex items-center justify-center py-8">
