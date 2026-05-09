@@ -16,7 +16,7 @@ type TeamSummary = {
   gender: "male" | "female" | "mixed";
   squadAlias: string;
   className: string;
-  status: "draft" | "open" | "confirmed" | "cancelled";
+  status: "draft" | "open" | "confirmed" | "rejected" | "cancelled";
   playersCount: number;
   staffCount: number;
 };
@@ -48,9 +48,10 @@ interface TeamSwitcherProps {
 
 const statusDot: Record<string, string> = {
   draft:     "bg-gray-400",
-  open:      "bg-emerald-500",
+  open:      "bg-amber-500",
   confirmed: "bg-[var(--cat-accent)]",
-  cancelled: "bg-red-400",
+  rejected:  "bg-red-500",
+  cancelled: "bg-gray-500",
 };
 
 export function TeamSwitcher({ clubName, clubBadgeUrl, clubId, teams, classes, dark = false }: TeamSwitcherProps) {

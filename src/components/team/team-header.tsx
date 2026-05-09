@@ -12,7 +12,7 @@ type TeamSummary = {
   id: number;
   name: string;
   className: string;
-  status: "draft" | "open" | "confirmed" | "cancelled";
+  status: "draft" | "open" | "confirmed" | "rejected" | "cancelled";
   playersCount: number;
 };
 
@@ -35,9 +35,10 @@ interface TeamHeaderProps {
 
 const statusDot: Record<string, string> = {
   draft:     "bg-gray-400",
-  open:      "bg-emerald-400",
+  open:      "bg-amber-500",
   confirmed: "bg-emerald-600",
-  cancelled: "bg-red-400",
+  rejected:  "bg-red-500",
+  cancelled: "bg-gray-500",
 };
 
 export function TeamHeader({
