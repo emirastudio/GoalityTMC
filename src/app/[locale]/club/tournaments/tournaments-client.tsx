@@ -5,6 +5,14 @@ import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Trophy, Loader2, CalendarDays, ChevronRight, Users } from "lucide-react";
 
+// Picking a tournament from this list pins it as the active tournament
+// for the /team/* layout and jumps the user there. The active-tournament
+// cookie is plain (not httpOnly) precisely for this client-side write.
+function pickTournament(locale: string, tournamentId: number) {
+  document.cookie = `active_tournament_id=${tournamentId}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
+  window.location.href = `/${locale}/team/overview`;
+}
+
 // ─── Types ──────────────────────────────────────────────────
 
 interface TeamInfo {
@@ -171,10 +179,11 @@ export function ClubTournamentsClient({ clubId }: Props) {
               .join(", ");
 
             return (
-              <Link
+              <button
                 key={entry.tournament.id}
-                href={`/club/tournaments/${entry.tournament.id}`}
-                className="rounded-2xl border p-5 flex flex-col gap-3 transition-all hover:opacity-90"
+                type="button"
+                onClick={() => pickTournament(locale, entry.tournament.id)}
+                className="rounded-2xl border p-5 flex flex-col gap-3 transition-all hover:opacity-90 text-left cursor-pointer"
                 style={{
                   background: "var(--cat-card-bg)",
                   borderColor: "var(--cat-card-border)",
@@ -226,7 +235,7 @@ export function ClubTournamentsClient({ clubId }: Props) {
                     <ChevronRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>

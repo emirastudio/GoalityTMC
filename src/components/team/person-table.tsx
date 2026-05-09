@@ -26,7 +26,7 @@ interface PersonTableProps {
 }
 
 // Упрощённый просмотр справочника. Поездочная информация — на странице
-// /club/tournaments/[id]/roster для конкретного турнира.
+// /team/* для активного турнира.
 export function PersonTable({ persons, columns, emptyText, addLabel, onAdd, onDelete }: PersonTableProps) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _t = useTranslations("common");
