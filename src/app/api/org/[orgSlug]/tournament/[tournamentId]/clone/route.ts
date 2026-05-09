@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { tournaments, tournamentStadiums, tournamentFields, tournamentClasses } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
 import { slugify } from "@/lib/tenant";
 
@@ -13,15 +13,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Param
 
   const source = ctx.tournament;
   const newName = `${source.name} (copy)`;
-  let baseSlug = slugify(newName);
+  const baseSlug = slugify(newName);
   let slug = baseSlug;
   let attempt = 0;
   while (attempt < 10) {
     const existing = await db.query.tournaments.findFirst({
-      where: and(
-        eq(tournaments.organizationId, ctx.organizationId),
-        eq(tournaments.slug, slug)
-      ),
+      where: and(eq(tournaments.slug, slug), isNull(tournaments.deletedAt)),
     });
     if (!existing) break;
     attempt++;

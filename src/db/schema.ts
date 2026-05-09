@@ -210,8 +210,10 @@ export const tournaments = pgTable("tournaments", {
   deleteRequestedAt: timestamp("delete_requested_at"),   // organizer requested → superadmin decides
   deleteRequestReason: text("delete_request_reason"),
   deletedAt: timestamp("deleted_at"),                    // superadmin approved → soft delete (30 days)
-}, (table) => [
-  uniqueIndex("tournaments_org_slug_idx").on(table.organizationId, table.slug),
+}, () => [
+  // Global slug uniqueness is enforced by a PARTIAL unique index on
+  // (slug) WHERE deleted_at IS NULL — declared in raw SQL migration
+  // 0032 (drizzle-kit doesn't model partial unique indexes nicely).
 ]);
 
 // ─── Tournament Classes ─────────────────────────────────

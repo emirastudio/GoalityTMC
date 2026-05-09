@@ -103,9 +103,10 @@ export default async function TournamentOverviewPage({ params }: Props) {
     { id: "format",       done: Number(stageCount?.value ?? 0) > 0,         href: `${basePath}/setup` },
   ];
 
-  /* Public registration URL */
-  const registerUrl = `https://goalityfootball.com/${locale}/t/${organization.slug}/${tournament.slug}/register`;
-  const publicUrl   = `https://goalityfootball.com/${locale}/t/${organization.slug}/${tournament.slug}`;
+  /* Public-facing URLs — short form (resolves via global slug, redirects
+     to the canonical org-prefixed path on hit). */
+  const registerUrl = `https://goalityfootball.com/${locale}/t/${tournament.slug}/register`;
+  const publicUrl   = `https://goalityfootball.com/${locale}/t/${tournament.slug}`;
 
   const quickLinks = [
     { key: "registrations", icon: ClipboardList, href: `${basePath}/registrations`, color: "#10B981" },

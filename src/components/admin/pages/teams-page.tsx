@@ -74,7 +74,9 @@ function InviteBlock({ orgSlug, tournamentInfo, locale }: {
   if (!tournamentInfo) return null;
 
   const origin = typeof window !== "undefined" ? window.location.origin : "https://goalityfootball.com";
-  const registerUrl = `${origin}/${locale}/t/${orgSlug}/${tournamentInfo.slug}/register`;
+  // Short-form URL — see /[locale]/t/[slug]/register (resolves & redirects
+  // to the canonical /t/<orgSlug>/<slug>/register).
+  const registerUrl = `${origin}/${locale}/t/${tournamentInfo.slug}/register`;
 
   const channels = [
     {

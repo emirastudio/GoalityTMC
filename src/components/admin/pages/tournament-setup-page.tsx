@@ -7,6 +7,7 @@ import { useAdminFetch, useTournament } from "@/lib/tournament-context";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
 import { CatalogImageBlock } from "@/components/admin/catalog-image-block";
 import { TournamentLocationFields } from "@/components/admin/tournament-location-fields";
+import { TournamentSlugField } from "@/components/admin/tournament-slug-field";
 import { StadiumsPageContent } from "@/components/admin/pages/stadiums-page";
 import { Link } from "@/i18n/navigation";
 import {
@@ -491,6 +492,9 @@ function StepBasics({ name, setName, year, setYear, startDate, setStartDate, end
           </Field>
         </div>
       </div>
+
+      {/* Editable URL slug — globally unique. */}
+      <TournamentSlugField orgSlug={orgSlug} tournamentId={tournamentId} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label={t("startDate")}>

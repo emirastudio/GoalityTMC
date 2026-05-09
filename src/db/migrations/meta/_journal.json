@@ -225,6 +225,13 @@
       "when": 1775170171661,
       "tag": "0031_club_user_teams_status",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1775170231661,
+      "tag": "0032_tournaments_global_slug",
+      "breakpoints": true
     }
   ]
 }

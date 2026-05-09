@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireGameAdmin } from "@/lib/game-auth";
 import { db } from "@/db";
 import { tournaments, tournamentFields } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, and, ne, asc, isNull } from "drizzle-orm";
+import { slugify } from "@/lib/tenant";
 
 type Params = { orgSlug: string; tournamentId: string };
 
@@ -19,6 +20,7 @@ export async function GET(
   const [row] = await db
     .select({
       id:               tournaments.id,
+      slug:             tournaments.slug,
       name:             tournaments.name,
       year:             tournaments.year,
       currency:         tournaments.currency,
@@ -77,6 +79,7 @@ export async function PATCH(
 
   const {
     name,
+    slug: slugRaw,
     year,
     currency,
     startDate,
@@ -91,11 +94,39 @@ export async function PATCH(
     fields,
   } = body;
 
+  // Slug update — globally unique (migration 0032). We sanitise the
+  // input via slugify and refuse 409 if another LIVE tournament already
+  // owns it. The DB partial-unique index is the final guarantee.
+  let slugToSet: string | undefined;
+  if (typeof slugRaw === "string") {
+    const cleaned = slugify(slugRaw);
+    if (cleaned.length < 3 || cleaned.length > 80) {
+      return NextResponse.json({ error: "Slug must be 3–80 characters." }, { status: 400 });
+    }
+    if (cleaned !== ctx.tournament.slug) {
+      const collision = await db.query.tournaments.findFirst({
+        where: and(
+          eq(tournaments.slug, cleaned),
+          isNull(tournaments.deletedAt),
+          ne(tournaments.id, ctx.tournament.id),
+        ),
+      });
+      if (collision) {
+        return NextResponse.json(
+          { error: "This URL is taken — pick a different one.", code: "SLUG_TAKEN" },
+          { status: 409 }
+        );
+      }
+      slugToSet = cleaned;
+    }
+  }
+
   // Обновляем основные поля турнира
   await db
     .update(tournaments)
     .set({
       ...(name       !== undefined && { name: name.trim() }),
+      ...(slugToSet  !== undefined && { slug: slugToSet }),
       ...(year       !== undefined && { year: Number(year) }),
       ...(currency   !== undefined && { currency }),
       ...(startDate  !== undefined && { startDate: startDate ? new Date(startDate) : null }),

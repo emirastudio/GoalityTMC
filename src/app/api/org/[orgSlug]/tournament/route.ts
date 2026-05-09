@@ -96,16 +96,15 @@ export async function POST(
     );
   }
 
-  // Generate unique slug
-  let baseSlug = slugify(name.trim());
+  // Generate a globally unique slug — see migration 0032. We auto-bump
+  // the suffix here for convenience; if even after 10 attempts there's
+  // still a clash (unlikely) the DB partial-unique index will catch it.
+  const baseSlug = slugify(name.trim());
   let slug = baseSlug;
   let attempt = 0;
   while (attempt < 10) {
     const existing = await db.query.tournaments.findFirst({
-      where: and(
-        eq(tournaments.organizationId, organization.id),
-        eq(tournaments.slug, slug)
-      ),
+      where: and(eq(tournaments.slug, slug), isNull(tournaments.deletedAt)),
     });
     if (!existing) break;
     attempt++;
