@@ -898,12 +898,16 @@ export default function RegisterPage() {
                 key={club.id}
                 club={club}
                 onSelect={() => {
+                  // User picked an existing club from the global DB —
+                  // we already have name/country/city/badge, so skip
+                  // the "club info" wizard step and jump straight to
+                  // creating an account (or teams if logged in).
                   setClubName(club.name);
                   setCountry(club.country ?? "");
                   setCity(club.city ?? "");
                   setPickedGlobalClubId(club.id);
                   setView("create");
-                  setStep(1);
+                  setStep(2);
                 }}
               />
             ))}
@@ -1034,16 +1038,23 @@ export default function RegisterPage() {
     <div className="max-w-lg mx-auto py-6 space-y-5">
       <button onClick={() => {
         if (loggedInClub) return; // logged-in club can't go back in wizard
-        step === 1 ? setView("search") : setStep(s => (s - 1) as Step);
+        // For an existing-club pick we jumped past step 1, so going
+        // back from step 2 returns to search (not to the empty step 1).
+        const minStep: Step = pickedGlobalClubId !== null ? 2 : 1;
+        step === minStep ? setView("search") : setStep(s => (s - 1) as Step);
       }}
         className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
         style={{ color: "var(--cat-text-muted)", visibility: loggedInClub ? "hidden" : "visible" }}>
-        <ArrowLeft className="w-4 h-4" /> {step === 1 ? "Назад к поиску" : "Назад"}
+        <ArrowLeft className="w-4 h-4" /> {step === (pickedGlobalClubId !== null ? 2 : 1) ? "Назад к поиску" : "Назад"}
       </button>
 
       <div>
         <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: "var(--cat-accent)" }}>
-          {loggedInClub ? `${loggedInClub.name} · Регистрация` : `Новый клуб · Шаг ${step} из 3`}
+          {loggedInClub
+            ? `${loggedInClub.name} · Регистрация`
+            : pickedGlobalClubId !== null
+              ? `${clubName} · Шаг ${step - 1} из 2`
+              : `Новый клуб · Шаг ${step} из 3`}
         </span>
         <h1 className="text-2xl font-black mt-1" style={{ color: "var(--cat-text)" }}>
           {loggedInClub ? `Команды для ${tournament!.name}` : (
@@ -1054,12 +1065,18 @@ export default function RegisterPage() {
           {loggedInClub
             ? "Выберите команды клуба или создайте новую"
             : (step === 1 ? "Расскажите о вашем клубе"
-              : step === 2 ? "Создайте вход в личный кабинет клуба"
+              : step === 2 ? (pickedGlobalClubId !== null
+                  ? `Создайте вход в личный кабинет клуба «${clubName}»`
+                  : "Создайте вход в личный кабинет клуба")
               : `Выберите дивизионы в турнире ${tournament!.name}`)}
         </p>
       </div>
 
-      {!loggedInClub && <StepBar step={step} total={3} />}
+      {!loggedInClub && (
+        pickedGlobalClubId !== null
+          ? <StepBar step={step - 1} total={2} />
+          : <StepBar step={step} total={3} />
+      )}
 
       {/* ── Step 1: Club info ── */}
       {!loggedInClub && step === 1 && (
