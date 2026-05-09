@@ -191,6 +191,9 @@ export function PublicHeaderActions({
  * Pass as `rightContent` to GlobalHeader.
  */
 export function AdminHeaderActions({
+  // logoutLabel kept for prop-compat (callers still pass it) — the
+  // user dropdown owns the actual sign-out copy now.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   logoutLabel = "Log out",
   isSuper = false,
   currentArea = "super" as "super" | "org" | "team",
@@ -213,15 +216,10 @@ export function AdminHeaderActions({
         </a>
       )}
       {isSuper && <DevNavWidget currentArea={currentArea} />}
-      <form action="/api/auth/logout" method="POST">
-        <button
-          type="submit"
-          className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70 cursor-pointer"
-          style={{ color: "var(--cat-text-muted)" }}
-        >
-          {logoutLabel}
-        </button>
-      </form>
+      {/* Always visible — identifies who's logged in, links to their
+          cabinet, and owns the sign-out action. Replaces the bare
+          "Log out" link the admin pages used to render. */}
+      <UserAvatarMenu />
     </div>
   );
 }
