@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { pickLocaleText } from "@/lib/i18n-text";
 import { useTournament } from "@/lib/tournament-context";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -1194,7 +1195,9 @@ export function MatchProtocolPage({ matchId }: { matchId: number }) {
   const canEdit = isLive || isFinished;
   const canEditLineup = true; // lineup can be filled any time (even before match starts)
 
-  const divName = (locale === "ru" ? match.stage?.nameRu : null) || match.stage?.name || "";
+  const divName = match.stage
+    ? (pickLocaleText(match.stage as unknown as Record<string, unknown>, locale, "name") || match.stage.name || "")
+    : "";
   const home = match.homeScore ?? 0;
   const away = match.awayScore ?? 0;
   const homeWon = isFinished && home > away;

@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { CheckCircle2, Circle, PlayCircle, Clock3 } from "lucide-react";
+import { pickLocaleText } from "@/lib/i18n-text";
 
 type Stage = {
   id: number;
   name: string;
   nameRu?: string | null;
   nameEt?: string | null;
+  nameEs?: string | null;
   order: number;
   type: string;
   status: string;
@@ -30,9 +32,7 @@ type Props = {
 };
 
 function stageName(s: Stage, locale?: string) {
-  if (locale === "ru" && s.nameRu) return s.nameRu;
-  if (locale === "et" && s.nameEt) return s.nameEt;
-  return s.name;
+  return pickLocaleText(s as unknown as Record<string, unknown>, locale ?? "en", "name") || s.name;
 }
 
 const STATUS_COLORS = {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { pickLocaleText } from "@/lib/i18n-text";
 import { Badge } from "@/components/ui/badge";
 import { useTeam } from "@/lib/team-context";
 import { CreditCard, Clock, TrendingUp, Wallet, Receipt, CheckCircle2 } from "lucide-react";
@@ -54,9 +55,7 @@ export default function EconomyPage() {
   if (!data) return null;
 
   function getLocalName(order: OrderLine) {
-    if (locale === "ru" && order.productNameRu) return order.productNameRu;
-    if (locale === "et" && order.productNameEt) return order.productNameEt;
-    return order.productName;
+    return pickLocaleText(order as unknown as Record<string, unknown>, locale, "productName") || order.productName;
   }
 
   const balanceNum = parseFloat(data.balance);

@@ -65,6 +65,30 @@ export function pickLocaleFields<T extends Record<string, unknown>, K extends st
 }
 
 /**
+ * Вариант для blog_posts и других таблиц с EN-named base колонкой
+ * (`titleEn` вместо `title`). Логика та же — для активной локали берём
+ * `<base><LocaleSuffix>`, fallback на `<base>En`.
+ */
+export function pickLocaleTextEn<T extends Record<string, unknown>>(
+  obj: T | null | undefined,
+  locale: string,
+  base: string,
+): string {
+  if (!obj) return "";
+  const lc = (locale ?? "").toLowerCase().slice(0, 2);
+  const suffix =
+    lc === "ru" ? "Ru" :
+    lc === "et" ? "Et" :
+    lc === "es" ? "Es" :
+    "En";
+  const v = obj[`${base}${suffix}`];
+  if (typeof v === "string" && v.trim()) return v;
+  // Fallback на канон — английский.
+  const en = obj[`${base}En`];
+  return typeof en === "string" ? en : "";
+}
+
+/**
  * Тип для multilang-input стейта в формах. Используется в
  * `MultilangInput`-компоненте.
  */

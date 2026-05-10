@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { pickLocaleText } from "@/lib/i18n-text";
 import { TeamBadge } from "@/components/ui/team-badge";
 import { useTournament } from "@/lib/tournament-context";
 import { useRouter } from "@/i18n/navigation";
@@ -1539,8 +1540,8 @@ function StageAdvancePanel({
       fetch(`${base}/stages?classId=${cid}`).then(r => r.ok ? r.json() : [])
     )).then(results => {
       const nameMap: Record<number, string> = {};
-      for (const stage of results.flat() as Array<{ id: number; name: string; nameRu?: string | null }>) {
-        nameMap[stage.id] = (locale === "ru" && stage.nameRu) ? stage.nameRu : stage.name;
+      for (const stage of results.flat() as Array<{ id: number; name: string; nameRu?: string | null; nameEt?: string | null; nameEs?: string | null }>) {
+        nameMap[stage.id] = pickLocaleText(stage as unknown as Record<string, unknown>, locale, "name") || stage.name;
       }
       setStageNames(nameMap);
     });

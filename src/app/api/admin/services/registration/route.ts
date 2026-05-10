@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
         name: body.name ?? existing.name,
         nameRu: body.nameRu !== undefined ? body.nameRu : existing.nameRu,
         nameEt: body.nameEt !== undefined ? body.nameEt : existing.nameEt,
+        nameEs: body.nameEs !== undefined ? body.nameEs : existing.nameEs,
         price: body.price !== undefined ? String(body.price) : existing.price,
         isRequired: body.isRequired !== undefined ? body.isRequired : existing.isRequired,
       })
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
       name: body.name ?? "Registration fee",
       nameRu: body.nameRu,
       nameEt: body.nameEt,
+      nameEs: body.nameEs ?? null,
       price: String(body.price),
       isRequired: body.isRequired ?? true,
     })

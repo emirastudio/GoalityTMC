@@ -145,28 +145,28 @@ function formatDate(dateStr: string | null): string {
   return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-function getLocalName(
-  item: { name: string; nameRu: string | null },
-  locale: string
-): string {
-  if (locale === "ru" && item.nameRu) return item.nameRu;
-  return item.name;
+// Локализованные геттеры для legacy v2.5 services (accommodation/meals/
+// transfer/registration). Делегируем в общий pickLocaleText — он умеет
+// EN/RU/ET/ES с fallback на base. Item-типы сужены до Record<string, unknown>
+// чтобы не тащить точную структуру каждой подсистемы.
+function getLocalName(item: { name: string; [k: string]: unknown }, locale: string): string {
+  return pickLocaleText(item, locale, "name") || item.name;
 }
 
 function getLocalDesc(
-  item: { description?: string | null; descriptionRu?: string | null },
-  locale: string
+  item: { description?: string | null; [k: string]: unknown },
+  locale: string,
 ): string | null {
-  if (locale === "ru" && item.descriptionRu) return item.descriptionRu;
-  return item.description ?? null;
+  const v = pickLocaleText(item, locale, "description");
+  return v || (item.description ?? null);
 }
 
 function getLocalMealNote(
-  item: { mealNote: string | null; mealNoteRu: string | null },
-  locale: string
+  item: { mealNote: string | null; [k: string]: unknown },
+  locale: string,
 ): string | null {
-  if (locale === "ru" && item.mealNoteRu) return item.mealNoteRu;
-  return item.mealNote;
+  const v = pickLocaleText(item, locale, "mealNote");
+  return v || item.mealNote;
 }
 
 function effectivePrice(

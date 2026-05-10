@@ -4,6 +4,7 @@ import { useTournamentPublic } from "@/lib/tournament-public-context";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { pickLocaleText } from "@/lib/i18n-text";
 import {
   Trophy, Loader2, Crown, Zap, Clock, ChevronRight,
   Star, Shield, TrendingUp,
@@ -29,6 +30,7 @@ interface BracketRound {
   name: string;
   nameRu?: string | null;
   nameEt?: string | null;
+  nameEs?: string | null;
   shortName?: string | null;
   order: number;
   matchCount: number;
@@ -43,6 +45,7 @@ interface BracketStage {
     name: string;
     nameRu?: string | null;
     nameEt?: string | null;
+    nameEs?: string | null;
     status: string;
   };
   rounds: BracketRound[];
@@ -297,7 +300,7 @@ function RoundColumn({
             }}
           >
             {isFinalRound && <Crown className="inline w-2.5 h-2.5 mr-1 mb-0.5" />}
-            {round.nameRu ?? round.shortName ?? round.name}
+            {pickLocaleText(round as unknown as Record<string, unknown>, locale, "name") || round.shortName || round.name}
           </span>
           <span className="text-[9px]" style={{ color: "var(--cat-text-muted)" }}>
             {round.matchCount} {round.matchCount === 1 ? tMatchSingular : tMatchPlural}
@@ -464,9 +467,7 @@ function StageTab({
   locale: string;
 }) {
   const meta = getCompetitionMeta(stage.stage.name);
-  const label = locale === "ru" ? (stage.stage.nameRu ?? stage.stage.name)
-    : locale === "et" ? ((stage.stage as { nameEt?: string | null }).nameEt ?? stage.stage.name)
-    : stage.stage.name;
+  const label = pickLocaleText(stage.stage as unknown as Record<string, unknown>, locale, "name") || stage.stage.name;
 
   return (
     <button
@@ -612,9 +613,7 @@ export default function DivisionBracketPage() {
             >
               <span>{currentMeta.icon}</span>
               <span>
-                {locale === "ru" ? (current.stage.nameRu ?? current.stage.name)
-                  : locale === "et" ? ((current.stage as { nameEt?: string | null }).nameEt ?? current.stage.name)
-                  : current.stage.name}
+                {pickLocaleText(current.stage as unknown as Record<string, unknown>, locale, "name") || current.stage.name}
               </span>
             </div>
           )}

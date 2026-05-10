@@ -5,14 +5,19 @@ import { Link } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { Calendar, ArrowRight, BookOpen, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { BLOG_CATEGORIES, getCategoryMeta } from "@/lib/blog-categories";
+import { pickLocaleTextEn } from "@/lib/i18n-text";
 
 export type BlogPostEntry = {
   id: number;
   slug: string;
   titleEn: string;
   titleRu: string | null;
+  titleEt: string | null;
+  titleEs: string | null;
   excerptEn: string | null;
   excerptRu: string | null;
+  excerptEt: string | null;
+  excerptEs: string | null;
   coverImageUrl: string | null;
   category: string | null;
   tags: string[] | null;
@@ -58,8 +63,8 @@ export function BlogListClient({ posts }: { posts: BlogPostEntry[] }) {
   const totalPages = Math.ceil(filtered.length / POSTS_PER_PAGE);
   const paginated = filtered.slice((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE);
 
-  const getTitle   = (p: BlogPostEntry) => (locale === "ru" && p.titleRu) ? p.titleRu : p.titleEn;
-  const getExcerpt = (p: BlogPostEntry) => (locale === "ru" && p.excerptRu) ? p.excerptRu : p.excerptEn;
+  const getTitle   = (p: BlogPostEntry) => pickLocaleTextEn(p as unknown as Record<string, unknown>, locale, "title")   || p.titleEn;
+  const getExcerpt = (p: BlogPostEntry) => pickLocaleTextEn(p as unknown as Record<string, unknown>, locale, "excerpt") || p.excerptEn;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20">

@@ -15,8 +15,11 @@ export async function PATCH(
   const body = await req.json();
 
   const updates: Record<string, unknown> = {};
-  if (body.name !== undefined) updates.name = body.name;
-  if (body.description !== undefined) updates.description = body.description;
+  for (const f of ["name", "nameRu", "nameEt", "nameEs",
+                   "mealNote", "mealNoteRu", "mealNoteEt", "mealNoteEs"]) {
+    if (body[f] !== undefined) updates[f] = body[f];
+  }
+  if (body.includedMeals !== undefined) updates.includedMeals = body.includedMeals;
   if (body.checkIn !== undefined) updates.checkIn = body.checkIn ? new Date(body.checkIn) : null;
   if (body.checkOut !== undefined) updates.checkOut = body.checkOut ? new Date(body.checkOut) : null;
   if (body.pricePerPlayer !== undefined) updates.pricePerPlayer = String(body.pricePerPlayer);

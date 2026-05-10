@@ -3,6 +3,7 @@
 import { useTournamentPublic } from "@/lib/tournament-public-context";
 import { useParams } from "next/navigation";
 import { useLocale } from "next-intl";
+import { pickLocaleText } from "@/lib/i18n-text";
 import { useEffect, useState } from "react";
 import { Clock, MapPin, Zap, CheckCircle, CalendarDays, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -57,10 +58,16 @@ function MatchCard({ match, locale, tGroup, tFinished }: { match: PublicMatch; l
   const isLive = match.status === "live";
   const isFinished = match.status === "finished";
 
+  const stageName = match.stage
+    ? (pickLocaleText(match.stage as unknown as Record<string, unknown>, locale, "name") || match.stage.name)
+    : null;
+  const roundName = match.round
+    ? (pickLocaleText(match.round as unknown as Record<string, unknown>, locale, "name") || match.round.shortName || match.round.name)
+    : null;
   const stageMeta = [
-    match.stage?.nameRu ?? match.stage?.name,
+    stageName,
     match.group ? `${tGroup} ${match.group.name}` : null,
-    match.round?.shortName ?? match.round?.name,
+    roundName,
   ].filter(Boolean).join(" · ");
 
   return (

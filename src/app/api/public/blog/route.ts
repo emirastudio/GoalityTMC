@@ -2,27 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { blogPosts } from "@/db/schema";
 import { eq, desc, count, and } from "drizzle-orm";
-
-// Blog uses an explicit `*_en` base instead of bare `<base>` like other
-// tables (titleEn / contentEn / excerptEn). pickLocaleText() expects bare
-// base, so we adapt: try `<base><LocaleSuffix>` first, fall back to *En.
-function pickBlogText(
-  p: Record<string, unknown>,
-  locale: string,
-  base: "title" | "content" | "excerpt" | "seoTitle" | "seoDescription",
-): string {
-  const lc = locale.slice(0, 2).toLowerCase();
-  const suffix =
-    lc === "ru" ? "Ru" :
-    lc === "et" ? "Et" :
-    lc === "es" ? "Es" :
-    "En";
-  const v = p[`${base}${suffix}`];
-  if (typeof v === "string" && v.trim()) return v;
-  // Fallback chain: any locale → English (canonical base for blog).
-  const en = p[`${base}En`];
-  return typeof en === "string" ? en : "";
-}
+import { pickLocaleTextEn } from "@/lib/i18n-text";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -53,8 +33,8 @@ export async function GET(req: NextRequest) {
   const mapped = posts.map((p) => ({
     id: p.id,
     slug: p.slug,
-    title: pickBlogText(p as unknown as Record<string, unknown>, locale, "title"),
-    excerpt: pickBlogText(p as unknown as Record<string, unknown>, locale, "excerpt"),
+    title: pickLocaleTextEn(p as unknown as Record<string, unknown>, locale, "title"),
+    excerpt: pickLocaleTextEn(p as unknown as Record<string, unknown>, locale, "excerpt"),
     coverImageUrl: p.coverImageUrl,
     category: p.category,
     tags: p.tags,

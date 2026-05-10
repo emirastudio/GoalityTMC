@@ -4,7 +4,8 @@ import { useTournamentPublic } from "@/lib/tournament-public-context";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Trophy, TrendingUp, Loader2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { pickLocaleText } from "@/lib/i18n-text";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -175,6 +176,7 @@ export default function DivisionStandingsPage() {
   const params = useParams<{ classId: string }>();
   const classId = params.classId ?? "";
   const t = useTranslations("tournament");
+  const locale = useLocale();
 
   const [stages, setStages] = useState<Stage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,7 +245,7 @@ export default function DivisionStandingsPage() {
                 ? { background: "var(--cat-accent)", color: "#0A0E14", boxShadow: "0 0 10px var(--cat-accent-glow)" }
                 : { color: "var(--cat-text-secondary)" }}
             >
-              {s.nameRu ?? s.name}
+              {pickLocaleText(s as unknown as Record<string, unknown>, locale, "name") || s.name}
             </button>
           ))}
         </div>

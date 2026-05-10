@@ -3,6 +3,7 @@
 import { useTournamentPublic } from "@/lib/tournament-public-context";
 import { useTranslations, useLocale } from "next-intl";
 import React, { useEffect, useState, useRef } from "react";
+import { pickLocaleText } from "@/lib/i18n-text";
 import {
   Trophy, TrendingUp, Loader2, ArrowUpRight, Star, Shield, Radio,
   Crown, Zap, Clock, GitBranch, MapPin,
@@ -281,9 +282,7 @@ function ZoneLegend({ zones, locale }: { zones: Zone[]; locale: string }) {
       style={{ borderColor: "var(--cat-card-border)", background: "rgba(0,0,0,0.02)" }}>
       {zones.map(zone => {
         const style = getZoneStyle(zone.targetName, zone.targetType);
-        const name  = locale === "ru" ? (zone.targetNameRu ?? zone.targetName)
-          : locale === "et" ? (zone.targetNameEt ?? zone.targetName)
-          : zone.targetName;
+        const name = pickLocaleText(zone as unknown as Record<string, unknown>, locale, "targetName") || zone.targetName;
         return (
           <div key={`${zone.fromRank}-${zone.toRank}`}
             className="flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-full"
@@ -558,8 +557,8 @@ function BracketMatchCard({ match, brand, isFinal, locale, colIndex }: {
 
   const cardH = matchCardH(match);
 
-  const homeSlot = locale === "ru" ? (match?.homeSlotLabelRu ?? match?.homeSlotLabel) : match?.homeSlotLabel;
-  const awaySlot = locale === "ru" ? (match?.awaySlotLabelRu ?? match?.awaySlotLabel) : match?.awaySlotLabel;
+  const homeSlot = match ? (pickLocaleText(match as unknown as Record<string, unknown>, locale, "homeSlotLabel") || match.homeSlotLabel) : null;
+  const awaySlot = match ? (pickLocaleText(match as unknown as Record<string, unknown>, locale, "awaySlotLabel") || match.awaySlotLabel) : null;
 
   const cardBg = isLive
     ? `linear-gradient(135deg, ${brand}12, var(--cat-card-bg))`
@@ -777,11 +776,7 @@ function BracketGrid({ rounds, brand, locale, t }: {
           const gold     = "#F59E0B";
           const hdrColor = isFinal ? gold : brand;
           const dateStr  = roundDate(round.matches, locale);
-          const label    = locale === "ru"
-            ? (round.nameRu ?? round.name)
-            : locale === "et"
-            ? (round.nameEt ?? round.name)
-            : round.name;
+          const label = pickLocaleText(round as unknown as Record<string, unknown>, locale, "name") || round.name;
 
           return (
             <motion.div
@@ -960,11 +955,7 @@ function MobileBracket({ rounds, brand, locale }: { rounds: BracketRound[]; bran
       {[...rounds].reverse().map(round => {
         const isFinal = round.shortName?.toUpperCase() === "F" || round.name.toLowerCase() === "final";
         const isOpen  = openRound === round.id;
-        const label   = locale === "ru"
-          ? (round.nameRu ?? round.shortName ?? round.name)
-          : locale === "et"
-          ? (round.nameEt ?? round.shortName ?? round.name)
-          : round.shortName ?? round.name;
+        const label = pickLocaleText(round as unknown as Record<string, unknown>, locale, "name") || round.shortName || round.name;
         const date = roundDate(round.matches, locale);
 
         return (
@@ -1099,9 +1090,7 @@ function MobileBracket({ rounds, brand, locale }: { rounds: BracketRound[]; bran
                             brand={brand}
                             isTop
                             slotLabel={
-                              locale === "ru"
-                                ? (match.homeSlotLabelRu ?? match.homeSlotLabel)
-                                : match.homeSlotLabel
+                              pickLocaleText(match as unknown as Record<string, unknown>, locale, "homeSlotLabel") || match.homeSlotLabel
                             }
                           />
                           <BracketTeamRow
@@ -1113,9 +1102,7 @@ function MobileBracket({ rounds, brand, locale }: { rounds: BracketRound[]; bran
                             brand={brand}
                             isTop={false}
                             slotLabel={
-                              locale === "ru"
-                                ? (match.awaySlotLabelRu ?? match.awaySlotLabel)
-                                : match.awaySlotLabel
+                              pickLocaleText(match as unknown as Record<string, unknown>, locale, "awaySlotLabel") || match.awaySlotLabel
                             }
                           />
 
@@ -1358,7 +1345,7 @@ export default function StandingsPage() {
   const labelCount: Record<string, number> = {};
   const labelIdx:   Record<string, number> = {};
   bracketStages.forEach(bs => {
-    const raw = locale === "ru" ? (bs.stage.nameRu ?? bs.stage.name) : bs.stage.name;
+    const raw = pickLocaleText(bs.stage as unknown as Record<string, unknown>, locale, "name") || bs.stage.name;
     labelCount[raw] = (labelCount[raw] ?? 0) + 1;
   });
   const subTabs: { key: SectionKey; label: string; icon?: string; color?: string }[] = [
@@ -1521,7 +1508,7 @@ export default function StandingsPage() {
                 <div className="flex flex-wrap gap-1 p-1 rounded-xl w-fit"
                   style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-card-border)" }}>
                   {divisionStages.map(s => {
-                    const sLabel = locale === "ru" ? (s.nameRu ?? s.name) : locale === "et" ? (s.nameEt ?? s.name) : s.name;
+                    const sLabel = pickLocaleText(s as unknown as Record<string, unknown>, locale, "name") || s.name;
                     return (
                       <div key={s.id} className="px-3 py-1.5 rounded-lg text-[12px] font-medium"
                         style={{ color: "var(--cat-text-secondary)" }}>

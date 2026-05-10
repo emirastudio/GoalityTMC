@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
       name: body.name,
       nameRu: body.nameRu,
       nameEt: body.nameEt,
+      nameEs: body.nameEs ?? null,
       checkIn: body.checkIn ? new Date(body.checkIn) : null,
       checkOut: body.checkOut ? new Date(body.checkOut) : null,
       pricePerPlayer: String(body.pricePerPlayer),
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
       mealNote: body.mealNote,
       mealNoteRu: body.mealNoteRu,
       mealNoteEt: body.mealNoteEt,
+      mealNoteEs: body.mealNoteEs ?? null,
       sortOrder: body.sortOrder ?? 0,
     })
     .returning();

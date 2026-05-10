@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback, type ChangeEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useAdminFetch } from "@/lib/tournament-context";
-import { LangTabs, type Lang } from "@/components/admin/lang-tabs";
 import { Card, CardTitle } from "@/components/ui/card";
+import { MultilangInput } from "@/components/ui/multilang-input";
+import { multilangFromRow, multilangToPayload, pickLocaleText, type MultilangValue } from "@/lib/i18n-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,7 +26,9 @@ import {
 interface AccommodationOption {
   id: number;
   name: string;
-  nameRu: string;
+  nameRu: string | null;
+  nameEt: string | null;
+  nameEs: string | null;
   checkIn: string;
   checkOut: string;
   pricePerPlayer: string;
@@ -34,14 +37,20 @@ interface AccommodationOption {
   includedMeals: number;
   mealNote: string | null;
   mealNoteRu: string | null;
+  mealNoteEt: string | null;
+  mealNoteEs: string | null;
 }
 
 interface MealOption {
   id: number;
   name: string;
-  nameRu: string;
+  nameRu: string | null;
+  nameEt: string | null;
+  nameEs: string | null;
   description: string | null;
   descriptionRu: string | null;
+  descriptionEt: string | null;
+  descriptionEs: string | null;
   pricePerPerson: string;
   perDay: boolean;
 }
@@ -49,16 +58,22 @@ interface MealOption {
 interface TransferOption {
   id: number;
   name: string;
-  nameRu: string;
+  nameRu: string | null;
+  nameEt: string | null;
+  nameEs: string | null;
   description: string | null;
   descriptionRu: string | null;
+  descriptionEt: string | null;
+  descriptionEs: string | null;
   pricePerPerson: string;
 }
 
 interface RegistrationFee {
   id?: number;
   name: string;
-  nameRu: string;
+  nameRu: string | null;
+  nameEt: string | null;
+  nameEs: string | null;
   price: string;
   isRequired: boolean;
 }
@@ -162,6 +177,7 @@ function DeleteConfirm({
 
 function AccommodationTab() {
   const t = useTranslations("orgAdmin.svc");
+  const locale = useLocale();
   const adminFetch = useAdminFetch();
   const [items, setItems] = useState<AccommodationOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,19 +186,25 @@ function AccommodationTab() {
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | "new" | null>(null);
-  const [lang, setLang] = useState<Lang>("en");
 
-  const emptyForm = {
-    name: "",
-    nameRu: "",
+  const emptyForm: {
+    nameML: MultilangValue;
+    checkIn: string;
+    checkOut: string;
+    pricePerPlayer: string;
+    pricePerStaff: string;
+    pricePerAccompanying: string;
+    includedMeals: number;
+    mealNoteML: MultilangValue;
+  } = {
+    nameML: { en: "", ru: "", et: "", es: "" },
     checkIn: "",
     checkOut: "",
     pricePerPlayer: "",
     pricePerStaff: "",
     pricePerAccompanying: "",
     includedMeals: 0,
-    mealNote: "",
-    mealNoteRu: "",
+    mealNoteML: { en: "", ru: "", et: "", es: "" },
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -206,16 +228,14 @@ function AccommodationTab() {
   const openNew = () => { setForm(emptyForm); setEditId("new"); };
   const openEdit = (item: AccommodationOption) => {
     setForm({
-      name: item.name,
-      nameRu: item.nameRu,
+      nameML: multilangFromRow(item as unknown as Record<string, unknown>, "name"),
       checkIn: toDateInput(item.checkIn),
       checkOut: toDateInput(item.checkOut),
       pricePerPlayer: item.pricePerPlayer,
       pricePerStaff: item.pricePerStaff,
       pricePerAccompanying: item.pricePerAccompanying,
       includedMeals: item.includedMeals,
-      mealNote: item.mealNote ?? "",
-      mealNoteRu: item.mealNoteRu ?? "",
+      mealNoteML: multilangFromRow(item as unknown as Record<string, unknown>, "mealNote"),
     });
     setEditId(item.id);
   };
@@ -229,10 +249,18 @@ function AccommodationTab() {
       const url = isNew
         ? "/api/admin/services/accommodation"
         : `/api/admin/services/accommodation/${editId}`;
+      // Раскладываем multilang в плоские поля name/nameRu/nameEt/nameEs
+      // плюс mealNote*-варианты — на сервере их подхватывают POST + PATCH.
+      const { nameML, mealNoteML, ...rest } = form;
+      const body = {
+        ...rest,
+        ...multilangToPayload("name", nameML),
+        ...multilangToPayload("mealNote", mealNoteML),
+      };
       const res = await adminFetch(url, {
         method: isNew ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Save failed");
       await load();
@@ -291,21 +319,19 @@ function AccommodationTab() {
 
       {editId !== null && (
         <div className="p-6 border-b th-border th-bg/40">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold th-text">
-              {editId === "new" ? t("addOption") : t("editOption")}
-            </p>
-            <LangTabs lang={lang} onChange={setLang} />
-          </div>
+          <p className="text-sm font-semibold th-text mb-4">
+            {editId === "new" ? t("addOption") : t("editOption")}
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lang === "en" ? (
-              <Input id="acc-name" label={t("name")} value={form.name}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setField("name", e.target.value)} />
-            ) : (
-              <Input id="acc-nameRu" label={t("name")} value={form.nameRu}
-                placeholder={t("leaveEmpty")}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setField("nameRu", e.target.value)} />
-            )}
+            {/* Имя в 4 локали через единый MultilangInput с табами EN/RU/ET/ES. */}
+            <div className="md:col-span-2 lg:col-span-3">
+              <label className="block text-sm font-medium th-text mb-1">{t("name")}</label>
+              <MultilangInput
+                value={form.nameML}
+                onChange={(nameML) => setForm((f) => ({ ...f, nameML }))}
+                required
+              />
+            </div>
             <Input id="acc-checkIn" label={t("checkIn")} type="date" value={form.checkIn}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setField("checkIn", e.target.value)} />
             <Input id="acc-checkOut" label={t("checkOut")} type="date" value={form.checkOut}
@@ -329,14 +355,13 @@ function AccommodationTab() {
                 className="w-full rounded-lg border th-border px-3 py-2 text-sm focus:outline-none focus:border-navy"
               />
             </div>
-            {lang === "en" ? (
-              <Input id="acc-mealNote" label={t("mealNote")} value={form.mealNote}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setField("mealNote", e.target.value)} />
-            ) : (
-              <Input id="acc-mealNoteRu" label={t("mealNote")} value={form.mealNoteRu}
-                placeholder={t("leaveEmpty")}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setField("mealNoteRu", e.target.value)} />
-            )}
+            <div className="md:col-span-2 lg:col-span-3">
+              <label className="block text-sm font-medium th-text mb-1">{t("mealNote")}</label>
+              <MultilangInput
+                value={form.mealNoteML}
+                onChange={(mealNoteML) => setForm((f) => ({ ...f, mealNoteML }))}
+              />
+            </div>
           </div>
           <div className="mt-4 flex items-center gap-2">
             <Button onClick={saveForm} disabled={saving}>
@@ -355,7 +380,7 @@ function AccommodationTab() {
           <table className="w-full">
             <thead>
               <tr className="border-b th-border text-left">
-                {[t("name"), t("nameRu"), t("checkIn"), t("checkOut"), t("pricePlayer"), t("priceStaff"), t("priceAccompanying"), t("mealsCol"), ""].map((h, i) => (
+                {[t("name"), t("checkIn"), t("checkOut"), t("pricePlayer"), t("priceStaff"), t("priceAccompanying"), t("mealsCol"), ""].map((h, i) => (
                   <th key={i} className="px-4 py-3 text-xs font-medium th-text-2 uppercase whitespace-nowrap">
                     {h}
                   </th>
@@ -365,8 +390,9 @@ function AccommodationTab() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b th-border last:border-0 hover:th-bg/50">
-                  <td className="px-4 py-3 text-sm th-text font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-sm th-text-2">{item.nameRu}</td>
+                  <td className="px-4 py-3 text-sm th-text font-medium">
+                    {pickLocaleText(item as unknown as Record<string, unknown>, locale, "name") || item.name}
+                  </td>
                   <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatDate(item.checkIn)}</td>
                   <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatDate(item.checkOut)}</td>
                   <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatPrice(item.pricePerPlayer)}</td>
@@ -412,6 +438,7 @@ function AccommodationTab() {
 
 function MealsTab() {
   const t = useTranslations("orgAdmin.svc");
+  const locale = useLocale();
   const adminFetch = useAdminFetch();
   const [items, setItems] = useState<MealOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -420,9 +447,18 @@ function MealsTab() {
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | "new" | null>(null);
-  const [lang, setLang] = useState<Lang>("en");
 
-  const emptyForm = { name: "", nameRu: "", description: "", descriptionRu: "", pricePerPerson: "", perDay: false };
+  const emptyForm: {
+    nameML: MultilangValue;
+    descriptionML: MultilangValue;
+    pricePerPerson: string;
+    perDay: boolean;
+  } = {
+    nameML: { en: "", ru: "", et: "", es: "" },
+    descriptionML: { en: "", ru: "", et: "", es: "" },
+    pricePerPerson: "",
+    perDay: false,
+  };
   const [form, setForm] = useState(emptyForm);
 
   const load = useCallback(async () => {
@@ -443,8 +479,12 @@ function MealsTab() {
 
   const openNew = () => { setForm(emptyForm); setEditId("new"); };
   const openEdit = (item: MealOption) => {
-    setForm({ name: item.name, nameRu: item.nameRu, description: item.description ?? "",
-      descriptionRu: item.descriptionRu ?? "", pricePerPerson: item.pricePerPerson, perDay: item.perDay });
+    setForm({
+      nameML: multilangFromRow(item as unknown as Record<string, unknown>, "name"),
+      descriptionML: multilangFromRow(item as unknown as Record<string, unknown>, "description"),
+      pricePerPerson: item.pricePerPerson,
+      perDay: item.perDay,
+    });
     setEditId(item.id);
   };
   const cancelEdit = () => { setEditId(null); setForm(emptyForm); };
@@ -455,10 +495,16 @@ function MealsTab() {
     try {
       const isNew = editId === "new";
       const url = isNew ? "/api/admin/services/meals" : `/api/admin/services/meals/${editId}`;
+      const { nameML, descriptionML, ...rest } = form;
+      const body = {
+        ...rest,
+        ...multilangToPayload("name", nameML),
+        ...multilangToPayload("description", descriptionML),
+      };
       const res = await adminFetch(url, {
         method: isNew ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Save failed");
       await load();
@@ -509,23 +555,25 @@ function MealsTab() {
 
       {editId !== null && (
         <div className="p-6 border-b th-border th-bg/40">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold th-text">
-              {editId === "new" ? t("addOption") : t("editOption")}
-            </p>
-            <LangTabs lang={lang} onChange={setLang} />
-          </div>
+          <p className="text-sm font-semibold th-text mb-4">
+            {editId === "new" ? t("addOption") : t("editOption")}
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {lang === "en" ? (
-              <Input id="meal-name" label={t("name")} value={form.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("name", e.target.value)} />
-            ) : (
-              <Input id="meal-nameRu" label={t("name")} value={form.nameRu} placeholder={t("leaveEmpty")} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("nameRu", e.target.value)} />
-            )}
-            {lang === "en" ? (
-              <Input id="meal-desc" label={t("description")} value={form.description} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("description", e.target.value)} />
-            ) : (
-              <Input id="meal-descRu" label={t("description")} value={form.descriptionRu} placeholder={t("leaveEmpty")} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("descriptionRu", e.target.value)} />
-            )}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium th-text mb-1">{t("name")}</label>
+              <MultilangInput
+                value={form.nameML}
+                onChange={(nameML) => setForm((f) => ({ ...f, nameML }))}
+                required
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium th-text mb-1">{t("description")}</label>
+              <MultilangInput
+                value={form.descriptionML}
+                onChange={(descriptionML) => setForm((f) => ({ ...f, descriptionML }))}
+              />
+            </div>
             <Input id="meal-price" label={t("pricePerPerson")} type="number" step="0.01"
               value={form.pricePerPerson} onChange={(e) => setField("pricePerPerson", e.target.value)} />
             <div className="flex items-center gap-3 pt-6">
@@ -552,7 +600,7 @@ function MealsTab() {
           <table className="w-full">
             <thead>
               <tr className="border-b th-border text-left">
-                {[t("name"), t("nameRu"), t("pricePerPerson"), t("perDay"), ""].map((h, i) => (
+                {[t("name"), t("pricePerPerson"), t("perDay"), ""].map((h, i) => (
                   <th key={i} className="px-4 py-3 text-xs font-medium th-text-2 uppercase whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -560,8 +608,9 @@ function MealsTab() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b th-border last:border-0 hover:th-bg/50">
-                  <td className="px-4 py-3 text-sm th-text font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-sm th-text-2">{item.nameRu}</td>
+                  <td className="px-4 py-3 text-sm th-text font-medium">
+                    {pickLocaleText(item as unknown as Record<string, unknown>, locale, "name") || item.name}
+                  </td>
                   <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatPrice(item.pricePerPerson)}</td>
                   <td className="px-4 py-3 text-center">
                     {item.perDay ? <Check className="w-4 h-4 text-green-600 mx-auto" /> : <span className="th-text-2/40">—</span>}
@@ -605,6 +654,7 @@ function MealsTab() {
 
 function TransfersTab() {
   const t = useTranslations("orgAdmin.svc");
+  const locale = useLocale();
   const adminFetch = useAdminFetch();
   const [items, setItems] = useState<TransferOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -613,9 +663,16 @@ function TransfersTab() {
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | "new" | null>(null);
-  const [lang, setLang] = useState<Lang>("en");
 
-  const emptyForm = { name: "", nameRu: "", description: "", descriptionRu: "", pricePerPerson: "" };
+  const emptyForm: {
+    nameML: MultilangValue;
+    descriptionML: MultilangValue;
+    pricePerPerson: string;
+  } = {
+    nameML: { en: "", ru: "", et: "", es: "" },
+    descriptionML: { en: "", ru: "", et: "", es: "" },
+    pricePerPerson: "",
+  };
   const [form, setForm] = useState(emptyForm);
 
   const load = useCallback(async () => {
@@ -636,8 +693,11 @@ function TransfersTab() {
 
   const openNew = () => { setForm(emptyForm); setEditId("new"); };
   const openEdit = (item: TransferOption) => {
-    setForm({ name: item.name, nameRu: item.nameRu, description: item.description ?? "",
-      descriptionRu: item.descriptionRu ?? "", pricePerPerson: item.pricePerPerson });
+    setForm({
+      nameML: multilangFromRow(item as unknown as Record<string, unknown>, "name"),
+      descriptionML: multilangFromRow(item as unknown as Record<string, unknown>, "description"),
+      pricePerPerson: item.pricePerPerson,
+    });
     setEditId(item.id);
   };
   const cancelEdit = () => { setEditId(null); setForm(emptyForm); };
@@ -648,10 +708,16 @@ function TransfersTab() {
     try {
       const isNew = editId === "new";
       const url = isNew ? "/api/admin/services/transfers" : `/api/admin/services/transfers/${editId}`;
+      const { nameML, descriptionML, ...rest } = form;
+      const body = {
+        ...rest,
+        ...multilangToPayload("name", nameML),
+        ...multilangToPayload("description", descriptionML),
+      };
       const res = await adminFetch(url, {
         method: isNew ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Save failed");
       await load();
@@ -702,23 +768,25 @@ function TransfersTab() {
 
       {editId !== null && (
         <div className="p-6 border-b th-border th-bg/40">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold th-text">
-              {editId === "new" ? t("addOption") : t("editOption")}
-            </p>
-            <LangTabs lang={lang} onChange={setLang} />
-          </div>
+          <p className="text-sm font-semibold th-text mb-4">
+            {editId === "new" ? t("addOption") : t("editOption")}
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {lang === "en" ? (
-              <Input id="tr-name" label={t("name")} value={form.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("name", e.target.value)} />
-            ) : (
-              <Input id="tr-nameRu" label={t("name")} value={form.nameRu} placeholder={t("leaveEmpty")} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("nameRu", e.target.value)} />
-            )}
-            {lang === "en" ? (
-              <Input id="tr-desc" label={t("description")} value={form.description} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("description", e.target.value)} />
-            ) : (
-              <Input id="tr-descRu" label={t("description")} value={form.descriptionRu} placeholder={t("leaveEmpty")} onChange={(e: ChangeEvent<HTMLInputElement>) => setField("descriptionRu", e.target.value)} />
-            )}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium th-text mb-1">{t("name")}</label>
+              <MultilangInput
+                value={form.nameML}
+                onChange={(nameML) => setForm((f) => ({ ...f, nameML }))}
+                required
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium th-text mb-1">{t("description")}</label>
+              <MultilangInput
+                value={form.descriptionML}
+                onChange={(descriptionML) => setForm((f) => ({ ...f, descriptionML }))}
+              />
+            </div>
             <Input id="tr-price" label={t("pricePerTeam")} type="number" step="0.01"
               value={form.pricePerPerson} onChange={(e) => setField("pricePerPerson", e.target.value)} />
           </div>
@@ -737,7 +805,7 @@ function TransfersTab() {
           <table className="w-full">
             <thead>
               <tr className="border-b th-border text-left">
-                {[t("name"), t("nameRu"), t("description"), t("pricePerTeam"), ""].map((h, i) => (
+                {[t("name"), t("description"), t("pricePerTeam"), ""].map((h, i) => (
                   <th key={i} className="px-4 py-3 text-xs font-medium th-text-2 uppercase whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -745,9 +813,12 @@ function TransfersTab() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b th-border last:border-0 hover:th-bg/50">
-                  <td className="px-4 py-3 text-sm th-text font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-sm th-text-2">{item.nameRu}</td>
-                  <td className="px-4 py-3 text-sm th-text-2 max-w-xs truncate">{item.description ?? "—"}</td>
+                  <td className="px-4 py-3 text-sm th-text font-medium">
+                    {pickLocaleText(item as unknown as Record<string, unknown>, locale, "name") || item.name}
+                  </td>
+                  <td className="px-4 py-3 text-sm th-text-2 max-w-xs truncate">
+                    {pickLocaleText(item as unknown as Record<string, unknown>, locale, "description") || item.description || "—"}
+                  </td>
                   <td className="px-4 py-3 text-sm th-text-2 whitespace-nowrap">{formatPrice(item.pricePerPerson)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">
@@ -793,7 +864,15 @@ function RegistrationTab() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", nameRu: "", price: "", isRequired: true });
+  const [form, setForm] = useState<{
+    nameML: MultilangValue;
+    price: string;
+    isRequired: boolean;
+  }>({
+    nameML: { en: "", ru: "", et: "", es: "" },
+    price: "",
+    isRequired: true,
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -802,7 +881,11 @@ function RegistrationTab() {
       const res = await adminFetch("/api/admin/services/registration");
       if (!res.ok) throw new Error("Failed to load");
       const data: RegistrationFee = await res.json();
-      setForm({ name: data.name ?? "", nameRu: data.nameRu ?? "", price: data.price ?? "", isRequired: data.isRequired ?? true });
+      setForm({
+        nameML: multilangFromRow(data as unknown as Record<string, unknown>, "name"),
+        price: data.price ?? "",
+        isRequired: data.isRequired ?? true,
+      });
     } catch {
       // no existing record is OK
     } finally {
@@ -816,10 +899,15 @@ function RegistrationTab() {
     setSaving(true);
     setError(null);
     try {
+      const { nameML, ...rest } = form;
+      const body = {
+        ...rest,
+        ...multilangToPayload("name", nameML),
+      };
       const res = await adminFetch("/api/admin/services/registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Save failed");
       setSaved(true);
@@ -850,8 +938,14 @@ function RegistrationTab() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-xl">
-        <Input id="reg-name" label={t("name")} value={form.name} onChange={(e) => setField("name", e.target.value)} />
-        <Input id="reg-nameRu" label={t("nameRu")} value={form.nameRu} onChange={(e) => setField("nameRu", e.target.value)} />
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium th-text mb-1">{t("name")}</label>
+          <MultilangInput
+            value={form.nameML}
+            onChange={(nameML) => setForm((f) => ({ ...f, nameML }))}
+            required
+          />
+        </div>
         <Input id="reg-price" label={t("price")} type="number" step="0.01"
           value={form.price} onChange={(e) => setField("price", e.target.value)} />
         <div className="flex items-center gap-3 pt-6">

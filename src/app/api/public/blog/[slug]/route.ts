@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { blogPosts } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { pickLocaleTextEn } from "@/lib/i18n-text";
 
 export async function GET(
   req: NextRequest,
@@ -19,18 +20,19 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const p = post as unknown as Record<string, unknown>;
   return NextResponse.json({
     id: post.id,
     slug: post.slug,
-    title: (locale === "ru" && post.titleRu) ? post.titleRu : post.titleEn,
-    content: (locale === "ru" && post.contentRu) ? post.contentRu : post.contentEn,
-    excerpt: (locale === "ru" && post.excerptRu) ? post.excerptRu : post.excerptEn,
-    coverImageUrl: post.coverImageUrl,
-    category: post.category,
-    tags: post.tags,
-    authorName: post.authorName,
-    publishedAt: post.publishedAt,
-    seoTitle: (locale === "ru" && post.seoTitleRu) ? post.seoTitleRu : post.seoTitleEn,
-    seoDescription: (locale === "ru" && post.seoDescriptionRu) ? post.seoDescriptionRu : post.seoDescriptionEn,
+    title:          pickLocaleTextEn(p, locale, "title"),
+    content:        pickLocaleTextEn(p, locale, "content"),
+    excerpt:        pickLocaleTextEn(p, locale, "excerpt"),
+    coverImageUrl:  post.coverImageUrl,
+    category:       post.category,
+    tags:           post.tags,
+    authorName:     post.authorName,
+    publishedAt:    post.publishedAt,
+    seoTitle:       pickLocaleTextEn(p, locale, "seoTitle"),
+    seoDescription: pickLocaleTextEn(p, locale, "seoDescription"),
   });
 }

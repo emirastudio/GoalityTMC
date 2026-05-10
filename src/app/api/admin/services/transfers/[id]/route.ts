@@ -15,8 +15,11 @@ export async function PATCH(
   const body = await req.json();
 
   const updates: Record<string, unknown> = {};
-  if (body.name !== undefined) updates.name = body.name;
-  if (body.description !== undefined) updates.description = body.description;
+  // Multilang fields — все 4 локали проходят через PATCH одинаково.
+  for (const f of ["name", "nameRu", "nameEt", "nameEs",
+                   "description", "descriptionRu", "descriptionEt", "descriptionEs"]) {
+    if (body[f] !== undefined) updates[f] = body[f];
+  }
   if (body.pricePerPerson !== undefined) updates.pricePerPerson = String(body.pricePerPerson);
   if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
   if (body.isActive !== undefined) updates.isActive = body.isActive;
