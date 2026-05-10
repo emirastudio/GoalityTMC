@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { tournaments, organizations, tournamentDocuments } from "@/db/schema";
+import { tournaments, organizations, tournamentDocuments, tournamentClasses } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 import { unlink } from "fs/promises";
@@ -35,6 +35,24 @@ export async function PATCH(
   if (typeof body.name === "string") patch.name = body.name.trim() || doc.name;
   if (typeof body.nameRu === "string") patch.nameRu = body.nameRu.trim() || null;
   if (typeof body.nameEt === "string") patch.nameEt = body.nameEt.trim() || null;
+  if (typeof body.nameEs === "string") patch.nameEs = body.nameEs.trim() || null;
+  // classId — переместить документ из общего блока в дивизион (или наоборот).
+  // null/0 = «общий», иначе — валидируем принадлежность турниру.
+  if ("classId" in body) {
+    if (body.classId == null || body.classId === 0) {
+      patch.classId = null;
+    } else {
+      const cid = parseInt(String(body.classId), 10);
+      if (Number.isFinite(cid)) {
+        const [cls] = await db
+          .select({ id: tournamentClasses.id })
+          .from(tournamentClasses)
+          .where(and(eq(tournamentClasses.id, cid), eq(tournamentClasses.tournamentId, tid)))
+          .limit(1);
+        if (cls) patch.classId = cid;
+      }
+    }
+  }
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }

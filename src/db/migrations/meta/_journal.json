@@ -260,6 +260,13 @@
       "when": 1775170471661,
       "tag": "0036_es_locale_rollout",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1775170531661,
+      "tag": "0037_regulations_text_and_class_docs",
+      "breakpoints": true
     }
   ]
 }

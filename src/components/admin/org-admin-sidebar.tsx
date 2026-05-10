@@ -10,7 +10,7 @@ import {
   CreditCard, MessageSquare, Settings, LayoutDashboard, Trophy, LogOut,
   ChevronDown, ChevronLeft, Radio, Lock, Zap, Receipt, Plus, Trash2,
   ClipboardList, Hotel, Utensils, Bus, BarChart3, MapPin,
-  Crown, Rocket, Gift, Users2,
+  Crown, Rocket, Gift, Users2, BookOpen,
 } from "lucide-react";
 import { DivisionCreateModal } from "@/components/admin/division-create-modal";
 import { PlanLimitModal } from "@/components/ui/plan-gate";
@@ -546,6 +546,17 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
               label={tAdmin("settings")}
               isActive={isActive(`${base}/setup`) || (isActive(`${base}/settings`) && pathname.endsWith("/settings"))}
               color="var(--cat-text-muted)"
+            />
+            {/* Регламент турнира — общий текст + по дивизионам + документы.
+                Plan-gated на documents (Starter+); сама страница покажет
+                gate если у плана нет hasDocuments. */}
+            <NavLink
+              href={`${base}/regulations`}
+              icon={BookOpen}
+              label={tAdmin("regulations")}
+              isActive={isActive(`${base}/regulations`)}
+              color="#06b6d4"
+              bg="rgba(6,182,212,0.10)"
             />
           </nav>
 

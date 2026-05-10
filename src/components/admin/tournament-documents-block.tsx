@@ -45,7 +45,10 @@ export function TournamentDocumentsBlock({
         return;
       }
       if (res.ok) {
-        setDocs(await res.json());
+        const data = await res.json();
+        // API теперь возвращает `{ docs, storage }` (см. migration 0037).
+        // Поддерживаем и старый плоский массив на случай отката.
+        setDocs(Array.isArray(data) ? data : (data.docs ?? []));
         setPlanLocked(false);
       }
     } finally {

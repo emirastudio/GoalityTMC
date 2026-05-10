@@ -207,6 +207,13 @@ export const tournaments = pgTable("tournaments", {
   // Organiser's payment instructions shown to clubs (bank details,
   // external payment link, etc.). Plain text / Markdown-ish.
   paymentInstructions: text("payment_instructions"),
+  // ── Regulations text (organizer-authored, multilang) ────
+  // Общий текст регламента турнира. Пустой = регламент только в
+  // PDF-документах. См. migration 0037.
+  regulationsText:    text("regulations_text"),
+  regulationsTextRu:  text("regulations_text_ru"),
+  regulationsTextEt:  text("regulations_text_et"),
+  regulationsTextEs:  text("regulations_text_es"),
   // ── Deletion flow ───────────────────────────────────────
   deleteRequestedAt: timestamp("delete_requested_at"),   // organizer requested → superadmin decides
   deleteRequestReason: text("delete_request_reason"),
@@ -303,6 +310,12 @@ export const tournamentClasses = pgTable("tournament_classes", {
   scheduleConfig: jsonb("schedule_config").$type<ScheduleConfig | null>(),
   startDate: date("start_date"),
   endDate: date("end_date"),
+  // Регламент дивизиона — отдельный текст для каждой возрастной группы
+  // на 4 локалях. Дополняет общий tournaments.regulationsText.
+  regulationsText:    text("regulations_text"),
+  regulationsTextRu:  text("regulations_text_ru"),
+  regulationsTextEt:  text("regulations_text_et"),
+  regulationsTextEs:  text("regulations_text_es"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -776,11 +789,17 @@ export const tournamentDocuments = pgTable("tournament_documents", {
   tournamentId: integer("tournament_id")
     .references(() => tournaments.id, { onDelete: "cascade" })
     .notNull(),
+  // Привязка к дивизиону. NULL = общий документ турнира; иначе —
+  // документ конкретной возрастной группы. См. migration 0037.
+  classId: integer("class_id"),
   name: text("name").notNull(),
   nameRu: text("name_ru"),
   nameEt: text("name_et"),
+  nameEs: text("name_es"),
   fileUrl: text("file_url").notNull(),
   fileSize: text("file_size"),
+  // MIME сохраняем для безопасной отдачи + сортировки иконок (PDF vs DOC).
+  mimeType: varchar("mime_type", { length: 100 }),
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
 });
 
