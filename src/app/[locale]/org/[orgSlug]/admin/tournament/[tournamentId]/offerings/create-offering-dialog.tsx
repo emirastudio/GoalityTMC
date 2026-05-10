@@ -2,9 +2,34 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { X, Loader2, Check } from "lucide-react";
+import { X, Loader2, Check, Settings2 } from "lucide-react";
 import type { OfferingDTO, OfferingInclusion, OfferingKind, OfferingPriceModel } from "@/lib/offerings/types";
 import { OFFERING_ICONS, OfferingIcon } from "@/lib/offerings/icons";
+import type { ArchetypeKey } from "./archetype-picker";
+
+// Дефолты для архетипов: как только пользователь выбирает «🏨 Проживание»,
+// мы за него подставляем priceModel/icon/inclusion. Дальше он только вбивает
+// название и цену.
+const ARCHETYPE_DEFAULTS: Record<Exclude<ArchetypeKey, "advanced">, {
+  priceModel: OfferingPriceModel;
+  icon: string;
+  inclusion: OfferingInclusion;
+}> = {
+  hotel:       { priceModel: "per_night",  icon: "hotel", inclusion: "optional" },
+  meals_count: { priceModel: "per_meal",   icon: "meal",  inclusion: "optional" },
+  meals_all:   { priceModel: "per_person", icon: "meal",  inclusion: "optional" },
+  fee:         { priceModel: "per_team",   icon: "fee",   inclusion: "required" },
+  transfer:    { priceModel: "per_person", icon: "bus",   inclusion: "optional" },
+  merch:       { priceModel: "per_unit",   icon: "shirt", inclusion: "optional" },
+};
+
+// Доступные подрежимы цены для архетипов где это важно (например, регвзнос
+// может быть «за команду» или «за игрока»). Радиокнопкой внутри упрощённого
+// режима — без всего меню из 9 опций.
+const ARCHETYPE_PRICE_OPTIONS: Partial<Record<ArchetypeKey, OfferingPriceModel[]>> = {
+  fee:      ["per_team", "per_player", "flat"],
+  transfer: ["per_team", "per_person"],
+};
 
 // Semantic grouping for the radio-card picker below. Keeps the order in
 // the dropdown stable for API/older code via PRICE_MODELS (flat sequence)
@@ -42,6 +67,7 @@ export function CreateOfferingDialog({
   initial,
   initialKind,
   prefill,
+  simpleMode,
   onClose,
   onCreated,
 }: {
@@ -53,18 +79,42 @@ export function CreateOfferingDialog({
   initialKind?: OfferingKind;
   /** Pre-fill fields when creating (e.g. from a template card). */
   prefill?: OfferingPrefill;
+  /**
+   * Упрощённый режим — пользователь пришёл из ArchetypePicker. Скрываем
+   * picker priceModel/kind/icon, показываем только title + цену + live-
+   * превью. По кнопке «Все опции» переключается на полную форму.
+   */
+  simpleMode?: ArchetypeKey | null;
   onClose: () => void;
   onCreated: () => void;
 }) {
   const t = useTranslations("offeringsAdmin");
   const isEdit = !!initial;
 
+  // Архетип задействует упрощённый режим только при создании. На edit мы
+  // всегда показываем полную форму, чтобы организатор мог поменять что
+  // угодно (priceModel, icon и т.д.).
+  const archetype = !isEdit && simpleMode && simpleMode !== "advanced" ? simpleMode : null;
+  const archetypeDefaults = archetype ? ARCHETYPE_DEFAULTS[archetype] : null;
+  const archetypePriceOptions = archetype ? ARCHETYPE_PRICE_OPTIONS[archetype] : undefined;
+
+  // «Свернуть» лишние секции при первом открытии. Пользователь может
+  // развернуть полную форму — стейт сохранится.
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const simple = !!archetype && !showAdvanced;
+
   const [kind, setKind] = useState<OfferingKind>(initial?.kind ?? prefill?.kind ?? initialKind ?? "single");
   const [title, setTitle] = useState(initial?.title ?? prefill?.title ?? "");
-  const [icon, setIcon] = useState(initial?.icon ?? prefill?.icon ?? "");
+  const [icon, setIcon] = useState(
+    initial?.icon ?? prefill?.icon ?? archetypeDefaults?.icon ?? ""
+  );
   const [description, setDescription] = useState(initial?.description ?? prefill?.description ?? "");
-  const [inclusion, setInclusion] = useState<OfferingInclusion>(initial?.inclusion ?? prefill?.inclusion ?? "optional");
-  const [priceModel, setPriceModel] = useState<OfferingPriceModel>(initial?.priceModel ?? prefill?.priceModel ?? "per_person");
+  const [inclusion, setInclusion] = useState<OfferingInclusion>(
+    initial?.inclusion ?? prefill?.inclusion ?? archetypeDefaults?.inclusion ?? "optional"
+  );
+  const [priceModel, setPriceModel] = useState<OfferingPriceModel>(
+    initial?.priceModel ?? prefill?.priceModel ?? archetypeDefaults?.priceModel ?? "per_person"
+  );
   const [priceEur, setPriceEur] = useState(
     String(((initial?.priceCents ?? prefill?.priceCents ?? 0)) / 100)
   );
@@ -165,16 +215,27 @@ export function CreateOfferingDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
-          <h3 className="text-base font-bold" style={{ color: "var(--cat-text)" }}>
-            {isEdit ? t("editOfferingTitle") : t("createOfferingTitle")}
-          </h3>
+          <div>
+            <h3 className="text-base font-bold" style={{ color: "var(--cat-text)" }}>
+              {isEdit
+                ? t("editOfferingTitle")
+                : archetype
+                  ? t(`arch_${archetype}_title`)
+                  : t("createOfferingTitle")}
+            </h3>
+            {archetype && !showAdvanced && (
+              <p className="text-[11px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+                {t(`arch_${archetype}_desc`)}
+              </p>
+            )}
+          </div>
           <button onClick={onClose} className="p-1 rounded hover:opacity-70" style={{ color: "var(--cat-text-muted)" }}>
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto" style={{ flex: 1 }}>
-          {!isEdit && (
+          {!isEdit && !simple && (
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--cat-text-muted)" }}>
                 {t("kindLabel")}
@@ -214,6 +275,7 @@ export function CreateOfferingDialog({
             />
           </div>
 
+          {!simple && (
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--cat-text-muted)" }}>{t("iconLabel")}</label>
             <div className="grid grid-cols-8 sm:grid-cols-10 gap-1.5">
@@ -239,7 +301,9 @@ export function CreateOfferingDialog({
               })}
             </div>
           </div>
+          )}
 
+          {!simple && (
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: "var(--cat-text-muted)" }}>{t("descriptionLabel")}</label>
             <textarea
@@ -250,7 +314,9 @@ export function CreateOfferingDialog({
               style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
             />
           </div>
+          )}
 
+          {!simple && (
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--cat-text-muted)" }}>{t("inclusionLabel")}</label>
             <div className="grid grid-cols-3 gap-2">
@@ -274,10 +340,48 @@ export function CreateOfferingDialog({
               })}
             </div>
           </div>
+          )}
+
+          {/* Sub-mode radio для архетипов с выбором (fee, transfer).
+              Узкий 2-3 кнопочный выбор вместо полной сетки из 9 опций. */}
+          {simple && archetypePriceOptions && archetypePriceOptions.length > 1 && (
+            <div>
+              <label
+                className="block text-xs font-medium mb-1.5"
+                style={{ color: "var(--cat-text-muted)" }}
+              >
+                {t(`arch_${archetype}_subLabel`)}
+              </label>
+              <div
+                className="grid gap-2"
+                style={{ gridTemplateColumns: `repeat(${archetypePriceOptions.length}, minmax(0, 1fr))` }}
+              >
+                {archetypePriceOptions.map((m) => {
+                  const active = priceModel === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setPriceModel(m)}
+                      className="px-3 py-2 rounded-lg text-xs font-bold border"
+                      style={{
+                        background: active ? "var(--cat-badge-open-bg)" : "var(--cat-card-bg)",
+                        borderColor: active ? "var(--cat-accent)" : "var(--cat-card-border)",
+                        color: active ? "var(--cat-accent)" : "var(--cat-text-secondary)",
+                      }}
+                    >
+                      {t(`pm_${m}_title`)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Price model picker — grouped radio cards.
               Far clearer than a flat dropdown: the organiser sees the
               pricing math upfront (example line under each title). */}
+          {!simple && (
           <div>
             <label className="block text-xs font-medium mb-2" style={{ color: "var(--cat-text-muted)" }}>
               {t("priceModelLabel")}
@@ -329,6 +433,7 @@ export function CreateOfferingDialog({
               ))}
             </div>
           </div>
+          )}
 
           {/* Base price + optional nights override for per_night. */}
           <div className="flex items-start gap-3 flex-wrap">
@@ -372,6 +477,58 @@ export function CreateOfferingDialog({
               </div>
             )}
           </div>
+
+          {/* Live-превью — показываем как услуга посчитается на типичной
+              команде (17 игроков + 3 тренера). Помогает понять смысл
+              priceModel без чтения документации. */}
+          <LivePreview
+            priceModel={priceModel}
+            priceEur={priceEur}
+            nightsOverride={nightsCount}
+            t={t}
+          />
+
+          {/* Компактный inclusion-toggle в упрощённом режиме. Полный
+              picker всё равно доступен через «Все опции». */}
+          {simple && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+                {t("inclusionLabel")}:
+              </span>
+              {INCLUSIONS.map((i) => {
+                const active = inclusion === i;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setInclusion(i)}
+                    className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                    style={{
+                      background: active ? "var(--cat-badge-open-bg)" : "transparent",
+                      borderColor: active ? "var(--cat-accent)" : "var(--cat-card-border)",
+                      color: active ? "var(--cat-accent)" : "var(--cat-text-muted)",
+                    }}
+                  >
+                    {t(`incl_${i}`)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* «Все опции» — переключение в полный режим. Видна только в
+              упрощённом режиме, исчезает после раскрытия. */}
+          {!isEdit && archetype && !showAdvanced && (
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(true)}
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold opacity-70 hover:opacity-100"
+              style={{ color: "var(--cat-text-muted)" }}
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+              {t("showAllOptions")}
+            </button>
+          )}
 
           {kind === "package" && (
             <div className="space-y-3 p-3 rounded-xl border"
@@ -452,6 +609,10 @@ export function CreateOfferingDialog({
           )}
         </form>
 
+        {/* Hidden in simple mode: kind/icon/description/inclusion + price-model picker
+            stay accessible by clicking «Все опции». Their state and submit logic are
+            unchanged — we only conditionally hide their UI. */}
+
         <div className="flex gap-2 px-5 py-3 border-t" style={{ borderColor: "var(--cat-card-border)" }}>
           <button
             onClick={onClose}
@@ -472,6 +633,122 @@ export function CreateOfferingDialog({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Live-превью цены ─────────────────────────────────────────────────────
+// Показывает «как это посчитается» на типичной команде. Цифры синтетические,
+// но дают организатору мгновенный feedback что он выбрал правильный
+// priceModel. В калькулятор не лезем — формулы здесь дублированы для
+// простоты, но соответствуют src/lib/offerings/calculator.ts:quantityFor().
+const PREVIEW = {
+  players: 17,
+  staff: 3,
+  accompanying: 5,
+  nights: 3,
+  meals: 6,
+};
+
+function LivePreview({
+  priceModel,
+  priceEur,
+  nightsOverride,
+  t,
+}: {
+  priceModel: OfferingPriceModel;
+  priceEur: string;
+  nightsOverride: string;
+  t: ReturnType<typeof useTranslations<string>>;
+}) {
+  const price = parseFloat(priceEur || "0") || 0;
+  const people = PREVIEW.players + PREVIEW.staff;
+  const nights =
+    nightsOverride.trim() !== ""
+      ? Math.max(0, parseInt(nightsOverride, 10) || 0)
+      : PREVIEW.nights;
+
+  let qty = 0;
+  let qtyLabel = "";
+  let showTotal = true;
+
+  switch (priceModel) {
+    case "flat":
+      qty = 1;
+      qtyLabel = "—";
+      break;
+    case "per_team":
+      qty = 1;
+      qtyLabel = t("preview_team");
+      break;
+    case "per_unit":
+      qtyLabel = t("preview_unit");
+      showTotal = false;
+      break;
+    case "per_person":
+      qty = people;
+      qtyLabel = t("preview_people", { n: people });
+      break;
+    case "per_player":
+      qty = PREVIEW.players;
+      qtyLabel = t("preview_players", { n: PREVIEW.players });
+      break;
+    case "per_staff":
+      qty = PREVIEW.staff;
+      qtyLabel = t("preview_staff", { n: PREVIEW.staff });
+      break;
+    case "per_accompanying":
+      qty = PREVIEW.accompanying;
+      qtyLabel = t("preview_accompanying", { n: PREVIEW.accompanying });
+      break;
+    case "per_night":
+      qty = people * nights;
+      qtyLabel = t("preview_nights", { n: people, nights });
+      break;
+    case "per_meal":
+      qty = people * PREVIEW.meals;
+      qtyLabel = t("preview_meals", { n: people, meals: PREVIEW.meals });
+      break;
+  }
+
+  const total = price * qty;
+
+  return (
+    <div
+      className="rounded-xl border px-3 py-2.5"
+      style={{
+        background: "var(--cat-tag-bg)",
+        borderColor: "var(--cat-card-border)",
+      }}
+    >
+      <div
+        className="text-[10px] font-bold uppercase tracking-wider mb-1"
+        style={{ color: "var(--cat-text-muted)" }}
+      >
+        {t("previewLabel")}
+      </div>
+      <div className="flex items-baseline gap-2 flex-wrap">
+        <span className="text-sm font-mono" style={{ color: "var(--cat-text-secondary)" }}>
+          €{price.toFixed(2)} {qtyLabel && <span className="opacity-60">{qtyLabel}</span>}
+        </span>
+        {showTotal && (
+          <>
+            <span style={{ color: "var(--cat-text-muted)" }}>=</span>
+            <span
+              className="text-base font-bold font-mono"
+              style={{ color: "var(--cat-accent)" }}
+            >
+              €{total.toFixed(2)}
+            </span>
+          </>
+        )}
+      </div>
+      <p
+        className="text-[10px] mt-1"
+        style={{ color: "var(--cat-text-muted)" }}
+      >
+        {t("previewHint")}
+      </p>
     </div>
   );
 }

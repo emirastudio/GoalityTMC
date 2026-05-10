@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Loader2, Plus, Trash2, Edit3, Archive, Package, Copy, Sparkles, RotateCcw } from "lucide-react";
 import { CreateOfferingDialog, type OfferingPrefill } from "./create-offering-dialog";
+import { ArchetypePicker, type ArchetypeKey } from "./archetype-picker";
 import { TemplateEditDialog } from "./template-edit-dialog";
 import { formatMoney, type OfferingDTO, type OfferingInclusion, type OfferingKind, type OfferingPriceModel } from "@/lib/offerings/types";
 import { OfferingIcon } from "@/lib/offerings/icons";
@@ -58,6 +59,10 @@ export function OfferingsCatalogTab({
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [createPrefill, setCreatePrefill] = useState<OfferingPrefill | null>(null);
+  // Архетип, выбранный в ArchetypePicker. Используется CreateOfferingDialog
+  // для упрощённого режима (скрытый picker priceModel + live-превью).
+  const [createArchetype, setCreateArchetype] = useState<ArchetypeKey | null>(null);
+  const [archetypePickerOpen, setArchetypePickerOpen] = useState(false);
   const [editing, setEditing] = useState<OfferingDTO | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<OfferingTemplate | "new" | null>(null);
   const [templatesBusy, setTemplatesBusy] = useState(false);
@@ -107,6 +112,15 @@ export function OfferingsCatalogTab({
       priceCents: tmpl.defaultPriceCents,
       nightsCount: tmpl.nightsCount,
     });
+    setCreateOpen(true);
+  }
+
+  // Шаг 1 → шаг 2: пользователь выбрал архетип на ArchetypePicker. Закрываем
+  // picker, открываем диалог создания в упрощённом режиме. Если выбрано
+  // «advanced» — открываем полный диалог как раньше.
+  function pickArchetype(key: ArchetypeKey) {
+    setArchetypePickerOpen(false);
+    setCreateArchetype(key);
     setCreateOpen(true);
   }
 
@@ -193,7 +207,7 @@ export function OfferingsCatalogTab({
           {t("servicesCount", { n: visible.length })}
         </p>
         <button
-          onClick={() => setCreateOpen(true)}
+          onClick={() => setArchetypePickerOpen(true)}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-95"
           style={{
             background: "var(--cat-accent)",
@@ -206,7 +220,7 @@ export function OfferingsCatalogTab({
       </div>
 
       {visible.length === 0 ? (
-        <EmptyCatalog t={t} onCreate={() => setCreateOpen(true)} />
+        <EmptyCatalog t={t} onCreate={() => setArchetypePickerOpen(true)} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {visible.map((o) => (
@@ -251,6 +265,12 @@ export function OfferingsCatalogTab({
         t={t}
       />
 
+      {archetypePickerOpen && (
+        <ArchetypePicker
+          onPick={pickArchetype}
+          onClose={() => setArchetypePickerOpen(false)}
+        />
+      )}
       {createOpen && (
         <CreateOfferingDialog
           orgSlug={orgSlug}
@@ -258,8 +278,9 @@ export function OfferingsCatalogTab({
           allOfferings={offerings}
           initial={null}
           prefill={createPrefill ?? undefined}
-          onClose={() => { setCreateOpen(false); setCreatePrefill(null); }}
-          onCreated={() => { setCreateOpen(false); setCreatePrefill(null); load(); onChange(); }}
+          simpleMode={createArchetype}
+          onClose={() => { setCreateOpen(false); setCreatePrefill(null); setCreateArchetype(null); }}
+          onCreated={() => { setCreateOpen(false); setCreatePrefill(null); setCreateArchetype(null); load(); onChange(); }}
         />
       )}
       {editing && (
