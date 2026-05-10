@@ -835,6 +835,7 @@ export const accommodationOptions = pgTable("accommodation_options", {
   name: text("name").notNull(),
   nameRu: text("name_ru"),
   nameEt: text("name_et"),
+  nameEs: text("name_es"),
   checkIn: timestamp("check_in"),
   checkOut: timestamp("check_out"),
   pricePerPlayer: decimal("price_per_player", { precision: 10, scale: 2 }).notNull(),
@@ -844,6 +845,7 @@ export const accommodationOptions = pgTable("accommodation_options", {
   mealNote: text("meal_note"),
   mealNoteRu: text("meal_note_ru"),
   mealNoteEt: text("meal_note_et"),
+  mealNoteEs: text("meal_note_es"),
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -857,9 +859,11 @@ export const extraMealOptions = pgTable("extra_meal_options", {
   name: text("name").notNull(),
   nameRu: text("name_ru"),
   nameEt: text("name_et"),
+  nameEs: text("name_es"),
   description: text("description"),
   descriptionRu: text("description_ru"),
   descriptionEt: text("description_et"),
+  descriptionEs: text("description_es"),
   pricePerPerson: decimal("price_per_person", { precision: 10, scale: 2 }).notNull(),
   perDay: boolean("per_day").default(false).notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),
@@ -875,9 +879,11 @@ export const transferOptions = pgTable("transfer_options", {
   name: text("name").notNull(),
   nameRu: text("name_ru"),
   nameEt: text("name_et"),
+  nameEs: text("name_es"),
   description: text("description"),
   descriptionRu: text("description_ru"),
   descriptionEt: text("description_et"),
+  descriptionEs: text("description_es"),
   pricePerPerson: decimal("price_per_person", { precision: 10, scale: 2 }).notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -892,6 +898,7 @@ export const registrationFees = pgTable("registration_fees", {
   name: text("name").default("Registration fee").notNull(),
   nameRu: text("name_ru"),
   nameEt: text("name_et"),
+  nameEs: text("name_es"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   isRequired: boolean("is_required").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -1108,6 +1115,7 @@ export const tournamentStages = pgTable("tournament_stages", {
   name: varchar("name", { length: 100 }).notNull(),
   nameRu: varchar("name_ru", { length: 100 }),
   nameEt: varchar("name_et", { length: 100 }),
+  nameEs: varchar("name_es", { length: 100 }),
   type: stageTypeEnum("type").notNull(),
   order: integer("order").notNull(),
   status: stageStatusEnum("status").default("pending").notNull(),
@@ -1189,6 +1197,7 @@ export const matchRounds = pgTable("match_rounds", {
   name: varchar("name", { length: 50 }).notNull(),      // "Финал"
   nameRu: varchar("name_ru", { length: 50 }),
   nameEt: varchar("name_et", { length: 50 }),
+  nameEs: varchar("name_es", { length: 50 }),
   shortName: varchar("short_name", { length: 10 }),     // "F", "SF", "QF", "R16"
   order: integer("order").notNull(),                     // 1=финал, 2=полуфинал...
   matchCount: integer("match_count").default(1).notNull(), // 1, 2, 4, 8, 16
@@ -1589,10 +1598,16 @@ export const blogPosts = pgTable(
 
     titleEn: text("title_en").notNull(),
     titleRu: text("title_ru"),
+    titleEt: text("title_et"),
+    titleEs: text("title_es"),
     contentEn: text("content_en").notNull(),
     contentRu: text("content_ru"),
+    contentEt: text("content_et"),
+    contentEs: text("content_es"),
     excerptEn: text("excerpt_en"),
     excerptRu: text("excerpt_ru"),
+    excerptEt: text("excerpt_et"),
+    excerptEs: text("excerpt_es"),
 
     coverImageUrl: text("cover_image_url"),
     category: varchar("category", { length: 100 }),
@@ -1600,8 +1615,12 @@ export const blogPosts = pgTable(
 
     seoTitleEn: text("seo_title_en"),
     seoTitleRu: text("seo_title_ru"),
+    seoTitleEt: text("seo_title_et"),
+    seoTitleEs: text("seo_title_es"),
     seoDescriptionEn: text("seo_description_en"),
     seoDescriptionRu: text("seo_description_ru"),
+    seoDescriptionEt: text("seo_description_et"),
+    seoDescriptionEs: text("seo_description_es"),
 
     authorName: varchar("author_name", { length: 255 }).default("Goality Team"),
     publishedAt: timestamp("published_at"),

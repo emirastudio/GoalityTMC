@@ -11,6 +11,8 @@ type BlogPost = {
   slug: string;
   titleEn: string;
   titleRu: string | null;
+  titleEt: string | null;
+  titleEs: string | null;
   status: "draft" | "published" | "archived";
   category: string | null;
   authorName: string | null;
@@ -60,6 +62,8 @@ export default function AdminBlogPage() {
       return (
         p.titleEn.toLowerCase().includes(q) ||
         (p.titleRu ?? "").toLowerCase().includes(q) ||
+        (p.titleEt ?? "").toLowerCase().includes(q) ||
+        (p.titleEs ?? "").toLowerCase().includes(q) ||
         p.slug.toLowerCase().includes(q) ||
         (p.category ?? "").toLowerCase().includes(q)
       );

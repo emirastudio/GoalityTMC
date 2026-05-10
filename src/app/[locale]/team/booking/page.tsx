@@ -9,6 +9,7 @@ import { useTeam } from "@/lib/team-context";
 import { Clock, CheckCircle, ChevronRight, Package as PackageIcon, Gift } from "lucide-react";
 import { OfferingIcon } from "@/lib/offerings/icons";
 import { formatMoney, type DealBreakdown } from "@/lib/offerings/types";
+import { pickLocaleText } from "@/lib/i18n-text";
 import { AccommodationQuestCard } from "@/app/[locale]/team/overview/page";
 
 // DTO для /api/teams/[teamId]/accommodation (demand-поля + computed counts).
@@ -1294,6 +1295,7 @@ type V3Data = Extract<BookingData, { v3: true; available: true }>;
 
 function V3BookingView({
   data,
+  locale,
   t,
 }: {
   data: V3Data;
@@ -1346,8 +1348,8 @@ function V3BookingView({
         <main className="flex-1 min-w-0 space-y-5">
           {/* Step 1: package */}
           {primary && (
-            <V3StepCard stepNum={steps.find(s => s.label === t("v3Package"))?.num ?? 1} title={primary.offering.title} badge="PKG" subtotalCents={primary.totalCents} currency={data.currency}>
-              <V3DealLines deal={primary} />
+            <V3StepCard stepNum={steps.find(s => s.label === t("v3Package"))?.num ?? 1} title={pickLocaleText(primary.offering as unknown as Record<string, unknown>, locale, "title") || primary.offering.title} badge="PKG" subtotalCents={primary.totalCents} currency={data.currency}>
+              <V3DealLines deal={primary} locale={locale} />
             </V3StepCard>
           )}
 
@@ -1363,9 +1365,9 @@ function V3BookingView({
                         style={{ background: "var(--cat-badge-open-bg)", color: "var(--cat-accent)" }}>
                         <OfferingIcon iconKey={d.offering.icon} size={16} />
                       </div>
-                      <p className="text-base font-bold th-text truncate">{d.offering.title}</p>
+                      <p className="text-base font-bold th-text truncate">{pickLocaleText(d.offering as unknown as Record<string, unknown>, locale, "title") || d.offering.title}</p>
                     </div>
-                    <V3DealLines deal={d} />
+                    <V3DealLines deal={d} locale={locale} />
                   </div>
                 ))}
               </div>
@@ -1374,7 +1376,7 @@ function V3BookingView({
 
           {/* Step 3: Summary */}
           <V3StepCard stepNum={steps.find(s => s.label === t("summary"))?.num ?? 3} title={t("summary")} hideSubtotal>
-            <V3SummaryTable data={data} t={t} />
+            <V3SummaryTable data={data} t={t} locale={locale} />
           </V3StepCard>
         </main>
       </div>
@@ -1441,17 +1443,19 @@ function V3StepCard({
   );
 }
 
-function V3DealLines({ deal }: { deal: V3Data["deals"][number] }) {
+function V3DealLines({ deal, locale }: { deal: V3Data["deals"][number]; locale: string }) {
   return (
     <div className="divide-y th-border">
-      {deal.lines.map((l) => (
+      {deal.lines.map((l) => {
+        const lineTitle = pickLocaleText(l as unknown as Record<string, unknown>, locale, "title") || l.title;
+        return (
         <div key={l.offeringId} className="grid grid-cols-[1fr_minmax(0,1.1fr)_auto] gap-3 items-center px-5 py-4">
           <div className="flex items-center gap-3 min-w-0">
             <span className="shrink-0 th-text-2">
               <OfferingIcon iconKey={l.icon} size={18} />
             </span>
             <div className="min-w-0">
-              <p className="text-base font-semibold th-text truncate">{l.title}</p>
+              <p className="text-base font-semibold th-text truncate">{lineTitle}</p>
             </div>
           </div>
           <p className="text-[13px] th-text-2 truncate">{l.conditionsText}</p>
@@ -1478,7 +1482,8 @@ function V3DealLines({ deal }: { deal: V3Data["deals"][number] }) {
             )}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -1486,24 +1491,31 @@ function V3DealLines({ deal }: { deal: V3Data["deals"][number] }) {
 function V3SummaryTable({
   data,
   t,
+  locale,
 }: {
   data: V3Data;
   t: ReturnType<typeof useTranslations<"booking">>;
+  locale: string;
 }) {
   // Flatten every deal's lines into a single ledger (what the organiser
   // wants the club to pay, grouped by origin deal). Gifts show €0 on their
   // own row — matches the old legacy summary's clarity.
   const rows: { label: string; qty: string; unitPrice: number; totalCents: number; isGift: boolean }[] = [];
   for (const deal of data.deals) {
+    const dealTitle =
+      pickLocaleText(deal.offering as unknown as Record<string, unknown>, locale, "title") ||
+      deal.offering.title;
     for (const l of deal.lines) {
+      const lineTitle =
+        pickLocaleText(l as unknown as Record<string, unknown>, locale, "title") || l.title;
       const qtyStr =
         l.quantityPaid !== l.quantity
           ? `${l.quantityPaid} / ${l.quantity}`
           : String(l.quantityPaid);
       rows.push({
         label: deal.offering.kind === "package" && deal.lines.length > 1
-          ? `${deal.offering.title} — ${l.title}`
-          : l.title,
+          ? `${dealTitle} — ${lineTitle}`
+          : lineTitle,
         qty: qtyStr,
         unitPrice: l.unitPriceCents,
         totalCents: l.isGift ? 0 : l.unitPriceCents * l.quantityPaid,

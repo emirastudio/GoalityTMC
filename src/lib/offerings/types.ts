@@ -47,6 +47,9 @@ export interface OfferingDTO {
 export interface LineBreakdown {
   offeringId: number;
   title: string;
+  titleRu: string | null;
+  titleEt: string | null;
+  titleEs: string | null;
   icon: string | null;
   priceModel: OfferingPriceModel;
   /** Human-readable sub-line shown under the service title
@@ -83,7 +86,15 @@ export interface DealFreeSlots {
 }
 export interface DealBreakdown {
   dealId: number;
-  offering: { id: number; title: string; kind: OfferingKind; icon: string | null };
+  offering: {
+    id: number;
+    title: string;
+    titleRu: string | null;
+    titleEt: string | null;
+    titleEs: string | null;
+    kind: OfferingKind;
+    icon: string | null;
+  };
   lines: LineBreakdown[];
   freeSlots: DealFreeSlots;
   subtotalCents: number;

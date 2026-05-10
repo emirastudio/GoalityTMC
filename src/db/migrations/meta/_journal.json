@@ -253,6 +253,13 @@
       "when": 1775170411661,
       "tag": "0035_offering_title_es",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1775170471661,
+      "tag": "0036_es_locale_rollout",
+      "breakpoints": true
     }
   ]
 }

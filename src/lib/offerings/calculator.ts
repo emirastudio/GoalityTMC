@@ -34,6 +34,12 @@ type OfferingRow = {
   id: number;
   kind: "single" | "package";
   title: string;
+  /** Локализованные варианты — попадают в DealBreakdown, чтобы клуб видел
+   *  название на своём языке, а не английскую базу. См. фикс Phase 1
+   *  i18n-rollout 2026-05-10. */
+  titleRu: string | null;
+  titleEt: string | null;
+  titleEs: string | null;
   priceModel: PriceModel;
   priceCents: number;
   packagePriceOverrideCents: number | null;
@@ -72,6 +78,11 @@ type DealFreeSlots = {
 export type LineBreakdown = {
   offeringId: number;
   title: string;
+  /** Variants for локализованного отображения на стороне клиента
+   *  (pickLocaleText). EN — в `title`, остальные nullable. */
+  titleRu: string | null;
+  titleEt: string | null;
+  titleEs: string | null;
   icon: string | null;
   priceModel: PriceModel;
   /** Human-readable context for the CONDITIONS column.
@@ -104,7 +115,15 @@ export type AdjustmentBreakdown = {
 
 export type DealBreakdown = {
   dealId: number;
-  offering: { id: number; title: string; kind: "single" | "package"; icon: string | null };
+  offering: {
+    id: number;
+    title: string;
+    titleRu: string | null;
+    titleEt: string | null;
+    titleEs: string | null;
+    kind: "single" | "package";
+    icon: string | null;
+  };
   lines: LineBreakdown[];
   /** Free slots applied to the deal (per-category gift counts + meals override). */
   freeSlots: DealFreeSlots;
@@ -146,6 +165,9 @@ export async function buildDealBreakdown(dealId: number): Promise<DealBreakdown 
       id: offerings.id,
       kind: offerings.kind,
       title: offerings.title,
+      titleRu: offerings.titleRu,
+      titleEt: offerings.titleEt,
+      titleEs: offerings.titleEs,
       priceModel: offerings.priceModel,
       priceCents: offerings.priceCents,
       packagePriceOverrideCents: offerings.packagePriceOverrideCents,
@@ -186,6 +208,9 @@ export async function buildDealBreakdown(dealId: number): Promise<DealBreakdown 
         {
           offeringId: offeringRow.id,
           title: offeringRow.title,
+          titleRu: offeringRow.titleRu,
+          titleEt: offeringRow.titleEt,
+          titleEs: offeringRow.titleEs,
           icon: offeringRow.icon,
           priceModel: offeringRow.priceModel,
           conditionsText: conditionsTextFor(offeringRow.priceModel, qty, qtyPaid, ctx, freeSlots),
@@ -205,6 +230,9 @@ export async function buildDealBreakdown(dealId: number): Promise<DealBreakdown 
           id: offerings.id,
           kind: offerings.kind,
           title: offerings.title,
+          titleRu: offerings.titleRu,
+          titleEt: offerings.titleEt,
+          titleEs: offerings.titleEs,
           priceModel: offerings.priceModel,
           priceCents: offerings.priceCents,
           packagePriceOverrideCents: offerings.packagePriceOverrideCents,
@@ -257,7 +285,15 @@ export async function buildDealBreakdown(dealId: number): Promise<DealBreakdown 
 
   return {
     dealId,
-    offering: { id: offeringRow.id, title: offeringRow.title, kind: offeringRow.kind, icon: offeringRow.icon },
+    offering: {
+      id: offeringRow.id,
+      title: offeringRow.title,
+      titleRu: offeringRow.titleRu,
+      titleEt: offeringRow.titleEt,
+      titleEs: offeringRow.titleEs,
+      kind: offeringRow.kind,
+      icon: offeringRow.icon,
+    },
     lines,
     freeSlots,
     subtotalCents,
@@ -288,6 +324,9 @@ function priceLine(
   return {
     offeringId: row.id,
     title: row.title,
+    titleRu: row.titleRu,
+    titleEt: row.titleEt,
+    titleEs: row.titleEs,
     icon: row.icon,
     priceModel: row.priceModel,
     conditionsText: conditionsTextFor(row.priceModel, qty, qtyPaid, rowCtx, freeSlots),
