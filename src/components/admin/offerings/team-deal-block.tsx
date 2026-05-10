@@ -17,11 +17,11 @@
  * All math is rebuilt server-side on every edit via the calculator.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   Loader2, Plus, Trash2, Check, Eye, EyeOff, Package as PackageIcon,
-  Gift, RotateCcw, ChevronDown, ChevronUp,
+  Gift, RotateCcw, ChevronDown, ChevronUp, X, Search,
 } from "lucide-react";
 import {
   formatMoney,
@@ -60,8 +60,10 @@ export function TeamDealBlock({
   const [deals, setDeals] = useState<DealRow[]>([]);
   const [catalog, setCatalog] = useState<OfferingDTO[]>([]);
   const [saving, setSaving] = useState(false);
-  const [addOnId, setAddOnId] = useState<string>("");
   const [packageId, setPackageId] = useState<string>("");
+  // Bulk picker — модалка с чекбоксами вместо одиночного dropdown.
+  // Решает UX-проблему «5 услуг = 15 кликов».
+  const [bulkPickerOpen, setBulkPickerOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -117,10 +119,26 @@ export function TeamDealBlock({
       setSaving(false);
     }
   }
-  async function addAddOn() {
-    if (!addOnId) return;
-    await postAssign(Number(addOnId));
-    setAddOnId("");
+  // Bulk-assign: создаём по одной сделке на каждый выбранный offering, но
+  // в параллельных запросах — UI получает один общий load() в конце.
+  async function addBulkAddOns(offeringIds: number[]) {
+    if (!registrationId || offeringIds.length === 0) return;
+    setSaving(true);
+    try {
+      await Promise.all(
+        offeringIds.map((id) =>
+          fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/deals`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ offeringId: id, registrationIds: [registrationId] }),
+          })
+        )
+      );
+      await load();
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function postAssign(offeringId: number) {
@@ -299,36 +317,247 @@ export function TeamDealBlock({
       )}
 
       {addOnOptions.length > 0 && (
-        <div className="rounded-xl p-3 border border-dashed"
+        <div className="rounded-xl p-3 border border-dashed flex items-center justify-between gap-3"
           style={{ borderColor: "var(--cat-card-border)" }}>
-          <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--cat-text-muted)" }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--cat-text-muted)" }}>
             {t("addExtra")}
           </p>
-          <div className="flex gap-2">
-            <select
-              value={addOnId}
-              onChange={(e) => setAddOnId(e.target.value)}
-              className="flex-1 px-3 py-1.5 rounded-lg text-sm border outline-none"
-              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
-            >
-              <option value="">— {t("selectExtra")} —</option>
-              {addOnOptions.map(o => (
-                <option key={o.id} value={o.id}>
-                  {o.title} · {formatMoney(o.priceCents, o.currency)} {priceModelLabel(o.priceModel)}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={addAddOn}
-              disabled={!addOnId || saving}
-              className="px-3 py-1.5 rounded-lg text-sm font-bold disabled:opacity-50 inline-flex items-center gap-1.5"
-              style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)", cursor: saving ? "wait" : "pointer" }}
-            >
-              <Plus className="w-3.5 h-3.5" /> {t("add")}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setBulkPickerOpen(true)}
+            disabled={saving}
+            className="px-3 py-1.5 rounded-lg text-sm font-bold disabled:opacity-50 inline-flex items-center gap-1.5"
+            style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            {t("addServicesBulk", { n: addOnOptions.length })}
+          </button>
         </div>
       )}
+
+      {bulkPickerOpen && (
+        <BulkAddOnPicker
+          options={addOnOptions}
+          saving={saving}
+          onClose={() => setBulkPickerOpen(false)}
+          onConfirm={async (ids) => {
+            setBulkPickerOpen(false);
+            await addBulkAddOns(ids);
+          }}
+          t={t}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── BulkAddOnPicker ─────────────────────────────────────────────────────
+// Модалка для добавления сразу нескольких услуг команде. Чекбоксы +
+// поиск + кнопка «Добавить N услуг». Заменяет одиночный dropdown.
+function BulkAddOnPicker({
+  options,
+  saving,
+  onClose,
+  onConfirm,
+  t,
+}: {
+  options: OfferingDTO[];
+  saving: boolean;
+  onClose: () => void;
+  onConfirm: (ids: number[]) => Promise<void> | void;
+  t: (k: string, p?: Record<string, string | number>) => string;
+}) {
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter(
+      (o) =>
+        o.title.toLowerCase().includes(q) ||
+        (o.titleRu ?? "").toLowerCase().includes(q) ||
+        (o.titleEt ?? "").toLowerCase().includes(q) ||
+        (o.titleEs ?? "").toLowerCase().includes(q)
+    );
+  }, [options, query]);
+
+  function toggle(id: number) {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((s) =>
+      s.size === filtered.length ? new Set() : new Set(filtered.map((o) => o.id))
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
+      style={{ background: "rgba(0,0,0,0.65)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-2xl border overflow-hidden shadow-2xl"
+        style={{
+          background: "var(--cat-bg)",
+          borderColor: "var(--cat-card-border)",
+          maxHeight: "85vh",
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="flex items-center justify-between px-5 py-3 border-b"
+          style={{ borderColor: "var(--cat-card-border)" }}
+        >
+          <h3 className="text-base font-bold" style={{ color: "var(--cat-text)" }}>
+            {t("bulkPickerTitle")}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:opacity-70"
+            style={{ color: "var(--cat-text-muted)" }}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-5 pt-3 pb-2">
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+              style={{ color: "var(--cat-text-muted)" }}
+            />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("bulkPickerSearchPlaceholder")}
+              autoFocus
+              className="w-full pl-9 pr-3 py-2 rounded-lg text-sm border outline-none"
+              style={{
+                background: "var(--cat-card-bg)",
+                borderColor: "var(--cat-card-border)",
+                color: "var(--cat-text)",
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between px-5 py-1.5">
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="text-[11px] font-bold uppercase tracking-wider hover:opacity-70"
+            style={{ color: "var(--cat-text-muted)" }}
+          >
+            {selected.size === filtered.length && filtered.length > 0
+              ? t("bulkPickerDeselectAll")
+              : t("bulkPickerSelectAll")}
+          </button>
+          <span className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
+            {t("bulkPickerSelectedOf", { n: selected.size, total: filtered.length })}
+          </span>
+        </div>
+
+        <div className="px-3 pb-3 overflow-y-auto" style={{ flex: 1 }}>
+          {filtered.length === 0 ? (
+            <p
+              className="text-sm py-8 text-center"
+              style={{ color: "var(--cat-text-muted)" }}
+            >
+              {t("bulkPickerEmpty")}
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {filtered.map((o) => {
+                const checked = selected.has(o.id);
+                return (
+                  <label
+                    key={o.id}
+                    className="flex items-center gap-3 px-2.5 py-2 rounded-lg cursor-pointer transition-all"
+                    style={{
+                      background: checked ? "var(--cat-badge-open-bg)" : "transparent",
+                      border: "1px solid",
+                      borderColor: checked
+                        ? "var(--cat-accent)"
+                        : "var(--cat-card-border)",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggle(o.id)}
+                      style={{ accentColor: "var(--cat-accent)" }}
+                    />
+                    <OfferingIcon iconKey={o.icon} size={16} />
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className="text-sm font-bold truncate"
+                        style={{ color: "var(--cat-text)" }}
+                      >
+                        {o.title}
+                      </div>
+                      <div
+                        className="text-[11px]"
+                        style={{ color: "var(--cat-text-muted)" }}
+                      >
+                        {formatMoney(o.priceCents, o.currency)} ·{" "}
+                        {priceModelLabel(o.priceModel)}
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div
+          className="flex gap-2 px-5 py-3 border-t"
+          style={{ borderColor: "var(--cat-card-border)" }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 rounded-lg text-sm font-bold border"
+            style={{
+              background: "var(--cat-card-bg)",
+              borderColor: "var(--cat-card-border)",
+              color: "var(--cat-text)",
+            }}
+          >
+            {t("cancel")}
+          </button>
+          <button
+            type="button"
+            disabled={selected.size === 0 || saving}
+            onClick={() => onConfirm(Array.from(selected))}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
+            style={{
+              background: "var(--cat-accent)",
+              color: "var(--cat-accent-text)",
+              cursor: saving ? "wait" : "pointer",
+            }}
+          >
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            {t("bulkPickerConfirm", { n: selected.size })}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

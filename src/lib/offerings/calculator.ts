@@ -315,16 +315,20 @@ function quantityFor(model: PriceModel, ctx: RegistrationContext): number {
   const demandP = accomDemand.confirmed && accomDemand.players > 0 ? accomDemand.players : playerCount;
   const demandS = accomDemand.confirmed && accomDemand.staff > 0 ? accomDemand.staff : staffCount;
   const demandA = accomDemand.confirmed && accomDemand.accompanying > 0 ? accomDemand.accompanying : accompanyingCount;
-  const persons = demandP + demandS;
+  // EVERYONE who is physically present — for hotel/meals/per-person pricing.
+  // Раньше тут было P+S и сопровождающие выпадали из сметы (parents у тренера
+  // тоже едят в отеле и спят в номере). Теперь учитываем всех, кто заявлен
+  // — никого не забыли. См. UX feedback Andrei 2026-05-10.
+  const allPersons = demandP + demandS + demandA;
   switch (model) {
     case "flat":             return 1;
     case "per_team":         return 1; // single reg = 1 team
-    case "per_person":       return persons;
+    case "per_person":       return allPersons;
     case "per_player":       return demandP;
     case "per_staff":        return demandS;
     case "per_accompanying": return demandA;
-    case "per_night":        return persons * nights;
-    case "per_meal":         return persons * meals;
+    case "per_night":        return allPersons * nights;
+    case "per_meal":         return allPersons * meals;
     case "per_unit":         return 1; // UI supplies quantity explicitly (v3.1)
     default:                 return 1;
   }
@@ -345,9 +349,12 @@ function quantityPaidFor(
     case "per_accompanying":
       return Math.max(0, qty - f.accompanyingCount);
     case "per_person":
-      return Math.max(0, qty - f.playersCount - f.staffCount);
+      // Все три категории "free" вычитаются — модель означает "за человека",
+      // и если организатор подарил места кому угодно (player/staff/acc),
+      // это уменьшает qtyPaid.
+      return Math.max(0, qty - f.playersCount - f.staffCount - f.accompanyingCount);
     case "per_night": {
-      const freePersonNights = (f.playersCount + f.staffCount) * ctx.nights;
+      const freePersonNights = (f.playersCount + f.staffCount + f.accompanyingCount) * ctx.nights;
       return Math.max(0, qty - freePersonNights);
     }
     default:
@@ -373,7 +380,7 @@ function conditionsTextFor(
     case "per_team":
       return "Per team";
     case "per_person":
-      return `${qty} persons${freeNote(f.playersCount + f.staffCount, "free")}`;
+      return `${qty} persons${freeNote(f.playersCount + f.staffCount + f.accompanyingCount, "free")}`;
     case "per_player":
       return `${qty} players${freeNote(f.playersCount, "free")}`;
     case "per_staff":
@@ -381,13 +388,14 @@ function conditionsTextFor(
     case "per_accompanying":
       return `${qty} accompanying${freeNote(f.accompanyingCount, "free")}`;
     case "per_night": {
-      const persons = ctx.playerCount + ctx.staffCount;
+      const persons = ctx.playerCount + ctx.staffCount + ctx.accompanyingCount;
+      const free = f.playersCount + f.staffCount + f.accompanyingCount;
       return `${persons} × ${ctx.nights} night${ctx.nights === 1 ? "" : "s"}${
-        f.playersCount + f.staffCount > 0 ? ` · ${f.playersCount + f.staffCount} free` : ""
+        free > 0 ? ` · ${free} free` : ""
       }`;
     }
     case "per_meal": {
-      const persons = ctx.playerCount + ctx.staffCount;
+      const persons = ctx.playerCount + ctx.staffCount + ctx.accompanyingCount;
       const mealsPerPerson = f.mealsCountOverride ?? ctx.meals;
       const tag = f.mealsCountOverride != null ? " (custom)" : "";
       return `${persons} × ${mealsPerPerson} meal${mealsPerPerson === 1 ? "" : "s"}${tag}`;

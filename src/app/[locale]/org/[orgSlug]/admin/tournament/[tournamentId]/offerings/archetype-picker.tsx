@@ -18,6 +18,7 @@ export type ArchetypeKey =
   | "hotel"
   | "meals_count"
   | "meals_all"
+  | "hotel_meals_package"
   | "fee"
   | "transfer"
   | "merch"
@@ -35,12 +36,13 @@ export type ArchetypeDef = {
 // src/lib/offerings/icons.ts чтобы превью карточки показало правильную
 // иконку.
 export const ARCHETYPES: ArchetypeDef[] = [
-  { key: "hotel",       iconKey: "hotel",   hue: "#3b82f6" },
-  { key: "meals_count", iconKey: "meal",    hue: "#ef4444" },
-  { key: "meals_all",   iconKey: "meal",    hue: "#f59e0b" },
-  { key: "fee",         iconKey: "fee",     hue: "#10b981" },
-  { key: "transfer",    iconKey: "bus",     hue: "#8b5cf6" },
-  { key: "merch",       iconKey: "shirt",   hue: "#ec4899" },
+  { key: "hotel",                iconKey: "hotel",   hue: "#3b82f6" },
+  { key: "meals_count",          iconKey: "meal",    hue: "#ef4444" },
+  { key: "meals_all",            iconKey: "meal",    hue: "#f59e0b" },
+  { key: "hotel_meals_package",  iconKey: "package", hue: "#06b6d4" },
+  { key: "fee",                  iconKey: "fee",     hue: "#10b981" },
+  { key: "transfer",             iconKey: "bus",     hue: "#8b5cf6" },
+  { key: "merch",                iconKey: "shirt",   hue: "#ec4899" },
 ];
 
 export function ArchetypePicker({
@@ -198,11 +200,12 @@ function ArchetypeCard({
 
 // Симпатичные эмодзи на карточках. Не зависят от шрифта — работают везде.
 const ARCHETYPE_EMOJI: Record<ArchetypeKey, string> = {
-  hotel:       "🏨",
-  meals_count: "🍽️",
-  meals_all:   "🥗",
-  fee:         "💵",
-  transfer:    "🚐",
-  merch:       "🎽",
-  advanced:    "⚙️",
+  hotel:                "🏨",
+  meals_count:          "🍽️",
+  meals_all:            "🥗",
+  hotel_meals_package:  "🏨🍽️",
+  fee:                  "💵",
+  transfer:             "🚐",
+  merch:                "🎽",
+  advanced:             "⚙️",
 };

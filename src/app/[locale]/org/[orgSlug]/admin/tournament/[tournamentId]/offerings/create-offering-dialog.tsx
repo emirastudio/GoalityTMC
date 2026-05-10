@@ -11,12 +11,13 @@ import { multilangFromRow, multilangToPayload, type MultilangValue } from "@/lib
 
 // Дефолты для архетипов: как только пользователь выбирает «🏨 Проживание»,
 // мы за него подставляем priceModel/icon/inclusion. Дальше он только вбивает
-// название и цену.
-const ARCHETYPE_DEFAULTS: Record<Exclude<ArchetypeKey, "advanced">, {
+// название и цену. `hotel_meals_package` сюда не попадает — он открывается в
+// режиме package builder и не использует упрощённую форму.
+const ARCHETYPE_DEFAULTS: Partial<Record<ArchetypeKey, {
   priceModel: OfferingPriceModel;
   icon: string;
   inclusion: OfferingInclusion;
-}> = {
+}>> = {
   hotel:       { priceModel: "per_night",  icon: "hotel", inclusion: "optional" },
   meals_count: { priceModel: "per_meal",   icon: "meal",  inclusion: "optional" },
   meals_all:   { priceModel: "per_person", icon: "meal",  inclusion: "optional" },
@@ -103,7 +104,14 @@ export function CreateOfferingDialog({
   // Архетип задействует упрощённый режим только при создании. На edit мы
   // всегда показываем полную форму, чтобы организатор мог поменять что
   // угодно (priceModel, icon и т.д.).
-  const archetype = !isEdit && simpleMode && simpleMode !== "advanced" ? simpleMode : null;
+  // hotel_meals_package — особый случай: это пакет, не single. Упрощённый
+  // режим (со скрытыми опциями + live-preview) для него не подходит — нужен
+  // полный builder со списком детей. Поэтому при выборе этого архетипа мы
+  // НЕ включаем simple, но всё равно показываем «архетипный» заголовок.
+  const isPackageArchetype = simpleMode === "hotel_meals_package";
+  const archetype = !isEdit && simpleMode && simpleMode !== "advanced" && !isPackageArchetype
+    ? simpleMode
+    : null;
   const archetypeDefaults = archetype ? ARCHETYPE_DEFAULTS[archetype] : null;
   const archetypePriceOptions = archetype ? ARCHETYPE_PRICE_OPTIONS[archetype] : undefined;
 
@@ -112,7 +120,9 @@ export function CreateOfferingDialog({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const simple = !!archetype && !showAdvanced;
 
-  const [kind, setKind] = useState<OfferingKind>(initial?.kind ?? prefill?.kind ?? initialKind ?? "single");
+  const [kind, setKind] = useState<OfferingKind>(
+    initial?.kind ?? prefill?.kind ?? initialKind ?? (isPackageArchetype ? "package" : "single")
+  );
   // Multilang title/description — единый объект {en, ru, et, es} вместо
   // одного строкового поля. EN обязателен (см. MultilangInput required prop),
   // остальные опциональны. Сериализуется в payload через multilangToPayload().
@@ -253,11 +263,18 @@ export function CreateOfferingDialog({
                 ? t("editOfferingTitle")
                 : archetype
                   ? t(`arch_${archetype}_title`)
-                  : t("createOfferingTitle")}
+                  : isPackageArchetype
+                    ? t("arch_hotel_meals_package_title")
+                    : t("createOfferingTitle")}
             </h3>
             {archetype && !showAdvanced && (
               <p className="text-[11px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
                 {t(`arch_${archetype}_desc`)}
+              </p>
+            )}
+            {isPackageArchetype && !isEdit && (
+              <p className="text-[11px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
+                {t("arch_hotel_meals_package_desc")}
               </p>
             )}
           </div>
@@ -341,6 +358,21 @@ export function CreateOfferingDialog({
               multiline
               rows={2}
             />
+            {/* B: hint для hotel/meals — подсказка про «всё включено» и
+                путь через пакет, чтобы организатор не терялся в случае
+                «отель с завтраком». */}
+            {(archetype === "hotel" || archetype === "meals_count" || archetype === "meals_all") && (
+              <p
+                className="text-[11px] mt-1.5 rounded-lg px-2.5 py-1.5"
+                style={{
+                  background: "rgba(59,130,246,0.06)",
+                  borderLeft: "2px solid #3b82f6",
+                  color: "var(--cat-text-muted)",
+                }}
+              >
+                💡 {t("arch_meals_in_hotel_hint")}
+              </p>
+            )}
           </div>
 
           {!simple && (
@@ -689,7 +721,11 @@ function LivePreview({
   t: ReturnType<typeof useTranslations<string>>;
 }) {
   const price = parseFloat(priceEur || "0") || 0;
-  const people = PREVIEW.players + PREVIEW.staff;
+  // ВСЕ кто едет — игроки + тренеры + сопровождающие. Это соответствует
+  // src/lib/offerings/calculator.ts:quantityFor(): per_person/per_night/
+  // per_meal теперь учитывают сопровождающих, чтобы при бронировании
+  // отеля никого не забыли.
+  const people = PREVIEW.players + PREVIEW.staff + PREVIEW.accompanying;
   const nights =
     nightsOverride.trim() !== ""
       ? Math.max(0, parseInt(nightsOverride, 10) || 0)
