@@ -21,7 +21,11 @@ export interface OfferingDTO {
   title: string;
   titleRu: string | null;
   titleEt: string | null;
+  titleEs: string | null;
   description: string | null;
+  descriptionRu: string | null;
+  descriptionEt: string | null;
+  descriptionEs: string | null;
   icon: string | null;
   priceModel: OfferingPriceModel;
   priceCents: number;

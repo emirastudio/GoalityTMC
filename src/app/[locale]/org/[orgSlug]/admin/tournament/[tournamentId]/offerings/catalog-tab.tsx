@@ -6,6 +6,7 @@ import { Loader2, Plus, Trash2, Edit3, Archive, Package, Copy, Sparkles, RotateC
 import { CreateOfferingDialog, type OfferingPrefill } from "./create-offering-dialog";
 import { ArchetypePicker, type ArchetypeKey } from "./archetype-picker";
 import { TemplateEditDialog } from "./template-edit-dialog";
+import { pickLocaleText } from "@/lib/i18n-text";
 import { formatMoney, type OfferingDTO, type OfferingInclusion, type OfferingKind, type OfferingPriceModel } from "@/lib/offerings/types";
 import { OfferingIcon } from "@/lib/offerings/icons";
 
@@ -18,9 +19,11 @@ export type OfferingTemplate = {
   title: string;
   titleRu: string | null;
   titleEt: string | null;
+  titleEs: string | null;
   description: string | null;
   descriptionRu: string | null;
   descriptionEt: string | null;
+  descriptionEs: string | null;
   icon: string | null;
   kind: OfferingKind;
   inclusion: OfferingInclusion;
@@ -102,11 +105,19 @@ export function OfferingsCatalogTab({
 
   // Клик по карточке шаблона — открыть диалог создания услуги с pre-fill.
   function useTemplate(tmpl: OfferingTemplate, locale: string) {
+    // Передаём все 4 локали в prefill — чтобы новая услуга стартовала со
+    // всеми переводами шаблона, а не только под текущий locale админки.
     setCreatePrefill({
       kind: tmpl.kind,
-      title: pickLocaleTitle(tmpl, locale),
+      title: tmpl.title,
+      titleRu: tmpl.titleRu,
+      titleEt: tmpl.titleEt,
+      titleEs: tmpl.titleEs,
       icon: tmpl.icon,
-      description: pickLocaleDescription(tmpl, locale),
+      description: tmpl.description,
+      descriptionRu: tmpl.descriptionRu,
+      descriptionEt: tmpl.descriptionEt,
+      descriptionEs: tmpl.descriptionEs,
       inclusion: tmpl.inclusion,
       priceModel: tmpl.priceModel,
       priceCents: tmpl.defaultPriceCents,
@@ -165,6 +176,7 @@ export function OfferingsCatalogTab({
       title: `${source.title}${suffix}`,
       titleRu: source.titleRu ? `${source.titleRu}${suffix}` : null,
       titleEt: source.titleEt ? `${source.titleEt}${suffix}` : null,
+      titleEs: source.titleEs ? `${source.titleEs}${suffix}` : null,
       description: source.description,
       icon: source.icon,
       inclusion: source.inclusion,
@@ -227,6 +239,7 @@ export function OfferingsCatalogTab({
             <OfferingCard
               key={o.id}
               offering={o}
+              locale={locale}
               label={{
                 inclusion: t(`incl_${o.inclusion}`),
                 priceModel: t(`pm_${o.priceModel}`),
@@ -306,15 +319,15 @@ export function OfferingsCatalogTab({
 }
 
 // ─── Helpers: локализованные заголовок/описание из шаблона ─────
+// Делегируем в общий хелпер `pickLocaleText` чтобы fallback-логика
+// (en/ru/et/es) была одинаковой для всех мест, где читается переводимый
+// текст организатора. См. src/lib/i18n-text.ts.
 function pickLocaleTitle(tmpl: OfferingTemplate, locale: string): string {
-  if (locale === "ru" && tmpl.titleRu) return tmpl.titleRu;
-  if (locale === "et" && tmpl.titleEt) return tmpl.titleEt;
-  return tmpl.title;
+  return pickLocaleText(tmpl as unknown as Record<string, unknown>, locale, "title") || tmpl.title;
 }
 function pickLocaleDescription(tmpl: OfferingTemplate, locale: string): string | null {
-  if (locale === "ru" && tmpl.descriptionRu) return tmpl.descriptionRu;
-  if (locale === "et" && tmpl.descriptionEt) return tmpl.descriptionEt;
-  return tmpl.description;
+  const v = pickLocaleText(tmpl as unknown as Record<string, unknown>, locale, "description");
+  return v || tmpl.description;
 }
 
 function EmptyCatalog({ t, onCreate }: { t: (k: string) => string; onCreate: () => void }) {
@@ -591,12 +604,14 @@ function TemplateCard({
 function OfferingCard({
   offering: o,
   label,
+  locale,
   onEdit,
   onDuplicate,
   onDelete,
 }: {
   offering: OfferingDTO;
   label: { inclusion: string; priceModel: string; edit: string; delete: string; duplicate: string };
+  locale: string;
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -604,6 +619,9 @@ function OfferingCard({
   const incColor = INCLUSION_COLOR[o.inclusion];
   const priceCents = o.kind === "package" ? (o.packagePriceOverrideCents ?? 0) : o.priceCents;
   const priceModelShort = label.priceModel;
+  // Локализованные заголовок/описание из БД с fallback на базовый EN.
+  const localizedTitle = pickLocaleText(o as unknown as Record<string, unknown>, locale, "title") || o.title;
+  const localizedDescription = pickLocaleText(o as unknown as Record<string, unknown>, locale, "description") || o.description;
 
   return (
     <div
@@ -632,11 +650,11 @@ function OfferingCard({
       {/* Title + description */}
       <div className="px-5">
         <h3 className="text-lg font-bold leading-tight" style={{ color: "var(--cat-text)" }}>
-          {o.title}
+          {localizedTitle}
         </h3>
-        {o.description && (
+        {localizedDescription && (
           <p className="text-sm mt-1.5 leading-snug line-clamp-2" style={{ color: "var(--cat-text-muted)" }}>
-            {o.description}
+            {localizedDescription}
           </p>
         )}
       </div>

@@ -14,9 +14,13 @@ export type BuiltinTemplatePreset = {
   title: string;
   titleRu: string;
   titleEt: string;
+  /** ES добавлен в migration 0035 — для уже существующих presets оставляем
+   *  null, организатор сможет дозалить вручную через TemplateEditDialog. */
+  titleEs?: string | null;
   description: string | null;
   descriptionRu: string | null;
   descriptionEt: string | null;
+  descriptionEs?: string | null;
   icon: string;
   kind: "single" | "package";
   inclusion: "required" | "default" | "optional";

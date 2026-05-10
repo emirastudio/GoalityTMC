@@ -14,6 +14,8 @@ import { useTranslations } from "next-intl";
 import { X, Loader2, Check } from "lucide-react";
 import type { OfferingInclusion, OfferingKind, OfferingPriceModel } from "@/lib/offerings/types";
 import type { OfferingTemplate } from "./catalog-tab";
+import { MultilangInput } from "@/components/ui/multilang-input";
+import { multilangFromRow, multilangToPayload, type MultilangValue } from "@/lib/i18n-text";
 
 const PRICE_MODELS: OfferingPriceModel[] = [
   "flat", "per_team", "per_unit",
@@ -36,10 +38,16 @@ export function TemplateEditDialog({
   const t = useTranslations("offeringsAdmin");
   const isEdit = !!template;
 
-  const [title, setTitle] = useState(template?.title ?? "");
-  const [titleRu, setTitleRu] = useState(template?.titleRu ?? "");
-  const [titleEt, setTitleEt] = useState(template?.titleEt ?? "");
-  const [description, setDescription] = useState(template?.description ?? "");
+  const [titleML, setTitleML] = useState<MultilangValue>(() =>
+    template
+      ? multilangFromRow(template as unknown as Record<string, unknown>, "title")
+      : { en: "", ru: "", et: "", es: "" }
+  );
+  const [descriptionML, setDescriptionML] = useState<MultilangValue>(() =>
+    template
+      ? multilangFromRow(template as unknown as Record<string, unknown>, "description")
+      : { en: "", ru: "", et: "", es: "" }
+  );
   const [icon, setIcon] = useState(template?.icon ?? "");
   const [kind] = useState<OfferingKind>(template?.kind ?? "single");
   const [inclusion, setInclusion] = useState<OfferingInclusion>(template?.inclusion ?? "optional");
@@ -54,14 +62,12 @@ export function TemplateEditDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!title.trim()) { setError(t("titleRequired")); return; }
+    if (!titleML.en.trim()) { setError(t("titleRequired")); return; }
     setSubmitting(true);
     try {
       const body = {
-        title: title.trim(),
-        titleRu: titleRu.trim() || null,
-        titleEt: titleEt.trim() || null,
-        description: description.trim() || null,
+        ...multilangToPayload("title", titleML),
+        ...multilangToPayload("description", descriptionML),
         icon: icon.trim().slice(0, 4) || null,
         kind,
         inclusion,
@@ -122,57 +128,29 @@ export function TemplateEditDialog({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto" style={{ flex: 1 }}>
-          {/* Titles (EN + localised) */}
+          {/* Title — единый MultilangInput с табами EN/RU/ET/ES вместо
+              трёх отдельных полей. */}
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: "var(--cat-text-muted)" }}>
-              {t("templates.titleEnLabel")}
+              {t("titleLabel")}
             </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+            <MultilangInput
+              value={titleML}
+              onChange={setTitleML}
               required
-              className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
-              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
+              autoFocus
             />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: "var(--cat-text-muted)" }}>
-                {t("templates.titleRuLabel")}
-              </label>
-              <input
-                type="text"
-                value={titleRu}
-                onChange={(e) => setTitleRu(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
-                style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: "var(--cat-text-muted)" }}>
-                {t("templates.titleEtLabel")}
-              </label>
-              <input
-                type="text"
-                value={titleEt}
-                onChange={(e) => setTitleEt(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
-                style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
-              />
-            </div>
           </div>
 
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: "var(--cat-text-muted)" }}>
               {t("descriptionLabel")}
             </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <MultilangInput
+              value={descriptionML}
+              onChange={setDescriptionML}
+              multiline
               rows={2}
-              className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
-              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
             />
           </div>
 

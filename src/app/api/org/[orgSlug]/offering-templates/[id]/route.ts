@@ -29,8 +29,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<Para
   const updates: Record<string, unknown> = {};
 
   const textFields = [
-    "title", "titleRu", "titleEt",
-    "description", "descriptionRu", "descriptionEt",
+    "title", "titleRu", "titleEt", "titleEs",
+    "description", "descriptionRu", "descriptionEt", "descriptionEs",
     "icon", "currency",
   ] as const;
   for (const f of textFields) {

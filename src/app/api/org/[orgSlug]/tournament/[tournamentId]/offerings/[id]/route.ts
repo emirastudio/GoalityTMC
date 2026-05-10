@@ -47,7 +47,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<Para
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const patch: Record<string, any> = { updatedAt: new Date() };
 
-  const allowedStrings = ["title", "titleRu", "titleEt", "description", "descriptionRu", "descriptionEt", "icon"];
+  const allowedStrings = [
+    "title", "titleRu", "titleEt", "titleEs",
+    "description", "descriptionRu", "descriptionEt", "descriptionEs",
+    "icon",
+  ];
   for (const k of allowedStrings) {
     if (k in body) patch[k] = body[k] ?? null;
   }

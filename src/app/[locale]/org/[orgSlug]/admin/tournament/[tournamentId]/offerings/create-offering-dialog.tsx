@@ -6,6 +6,8 @@ import { X, Loader2, Check, Settings2 } from "lucide-react";
 import type { OfferingDTO, OfferingInclusion, OfferingKind, OfferingPriceModel } from "@/lib/offerings/types";
 import { OFFERING_ICONS, OfferingIcon } from "@/lib/offerings/icons";
 import type { ArchetypeKey } from "./archetype-picker";
+import { MultilangInput } from "@/components/ui/multilang-input";
+import { multilangFromRow, multilangToPayload, type MultilangValue } from "@/lib/i18n-text";
 
 // Дефолты для архетипов: как только пользователь выбирает «🏨 Проживание»,
 // мы за него подставляем priceModel/icon/inclusion. Дальше он только вбивает
@@ -52,8 +54,15 @@ const INCLUSIONS: OfferingInclusion[] = ["required", "default", "optional"];
 export type OfferingPrefill = {
   kind?: OfferingKind;
   title?: string;
+  /** Опциональные переводы названия для prefill из шаблона. */
+  titleRu?: string | null;
+  titleEt?: string | null;
+  titleEs?: string | null;
   icon?: string | null;
   description?: string | null;
+  descriptionRu?: string | null;
+  descriptionEt?: string | null;
+  descriptionEs?: string | null;
   inclusion?: OfferingInclusion;
   priceModel?: OfferingPriceModel;
   priceCents?: number;
@@ -104,11 +113,32 @@ export function CreateOfferingDialog({
   const simple = !!archetype && !showAdvanced;
 
   const [kind, setKind] = useState<OfferingKind>(initial?.kind ?? prefill?.kind ?? initialKind ?? "single");
-  const [title, setTitle] = useState(initial?.title ?? prefill?.title ?? "");
+  // Multilang title/description — единый объект {en, ru, et, es} вместо
+  // одного строкового поля. EN обязателен (см. MultilangInput required prop),
+  // остальные опциональны. Сериализуется в payload через multilangToPayload().
+  const [titleML, setTitleML] = useState<MultilangValue>(() =>
+    initial
+      ? multilangFromRow(initial as unknown as Record<string, unknown>, "title")
+      : {
+          en: prefill?.title ?? "",
+          ru: prefill?.titleRu ?? "",
+          et: prefill?.titleEt ?? "",
+          es: prefill?.titleEs ?? "",
+        }
+  );
+  const [descriptionML, setDescriptionML] = useState<MultilangValue>(() =>
+    initial
+      ? multilangFromRow(initial as unknown as Record<string, unknown>, "description")
+      : {
+          en: prefill?.description ?? "",
+          ru: prefill?.descriptionRu ?? "",
+          et: prefill?.descriptionEt ?? "",
+          es: prefill?.descriptionEs ?? "",
+        }
+  );
   const [icon, setIcon] = useState(
     initial?.icon ?? prefill?.icon ?? archetypeDefaults?.icon ?? ""
   );
-  const [description, setDescription] = useState(initial?.description ?? prefill?.description ?? "");
   const [inclusion, setInclusion] = useState<OfferingInclusion>(
     initial?.inclusion ?? prefill?.inclusion ?? archetypeDefaults?.inclusion ?? "optional"
   );
@@ -150,7 +180,7 @@ export function CreateOfferingDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!title.trim()) { setError(t("titleRequired")); return; }
+    if (!titleML.en.trim()) { setError(t("titleRequired")); return; }
     setSubmitting(true);
     try {
       const priceCents = Math.round(Number(priceEur || 0) * 100);
@@ -161,9 +191,11 @@ export function CreateOfferingDialog({
 
       const body: Record<string, unknown> = {
         kind,
-        title: title.trim(),
+        // title/titleRu/titleEt/titleEs — все 4 локали разом.
+        ...multilangToPayload("title", titleML),
+        // description/descriptionRu/descriptionEt/descriptionEs.
+        ...multilangToPayload("description", descriptionML),
         icon: icon.trim().slice(0, 4) || null,
-        description: description.trim() || null,
         inclusion,
         priceModel,
         priceCents,
@@ -265,13 +297,11 @@ export function CreateOfferingDialog({
 
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: "var(--cat-text-muted)" }}>{t("titleLabel")}</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+            <MultilangInput
+              value={titleML}
+              onChange={setTitleML}
               required
-              className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
-              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
+              autoFocus
             />
           </div>
 
@@ -303,18 +333,15 @@ export function CreateOfferingDialog({
           </div>
           )}
 
-          {!simple && (
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: "var(--cat-text-muted)" }}>{t("descriptionLabel")}</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <MultilangInput
+              value={descriptionML}
+              onChange={setDescriptionML}
+              multiline
               rows={2}
-              className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
-              style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}
             />
           </div>
-          )}
 
           {!simple && (
           <div>
