@@ -195,9 +195,9 @@ export default function TournamentInfoPage() {
               <p className="text-[11px] font-black uppercase tracking-widest"
                 style={{ color: "var(--cat-text-muted)" }}>{t("keyDates")}</p>
             </div>
-            <div className="flex flex-wrap items-stretch gap-3">
+            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
               {tourney.registrationDeadline && (
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border flex-1 min-w-[180px]"
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
                   style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
                   <Clock className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
                   <div className="min-w-0">
@@ -207,7 +207,7 @@ export default function TournamentInfoPage() {
                 </div>
               )}
               {tourney.startDate && (
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border flex-1 min-w-[180px]"
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
                   style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
                   <Calendar className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
                   <div className="min-w-0">
@@ -217,7 +217,7 @@ export default function TournamentInfoPage() {
                 </div>
               )}
               {tourney.endDate && (
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border flex-1 min-w-[180px]"
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
                   style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
                   <Trophy className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
                   <div className="min-w-0">
