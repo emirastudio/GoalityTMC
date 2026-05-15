@@ -37,7 +37,7 @@ function socialUrl(
   }
 }
 
-type ClubEntry = { name: string; badgeUrl: string | null; city: string | null };
+type ClubEntry = { name: string; slug: string | null; badgeUrl: string | null; city: string | null };
 
 const AGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   U8:  { bg: "rgba(236,72,153,0.12)", text: "#EC4899", border: "rgba(236,72,153,0.25)" },
@@ -288,22 +288,34 @@ export default function TournamentInfoPage() {
             </p>
           </div>
           <div className="grid grid-cols-5 sm:grid-cols-7 gap-3">
-            {clubs.map((club) => (
-              <div key={club.name} className="flex flex-col items-center gap-1.5">
-                {club.badgeUrl ? (
-                  <img src={club.badgeUrl} alt={club.name}
-                    className="w-10 h-10 rounded-xl object-contain border"
-                    style={{ borderColor: "var(--cat-card-border)" }} />
-                ) : (
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[11px] font-black border"
-                    style={{ background: "var(--cat-tag-bg)", color: "var(--cat-accent)", borderColor: "var(--cat-card-border)" }}>
-                    {club.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
-                  </div>
-                )}
-                <p className="text-[9px] text-center leading-tight line-clamp-2 w-full"
-                  style={{ color: "var(--cat-text-muted)" }}>{club.name}</p>
-              </div>
-            ))}
+            {clubs.map((club) => {
+              const inner = (
+                <>
+                  {club.badgeUrl ? (
+                    <img src={club.badgeUrl} alt={club.name}
+                      className="w-10 h-10 rounded-xl object-contain border"
+                      style={{ borderColor: "var(--cat-card-border)" }} />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[11px] font-black border"
+                      style={{ background: "var(--cat-tag-bg)", color: "var(--cat-accent)", borderColor: "var(--cat-card-border)" }}>
+                      {club.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
+                    </div>
+                  )}
+                  <p className="text-[9px] text-center leading-tight line-clamp-2 w-full"
+                    style={{ color: "var(--cat-text-muted)" }}>{club.name}</p>
+                </>
+              );
+              return club.slug ? (
+                <Link key={club.name} href={`/clubs/${club.slug}`}
+                  className="flex flex-col items-center gap-1.5 hover:opacity-75 transition-opacity">
+                  {inner}
+                </Link>
+              ) : (
+                <div key={club.name} className="flex flex-col items-center gap-1.5">
+                  {inner}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -74,7 +74,7 @@ export async function GET(
         status: reg.status,
         classId: reg.classId,
         club: club
-          ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
+          ? { name: club.name, slug: club.slug ?? null, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
           : null,
       };
     });
@@ -99,7 +99,7 @@ export async function GET(
           ?? (reg.team?.birthYear ? String(reg.team.birthYear) : ""),
           status: reg.status,
           club: club
-            ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
+            ? { name: club.name, slug: club.slug ?? null, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
             : null,
         };
       });
@@ -129,7 +129,7 @@ export async function GET(
           ?? (reg.team?.birthYear ? String(reg.team.birthYear) : ""),
         status: reg.status,
         club: club
-          ? { name: club.name, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
+          ? { name: club.name, slug: club.slug ?? null, badgeUrl: club.badgeUrl, city: club.city, country: club.country }
           : null,
       };
     });
