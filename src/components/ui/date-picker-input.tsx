@@ -115,10 +115,10 @@ export function DatePickerInput({
           gap: 8,
         }}
       >
-        <span style={{ color: value ? "inherit" : "rgba(255,255,255,0.3)", fontSize: 14 }}>
+        <span style={{ color: value ? "inherit" : "var(--cat-text-muted)", fontSize: 14 }}>
           {value ? formatDisplay(value) : placeholder}
         </span>
-        <CalendarDays className="w-4 h-4 shrink-0" style={{ color: value ? ACCENT : "rgba(255,255,255,0.3)" }} />
+        <CalendarDays className="w-4 h-4 shrink-0" style={{ color: value ? "var(--cat-accent)" : "var(--cat-text-muted)" }} />
       </button>
 
       {/* Popover */}
@@ -127,33 +127,33 @@ export function DatePickerInput({
           className="absolute z-50 mt-2 rounded-2xl shadow-2xl overflow-hidden"
           style={{
             background: "var(--cat-card-bg, #1C2121)",
-            border: "1px solid rgba(255,255,255,0.1)",
+            border: "1px solid var(--cat-card-border)",
             minWidth: 280,
-            boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
           }}
         >
           {/* Month nav */}
           <div className="flex items-center justify-between px-4 py-3"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            style={{ borderBottom: "1px solid var(--cat-divider)" }}>
             <button type="button" onClick={prevMonth}
               className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:opacity-70"
-              style={{ background: "rgba(255,255,255,0.06)" }}>
-              <ChevronLeft className="w-4 h-4" style={{ color: "rgba(255,255,255,0.7)" }} />
+              style={{ background: "var(--cat-tag-bg)" }}>
+              <ChevronLeft className="w-4 h-4" style={{ color: "var(--cat-text-secondary)" }} />
             </button>
 
             <div className="flex items-center gap-2">
               <span className="text-sm font-black" style={{ color: "var(--cat-text, #fff)" }}>
                 {MONTHS[viewMonth]}
               </span>
-              <span className="text-sm font-black" style={{ color: ACCENT }}>
+              <span className="text-sm font-black" style={{ color: "var(--cat-accent)" }}>
                 {viewYear}
               </span>
             </div>
 
             <button type="button" onClick={nextMonth}
               className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:opacity-70"
-              style={{ background: "rgba(255,255,255,0.06)" }}>
-              <ChevronRight className="w-4 h-4" style={{ color: "rgba(255,255,255,0.7)" }} />
+              style={{ background: "var(--cat-tag-bg)" }}>
+              <ChevronRight className="w-4 h-4" style={{ color: "var(--cat-text-secondary)" }} />
             </button>
           </div>
 
@@ -163,7 +163,7 @@ export function DatePickerInput({
             <div className="grid grid-cols-7 mb-1">
               {DAYS.map(d => (
                 <div key={d} className="text-center text-[10px] font-bold py-1"
-                  style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em" }}>
+                  style={{ color: "var(--cat-text-muted)", letterSpacing: "0.05em" }}>
                   {d}
                 </div>
               ))}
@@ -187,17 +187,17 @@ export function DatePickerInput({
                     className="aspect-square rounded-xl flex items-center justify-center text-sm font-semibold transition-all hover:scale-105"
                     style={{
                       background: isSelected
-                        ? ACCENT
+                        ? "var(--cat-accent)"
                         : isToday
-                        ? "rgba(43,254,186,0.12)"
+                        ? "var(--cat-pill-active-bg, rgba(43,254,186,0.12))"
                         : "transparent",
                       color: isSelected
-                        ? "#000"
+                        ? "var(--cat-accent-text)"
                         : isToday
-                        ? ACCENT
+                        ? "var(--cat-accent)"
                         : isSat || isSun
-                        ? "rgba(255,255,255,0.35)"
-                        : "rgba(255,255,255,0.85)",
+                        ? "var(--cat-text-muted)"
+                        : "var(--cat-text)",
                       outline: isToday && !isSelected ? `1.5px solid ${ACCENT}40` : "none",
                       fontWeight: isSelected || isToday ? 800 : 600,
                     }}
@@ -218,7 +218,7 @@ export function DatePickerInput({
                 setOpen(false);
               }}
               className="w-full py-2 rounded-xl text-xs font-bold transition-all hover:opacity-80"
-              style={{ background: "rgba(43,254,186,0.08)", color: ACCENT, border: `1px solid rgba(43,254,186,0.2)` }}
+              style={{ background: "var(--cat-pill-active-bg, rgba(43,254,186,0.08))", color: "var(--cat-accent)", border: `1px solid var(--cat-accent-glow, rgba(43,254,186,0.2))` }}
             >
               Today
             </button>
