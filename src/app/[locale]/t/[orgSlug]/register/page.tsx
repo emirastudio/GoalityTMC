@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { db } from "@/db";
 import { tournaments, organizations } from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
@@ -10,14 +10,14 @@ const BASE = "https://goalityfootball.com";
 // Short registration link: /<locale>/t/<slug>/register
 //
 // "orgSlug" is reused here as the TOURNAMENT slug (Next.js rule: same
-// dynamic-param name at the same path depth). This is the short,
-// poster/QR/social-friendly URL we hand out.
+// dynamic-param name at the same path depth). Short, poster/QR/social
+// friendly URL → canonical /<locale>/t/<orgSlug>/<slug>/register.
 //
-// We do NOT use redirect() here: redirect() returns a bare 307 with no
-// HTML <head>, so Telegram/Facebook/etc. link unfurlers see no title,
-// description or cover image. Instead we render a minimal HTML page that
-// (a) carries full Open Graph / Twitter metadata for crawlers and
-// (b) instantly forwards real browsers to the canonical register URL.
+// generateMetadata still emits full Open Graph / Twitter tags so social
+// unfurlers (Telegram etc.) that fetch the short URL get the title,
+// description and cover even though browsers are 307-redirected to the
+// canonical page. (Returning JSX here triggered a Next.js route-group
+// client-reference-manifest invariant, so we keep the bare redirect.)
 
 const resolve = cache(async (slug: string) => {
   const t = await db.query.tournaments.findFirst({
@@ -78,29 +78,5 @@ export default async function ShortTournamentRegister({
   const { locale, orgSlug: slug } = await params;
   const data = await resolve(slug);
   if (!data) notFound();
-  const { t, org } = data;
-
-  const target = `/${locale}/t/${org.slug}/${t.slug}/register`;
-
-  // No <html>/<head>/<body> — the root layout owns those. Crawlers read
-  // OG tags from generateMetadata (injected into the root <head>). Real
-  // browsers hit the inline script and forward instantly; the visible
-  // link is the no-JS / crawler fallback.
-  return (
-    <>
-      <script
-        dangerouslySetInnerHTML={{ __html: `location.replace(${JSON.stringify(target)});` }}
-      />
-      <div style={{
-        minHeight: "100vh", display: "flex", alignItems: "center",
-        justifyContent: "center", flexDirection: "column", gap: 12,
-        background: "#0A0E14", color: "#fff", fontFamily: "system-ui, sans-serif",
-      }}>
-        <p style={{ opacity: 0.7, fontSize: 14 }}>Redirecting to registration…</p>
-        <a href={target} style={{ color: "#2BFEBA", fontWeight: 700, textDecoration: "none" }}>
-          {t.name} {t.year} — Continue →
-        </a>
-      </div>
-    </>
-  );
+  redirect(`/${locale}/t/${data.org.slug}/${data.t.slug}/register`);
 }
