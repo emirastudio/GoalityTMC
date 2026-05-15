@@ -298,7 +298,7 @@ export default async function TournamentLayout({ children, params }: Props) {
 
           <footer className="border-t mt-12" style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-card-bg)" }}>
             <div className="w-[90%] max-w-[1400px] mx-auto py-4 flex items-center justify-between text-xs" style={{ color: "var(--cat-text-muted)" }}>
-              <span>&copy; {new Date().getFullYear()} {org.name}</span>
+              <span>&copy; {new Date().getFullYear()} Goality TMC</span>
               <a href="/catalog" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
                 <img src="/logo.png" alt="" className="w-4 h-4 rounded" /> Goality TMC
               </a>
