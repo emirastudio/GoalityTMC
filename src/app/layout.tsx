@@ -13,6 +13,10 @@ const geistSans = Manrope({
 
 
 export const metadata: Metadata = {
+  // Без metadataBase Next резолвит относительные OG/Twitter картинки
+  // против http://localhost:3001 → соцсети (Telegram и т.п.) не могут
+  // загрузить обложку. Базовый абсолютный домен прод-сайта.
+  metadataBase: new URL("https://goalityfootball.com"),
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
