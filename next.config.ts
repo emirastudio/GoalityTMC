@@ -4,6 +4,11 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Build can target an alternate dir (NEXT_DIST_DIR=.next-build) so the
+  // live server keeps serving a complete .next during the rebuild, then
+  // deploy.sh atomically swaps it in. Runtime (`next start`) has no
+  // NEXT_DIST_DIR set → always reads the default ".next".
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   async headers() {
     return [
       {
