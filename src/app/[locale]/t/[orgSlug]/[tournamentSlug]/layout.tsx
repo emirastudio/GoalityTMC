@@ -33,8 +33,9 @@ export async function generateMetadata({
 
   const { org, tournament } = data;
   const title = `${tournament.name} ${tournament.year} | ${org.name}`;
+  const metaCity = (tournament.city && tournament.city.trim()) ? tournament.city : org.city;
   const description = tournament.description
-    ?? `${tournament.name} — футбольный турнир ${tournament.year}${org.city ? ` в ${org.city}` : ""}. Расписание, результаты, таблицы.`;
+    ?? `${tournament.name} — футбольный турнир ${tournament.year}${metaCity ? ` в ${metaCity}` : ""}. Расписание, результаты, таблицы.`;
 
   const coverImage = tournament.coverUrl ?? tournament.cardImageUrl ?? `${BASE}/defaults/tournament-cover-default.jpg`;
   const canonicalPath = `/t/${orgSlug}/${tournamentSlug}`;
@@ -139,17 +140,20 @@ export default async function TournamentLayout({ children, params }: Props) {
   const effectiveCover = tournament.coverUrl ?? "/defaults/tournament-cover-default.jpg";
 
   // Resolved contact — приоритет: настройки ТУРНИРА (Step 7) → fallback
-  // на организацию. Пустые строки считаем «не задано». Город/страна пока
-  // только на уровне org (в tournament_info их нет).
+  // на организацию. Пустые строки считаем «не задано».
   const pick = (a?: string | null, b?: string | null) =>
     (a && a.trim()) ? a : (b && b.trim() ? b : null);
+  // Город/страна: сначала собственные поля ТУРНИРА (Step 1 — Location),
+  // и только если они пустые — данные организации.
+  const resolvedCity    = pick(tournament.city, org.city);
+  const resolvedCountry = pick(tournament.country, org.country);
   const contact = {
     name:    pick(tInfo?.contactName, null),
     email:   pick(tInfo?.contactEmail, org.contactEmail),
     phone:   pick(tInfo?.contactPhone, null),
     website: pick(tInfo?.website, org.website),
-    city:    org.city,
-    country: org.country,
+    city:    resolvedCity,
+    country: resolvedCountry,
     instagram: tInfo?.instagram ?? null,
     facebook:  tInfo?.facebook ?? null,
     twitter:   tInfo?.twitter ?? null,
@@ -179,11 +183,11 @@ export default async function TournamentLayout({ children, params }: Props) {
       "name": org.name,
       ...(org.website ? { "url": org.website } : {}),
     },
-    ...(org.city || org.country ? {
+    ...(resolvedCity || resolvedCountry ? {
       "location": {
         "@type": "Place",
-        "name": [org.city, org.country].filter(Boolean).join(", "),
-        "address": { "@type": "PostalAddress", "addressLocality": org.city ?? undefined, "addressCountry": org.country ?? undefined },
+        "name": [resolvedCity, resolvedCountry].filter(Boolean).join(", "),
+        "address": { "@type": "PostalAddress", "addressLocality": resolvedCity ?? undefined, "addressCountry": resolvedCountry ?? undefined },
       },
     } : {}),
   };
@@ -236,8 +240,8 @@ export default async function TournamentLayout({ children, params }: Props) {
                 registrationOpen={tournament.registrationOpen}
                 startDate={tournament.startDate ? tournament.startDate.toISOString() : null}
                 endDate={tournament.endDate ? tournament.endDate.toISOString() : null}
-                city={org.city}
-                country={org.country}
+                city={resolvedCity}
+                country={resolvedCountry}
                 classes={classesWithCounts}
                 clubCount={Number(clubCount?.count ?? 0)}
                 teamCount={Number(teamCount?.count ?? 0)}
