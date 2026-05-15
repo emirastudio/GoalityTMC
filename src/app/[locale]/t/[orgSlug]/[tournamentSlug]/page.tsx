@@ -166,70 +166,69 @@ export default function TournamentInfoPage() {
         )}
       </div>
 
-      {/* About + Key dates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {tourney.description && (
-          <div className="rounded-2xl p-5 border"
-            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                style={{ background: "var(--cat-badge-open-bg)" }}>
-                <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
-              </div>
-              <p className="text-[11px] font-black uppercase tracking-widest"
-                style={{ color: "var(--cat-text-muted)" }}>{t("aboutTournament")}</p>
+      {/* About */}
+      {tourney.description && (
+        <div className="rounded-2xl p-5 border"
+          style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+              style={{ background: "var(--cat-badge-open-bg)" }}>
+              <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
             </div>
-            <p className="text-sm leading-relaxed whitespace-pre-line"
-              style={{ color: "var(--cat-text-secondary)" }}>{tourney.description}</p>
+            <p className="text-[11px] font-black uppercase tracking-widest"
+              style={{ color: "var(--cat-text-muted)" }}>{t("aboutTournament")}</p>
           </div>
-        )}
+          <p className="text-sm leading-relaxed whitespace-pre-line"
+            style={{ color: "var(--cat-text-secondary)" }}>{tourney.description}</p>
+        </div>
+      )}
 
-        {(tourney.startDate || tourney.endDate || tourney.registrationDeadline) && (
-          <div className="rounded-2xl p-5 border"
-            style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                style={{ background: "var(--cat-badge-open-bg)" }}>
-                <Calendar className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
-              </div>
-              <p className="text-[11px] font-black uppercase tracking-widest"
-                style={{ color: "var(--cat-text-muted)" }}>{t("keyDates")}</p>
+      {/* Key dates — always full width */}
+      {(tourney.startDate || tourney.endDate || tourney.registrationDeadline) && (
+        <div className="rounded-2xl p-5 border"
+          style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+              style={{ background: "var(--cat-badge-open-bg)" }}>
+              <Calendar className="w-3.5 h-3.5" style={{ color: "var(--cat-accent)" }} />
             </div>
-            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
-              {tourney.registrationDeadline && (
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
-                  style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
-                  <Clock className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("registrationDeadline")}</p>
-                    <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{fmt(tourney.registrationDeadline, locale)}</p>
-                  </div>
-                </div>
-              )}
-              {tourney.startDate && (
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
-                  style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
-                  <Calendar className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentStart")}</p>
-                    <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{fmt(tourney.startDate, locale)}</p>
-                  </div>
-                </div>
-              )}
-              {tourney.endDate && (
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
-                  style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
-                  <Trophy className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentEnd")}</p>
-                    <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{fmt(tourney.endDate, locale)}</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <p className="text-[11px] font-black uppercase tracking-widest"
+              style={{ color: "var(--cat-text-muted)" }}>{t("keyDates")}</p>
           </div>
-        )}
-      </div>
+          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+            {tourney.registrationDeadline && (
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
+                style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+                <Clock className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("registrationDeadline")}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{fmt(tourney.registrationDeadline, locale)}</p>
+                </div>
+              </div>
+            )}
+            {tourney.startDate && (
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
+                style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+                <Calendar className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentStart")}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{fmt(tourney.startDate, locale)}</p>
+                </div>
+              </div>
+            )}
+            {tourney.endDate && (
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
+                style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
+                <Trophy className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>{t("tournamentEnd")}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: "var(--cat-text)" }}>{fmt(tourney.endDate, locale)}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Age categories */}
       {classes.length > 0 && (
