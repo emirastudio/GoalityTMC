@@ -165,3 +165,19 @@ body {
 .public-root select {
   font-size: 15px;
 }
+
+/* ── Global header: одинаковый масштаб на ВСЕХ страницах ──
+   Шапка (GlobalHeader, .gh-root) рендерится и внутри .public-root
+   (главная/каталог/цены), и вне его (клуб/турнир). Без этого блока
+   .public-root раздувает её шрифты, и шапка выглядит крупнее на
+   маркетинговых страницах. Пере-фиксируем размеры обратно к базовым
+   с большей специфичностью, чтобы шапка была pixel-identical везде. */
+.public-root .gh-root .text-\[9px\]  { font-size: 9px !important; }
+.public-root .gh-root .text-\[11px\] { font-size: 11px !important; }
+.public-root .gh-root .text-\[12px\] { font-size: 12px !important; }
+.public-root .gh-root .text-\[13px\] { font-size: 13px !important; }
+.public-root .gh-root .text-\[14px\] { font-size: 14px !important; }
+.public-root .gh-root .text-\[15px\] { font-size: 15px !important; }
+.public-root .gh-root .text-xs       { font-size: 12px !important; line-height: 1rem !important; }
+.public-root .gh-root .text-sm       { font-size: 14px !important; line-height: 1.25rem !important; }
+.public-root .gh-root .text-base     { font-size: 16px !important; line-height: 1.5rem !important; }

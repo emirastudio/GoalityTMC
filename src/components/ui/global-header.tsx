@@ -37,7 +37,7 @@ type Props = {
 export function GlobalHeader({ navLinks = [], rightContent }: Props) {
   return (
     <header
-      className="sticky top-0 z-50 backdrop-blur-xl border-b shrink-0"
+      className="gh-root sticky top-0 z-50 backdrop-blur-xl border-b shrink-0"
       style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)" }}
     >
       {/* Centered inner container — 90% width, max 1400px */}
