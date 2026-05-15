@@ -2331,6 +2331,9 @@
   "superAdmin": {
     "title": "Платформа Goality",
     "subtitle": "Администрирование платформы",
+    "impersonationBanner": "Вы просматриваете этот раздел как Супер-админ",
+    "impersonationBannerWithOrg": "Вы просматриваете {org} как Супер-админ",
+    "impersonationBackToSuper": "Назад в админку платформы",
     "organizations": "Организации",
     "totalOrganizations": "Всего организаций",
     "totalTournaments": "Всего турниров",

@@ -2331,6 +2331,9 @@
   "superAdmin": {
     "title": "Goality platvorm",
     "subtitle": "Platvormi haldamine",
+    "impersonationBanner": "Vaatate seda ala Super Adminina",
+    "impersonationBannerWithOrg": "Vaatate organisatsiooni {org} Super Adminina",
+    "impersonationBackToSuper": "Tagasi platvormi halduspaneeli",
     "organizations": "Organisatsioonid",
     "totalOrganizations": "Organisatsioone kokku",
     "totalTournaments": "Turniire kokku",

@@ -2336,6 +2336,9 @@
   "superAdmin": {
     "title": "Plataforma Goality",
     "subtitle": "Administración de la plataforma",
+    "impersonationBanner": "Estás inspeccionando esta área como Super Admin",
+    "impersonationBannerWithOrg": "Estás inspeccionando {org} como Super Admin",
+    "impersonationBackToSuper": "Volver al panel de la plataforma",
     "organizations": "Organizaciones",
     "totalOrganizations": "Total de organizaciones",
     "totalTournaments": "Total de torneos",

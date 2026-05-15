@@ -2331,6 +2331,9 @@
   "superAdmin": {
     "title": "Goality Platform",
     "subtitle": "Platform administration",
+    "impersonationBanner": "You are inspecting this area as Super Admin",
+    "impersonationBannerWithOrg": "You are inspecting {org} as Super Admin",
+    "impersonationBackToSuper": "Back to platform admin",
     "organizations": "Organizations",
     "totalOrganizations": "Total Organizations",
     "totalTournaments": "Total Tournaments",
