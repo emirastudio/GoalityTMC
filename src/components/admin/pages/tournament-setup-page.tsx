@@ -1742,7 +1742,7 @@ export function TournamentSetupPageContent() {
     setInfoSaving(true);
     try {
       await adminFetch("/api/admin/tournament-info", {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tInfo),
       });
