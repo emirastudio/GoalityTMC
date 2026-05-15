@@ -7,12 +7,33 @@ import { Link } from "@/i18n/navigation";
 import {
   Calendar, Mail, Globe, Clock, CheckCircle, ArrowRight,
   Trophy, Users, Building2, Layers, Sparkles, MapPin,
+  Phone, Link2,
 } from "lucide-react";
 import { TournamentProgressBar } from "@/components/tournament/tournament-progress-bar";
 
 function fmt(d: string | null, locale: string) {
   if (!d) return null;
   return new Date(d).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
+}
+
+// Организаторы вводят соцсети по-разному: «@handle», «facebook.com/x»,
+// полный «https://...». Нормализуем в кликабельный абсолютный URL.
+function socialUrl(
+  net: "instagram" | "facebook" | "twitter" | "youtube",
+  raw: string,
+): string {
+  const v = raw.trim();
+  if (/^https?:\/\//i.test(v)) return v;
+  const handle = v.replace(/^@/, "").replace(/\s+/g, "");
+  switch (net) {
+    case "instagram": return `https://instagram.com/${handle}`;
+    case "facebook":
+      return v.includes("facebook.com") ? `https://${v.replace(/^\/+/, "")}` : `https://facebook.com/${handle}`;
+    case "twitter":   return `https://x.com/${handle}`;
+    case "youtube":
+      if (v.includes("youtube.com") || v.includes("youtu.be")) return `https://${v.replace(/^\/+/, "")}`;
+      return `https://youtube.com/${handle.startsWith("@") ? handle : "@" + handle}`;
+  }
 }
 
 type ClubEntry = { name: string; badgeUrl: string | null; city: string | null };
@@ -38,7 +59,7 @@ function getAgeColor(name: string) {
 }
 
 export default function TournamentInfoPage() {
-  const { org, tournament: tourney, stats, classes } = useTournamentPublic();
+  const { org, contact, tournament: tourney, stats, classes } = useTournamentPublic();
   const t = useTranslations("tournament");
   const locale = useLocale();
   const [clubs, setClubs] = useState<ClubEntry[]>([]);
@@ -92,7 +113,7 @@ export default function TournamentInfoPage() {
             style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
               style={{ background: color + "18" }}>
-              <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" style={{ color }} />
+              <Icon className="w-4 h-4 w-[18px] h-[18px]" style={{ color }} />
             </div>
             <div>
               <p className="text-2xl font-black leading-none" style={{ color: "var(--cat-text)" }}>{value}</p>
@@ -287,8 +308,14 @@ export default function TournamentInfoPage() {
         </div>
       )}
 
-      {/* Contacts — only visible to logged-in clubs / admins */}
-      {canSeeContacts && (org.contactEmail || org.website || org.city) && (
+      {/* Contacts — only visible to logged-in clubs / admins.
+          Источник: настройки ТУРНИРА (Step 7) с fallback на организацию —
+          резолвится в layout.tsx как `contact`. */}
+      {canSeeContacts && (
+        contact.email || contact.website || contact.city ||
+        contact.name || contact.phone ||
+        contact.instagram || contact.facebook || contact.twitter || contact.youtube
+      ) && (
         <div className="rounded-2xl p-5 border"
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
           <div className="flex items-center gap-2 mb-4">
@@ -300,25 +327,65 @@ export default function TournamentInfoPage() {
               style={{ color: "var(--cat-text-muted)" }}>{t("contacts")}</p>
           </div>
           <div className="space-y-2.5">
-            {org.city && (
+            {contact.name && (
               <div className="flex items-center gap-2 text-sm" style={{ color: "var(--cat-text-secondary)" }}>
-                <MapPin className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
-                {org.city}{org.country ? `, ${org.country}` : ""}
+                <Users className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
+                {contact.name}
               </div>
             )}
-            {org.contactEmail && (
-              <a href={`mailto:${org.contactEmail}`}
+            {contact.city && (
+              <div className="flex items-center gap-2 text-sm" style={{ color: "var(--cat-text-secondary)" }}>
+                <MapPin className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
+                {contact.city}{contact.country ? `, ${contact.country}` : ""}
+              </div>
+            )}
+            {contact.email && (
+              <a href={`mailto:${contact.email}`}
                 className="flex items-center gap-2 text-sm transition-opacity hover:opacity-80"
                 style={{ color: "var(--cat-accent)" }}>
-                <Mail className="w-4 h-4 shrink-0" /> {org.contactEmail}
+                <Mail className="w-4 h-4 shrink-0" /> {contact.email}
               </a>
             )}
-            {org.website && (
-              <a href={org.website} target="_blank" rel="noopener noreferrer"
+            {contact.phone && (
+              <a href={`tel:${contact.phone.replace(/\s+/g, "")}`}
                 className="flex items-center gap-2 text-sm transition-opacity hover:opacity-80"
                 style={{ color: "var(--cat-accent)" }}>
-                <Globe className="w-4 h-4 shrink-0" /> {org.website}
+                <Phone className="w-4 h-4 shrink-0" /> {contact.phone}
               </a>
+            )}
+            {contact.website && (
+              <a href={contact.website} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm transition-opacity hover:opacity-80"
+                style={{ color: "var(--cat-accent)" }}>
+                <Globe className="w-4 h-4 shrink-0" /> {contact.website}
+              </a>
+            )}
+            {(contact.instagram || contact.facebook || contact.twitter || contact.youtube) && (
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                {([
+                  ["instagram", "Instagram", contact.instagram],
+                  ["facebook",  "Facebook",  contact.facebook],
+                  ["twitter",   "X",         contact.twitter],
+                  ["youtube",   "YouTube",   contact.youtube],
+                ] as const).map(([net, label, val]) =>
+                  val ? (
+                    <a
+                      key={net}
+                      href={socialUrl(net, val)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1 rounded-lg transition-opacity hover:opacity-80"
+                      style={{
+                        background: "var(--cat-tag-bg)",
+                        border: "1px solid var(--cat-tag-border)",
+                        color: "var(--cat-text-secondary)",
+                      }}
+                    >
+                      <Link2 className="w-3.5 h-3.5" /> {label}
+                    </a>
+                  ) : null,
+                )}
+              </div>
             )}
           </div>
         </div>

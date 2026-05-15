@@ -826,6 +826,17 @@ export const tournamentInfo = pgTable("tournament_info", {
   emergencyContact: text("emergency_contact"),
   emergencyPhone: text("emergency_phone"),
   additionalNotes: text("additional_notes"),
+  // Контакты и соцсети организатора на уровне ТУРНИРА (Step 7
+  // «Contact & Social»). Публичная страница показывает их с fallback
+  // на organizations.* если пусто. См. migration 0038.
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  website: text("website"),
+  instagram: text("instagram"),
+  facebook: text("facebook"),
+  twitter: text("twitter"),
+  youtube: text("youtube"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

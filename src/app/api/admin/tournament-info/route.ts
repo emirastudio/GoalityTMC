@@ -66,6 +66,16 @@ export async function PUT(req: NextRequest) {
     emergencyContact: body.emergencyContact ?? null,
     emergencyPhone: body.emergencyPhone ?? null,
     additionalNotes: body.additionalNotes ?? null,
+    // Contact & Social (Step 7) — раньше молча терялись, теперь
+    // персистятся. Пустые строки нормализуем в null.
+    contactName:  body.contactName?.trim()  || null,
+    contactEmail: body.contactEmail?.trim() || null,
+    contactPhone: body.contactPhone?.trim() || null,
+    website:      body.website?.trim()      || null,
+    instagram:    body.instagram?.trim()    || null,
+    facebook:     body.facebook?.trim()     || null,
+    twitter:      body.twitter?.trim()      || null,
+    youtube:      body.youtube?.trim()      || null,
     updatedAt: new Date(),
   };
 

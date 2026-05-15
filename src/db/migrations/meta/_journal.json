@@ -267,6 +267,13 @@
       "when": 1775170531661,
       "tag": "0037_regulations_text_and_class_docs",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1775170591661,
+      "tag": "0038_tournament_info_contact_social",
+      "breakpoints": true
     }
   ]
 }

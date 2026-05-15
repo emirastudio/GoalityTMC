@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { organizations, tournaments, tournamentClasses, teams, tournamentRegistrations } from "@/db/schema";
+import { organizations, tournaments, tournamentClasses, teams, tournamentRegistrations, tournamentInfo } from "@/db/schema";
 import { eq, and, count, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -90,6 +90,12 @@ export default async function TournamentLayout({ children, params }: Props) {
     orderBy: (c, { asc }) => [asc(c.minBirthYear)],
   });
 
+  // Per-tournament Contact & Social (Step 7). Может отсутствовать —
+  // тогда публичная страница падает на контакты организации.
+  const tInfo = await db.query.tournamentInfo.findFirst({
+    where: eq(tournamentInfo.tournamentId, tournament.id),
+  });
+
   // Public counts MUST track the public list — only confirmed
   // registrations should be visible. Same status filter as
   // /api/public/t/[orgSlug]/[tournamentSlug]/teams.
@@ -132,8 +138,27 @@ export default async function TournamentLayout({ children, params }: Props) {
   const brand = org.brandColor ?? "#272D2D";
   const effectiveCover = tournament.coverUrl ?? "/defaults/tournament-cover-default.jpg";
 
+  // Resolved contact — приоритет: настройки ТУРНИРА (Step 7) → fallback
+  // на организацию. Пустые строки считаем «не задано». Город/страна пока
+  // только на уровне org (в tournament_info их нет).
+  const pick = (a?: string | null, b?: string | null) =>
+    (a && a.trim()) ? a : (b && b.trim() ? b : null);
+  const contact = {
+    name:    pick(tInfo?.contactName, null),
+    email:   pick(tInfo?.contactEmail, org.contactEmail),
+    phone:   pick(tInfo?.contactPhone, null),
+    website: pick(tInfo?.website, org.website),
+    city:    org.city,
+    country: org.country,
+    instagram: tInfo?.instagram ?? null,
+    facebook:  tInfo?.facebook ?? null,
+    twitter:   tInfo?.twitter ?? null,
+    youtube:   tInfo?.youtube ?? null,
+  };
+
   const data = {
     org: { name: org.name, slug: org.slug, logo: org.logo, brandColor: brand, city: org.city, country: org.country, contactEmail: org.contactEmail, website: org.website },
+    contact,
     tournament: { id: tournament.id, name: tournament.name, slug: tournament.slug, year: tournament.year, description: tournament.description, logoUrl: tournament.logoUrl, coverUrl: tournament.coverUrl ?? null, registrationOpen: tournament.registrationOpen, registrationDeadline: tournament.registrationDeadline ? tournament.registrationDeadline.toISOString() : null, startDate: tournament.startDate ? tournament.startDate.toISOString() : null, endDate: tournament.endDate ? tournament.endDate.toISOString() : null, currency: tournament.currency },
     stats: { clubCount: Number(clubCount?.count ?? 0), teamCount: Number(teamCount?.count ?? 0), classCount: classes.length, days },
     classes: classesWithCounts,
