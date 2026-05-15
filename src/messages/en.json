@@ -1501,6 +1501,8 @@
     "regClosed": "Registration closed",
     "tournamentName": "Tournament name",
     "tournamentNamePlaceholder": "e.g. Summer Cup 2026",
+    "tournamentDescription": "Description (shown on public page)",
+    "tournamentDescriptionPlaceholder": "Brief description of the tournament — format, venue, age groups…",
     "year": "Year",
     "startDate": "Start date",
     "endDate": "End date",

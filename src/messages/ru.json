@@ -1501,6 +1501,8 @@
     "regClosed": "Регистрация закрыта",
     "tournamentName": "Название турнира",
     "tournamentNamePlaceholder": "напр. Летний Кубок 2026",
+    "tournamentDescription": "Описание (отображается на публичной странице)",
+    "tournamentDescriptionPlaceholder": "Краткое описание турнира — формат, место проведения, возрастные категории…",
     "year": "Год",
     "startDate": "Дата начала",
     "endDate": "Дата окончания",

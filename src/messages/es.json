@@ -1507,6 +1507,8 @@
     "regClosed": "Inscripción cerrada",
     "tournamentName": "Nombre del torneo",
     "tournamentNamePlaceholder": "p. ej. Copa de Verano 2026",
+    "tournamentDescription": "Descripción (visible en la página pública)",
+    "tournamentDescriptionPlaceholder": "Breve descripción del torneo — formato, sede, categorías de edad…",
     "year": "Año",
     "startDate": "Fecha de inicio",
     "endDate": "Fecha de fin",

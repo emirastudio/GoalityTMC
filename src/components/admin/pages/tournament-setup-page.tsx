@@ -464,8 +464,9 @@ const inputStyle = {
 //  ШАГ 1: Основное
 // ─────────────────────────────────────────────────────────────
 
-function StepBasics({ name, setName, year, setYear, startDate, setStartDate, endDate, setEndDate, regDeadline, setRegDeadline, currency, setCurrency, orgSlug, tournamentId }: {
+function StepBasics({ name, setName, description, setDescription, year, setYear, startDate, setStartDate, endDate, setEndDate, regDeadline, setRegDeadline, currency, setCurrency, orgSlug, tournamentId }: {
   name: string; setName: (v: string) => void;
+  description: string; setDescription: (v: string) => void;
   year: number; setYear: (v: number) => void;
   startDate: string; setStartDate: (v: string) => void;
   endDate: string; setEndDate: (v: string) => void;
@@ -492,6 +493,17 @@ function StepBasics({ name, setName, year, setYear, startDate, setStartDate, end
           </Field>
         </div>
       </div>
+
+      <Field label={t("tournamentDescription")}>
+        <textarea
+          className={inputCls}
+          style={{ ...inputStyle, minHeight: "80px", resize: "vertical" }}
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          placeholder={t("tournamentDescriptionPlaceholder")}
+          rows={3}
+        />
+      </Field>
 
       {/* Editable URL slug — globally unique. */}
       <TournamentSlugField orgSlug={orgSlug} tournamentId={tournamentId} />
@@ -1592,6 +1604,7 @@ export function TournamentSetupPageContent() {
 
   // Basics form
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -1633,6 +1646,7 @@ export function TournamentSetupPageContent() {
       const d: TournamentData = await res.json();
       setData(d);
       setName(d.name);
+      setDescription(d.description ?? "");
       setYear(d.year);
       setStartDate(toDateInput(d.startDate));
       setEndDate(toDateInput(d.endDate));
@@ -1854,12 +1868,13 @@ export function TournamentSetupPageContent() {
           summary={summaries.basics}
           isOpen={openSection === "basics"}
           onToggle={() => toggleSection("basics")}
-          onSave={async () => { await saveMain({ name, year, startDate: startDate || null, endDate: endDate || null, registrationDeadline: regDeadline || null, registrationOpen: regOpen, currency }); }}
+          onSave={async () => { await saveMain({ name, description: description || null, year, startDate: startDate || null, endDate: endDate || null, registrationDeadline: regDeadline || null, registrationOpen: regOpen, currency }); }}
           onAfterSave={() => setOpenSection("media")}
           saving={saving}
         >
           <StepBasics
             name={name} setName={setName}
+            description={description} setDescription={setDescription}
             year={year} setYear={setYear}
             startDate={startDate} setStartDate={setStartDate}
             endDate={endDate} setEndDate={setEndDate}

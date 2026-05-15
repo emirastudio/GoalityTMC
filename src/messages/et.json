@@ -1501,6 +1501,8 @@
     "regClosed": "Registreerimine suletud",
     "tournamentName": "Turniiri nimi",
     "tournamentNamePlaceholder": "nt. Suve Karikas 2026",
+    "tournamentDescription": "Kirjeldus (kuvatakse avalikul lehel)",
+    "tournamentDescriptionPlaceholder": "Lühike turniiri kirjeldus — formaat, toimumiskoht, vanusgrupid…",
     "year": "Aasta",
     "startDate": "Alguskuupäev",
     "endDate": "Lõppkuupäev",
