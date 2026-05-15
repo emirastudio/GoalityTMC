@@ -53,6 +53,7 @@ interface TournamentProduct {
 interface TournamentData {
   id: number;
   name: string;
+  description: string | null;
   year: number;
   startDate: string | null;
   endDate: string | null;
