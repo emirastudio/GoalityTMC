@@ -16,7 +16,7 @@ export type TournamentPublicData = {
     twitter: string | null;
     youtube: string | null;
   };
-  tournament: { id: number; name: string; slug: string; year: number; description: string | null; logoUrl: string | null; coverUrl: string | null; registrationOpen: boolean; registrationDeadline: string | null; startDate: string | null; endDate: string | null; currency: string };
+  tournament: { id: number; name: string; slug: string; year: number; description: string | null; descriptionRu: string | null; descriptionEt: string | null; descriptionEs: string | null; logoUrl: string | null; coverUrl: string | null; registrationOpen: boolean; registrationDeadline: string | null; startDate: string | null; endDate: string | null; currency: string };
   stats: { clubCount: number; teamCount: number; classCount: number; days: number | null };
   classes: { id: number; name: string; format: string | null; minBirthYear: number | null; maxBirthYear: number | null; maxPlayers: number | null; teamCount: number }[];
 };

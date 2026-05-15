@@ -10,6 +10,7 @@ import {
   Phone, Link2,
 } from "lucide-react";
 import { TournamentProgressBar } from "@/components/tournament/tournament-progress-bar";
+import { pickLocaleText } from "@/lib/i18n-text";
 
 function fmt(d: string | null, locale: string) {
   if (!d) return null;
@@ -167,7 +168,7 @@ export default function TournamentInfoPage() {
       </div>
 
       {/* About */}
-      {tourney.description && (
+      {pickLocaleText(tourney, locale, "description") && (
         <div className="rounded-2xl p-5 border"
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
           <div className="flex items-center gap-2 mb-3">
@@ -179,7 +180,7 @@ export default function TournamentInfoPage() {
               style={{ color: "var(--cat-text-muted)" }}>{t("aboutTournament")}</p>
           </div>
           <p className="text-sm leading-relaxed whitespace-pre-line"
-            style={{ color: "var(--cat-text-secondary)" }}>{tourney.description}</p>
+            style={{ color: "var(--cat-text-secondary)" }}>{pickLocaleText(tourney, locale, "description")}</p>
         </div>
       )}
 

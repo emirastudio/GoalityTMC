@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAdminFetch, useTournament } from "@/lib/tournament-context";
+import { MultilangInput } from "@/components/ui/multilang-input";
+import { multilangFromRow, multilangToPayload, type MultilangValue } from "@/lib/i18n-text";
 import { TournamentMediaUpload } from "@/components/admin/tournament-media-upload";
 import { CatalogImageBlock } from "@/components/admin/catalog-image-block";
 import { TournamentDocumentsBlock } from "@/components/admin/tournament-documents-block";
@@ -54,6 +56,9 @@ interface TournamentData {
   id: number;
   name: string;
   description: string | null;
+  descriptionRu: string | null;
+  descriptionEt: string | null;
+  descriptionEs: string | null;
   year: number;
   startDate: string | null;
   endDate: string | null;
@@ -465,9 +470,9 @@ const inputStyle = {
 //  ШАГ 1: Основное
 // ─────────────────────────────────────────────────────────────
 
-function StepBasics({ name, setName, description, setDescription, year, setYear, startDate, setStartDate, endDate, setEndDate, regDeadline, setRegDeadline, currency, setCurrency, orgSlug, tournamentId }: {
+function StepBasics({ name, setName, descriptionML, setDescriptionML, year, setYear, startDate, setStartDate, endDate, setEndDate, regDeadline, setRegDeadline, currency, setCurrency, orgSlug, tournamentId }: {
   name: string; setName: (v: string) => void;
-  description: string; setDescription: (v: string) => void;
+  descriptionML: MultilangValue; setDescriptionML: (v: MultilangValue) => void;
   year: number; setYear: (v: number) => void;
   startDate: string; setStartDate: (v: string) => void;
   endDate: string; setEndDate: (v: string) => void;
@@ -496,13 +501,12 @@ function StepBasics({ name, setName, description, setDescription, year, setYear,
       </div>
 
       <Field label={t("tournamentDescription")}>
-        <textarea
-          className={inputCls}
-          style={{ ...inputStyle, minHeight: "80px", resize: "vertical" }}
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          placeholder={t("tournamentDescriptionPlaceholder")}
+        <MultilangInput
+          value={descriptionML}
+          onChange={setDescriptionML}
+          multiline
           rows={3}
+          placeholder={t("tournamentDescriptionPlaceholder")}
         />
       </Field>
 
@@ -1605,7 +1609,7 @@ export function TournamentSetupPageContent() {
 
   // Basics form
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [descriptionML, setDescriptionML] = useState<MultilangValue>({ en: "", ru: "", et: "", es: "" });
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -1647,7 +1651,7 @@ export function TournamentSetupPageContent() {
       const d: TournamentData = await res.json();
       setData(d);
       setName(d.name);
-      setDescription(d.description ?? "");
+      setDescriptionML(multilangFromRow(d as unknown as Record<string, unknown>, "description"));
       setYear(d.year);
       setStartDate(toDateInput(d.startDate));
       setEndDate(toDateInput(d.endDate));
@@ -1869,13 +1873,13 @@ export function TournamentSetupPageContent() {
           summary={summaries.basics}
           isOpen={openSection === "basics"}
           onToggle={() => toggleSection("basics")}
-          onSave={async () => { await saveMain({ name, description: description || null, year, startDate: startDate || null, endDate: endDate || null, registrationDeadline: regDeadline || null, registrationOpen: regOpen, currency }); }}
+          onSave={async () => { await saveMain({ name, ...multilangToPayload("description", descriptionML), year, startDate: startDate || null, endDate: endDate || null, registrationDeadline: regDeadline || null, registrationOpen: regOpen, currency }); }}
           onAfterSave={() => setOpenSection("media")}
           saving={saving}
         >
           <StepBasics
             name={name} setName={setName}
-            description={description} setDescription={setDescription}
+            descriptionML={descriptionML} setDescriptionML={setDescriptionML}
             year={year} setYear={setYear}
             startDate={startDate} setStartDate={setStartDate}
             endDate={endDate} setEndDate={setEndDate}
