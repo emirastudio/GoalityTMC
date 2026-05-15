@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Search, Check } from "lucide-react";
 import { COUNTRIES } from "@/lib/countries";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,10 @@ export function CountrySelect({
 }: CountrySelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const selected = COUNTRIES.find((c) => c.name === value);
@@ -36,9 +40,30 @@ export function CountrySelect({
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const measure = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPos({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    measure();
+    window.addEventListener("scroll", measure, true);
+    window.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("scroll", measure, true);
+      window.removeEventListener("resize", measure);
+    };
+  }, [open, measure]);
+
   useEffect(() => {
     function handleOutside(e: MouseEvent | TouchEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const tgt = e.target as Node;
+      const inField = ref.current?.contains(tgt);
+      const inMenu = menuRef.current?.contains(tgt);
+      if (!inField && !inMenu) {
         setOpen(false);
         setSearch("");
       }
@@ -89,6 +114,7 @@ export function CountrySelect({
       )}
 
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => { setOpen((o) => !o); setSearch(""); }}
         className={triggerClass}
@@ -115,10 +141,16 @@ export function CountrySelect({
         />
       </button>
 
-      {open && (
+      {open && pos && typeof document !== "undefined" && createPortal(
         <div
-          className="absolute z-50 w-full mt-1 rounded-xl shadow-lg overflow-hidden border"
+          ref={menuRef}
+          className="rounded-xl shadow-lg overflow-hidden border"
           style={{
+            position: "fixed",
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            zIndex: 9999,
             background: "var(--cat-dropdown-bg, #1a2030)",
             borderColor: "var(--cat-card-border)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
@@ -190,7 +222,8 @@ export function CountrySelect({
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { getCitiesForCountry } from "@/lib/cities";
 import { cn } from "@/lib/utils";
 import { MapPin } from "lucide-react";
@@ -28,9 +29,32 @@ export function CityInput({
 }: CityInputProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const isOnboarding = variant === "onboarding";
+
+  // Measure the input box and pin the portal dropdown right below it.
+  const measure = useCallback(() => {
+    const el = fieldRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPos({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  // Keep the dropdown glued to the input while open (scroll / resize).
+  useEffect(() => {
+    if (!open) return;
+    measure();
+    window.addEventListener("scroll", measure, true);
+    window.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("scroll", measure, true);
+      window.removeEventListener("resize", measure);
+    };
+  }, [open, measure]);
 
   // Reset city and query when country changes
   useEffect(() => {
@@ -47,9 +71,10 @@ export function CityInput({
   // Close on outside click
   useEffect(() => {
     function handleOutside(e: MouseEvent | TouchEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const tgt = e.target as Node;
+      const inField = ref.current?.contains(tgt);
+      const inMenu = menuRef.current?.contains(tgt);
+      if (!inField && !inMenu) setOpen(false);
     }
     document.addEventListener("pointerdown", handleOutside as EventListener);
     return () => document.removeEventListener("pointerdown", handleOutside as EventListener);
@@ -111,7 +136,7 @@ export function CityInput({
         )
       )}
 
-      <div className="relative">
+      <div className="relative" ref={fieldRef}>
         <input
           type="text"
           value={query}
@@ -128,10 +153,16 @@ export function CityInput({
         />
       </div>
 
-      {showDropdown && (
+      {showDropdown && pos && typeof document !== "undefined" && createPortal(
         <div
-          className="absolute z-50 w-full mt-1 rounded-xl shadow-lg overflow-hidden border"
+          ref={menuRef}
+          className="rounded-xl shadow-lg overflow-hidden border"
           style={{
+            position: "fixed",
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            zIndex: 9999,
             background: "var(--cat-dropdown-bg, #1a2030)",
             borderColor: "var(--cat-card-border)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
@@ -163,7 +194,8 @@ export function CityInput({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
