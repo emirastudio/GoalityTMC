@@ -72,37 +72,11 @@ if [[ -z "\$DATABASE_URL" ]]; then
 fi
 timeout 180 pnpm drizzle-kit migrate
 
-echo "→ Build into .next-build (live server keeps serving old .next)..."
-# Zero-downtime: build to a side dir so the running process never sees a
-# half-deleted/half-built .next. Old complete .next serves traffic for the
-# whole ~4-min build; we atomically swap only at the very end.
-rm -rf .next-build
-NEXT_DIST_DIR=.next-build \
+echo "→ Build (clean) — bake SHA into bundle..."
+rm -rf .next
 NEXT_PUBLIC_DEPLOY_SHA="$DEPLOY_SHA" \
 NEXT_PUBLIC_BUILT_AT="$DEPLOY_TS" \
   pnpm build
-
-echo "→ Atomic swap .next-build → .next..."
-rm -rf .next-old
-[[ -d .next ]] && mv .next .next-old
-mv .next-build .next
-# The build baked distDir=".next-build" into required-server-files.json;
-# rewrite it to ".next" so `next start` (which has no NEXT_DIST_DIR) reads
-# the swapped-in directory instead of the now-gone .next-build.
-if [[ -f .next/required-server-files.json ]]; then
-  python3 - <<'PY'
-import json
-p = ".next/required-server-files.json"
-d = json.load(open(p))
-if isinstance(d.get("config"), dict) and d["config"].get("distDir") == ".next-build":
-    d["config"]["distDir"] = ".next"
-if d.get("relativeAppDir"):
-    d["relativeAppDir"] = d["relativeAppDir"].replace(".next-build", ".next")
-json.dump(d, open(p, "w"))
-print("  patched required-server-files.json distDir → .next")
-PY
-fi
-rm -rf .next-old
 
 echo "→ Kill any non-PM2 process on port 3001 (defensive)..."
 PM2_PID=\$(pm2 jlist 2>/dev/null | python3 -c '
