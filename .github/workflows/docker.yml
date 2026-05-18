@@ -4,20 +4,26 @@ name: Build & push image
 # (plenty of RAM — the prod server never builds), push to GHCR tagged by
 # commit SHA + latest. Deploy then just pulls this exact image.
 
+# Gated on CI: only builds the image if CI (typecheck + tests) passed.
+# Chain: push → CI → (success) → this → (success) → Deploy to production.
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
     branches: [main]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
-  group: docker-${{ github.ref }}
-  cancel-in-progress: true
+  group: docker-prod
+  cancel-in-progress: false
 
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/goalitytmc
 
 jobs:
   build:
+    # Only on green CI (or manual dispatch).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -25,7 +31,13 @@ jobs:
       packages: write
 
     steps:
+      - name: Resolve SHA
+        id: gitsha
+        run: echo "value=${{ github.event.workflow_run.head_sha || github.sha }}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.gitsha.outputs.value }}
 
       - name: Lowercase image name
         id: img
@@ -46,15 +58,15 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ steps.img.outputs.name }}:${{ github.sha }}
+            ${{ steps.img.outputs.name }}:${{ steps.gitsha.outputs.value }}
             ${{ steps.img.outputs.name }}:latest
           build-args: |
-            NEXT_PUBLIC_DEPLOY_SHA=${{ github.sha }}
-            NEXT_PUBLIC_BUILT_AT=${{ github.event.head_commit.timestamp }}
+            NEXT_PUBLIC_DEPLOY_SHA=${{ steps.gitsha.outputs.value }}
+            NEXT_PUBLIC_BUILT_AT=${{ github.event.workflow_run.updated_at || github.event.repository.updated_at }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
 
       - name: Summary
         run: |
-          echo "Pushed \`${{ steps.img.outputs.name }}:${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Pushed \`${{ steps.img.outputs.name }}:${{ steps.gitsha.outputs.value }}\`" >> "$GITHUB_STEP_SUMMARY"

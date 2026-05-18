@@ -30,22 +30,20 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # Lint is informational for now: there's ~200 pre-existing errors
-      # we're aware of but haven't yet cleaned up. Blocking on them would
-      # block all deploys. Tracked separately as tech debt.
+      # Lint is informational for now: ~200 pre-existing errors we haven't
+      # cleaned up yet. Blocking on them would block all deploys. Tech debt
+      # — clean incrementally (touched files), then flip to blocking.
       - name: Lint (non-blocking)
         run: pnpm lint
         continue-on-error: true
 
+      # ── GATES (must pass — they block the image build & deploy) ──
       - name: Typecheck
         run: pnpm exec tsc --noEmit
 
-      - name: Build
-        env:
-          # Build doesn't connect to a real DB but Next.js needs the env vars present
-          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
-          JWT_SECRET: ci-secret
-          NEXT_PUBLIC_APP_URL: https://example.test
-          RESEND_API_KEY: re_ci_dummy
-          EMAIL_FROM: CI <ci@example.test>
-        run: pnpm build
+      - name: Test
+        run: pnpm test
+
+      # Build is the artifact's job (docker.yml builds the prod image,
+      # gated on this CI succeeding). We don't double-build here — typecheck
+      # + test are the fast gate; the real `next build` runs in docker.yml.

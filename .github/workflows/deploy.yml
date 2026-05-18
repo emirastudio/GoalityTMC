@@ -97,6 +97,23 @@ jobs:
             if [ "${S:0:7}" = "${DEPLOY_SHA:0:7}" ]; then OK=true; echo "  ✓ serving $S"; break; fi
           done
 
+          # Smoke key routes against the NEW container (127.0.0.1:3001).
+          # Each must return an allowed status or the deploy rolls back.
+          if [ "$OK" = true ]; then
+            smoke() {  # $1=path  $2=allowed-codes(csv)
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 12 \
+                "http://127.0.0.1:3001$1" 2>/dev/null || echo 000)
+              case ",$2," in *",$code,"*) echo "  ✓ $1 → $code" ;;
+                *) echo "  ✗ $1 → $code (expected $2)"; OK=false ;; esac
+            }
+            smoke /en 200
+            smoke /ru 200
+            smoke /en/catalog 200
+            smoke /ru/t/together-to-goals/monkey-cup 200
+            smoke /en/clubs/fci-levadia 200
+            smoke /ru/t/monkey-cup/register 200,301,302,307,308
+          fi
+
           if [ "$OK" = true ]; then
             INTEG=$(curl -fsS --max-time 10 \
               "http://127.0.0.1:3001/api/health/registration-integrity?windowMinutes=120" 2>/dev/null \
