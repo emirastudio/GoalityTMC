@@ -4,6 +4,10 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Immutable deploy: produce a self-contained .next/standalone server
+  // (node server.js) so the Docker runtime image stays tiny and the
+  // server never builds — CI builds the image once, prod just runs it.
+  output: "standalone",
   async headers() {
     return [
       {
