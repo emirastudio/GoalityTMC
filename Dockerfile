@@ -23,9 +23,21 @@ COPY . .
 # SHA/timestamp baked into the client bundle (powers /api/version).
 ARG NEXT_PUBLIC_DEPLOY_SHA=unknown
 ARG NEXT_PUBLIC_BUILT_AT=unknown
+# Build-time env. NEXT_PUBLIC_* are compiled into the client bundle, so
+# they must be the REAL prod values (they are non-secret by definition).
+# Server-only secrets get dummy values here purely so module-level
+# constructors (e.g. `new Resend(...)`) don't throw while Next collects
+# page data — the REAL secrets are injected at runtime via --env-file,
+# never baked into the image.
 ENV NEXT_PUBLIC_DEPLOY_SHA=${NEXT_PUBLIC_DEPLOY_SHA} \
     NEXT_PUBLIC_BUILT_AT=${NEXT_PUBLIC_BUILT_AT} \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_PUBLIC_APP_URL=https://goalityfootball.com \
+    NEXT_PUBLIC_BASE_URL=https://goalityfootball.com \
+    NEXT_TELEMETRY_DISABLED=1 \
+    DATABASE_URL=postgres://build:build@localhost:5432/build \
+    JWT_SECRET=build-only-not-used-at-runtime \
+    RESEND_API_KEY=re_build_dummy \
+    EMAIL_FROM="Goality <noreply@send.goalityfootball.com>"
 RUN pnpm build
 
 # ── runner: tiny runtime, no source, no dev tooling ──────────────────────────
