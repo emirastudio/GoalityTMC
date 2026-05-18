@@ -1,20 +1,28 @@
 name: Deploy to production
 
-# Triggered when CI succeeds on main, or manually via workflow_dispatch.
+# Immutable deploy. Runs AFTER "Build & push image" succeeds on main.
+# The server never builds — it only pulls the exact image CI produced,
+# runs DB migrations as a one-shot, and atomically swaps the container.
+# Auto-rolls-back to the previous image if health/integrity checks fail.
 #
 # Required GitHub repo secrets:
-#   DEPLOY_SSH_KEY      — private SSH key (ed25519). Authorized_keys on
-#                         root@goality.ee must contain the matching public key.
-#   DEPLOY_KNOWN_HOSTS  — `ssh-keyscan goality.ee` output (pinned host key).
-#
-# Set them in: Settings → Secrets and variables → Actions → New repository secret.
+#   DEPLOY_SSH_KEY      — ed25519 private key; matching pubkey in
+#                         root@goality.ee:~/.ssh/authorized_keys
+#   DEPLOY_KNOWN_HOSTS  — `ssh-keyscan goality.ee` output
+# Server prerequisites (one-time, already done):
+#   /home/goality/.ghcr-token  — GH PAT (read:packages), chmod 600
+#   /home/goality/app/.env.local — runtime secrets
 
 on:
   workflow_run:
-    workflows: [CI]
+    workflows: ["Build & push image"]
     branches: [main]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to deploy (defaults to latest main)"
+        required: false
 
 concurrency:
   group: deploy-prod
@@ -24,12 +32,15 @@ jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Resolve deploy SHA
+        id: sha
+        run: |
+          SHA="${{ github.event.inputs.sha || github.event.workflow_run.head_sha || github.sha }}"
+          echo "value=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Deploying $SHA"
 
       - name: Setup SSH
         run: |
@@ -43,116 +54,64 @@ jobs:
           fi
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Sync files (rsync)
+      - name: Pull image, migrate, swap container, verify (with rollback)
         run: |
-          rsync -avz --delete-after \
-            --exclude-from=.rsync-exclude \
-            -e "ssh -i ~/.ssh/id_ed25519" \
-            ./ root@goality.ee:/home/goality/app/
-
-      - name: Remote pipeline (install + migrate + build + reload + verify)
-        run: |
-          DEPLOY_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          DEPLOY_SHA="${{ steps.sha.outputs.value }}"
           DEPLOY_TS=$(date -u +%FT%TZ)
-          ssh -i ~/.ssh/id_ed25519 root@goality.ee "DEPLOY_SHA=$DEPLOY_SHA DEPLOY_TS=$DEPLOY_TS bash -se" <<'EOF'
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          ssh -i ~/.ssh/id_ed25519 root@goality.ee \
+            "DEPLOY_SHA=$DEPLOY_SHA DEPLOY_TS=$DEPLOY_TS OWNER=$OWNER bash -se" <<'EOF'
           set -euo pipefail
-          cd /home/goality/app
+          IMG="ghcr.io/${OWNER}/goalitytmc:${DEPLOY_SHA}"
+          UP=/home/goality/app/public/uploads
+          ENVF=/home/goality/app/.env.local
+          run_app() {  # $1 = image ref
+            docker rm -f goality-app >/dev/null 2>&1 || true
+            docker run -d --name goality-app --network host \
+              -e PORT=3001 -e HOSTNAME=0.0.0.0 \
+              --env-file "$ENVF" -v "$UP":/app/public/uploads \
+              --restart unless-stopped "$1" >/dev/null
+          }
 
-          echo "→ Install deps (frozen)..."
-          pnpm install --frozen-lockfile
+          echo "→ GHCR login"
+          cat /home/goality/.ghcr-token | docker login ghcr.io -u emirastudio --password-stdin >/dev/null
 
-          echo "→ Run DB migrations..."
-          export DATABASE_URL=$(grep '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2-)
-          if [[ -z "$DATABASE_URL" ]]; then
-            echo "✗ DATABASE_URL missing in .env.local"
+          PREV=$(docker inspect goality-app --format '{{.Config.Image}}' 2>/dev/null || echo "")
+          echo "→ Previous image: ${PREV:-<none>}"
+
+          echo "→ Pull $IMG"
+          docker pull "$IMG" >/dev/null
+
+          echo "→ Migrate (idempotent, pre-swap)"
+          docker run --rm --network host --env-file "$ENVF" "$IMG" node scripts/migrate.mjs
+
+          echo "→ Swap container"
+          run_app "$IMG"
+
+          echo "→ Healthcheck (/api/version SHA)"
+          OK=false
+          for i in $(seq 1 20); do
+            sleep 3
+            S=$(curl -fsS --max-time 5 http://127.0.0.1:3001/api/version 2>/dev/null \
+                 | python3 -c 'import json,sys;print(json.load(sys.stdin).get("sha","?"))' 2>/dev/null || echo "?")
+            if [ "${S:0:7}" = "${DEPLOY_SHA:0:7}" ]; then OK=true; echo "  ✓ serving $S"; break; fi
+          done
+
+          if [ "$OK" = true ]; then
+            INTEG=$(curl -fsS --max-time 10 \
+              "http://127.0.0.1:3001/api/health/registration-integrity?windowMinutes=120" 2>/dev/null \
+              | jq -r '.ok // false' 2>/dev/null || echo false)
+            [ "$INTEG" = true ] || { echo "✗ integrity check failed"; OK=false; }
+          fi
+
+          if [ "$OK" != true ]; then
+            echo "✗ Deploy unhealthy — rolling back to ${PREV:-<none>}"
+            if [ -n "$PREV" ]; then run_app "$PREV"; fi
             exit 1
           fi
-          timeout 180 pnpm drizzle-kit migrate
 
-          echo "→ Build (clean) — bake SHA into bundle..."
-          rm -rf .next
-          NEXT_PUBLIC_DEPLOY_SHA="$DEPLOY_SHA" \
-          NEXT_PUBLIC_BUILT_AT="$DEPLOY_TS" \
-            pnpm build
-
-          echo "→ Kill any non-PM2 process on port 3001 (defensive)..."
-          # Find every PID listening on 3001 — anything that isn't the
-          # current PM2 child of 'goality' is an orphan and must die,
-          # otherwise pm2 reload's new worker fails to bind.
-          PM2_PID=$(pm2 jlist 2>/dev/null | python3 -c '
-          import json, sys
-          procs = json.load(sys.stdin)
-          for p in procs:
-            if p.get("name") == "goality":
-              print(p.get("pid", 0))
-              break
-          ' || echo 0)
-          for pid in $(ss -tlnp 2>/dev/null | grep ":3001 " | grep -oP "pid=\K[0-9]+" | sort -u); do
-            if [[ "$pid" != "$PM2_PID" ]] && [[ "$pid" != "0" ]]; then
-              echo "  killing orphan pid $pid (pm2 pid is $PM2_PID)"
-              kill "$pid" 2>/dev/null || true
-            fi
-          done
-
-          echo "→ Reload PM2..."
-          pm2 reload goality --update-env
-
-          echo "→ Wait for PM2 status = online + restart count stable..."
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            STATUS=$(pm2 jlist 2>/dev/null | python3 -c '
-          import json, sys
-          procs = json.load(sys.stdin)
-          for p in procs:
-            if p.get("name") == "goality":
-              env = p.get("pm2_env", {}) or {}
-              print(env.get("status", "unknown"))
-              break
-          else:
-            print("not_found")
-          ')
-            if [[ "$STATUS" == "online" ]]; then
-              echo "  ✓ pm2 status: online"
-              break
-            fi
-            if [[ $i -eq 10 ]]; then
-              echo "✗ pm2 status stuck at '$STATUS' after 30s — see 'pm2 logs goality'"
-              pm2 logs goality --lines 30 --nostream
-              exit 1
-            fi
-            sleep 3
-          done
-
-          echo "→ Smoke test the NEW build via /api/version (verifies SHA, not just port)..."
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            VERSION_JSON=$(curl -fsS --max-time 5 http://127.0.0.1:3001/api/version 2>/dev/null || echo '{}')
-            SERVING_SHA=$(echo "$VERSION_JSON" | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d.get("sha","?"))' 2>/dev/null || echo "?")
-            if [[ "$SERVING_SHA" == "$DEPLOY_SHA" ]]; then
-              echo "  ✓ /api/version reports $SERVING_SHA — matches deploy"
-              break
-            fi
-            if [[ $i -eq 10 ]]; then
-              echo "✗ /api/version SHA mismatch after 30s. Expected $DEPLOY_SHA, got $SERVING_SHA"
-              echo "  This usually means an orphan process on 3001 is serving stale code."
-              exit 1
-            fi
-            sleep 3
-          done
-
-          echo "→ Business-invariant check: /api/health/registration-integrity..."
-          # Catches the kind of regression we hit on 2026-05-09: register
-          # endpoint succeeds but no tournament_registrations get written.
-          # Window of 120 minutes covers the freshly-deployed code.
-          INTEGRITY_JSON=$(curl -fsS --max-time 10 "http://127.0.0.1:3001/api/health/registration-integrity?windowMinutes=120" 2>/dev/null || echo '{}')
-          INTEGRITY_OK=$(echo "$INTEGRITY_JSON" | jq -r '.ok // false' 2>/dev/null || echo "false")
-          if [[ "$INTEGRITY_OK" != "true" ]]; then
-            echo "✗ Registration-integrity check FAILED:"
-            echo "$INTEGRITY_JSON"
-            exit 1
-          fi
-          CHECKED=$(echo "$INTEGRITY_JSON" | jq -r '.checkedAttempts // 0' 2>/dev/null || echo "?")
-          echo "  ✓ Integrity OK — verified $CHECKED recent registrations"
-
+          docker image prune -f >/dev/null 2>&1 || true
           mkdir -p /home/goality/deploys
-          echo "${DEPLOY_TS}  ${DEPLOY_SHA}  github-actions" >> /home/goality/deploys/log.tsv
-          echo "✓ Deploy verified — $DEPLOY_SHA is live"
+          echo "${DEPLOY_TS}  ${DEPLOY_SHA}  ghcr-deploy" >> /home/goality/deploys/log.tsv
+          echo "✓ Deployed $DEPLOY_SHA (immutable)"
           EOF
