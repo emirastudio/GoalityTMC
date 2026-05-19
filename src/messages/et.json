@@ -428,7 +428,10 @@
     "signingInAs": "Logimine sisse kui",
     "changeClub": "Muuda",
     "clubNotRegistered": "Klubi pole veel registreeritud?",
-    "registerNow": "Registreeri klubi"
+    "registerNow": "Registreeri klubi",
+    "tooManyAttempts": "Liiga palju katseid. Proovige mõne minuti pärast uuesti.",
+    "serverError": "Midagi läks valesti. Proovige uuesti.",
+    "networkError": "Võrguviga — kontrollige ühendust ja proovige uuesti."
   },
   "nav": {
     "overview": "Ülevaade",

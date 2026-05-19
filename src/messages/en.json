@@ -428,7 +428,10 @@
     "signingInAs": "Signing in as",
     "changeClub": "Change",
     "clubNotRegistered": "Club not registered yet?",
-    "registerNow": "Register a new club"
+    "registerNow": "Register a new club",
+    "tooManyAttempts": "Too many attempts. Please try again in a few minutes.",
+    "serverError": "Something went wrong. Please try again.",
+    "networkError": "Network error — check your connection and try again."
   },
   "nav": {
     "overview": "Overview",

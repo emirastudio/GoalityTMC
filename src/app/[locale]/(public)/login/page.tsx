@@ -79,34 +79,46 @@ export default function LoginPage() {
     const form = new FormData(e.currentTarget);
     const endpoint = mode === "organizer" ? "/api/auth/admin-login" : "/api/auth/club-login";
 
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: form.get("email"),
-        password: form.get("password"),
-      }),
-    });
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.get("email"),
+          password: form.get("password"),
+        }),
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (safeNext) {
-        // Honour ?next= if present and safe (same-app path only).
-        // window.location to ensure server components see the new cookie.
-        window.location.href = safeNext;
-        return;
+      if (res.ok) {
+        const data = await res.json();
+        if (safeNext) {
+          // Honour ?next= if present and safe (same-app path only).
+          // window.location to ensure server components see the new cookie.
+          window.location.href = safeNext;
+          return;
+        }
+        if (mode === "organizer") {
+          if (data.organizationSlug) router.push(`/org/${data.organizationSlug}/admin`);
+          else if (data.isSuper) router.push("/admin/dashboard");
+          else router.push("/admin/dashboard");
+        } else {
+          router.push(data.hasTournament ? "/team/overview" : "/club/dashboard");
+        }
+        return; // success — keep the spinner until navigation
       }
-      if (mode === "organizer") {
-        if (data.organizationSlug) router.push(`/org/${data.organizationSlug}/admin`);
-        else if (data.isSuper) router.push("/admin/dashboard");
-        else router.push("/admin/dashboard");
-      } else {
-        router.push(data.hasTournament ? "/team/overview" : "/club/dashboard");
-      }
-    } else {
-      setError(t("invalidCredentials"));
+
+      // Distinct messages — a locked-out user must not see "invalid
+      // credentials", and a 500 isn't the user's fault.
+      if (res.status === 429) setError(t("tooManyAttempts"));
+      else if (res.status === 401 || res.status === 400) setError(t("invalidCredentials"));
+      else setError(t("serverError"));
+    } catch {
+      // fetch rejected — offline / DNS / aborted. Without this the
+      // spinner span forever and the user gets zero feedback.
+      setError(t("networkError"));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const heroLines = t("loginHeroTitle").split("\n");

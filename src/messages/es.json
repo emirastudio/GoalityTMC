@@ -428,7 +428,10 @@
     "signingInAs": "Iniciando sesión como",
     "changeClub": "Cambiar",
     "clubNotRegistered": "¿El club aún no está registrado?",
-    "registerNow": "Registrar un nuevo club"
+    "registerNow": "Registrar un nuevo club",
+    "tooManyAttempts": "Demasiados intentos. Inténtalo de nuevo en unos minutos.",
+    "serverError": "Algo salió mal. Inténtalo de nuevo.",
+    "networkError": "Error de red — comprueba tu conexión e inténtalo de nuevo."
   },
   "nav": {
     "overview": "Resumen",
