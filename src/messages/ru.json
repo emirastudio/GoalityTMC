@@ -908,8 +908,22 @@
       "passwordTooWeak": "Пароль: минимум 8 символов, заглавная, строчная буква и цифра",
       "passwordMismatch": "Пароли не совпадают",
       "registrationFailed": "Ошибка регистрации. Попробуйте ещё раз.",
-      "emailAlreadyExists": "Аккаунт с таким email уже существует. Пожалуйста, войдите в систему."
-    }
+      "emailAlreadyExists": "Аккаунт с таким email уже существует. Пожалуйста, войдите в систему.",
+      "emailNotVerified": "Подтвердите email перед продолжением."
+    },
+    "verifyButtonSend": "Отправить код",
+    "verifyButtonResend": "Отправить ещё раз",
+    "verifyButtonSending": "Отправляем…",
+    "verifyButtonVerified": "✓ Подтверждён",
+    "verifyEnterEmail": "Введите корректный email",
+    "verifySendError": "Не удалось отправить код. Попробуйте позже.",
+    "verifyCodeSentTo": "Код отправлен на {email}. Проверьте почту (и папку «Спам»).",
+    "verifyCheck": "Проверить",
+    "verifyChecking": "Проверяем…",
+    "verifyCodeFormat": "Код состоит из 6 цифр",
+    "verifyCodeWrong": "Неверный код",
+    "verifyDescription": "Подтвердите email — на него организаторы будут присылать важную информацию о турнире.",
+    "networkError": "Сетевая ошибка"
   },
   "admin": {
     "dashboard": {

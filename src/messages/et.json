@@ -908,8 +908,22 @@
       "passwordTooWeak": "Parool: min 8 tähemärki, suur, väike täht ja number",
       "passwordMismatch": "Paroolid ei ühti",
       "registrationFailed": "Registreerimine ebaõnnestus. Palun proovi uuesti.",
-      "emailAlreadyExists": "Selle e-postiga konto on juba olemas. Palun logi sisse."
-    }
+      "emailAlreadyExists": "Selle e-postiga konto on juba olemas. Palun logi sisse.",
+      "emailNotVerified": "Kinnitage e-post enne jätkamist."
+    },
+    "verifyButtonSend": "Saada kood",
+    "verifyButtonResend": "Saada uuesti",
+    "verifyButtonSending": "Saadame…",
+    "verifyButtonVerified": "✓ Kinnitatud",
+    "verifyEnterEmail": "Sisestage korrektne e-post",
+    "verifySendError": "Koodi saatmine ebaõnnestus. Proovige hiljem uuesti.",
+    "verifyCodeSentTo": "Kood saadetud aadressile {email}. Vaadake postkasti (ja Spam-kausta).",
+    "verifyCheck": "Kontrolli",
+    "verifyChecking": "Kontrollime…",
+    "verifyCodeFormat": "Kood koosneb 6 numbrist",
+    "verifyCodeWrong": "Vale kood",
+    "verifyDescription": "Kinnitage e-post — sellele saadab korraldaja olulist infot turniiri kohta.",
+    "networkError": "Võrgu viga"
   },
   "admin": {
     "dashboard": {

@@ -914,8 +914,22 @@
       "passwordTooWeak": "La contraseña debe tener al menos 8 caracteres con mayúsculas, minúsculas y un número",
       "passwordMismatch": "Las contraseñas no coinciden",
       "registrationFailed": "Error en la inscripción. Por favor, inténtelo de nuevo.",
-      "emailAlreadyExists": "Ya existe una cuenta con este correo electrónico. Por favor, inicie sesión."
-    }
+      "emailAlreadyExists": "Ya existe una cuenta con este correo electrónico. Por favor, inicie sesión.",
+      "emailNotVerified": "Verifica tu correo antes de continuar."
+    },
+    "verifyButtonSend": "Enviar código",
+    "verifyButtonResend": "Reenviar código",
+    "verifyButtonSending": "Enviando…",
+    "verifyButtonVerified": "✓ Verificado",
+    "verifyEnterEmail": "Introduce un email válido",
+    "verifySendError": "No se pudo enviar el código. Inténtalo más tarde.",
+    "verifyCodeSentTo": "Código enviado a {email}. Revisa tu bandeja (y la carpeta «Spam»).",
+    "verifyCheck": "Verificar",
+    "verifyChecking": "Verificando…",
+    "verifyCodeFormat": "El código tiene 6 dígitos",
+    "verifyCodeWrong": "Código incorrecto",
+    "verifyDescription": "Verifica tu email — el organizador enviará información importante allí.",
+    "networkError": "Error de red"
   },
   "admin": {
     "dashboard": {

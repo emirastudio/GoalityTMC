@@ -908,8 +908,22 @@
       "passwordTooWeak": "Password must be at least 8 characters with uppercase, lowercase and a number",
       "passwordMismatch": "Passwords do not match",
       "registrationFailed": "Registration failed. Please try again.",
-      "emailAlreadyExists": "An account with this email already exists. Please log in instead."
-    }
+      "emailAlreadyExists": "An account with this email already exists. Please log in instead.",
+      "emailNotVerified": "Please verify your email before continuing."
+    },
+    "verifyButtonSend": "Send code",
+    "verifyButtonResend": "Resend code",
+    "verifyButtonSending": "Sending…",
+    "verifyButtonVerified": "✓ Verified",
+    "verifyEnterEmail": "Enter a valid email",
+    "verifySendError": "Couldn't send the code. Please try again later.",
+    "verifyCodeSentTo": "We've sent a 6-digit code to {email}. Check your inbox (and Spam).",
+    "verifyCheck": "Verify",
+    "verifyChecking": "Verifying…",
+    "verifyCodeFormat": "The code is 6 digits",
+    "verifyCodeWrong": "Wrong code",
+    "verifyDescription": "Confirm your email — the organizer will use it to send you tournament info.",
+    "networkError": "Network error"
   },
   "admin": {
     "dashboard": {

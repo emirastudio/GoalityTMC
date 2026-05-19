@@ -427,6 +427,14 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
+  // Email verification — REQUIRED: /api/clubs/register refuses to create
+  // an account without a recently verified emailVerifications row for this
+  // address. Same proven flow as the tournament registration wizard.
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [verifyPhase, setVerifyPhase] = useState<"idle" | "sending" | "sent" | "checking">("idle");
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyError, setVerifyError] = useState("");
+
   const stepIndex = FORM_STEPS.indexOf(step);
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === FORM_STEPS.length - 1;
@@ -441,6 +449,71 @@ export default function RegisterPage() {
 
   const stepLabels = [tcr("step1"), tcr("step3"), tcr("step4")];
 
+  // Reset verification if the user edits the email after sending/verifying.
+  function onEmailChange(v: string) {
+    setContactEmail(v);
+    if (verifyPhase !== "idle" || emailVerified) {
+      setEmailVerified(false);
+      setVerifyPhase("idle");
+      setVerifyCode("");
+      setVerifyError("");
+    }
+  }
+
+  async function sendVerifyCode() {
+    setVerifyError("");
+    const email = contactEmail.trim();
+    if (!email.includes("@") || email.length < 5) {
+      setVerifyError(t("verifyEnterEmail"));
+      return;
+    }
+    setVerifyPhase("sending");
+    try {
+      const r = await fetch("/api/auth/email-verify/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setVerifyError(d.error ?? t("verifySendError"));
+        setVerifyPhase("idle");
+        return;
+      }
+      setVerifyPhase("sent");
+    } catch {
+      setVerifyError(t("networkError"));
+      setVerifyPhase("idle");
+    }
+  }
+
+  async function checkVerifyCode() {
+    setVerifyError("");
+    if (!/^\d{6}$/.test(verifyCode)) {
+      setVerifyError(t("verifyCodeFormat"));
+      return;
+    }
+    setVerifyPhase("checking");
+    try {
+      const r = await fetch("/api/auth/email-verify/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: contactEmail.trim(), code: verifyCode }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setVerifyError(d.error ?? t("verifyCodeWrong"));
+        setVerifyPhase("sent");
+        return;
+      }
+      setEmailVerified(true);
+      setVerifyPhase("idle");
+    } catch {
+      setVerifyError(t("networkError"));
+      setVerifyPhase("sent");
+    }
+  }
+
   function next() {
     setError("");
     if (step === "club" && !clubName.trim()) { setError(t("errors.clubNameRequired")); return; }
@@ -448,6 +521,7 @@ export default function RegisterPage() {
     if (step === "contact") {
       if (!contactName.trim()) { setError(t("errors.contactNameRequired")); return; }
       if (!contactEmail.trim()) { setError(t("errors.emailRequired")); return; }
+      if (!emailVerified) { setError(t("errors.emailNotVerified")); return; }
       if (!password) { setError(t("errors.passwordRequired")); return; }
       if (password.length < 6) { setError(t("errors.passwordTooShort")); return; }
       if (password !== passwordConfirm) { setError(t("errors.passwordMismatch")); return; }
@@ -473,6 +547,16 @@ export default function RegisterPage() {
 
   async function handleSubmit() {
     setError("");
+    // Defensive: server rejects unverified emails (or verification older
+    // than its 30-min window). Send the user back to re-verify with a
+    // clear message instead of the generic "registration failed".
+    if (!emailVerified) {
+      setError(t("errors.emailNotVerified"));
+      setEmailVerified(false);
+      setVerifyPhase("idle");
+      setStep("contact");
+      return;
+    }
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -490,8 +574,19 @@ export default function RegisterPage() {
       if (res.ok) {
         router.push("/club/dashboard");
       } else {
-        if (res.status === 409) setError(t("errors.emailAlreadyExists"));
-        else setError(t("errors.registrationFailed"));
+        const d = await res.json().catch(() => ({} as { error?: string }));
+        if (res.status === 409) {
+          setError(t("errors.emailAlreadyExists"));
+        } else if (res.status === 400 && /verify/i.test(d?.error ?? "")) {
+          // Verification expired between verify and submit (>30 min).
+          setError(t("errors.emailNotVerified"));
+          setEmailVerified(false);
+          setVerifyPhase("idle");
+          setVerifyCode("");
+          setStep("contact");
+        } else {
+          setError(t("errors.registrationFailed"));
+        }
       }
     } finally {
       setSubmitting(false);
@@ -773,8 +868,57 @@ export default function RegisterPage() {
                         options={contactRoles} placeholder={t("contact.selectRole")} />
                     </div>
 
-                    <Input id="contactEmail" label={t("contact.email")} type="email" value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)} required />
+                    {/* Email + 6-digit verification — REQUIRED before
+                        continuing (backend refuses unverified addresses). */}
+                    <div className="space-y-2">
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <Input id="contactEmail" label={t("contact.email")} type="email"
+                            value={contactEmail}
+                            onChange={(e) => onEmailChange(e.target.value)}
+                            disabled={emailVerified} required />
+                        </div>
+                        {emailVerified ? (
+                          <span className="shrink-0 px-3 py-2 rounded-lg text-xs font-bold"
+                            style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
+                            {t("verifyButtonVerified")}
+                          </span>
+                        ) : (
+                          <Button type="button" variant="gold" onClick={sendVerifyCode}
+                            disabled={verifyPhase === "sending" || !contactEmail.trim().includes("@")}
+                            className="shrink-0">
+                            {verifyPhase === "sending" ? t("verifyButtonSending")
+                              : verifyPhase === "sent" ? t("verifyButtonResend")
+                              : t("verifyButtonSend")}
+                          </Button>
+                        )}
+                      </div>
+
+                      {!emailVerified && (verifyPhase === "sent" || verifyPhase === "checking") && (
+                        <div className="rounded-xl th-bg border th-border p-3 space-y-2">
+                          <p className="text-xs th-text-2">
+                            {t("verifyCodeSentTo", { email: contactEmail })}
+                          </p>
+                          <div className="flex gap-2">
+                            <Input id="verifyCode" inputMode="numeric" maxLength={6}
+                              value={verifyCode}
+                              onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                              placeholder="000000"
+                              className="text-center font-mono tracking-[0.4em]" autoFocus />
+                            <Button type="button" onClick={checkVerifyCode}
+                              disabled={verifyPhase === "checking" || verifyCode.length !== 6}
+                              className="shrink-0">
+                              {verifyPhase === "checking" ? t("verifyChecking") : t("verifyCheck")}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {verifyError && <p className="text-xs text-error">{verifyError}</p>}
+                      {!emailVerified && verifyPhase === "idle" && (
+                        <p className="text-xs th-text-2">{t("verifyDescription")}</p>
+                      )}
+                    </div>
 
                     <Input id="contactPhone" label={t("contact.phone")} type="tel" value={contactPhone}
                       onChange={(e) => setContactPhone(e.target.value)} />
