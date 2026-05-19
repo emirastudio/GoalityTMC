@@ -17,6 +17,7 @@ import {
 import { eq, and, max, isNull } from "drizzle-orm";
 import { getSession, createToken, setSessionCookie } from "@/lib/auth";
 import { sendRegistrationReceived } from "@/lib/email";
+import { EMAIL_STRINGS, t as tStr, normaliseLocale } from "@/lib/email-i18n";
 
 // POST /api/clubs/[clubId]/tournament-register
 // Batch-register a club's teams for a tournament.
@@ -48,6 +49,9 @@ export async function POST(
   if (session.clubId !== cid) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  // UI locale for user-facing API messages (next-intl sets NEXT_LOCALE).
+  const reqLocale = normaliseLocale(req.cookies.get("NEXT_LOCALE")?.value);
 
   const body = await req.json();
   const { tournamentId, teams: teamEntries } = body as {
@@ -247,9 +251,12 @@ export async function POST(
     if (conflict) {
       return NextResponse.json(
         {
-          error: alias
-            ? `Команда «${teamName}» уже подавала заявку с псевдонимом «${alias}». Используйте другой псевдоним или отмените существующую заявку.`
-            : `Команда «${teamName}» уже зарегистрирована в этом турнире. Чтобы добавить второй состав — задайте псевдоним (Black/White/A/B), либо отмените существующую заявку.`,
+          error: tStr(
+            EMAIL_STRINGS.registrationDuplicate,
+            alias ? "aliasUsed" : "alreadyRegistered",
+            reqLocale,
+            { teamName, alias: alias ?? "" },
+          ),
           code: "DUPLICATE_REGISTRATION",
           conflict: { registrationId: conflict.id, teamId, classId: conflict.classId },
         },
@@ -325,8 +332,10 @@ export async function POST(
   // 10. Create welcome inbox message
   const [club] = await db.select().from(clubs).where(eq(clubs.id, cid));
 
-  const welcomeSubject = "Welcome! Your registration is confirmed";
-  const welcomeBody = `Dear ${club.name},\n\nYour teams have been successfully registered!\n\nPlease complete your registration by filling in:\n✅ Players — add all players\n✅ Staff — add coaching staff\n✅ Travel — arrival and departure details\n\nIf you have any questions, use the Inbox to contact the organizer.\n\nGoality TMC`;
+  // Inbox welcome — in the club's preferred language.
+  const clubLocale = normaliseLocale(club.preferredLocale);
+  const welcomeSubject = tStr(EMAIL_STRINGS.registrationWelcome, "subject", clubLocale);
+  const welcomeBody = tStr(EMAIL_STRINGS.registrationWelcome, "body", clubLocale, { clubName: club.name });
 
   const [message] = await db
     .insert(inboxMessages)

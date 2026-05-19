@@ -1,7 +1,9 @@
-// All user-visible email strings, in the four locales the UI supports.
-// Keep keys flat per template — they're referenced by name from the
-// matching sender in lib/email.ts. The English copy is the canonical
-// source for translators.
+// All user-visible server-rendered strings (emails + in-app inbox
+// messages + a few API error responses), in the four locales the UI
+// supports. Keep keys flat per group — referenced by name from the
+// matching sender / route. The English copy is the canonical source
+// for translators (registrationDuplicate's canonical source is RU,
+// per its original hand-written wording).
 //
 // Placeholder syntax: {name} — replaced at render time by `t()`.
 
@@ -137,6 +139,33 @@ export const EMAIL_STRINGS = {
     body2:      { en: "Browse the catalog to find another tournament that fits your teams.",         ru: "Загляните в каталог — там много открытых турниров.",                                       et: "Sirvige kataloogi, et leida sobiv turniir.",                                                     es: "Explora el catálogo para encontrar otro torneo." },
     cta:        { en: "Browse Tournaments",                                                          ru: "Каталог турниров",                                                                          et: "Sirvi turniire",                                                                                 es: "Ver torneos" },
     preheader:  { en: "{count} applications for {tournamentName} not accepted.",                     ru: "{count} заявок на {tournamentName} не приняты.",                                            et: "{count} avaldust turniirile {tournamentName} ei võetud vastu.",                                  es: "{count} solicitudes para {tournamentName} no aceptadas." },
+  },
+
+  // ─── In-app inbox: welcome message after a team registers ──
+  registrationWelcome: {
+    subject: { en: "Welcome! Your registration is confirmed", ru: "Добро пожаловать! Ваша заявка подтверждена", et: "Tere tulemast! Teie registreerimine on kinnitatud", es: "¡Bienvenido! Tu inscripción está confirmada" },
+    body: {
+      en: "Dear {clubName},\n\nYour teams have been successfully registered!\n\nPlease complete your registration by filling in:\n✅ Players — add all players\n✅ Staff — add coaching staff\n✅ Travel — arrival and departure details\n\nIf you have any questions, use the Inbox to contact the organizer.\n\nGoality TMC",
+      ru: "Уважаемый клуб {clubName},\n\nВаши команды успешно зарегистрированы!\n\nПожалуйста, завершите регистрацию, заполнив:\n✅ Игроки — добавьте всех игроков\n✅ Персонал — добавьте тренерский штаб\n✅ Поездка — детали прибытия и отъезда\n\nЕсли есть вопросы — свяжитесь с организатором через Входящие.\n\nGoality TMC",
+      et: "Lugupeetud {clubName},\n\nTeie meeskonnad on edukalt registreeritud!\n\nPalun lõpetage registreerimine, täites:\n✅ Mängijad — lisage kõik mängijad\n✅ Personal — lisage treenerid\n✅ Reis — saabumise ja lahkumise andmed\n\nKüsimuste korral võtke korraldajaga ühendust Postkasti kaudu.\n\nGoality TMC",
+      es: "Estimado {clubName},\n\n¡Tus equipos se han registrado correctamente!\n\nCompleta tu inscripción rellenando:\n✅ Jugadores — añade todos los jugadores\n✅ Personal — añade el cuerpo técnico\n✅ Viaje — datos de llegada y salida\n\nSi tienes preguntas, usa la Bandeja de entrada para contactar al organizador.\n\nGoality TMC",
+    },
+  },
+
+  // ─── API error: duplicate tournament registration ──
+  registrationDuplicate: {
+    aliasUsed: {
+      en: "Team \"{teamName}\" has already applied with the alias \"{alias}\". Use a different alias or cancel the existing application.",
+      ru: "Команда «{teamName}» уже подавала заявку с псевдонимом «{alias}». Используйте другой псевдоним или отмените существующую заявку.",
+      et: "Meeskond «{teamName}» on juba esitanud avalduse aliasega «{alias}». Kasutage teist aliast või tühistage olemasolev avaldus.",
+      es: "El equipo «{teamName}» ya ha solicitado con el alias «{alias}». Usa otro alias o cancela la solicitud existente.",
+    },
+    alreadyRegistered: {
+      en: "Team \"{teamName}\" is already registered for this tournament. To add a second squad, set an alias (Black/White/A/B), or cancel the existing application.",
+      ru: "Команда «{teamName}» уже зарегистрирована в этом турнире. Чтобы добавить второй состав — задайте псевдоним (Black/White/A/B), либо отмените существующую заявку.",
+      et: "Meeskond «{teamName}» on juba sellele turniirile registreeritud. Teise koosseisu lisamiseks määrake alias (Black/White/A/B) või tühistage olemasolev avaldus.",
+      es: "El equipo «{teamName}» ya está inscrito en este torneo. Para añadir un segundo equipo, define un alias (Black/White/A/B) o cancela la solicitud existente.",
+    },
   },
 } as const;
 

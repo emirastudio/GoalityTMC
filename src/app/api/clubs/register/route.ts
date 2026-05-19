@@ -8,6 +8,7 @@ import {
 import { eq, and, isNull, isNotNull, gt, desc, max } from "drizzle-orm";
 import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
 import { sendWelcomeEmail, sendCoachJoinedNotification, sendRegistrationReceived } from "@/lib/email";
+import { EMAIL_STRINGS, t as tStr, normaliseLocale } from "@/lib/email-i18n";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -348,17 +349,16 @@ export async function POST(req: NextRequest) {
           nextRegNumber++;
         }
 
-        // 7. Welcome inbox message routed to all created registrations.
+        // 7. Welcome inbox message routed to all created registrations,
+        //    in the club's preferred language.
         if (tournamentRegistrationsCreated.length > 0) {
-          const welcomeBody =
-            `Dear ${club.name},\n\nYour teams have been successfully registered!\n\nPlease complete your registration by filling in:\n` +
-            `✅ Players — add all players\n✅ Staff — add coaching staff\n✅ Travel — arrival and departure details\n\n` +
-            `If you have any questions, use the Inbox to contact the organizer.\n\nGoality TMC`;
+          const inboxLocale = normaliseLocale(club.preferredLocale);
+          const welcomeBody = tStr(EMAIL_STRINGS.registrationWelcome, "body", inboxLocale, { clubName: club.name });
           const [message] = await tx
             .insert(inboxMessages)
             .values({
               tournamentId,
-              subject: "Welcome! Your registration is confirmed",
+              subject: tStr(EMAIL_STRINGS.registrationWelcome, "subject", inboxLocale),
               body: welcomeBody,
               sentBy: 0,
               sendToAll: false,
