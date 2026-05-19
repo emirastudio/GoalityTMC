@@ -134,21 +134,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let club: { id: number; name: string; preferredLocale: string };
+  // ── PRE-TRANSACTION: validation + reads (may early-return) ──
+  // No DB writes happen here, so a rejection cannot orphan anything.
   let hasLogo = false;
+  let badgeUrl: string | null = null;
+  // For an EXISTING club we resolve the row now (read-only). For a NEW
+  // club the row is created inside the transaction below.
+  let existingClub: { id: number; name: string; preferredLocale: string } | null = null;
 
   if (existingClubId) {
-    // ── Existing-club path: re-use the global club row, skip logo / slug ──
     const found = await db.query.clubs.findFirst({ where: eq(clubs.id, existingClubId) });
     if (!found) {
       await logAttempt({ ...base, status: "fail_existing_club_not_found", failReason: `clubId=${existingClubId}` });
       return NextResponse.json({ error: "Selected club no longer exists. Search again." }, { status: 404 });
     }
-    club = { id: found.id, name: found.name, preferredLocale: found.preferredLocale ?? userLocale };
-    console.log(`[REGISTER] existing-club path — clubId=${club.id} ("${club.name}")`);
+    existingClub = { id: found.id, name: found.name, preferredLocale: found.preferredLocale ?? userLocale };
+    console.log(`[REGISTER] existing-club path — clubId=${existingClub.id} ("${existingClub.name}")`);
   } else {
-    // ── New-club path: original flow ──
-    let badgeUrl: string | null = null;
+    // Logo write is a filesystem side-effect — it cannot participate in a
+    // DB transaction. We accept that a failed txn may leave an orphan file
+    // (harmless, unreferenced) rather than risk an orphan DB account.
     hasLogo = !!(logoFile && logoFile.size > 0);
     if (hasLogo) {
       const allowed = ["image/png", "image/jpeg", "image/gif", "image/webp"];
@@ -161,34 +166,19 @@ export async function POST(req: NextRequest) {
         badgeUrl = `/uploads/badges/${filename}`;
       }
     }
-
-    // Slug из названия клуба
-    const baseSlug = clubName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-
-    // Создаём глобальный клуб
-    const [created] = await db.insert(clubs).values({
-      name: clubName, slug: `${baseSlug}-${Date.now()}`,
-      country, city, badgeUrl, contactName, contactEmail, contactPhone,
-      preferredLocale: userLocale,
-    }).returning();
-    club = { id: created.id, name: created.name, preferredLocale: created.preferredLocale ?? userLocale };
   }
 
-  // Determine what role this clubUser gets:
-  //   - new-club path → first admin of the new club (teamId = null)
-  //   - existing-club path → must pick or create a team (teamId set,
-  //     junction row inserted). The new user is a team coach, NOT a
-  //     second club admin.
+  // Coach-team resolution for the EXISTING-club path. joinTeamId is a
+  // pure read+check (early-return safe); a brand-new team is INSERTED
+  // inside the transaction (so it rolls back with everything else).
   let coachTeamId: number | null = null;
-  // For an existing-club JOIN we mark the junction "pending" so the
-  // club admin can later confirm. For a brand-new TEAM the joining
-  // coach made themselves, no admin approval applies → "approved".
   let coachJunctionStatus: "pending" | "approved" = "approved";
   let teamLabelForEmail: string | null = null;
-  if (existingClubId) {
+  let createTeamInTxn: { name: string | null; birthYear: number | null; gender: "male" | "female" | "mixed" } | null = null;
+  if (existingClubId && existingClub) {
     if (joinTeamId) {
       const [t] = await db.select().from(teams).where(eq(teams.id, joinTeamId));
-      if (!t || t.clubId !== club.id) {
+      if (!t || t.clubId !== existingClub.id) {
         await logAttempt({ ...base, status: "fail_team_mismatch", failReason: `joinTeamId=${joinTeamId}` });
         return NextResponse.json({ error: "Selected team does not belong to this club." }, { status: 400 });
       }
@@ -196,18 +186,12 @@ export async function POST(req: NextRequest) {
       coachJunctionStatus = "pending";
       teamLabelForEmail = t.name ?? `${t.birthYear ?? ""} ${t.gender}`.trim();
     } else if (newTeam) {
-      const [created] = await db
-        .insert(teams)
-        .values({
-          clubId: club.id,
-          name: newTeam.name?.toString().trim() || null,
-          birthYear: newTeam.birthYear ?? null,
-          gender: (newTeam.gender ?? "male") as "male" | "female" | "mixed",
-        })
-        .returning();
-      coachTeamId = created.id;
+      createTeamInTxn = {
+        name: newTeam.name?.toString().trim() || null,
+        birthYear: newTeam.birthYear ?? null,
+        gender: (newTeam.gender ?? "male") as "male" | "female" | "mixed",
+      };
       coachJunctionStatus = "approved";
-      teamLabelForEmail = created.name ?? `${created.birthYear ?? ""} ${created.gender}`.trim();
     } else {
       await logAttempt({ ...base, status: "fail_no_team", failReason: "joinTeamId/newTeam required" });
       return NextResponse.json(
@@ -217,210 +201,234 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Создаём пользователя клуба
   const passwordHash = await hashPassword(password);
-  const [newUser] = await db
-    .insert(clubUsers)
-    .values({
-      clubId: club.id,
-      email: contactEmail,
-      name: contactName,
-      passwordHash,
-      accessLevel: "write",
-      teamId: coachTeamId,
-    })
-    .returning();
 
-  // Junction row when this is a team coach (existing-club path).
-  if (coachTeamId) {
-    await db
-      .insert(clubUserTeams)
-      .values({ clubUserId: newUser.id, teamId: coachTeamId, status: coachJunctionStatus })
-      .onConflictDoNothing();
-
-    // Notify all club admins (clubUsers with team_id IS NULL) of the new
-    // arrival — fire-and-forget, never block the registration response.
-    if (coachJunctionStatus === "pending") {
-      const admins = await db
-        .select({ email: clubUsers.email })
-        .from(clubUsers)
-        .where(and(eq(clubUsers.clubId, club.id), isNull(clubUsers.teamId)));
-      // Use the club's preferred locale (set on first signup of this
-      // club) for the admin notification.
-      const adminLocale = club.preferredLocale;
-      const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com"}/${adminLocale}/club/dashboard`;
-      for (const admin of admins) {
-        if (!admin.email) continue;
-        sendCoachJoinedNotification({
-          to: admin.email,
-          clubName: club.name,
-          coachName: contactName,
-          coachEmail: contactEmail,
-          teamLabel: teamLabelForEmail ?? "—",
-          dashboardLink,
-          locale: adminLocale,
-        }).catch((e) => console.error("[EMAIL] coach-joined notify failed:", e));
-      }
-    }
-  }
-
-  // Consume the email verification — single-use.
-  await db
-    .update(emailVerifications)
-    .set({ usedAt: new Date() })
-    .where(eq(emailVerifications.id, verification.id));
-
-  await logAttempt({ ...base, hasLogo, status: "success", clubId: club.id });
-
-  // ── Tournament registration (the actual divisions the user is joining) ──
-  // Frontend's step 4 sends teams[] = [{classId, name?}, ...]. For each
-  // entry we materialise a team (deriving birthYear from the class's
-  // minBirthYear) and a tournament_registrations row, then assign the
-  // tournament's default service package and create a welcome inbox
-  // message + receipt email — the same outputs the existing
-  // /api/clubs/[clubId]/tournament-register endpoint produces.
+  // ── TRANSACTION: every write is atomic. A failure anywhere here rolls
+  // back the whole thing — no orphan club/user, so a retry is clean. ──
+  let club!: { id: number; name: string; preferredLocale: string };
+  let newUserId!: number;
+  let tournamentNameForEmail: string | null = null;
   const tournamentRegistrationsCreated: Array<{ teamId: number; teamName: string; registrationId: number; classId: number; regNumber: number }> = [];
-  if (tournamentId && teamEntries.length > 0) {
-    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
-    if (!tournament) {
-      console.warn(`[REGISTER] tournamentId=${tournamentId} not found — skipping registrations`);
-    } else if (!tournament.registrationOpen) {
-      console.warn(`[REGISTER] tournament ${tournamentId} registration closed — skipping`);
+
+  await db.transaction(async (tx) => {
+    // 1. Club — reuse existing or create new.
+    if (existingClub) {
+      club = existingClub;
     } else {
-      // Validate classIds belong to this tournament.
-      const validClasses = await db
-        .select({ id: tournamentClasses.id, name: tournamentClasses.name, minBirthYear: tournamentClasses.minBirthYear, maxBirthYear: tournamentClasses.maxBirthYear })
-        .from(tournamentClasses)
-        .where(eq(tournamentClasses.tournamentId, tournamentId));
-      const classById = new Map(validClasses.map((c) => [c.id, c]));
+      const baseSlug = clubName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const [created] = await tx.insert(clubs).values({
+        name: clubName, slug: `${baseSlug}-${Date.now()}`,
+        country, city, badgeUrl, contactName, contactEmail, contactPhone,
+        preferredLocale: userLocale,
+      }).returning();
+      club = { id: created.id, name: created.name, preferredLocale: created.preferredLocale ?? userLocale };
+    }
 
-      const [maxReg] = await db
-        .select({ maxReg: max(tournamentRegistrations.regNumber) })
-        .from(tournamentRegistrations)
-        .where(eq(tournamentRegistrations.tournamentId, tournamentId));
-      let nextRegNumber = (maxReg?.maxReg ?? 10000) + 1;
+    // 2. Existing-club brand-new team (deferred from pre-txn).
+    if (createTeamInTxn) {
+      const [created] = await tx.insert(teams).values({
+        clubId: club.id,
+        name: createTeamInTxn.name,
+        birthYear: createTeamInTxn.birthYear,
+        gender: createTeamInTxn.gender,
+      }).returning();
+      coachTeamId = created.id;
+      teamLabelForEmail = created.name ?? `${created.birthYear ?? ""} ${created.gender}`.trim();
+    }
 
-      const [defaultPackage] = await db
-        .select()
-        .from(servicePackages)
-        .where(and(eq(servicePackages.tournamentId, tournamentId), eq(servicePackages.isDefault, true)));
+    // 3. Club user.
+    const [newUser] = await tx
+      .insert(clubUsers)
+      .values({
+        clubId: club.id,
+        email: contactEmail,
+        name: contactName,
+        passwordHash,
+        accessLevel: "write",
+        teamId: coachTeamId,
+      })
+      .returning();
+    newUserId = newUser.id;
 
-      for (const entry of teamEntries) {
-        const cls = classById.get(entry.classId);
-        if (!cls) continue; // class doesn't belong to this tournament — skip
+    // 4. Coach↔team junction (existing-club path).
+    if (coachTeamId) {
+      await tx
+        .insert(clubUserTeams)
+        .values({ clubUserId: newUser.id, teamId: coachTeamId, status: coachJunctionStatus })
+        .onConflictDoNothing();
+    }
 
-        // Materialise a team. Existing-club path with a single picked
-        // coach team reuses that team; otherwise create per-class.
-        let teamId = coachTeamId;
-        let teamName = entry.name?.trim() || club.name;
-        if (!teamId) {
-          const [newTeamRow] = await db
-            .insert(teams)
+    // 5. Consume the email verification — single-use, inside the txn so
+    //    a rollback leaves it un-consumed and the user can retry.
+    await tx
+      .update(emailVerifications)
+      .set({ usedAt: new Date() })
+      .where(eq(emailVerifications.id, verification.id));
+
+    // 6. Tournament registration (divisions the user is joining).
+    if (tournamentId && teamEntries.length > 0) {
+      const [tournament] = await tx.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+      if (!tournament) {
+        console.warn(`[REGISTER] tournamentId=${tournamentId} not found — skipping registrations`);
+      } else if (!tournament.registrationOpen) {
+        console.warn(`[REGISTER] tournament ${tournamentId} registration closed — skipping`);
+      } else {
+        tournamentNameForEmail = tournament.name;
+        const validClasses = await tx
+          .select({ id: tournamentClasses.id, name: tournamentClasses.name, minBirthYear: tournamentClasses.minBirthYear, maxBirthYear: tournamentClasses.maxBirthYear })
+          .from(tournamentClasses)
+          .where(eq(tournamentClasses.tournamentId, tournamentId));
+        const classById = new Map(validClasses.map((c) => [c.id, c]));
+
+        const [maxReg] = await tx
+          .select({ maxReg: max(tournamentRegistrations.regNumber) })
+          .from(tournamentRegistrations)
+          .where(eq(tournamentRegistrations.tournamentId, tournamentId));
+        let nextRegNumber = (maxReg?.maxReg ?? 10000) + 1;
+
+        const [defaultPackage] = await tx
+          .select()
+          .from(servicePackages)
+          .where(and(eq(servicePackages.tournamentId, tournamentId), eq(servicePackages.isDefault, true)));
+
+        for (const entry of teamEntries) {
+          const cls = classById.get(entry.classId);
+          if (!cls) continue; // class doesn't belong to this tournament — skip
+
+          let teamId = coachTeamId;
+          let teamName = entry.name?.trim() || club.name;
+          if (!teamId) {
+            const [newTeamRow] = await tx
+              .insert(teams)
+              .values({
+                clubId: club.id,
+                name: entry.name?.trim() || null,
+                birthYear: cls.minBirthYear ?? null,
+                gender: "male",
+              })
+              .returning();
+            teamId = newTeamRow.id;
+            teamName = newTeamRow.name ?? `${club.name} ${cls.minBirthYear ?? cls.name}`;
+            if (teamEntries.length === 1 && !existingClubId) {
+              await tx.insert(clubUserTeams).values({
+                clubUserId: newUser.id,
+                teamId,
+                status: "approved",
+              }).onConflictDoNothing();
+            }
+          }
+
+          const [registration] = await tx
+            .insert(tournamentRegistrations)
             .values({
-              clubId: club.id,
-              name: entry.name?.trim() || null,
-              birthYear: cls.minBirthYear ?? null,
-              gender: "male",
+              teamId,
+              tournamentId,
+              classId: cls.id,
+              regNumber: nextRegNumber,
+              status: "open",
+              squadAlias: "",
+              displayName: null,
             })
             .returning();
-          teamId = newTeamRow.id;
-          teamName = newTeamRow.name ?? `${club.name} ${cls.minBirthYear ?? cls.name}`;
-          // Backfill: junction row when this is the user's only team
-          // (no junction yet because they're an admin-of-a-new-club).
-          // We skip if there are multiple new teams — the user is club
-          // admin and shouldn't be locked to a single team.
-          if (teamEntries.length === 1 && !existingClubId) {
-            await db.insert(clubUserTeams).values({
-              clubUserId: newUser.id,
-              teamId,
-              status: "approved",
-            }).onConflictDoNothing();
-          }
-        }
 
-        const [registration] = await db
-          .insert(tournamentRegistrations)
-          .values({
+          if (defaultPackage) {
+            await tx.insert(packageAssignments).values({
+              registrationId: registration.id,
+              packageId: defaultPackage.id,
+            });
+          }
+
+          tournamentRegistrationsCreated.push({
             teamId,
-            tournamentId,
+            teamName,
+            registrationId: registration.id,
             classId: cls.id,
             regNumber: nextRegNumber,
-            status: "open",
-            squadAlias: "",
-            displayName: null,
-          })
-          .returning();
-
-        if (defaultPackage) {
-          await db.insert(packageAssignments).values({
-            registrationId: registration.id,
-            packageId: defaultPackage.id,
           });
+          nextRegNumber++;
         }
 
-        tournamentRegistrationsCreated.push({
-          teamId,
-          teamName,
-          registrationId: registration.id,
-          classId: cls.id,
-          regNumber: nextRegNumber,
-        });
-        nextRegNumber++;
-      }
-
-      // Welcome inbox message routed to all freshly-created registrations.
-      if (tournamentRegistrationsCreated.length > 0) {
-        const welcomeBody =
-          `Dear ${club.name},\n\nYour teams have been successfully registered!\n\nPlease complete your registration by filling in:\n` +
-          `✅ Players — add all players\n✅ Staff — add coaching staff\n✅ Travel — arrival and departure details\n\n` +
-          `If you have any questions, use the Inbox to contact the organizer.\n\nGoality TMC`;
-        const [message] = await db
-          .insert(inboxMessages)
-          .values({
-            tournamentId,
-            subject: "Welcome! Your registration is confirmed",
-            body: welcomeBody,
-            sentBy: 0,
-            sendToAll: false,
-          })
-          .returning();
-        for (const reg of tournamentRegistrationsCreated) {
-          await db.insert(messageRecipients).values({
-            messageId: message.id,
-            registrationId: reg.registrationId,
-          });
+        // 7. Welcome inbox message routed to all created registrations.
+        if (tournamentRegistrationsCreated.length > 0) {
+          const welcomeBody =
+            `Dear ${club.name},\n\nYour teams have been successfully registered!\n\nPlease complete your registration by filling in:\n` +
+            `✅ Players — add all players\n✅ Staff — add coaching staff\n✅ Travel — arrival and departure details\n\n` +
+            `If you have any questions, use the Inbox to contact the organizer.\n\nGoality TMC`;
+          const [message] = await tx
+            .insert(inboxMessages)
+            .values({
+              tournamentId,
+              subject: "Welcome! Your registration is confirmed",
+              body: welcomeBody,
+              sentBy: 0,
+              sendToAll: false,
+            })
+            .returning();
+          for (const reg of tournamentRegistrationsCreated) {
+            await tx.insert(messageRecipients).values({
+              messageId: message.id,
+              registrationId: reg.registrationId,
+            });
+          }
         }
-
-        // Receipt email — fire & forget.
-        const teamNamesForEmail = tournamentRegistrationsCreated.map((r) => r.teamName).join(", ");
-        sendRegistrationReceived({
-          to: contactEmail,
-          clubName: club.name,
-          teamName: teamNamesForEmail,
-          tournamentName: tournament.name,
-          locale: club.preferredLocale,
-        }).catch((e) => console.error("[EMAIL] Registration received send failed:", e));
       }
+    }
+  });
+
+  // ── POST-TRANSACTION: side-effects. Only run after a successful commit
+  // so we never email / log success / set a session for a rolled-back
+  // registration. None of these block or revert the DB outcome. ──
+  await logAttempt({ ...base, hasLogo, status: "success", clubId: club.id });
+
+  // Notify club admins of a pending coach join (existing-club path).
+  if (coachTeamId && coachJunctionStatus === "pending") {
+    const admins = await db
+      .select({ email: clubUsers.email })
+      .from(clubUsers)
+      .where(and(eq(clubUsers.clubId, club.id), isNull(clubUsers.teamId)));
+    const adminLocale = club.preferredLocale;
+    const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com"}/${adminLocale}/club/dashboard`;
+    for (const admin of admins) {
+      if (!admin.email) continue;
+      sendCoachJoinedNotification({
+        to: admin.email,
+        clubName: club.name,
+        coachName: contactName,
+        coachEmail: contactEmail,
+        teamLabel: teamLabelForEmail ?? "—",
+        dashboardLink,
+        locale: adminLocale,
+      }).catch((e) => console.error("[EMAIL] coach-joined notify failed:", e));
     }
   }
 
-  // Welcome email (fire & forget) — uses the actual club name (which may
-  // differ from the form input when an existing club was picked).
+  // Receipt email — fire & forget.
+  if (tournamentRegistrationsCreated.length > 0) {
+    const teamNamesForEmail = tournamentRegistrationsCreated.map((r) => r.teamName).join(", ");
+    sendRegistrationReceived({
+      to: contactEmail,
+      clubName: club.name,
+      teamName: teamNamesForEmail,
+      tournamentName: tournamentNameForEmail ?? "",
+      locale: club.preferredLocale,
+    }).catch((e) => console.error("[EMAIL] Registration received send failed:", e));
+  }
+
+  // Welcome email (fire & forget).
   sendWelcomeEmail({ to: contactEmail, clubName: club.name, contactName, locale: club.preferredLocale }).catch(
     (e) => console.error("[EMAIL] Welcome send failed:", e),
   );
 
-  // Auto-login as the freshly-created clubUser. (Bug fix: previous code
-  // signed `userId: club.id` which is the CLUB id, not the user id.)
+  // Auto-login as the freshly-created clubUser.
   const token = createToken({
-    userId: newUser.id,
+    userId: newUserId,
     role: "club",
     clubId: club.id,
     ...(coachTeamId ? { teamId: coachTeamId } : {}),
   });
   await setSessionCookie(token);
 
-  console.log(`[REGISTER] SUCCESS — club="${club.name}" clubId=${club.id} userId=${newUser.id} teamId=${coachTeamId ?? "—"} regs=${tournamentRegistrationsCreated.length}`);
+  console.log(`[REGISTER] SUCCESS — club="${club.name}" clubId=${club.id} userId=${newUserId} teamId=${coachTeamId ?? "—"} regs=${tournamentRegistrationsCreated.length}`);
   return NextResponse.json({
     ok: true,
     clubId: club.id,
