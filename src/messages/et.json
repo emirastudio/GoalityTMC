@@ -2910,7 +2910,15 @@
     "passwordPlaceholder": "Vähemalt 6 tähemärki",
     "passwordTooShort": "Parool peab olema vähemalt 6 tähemärki.",
     "createAccount": "Loo konto ja logi sisse",
-    "acceptError": "Konto loomine ebaõnnestus. Link võib olla juba kasutatud."
+    "acceptError": "Konto loomine ebaõnnestus. Link võib olla juba kasutatud.",
+    "invalidHeading": "Kehtetu kutse",
+    "joinCta": "Loo konto ja liitu klubiga",
+    "managerSubtitle": "Loo oma haldurikonto",
+    "redirecting": "Suunan armatuurlauale…",
+    "submitting": "Loon kontot…",
+    "terms": "Konto loomisega nõustute Goality kasutustingimustega.",
+    "welcomeHeading": "Tere tulemast klubisse {club}!",
+    "joinHeading": "Liitu klubiga {club}"
   },
   "clubRegister": {
     "heroTitle": "Registreerige klubi",

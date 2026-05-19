@@ -103,7 +103,7 @@ export default function ClubInvitePage() {
         >
           <CheckCircle className="w-12 h-12 mx-auto mb-4" style={{ color: "#10b981" }} />
           <h1 className="text-xl font-bold mb-2" style={{ color: "var(--cat-text, #f9fafb)" }}>
-            Welcome to {invite?.clubName}!
+            {tInvite("welcomeHeading", { club: invite?.clubName ?? "" })}
           </h1>
           <p className="text-sm" style={{ color: "var(--cat-text-muted, #9ca3af)" }}>
             {tInvite("redirecting")}
@@ -134,7 +134,7 @@ export default function ClubInvitePage() {
               <Building2 className="w-8 h-8 text-white" />
             )}
           </div>
-          <h1 className="text-lg font-bold text-white mb-1">Join {invite?.clubName}</h1>
+          <h1 className="text-lg font-bold text-white mb-1">{tInvite("joinHeading", { club: invite?.clubName ?? "" })}</h1>
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
             {tInvite("managerSubtitle")}
           </p>

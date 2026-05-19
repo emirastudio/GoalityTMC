@@ -2910,7 +2910,15 @@
     "passwordPlaceholder": "At least 6 characters",
     "passwordTooShort": "Password must be at least 6 characters.",
     "createAccount": "Create Account & Sign In",
-    "acceptError": "Failed to create account. The link may have already been used."
+    "acceptError": "Failed to create account. The link may have already been used.",
+    "invalidHeading": "Invalid invite",
+    "joinCta": "Create account & join the club",
+    "managerSubtitle": "Create your manager account",
+    "redirecting": "Redirecting to the dashboard…",
+    "submitting": "Creating account…",
+    "terms": "By creating an account you accept Goality's Terms of Service.",
+    "welcomeHeading": "Welcome to {club}!",
+    "joinHeading": "Join {club}"
   },
   "clubRegister": {
     "heroTitle": "Register your club",

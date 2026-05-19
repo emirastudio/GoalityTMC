@@ -2921,7 +2921,9 @@
     "invalidHeading": "Invitación inválida",
     "managerSubtitle": "Crea tu cuenta de gestor",
     "terms": "Al crear una cuenta, aceptas los Términos de Servicio de Goality.",
-    "acceptError": "Error al crear la cuenta. Es posible que el enlace ya haya sido utilizado."
+    "acceptError": "Error al crear la cuenta. Es posible que el enlace ya haya sido utilizado.",
+    "welcomeHeading": "¡Bienvenido a {club}!",
+    "joinHeading": "Únete a {club}"
   },
   "clubRegister": {
     "heroTitle": "Registre su club",
