@@ -5335,6 +5335,7 @@
     "fillRequired": "Täitke kohustuslikud väljad",
     "regFailed": "Registreerimine ebaõnnestus. Proovige uuesti.",
     "logInUnderEmail": "🔐 Logi sisse aadressiga {email}",
-    "logInUnderEmailFallback": "selle e-postiga"
+    "logInUnderEmailFallback": "selle e-postiga",
+    "registerFreeNextSteps": "Registreerimine on tasuta. Pärast esitamist lisate mängijad ja valite teenused (majutus, toitlustus, transfeer) meeskonna portaalis."
   }
 }

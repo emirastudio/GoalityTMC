@@ -5375,6 +5375,7 @@
     "fillRequired": "Completa los campos obligatorios",
     "regFailed": "No se pudo registrar. Inténtalo de nuevo.",
     "logInUnderEmail": "🔐 Inicia sesión como {email}",
-    "logInUnderEmailFallback": "este email"
+    "logInUnderEmailFallback": "este email",
+    "registerFreeNextSteps": "El registro es gratuito. Tras enviar, añadirás a tus jugadores y elegirás servicios (alojamiento, comidas, transporte) en tu portal de equipo."
   }
 }

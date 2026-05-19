@@ -5335,6 +5335,7 @@
     "fillRequired": "Please fill in the required fields",
     "regFailed": "Registration failed. Please try again.",
     "logInUnderEmail": "🔐 Sign in as {email}",
-    "logInUnderEmailFallback": "this email"
+    "logInUnderEmailFallback": "this email",
+    "registerFreeNextSteps": "Registration is free. After submitting you'll add your players and choose services (accommodation, meals, transfer) in your team portal."
   }
 }

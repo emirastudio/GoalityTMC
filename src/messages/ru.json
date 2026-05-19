@@ -5335,6 +5335,7 @@
     "fillRequired": "Заполните обязательные поля",
     "regFailed": "Не удалось зарегистрироваться. Попробуйте снова.",
     "logInUnderEmail": "🔐 Войти под {email}",
-    "logInUnderEmailFallback": "этим email"
+    "logInUnderEmailFallback": "этим email",
+    "registerFreeNextSteps": "Регистрация бесплатна. После отправки вы добавите игроков и выберете услуги (проживание, питание, трансфер) в кабинете команды."
   }
 }

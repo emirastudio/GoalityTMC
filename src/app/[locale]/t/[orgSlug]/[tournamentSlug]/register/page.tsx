@@ -1893,6 +1893,15 @@ export default function RegisterPage() {
               </p>
             </div>
           )}
+          {/* Expectation-setting before submit: registration itself costs
+              nothing; paid services are chosen later in the team portal.
+              (Plan/extra-division fees are the ORGANIZER's bill, not the
+              club's — so no price is shown here on purpose.) */}
+          {classes.length > 0 && (
+            <p className="px-1 text-[11px] leading-relaxed" style={{ color: "var(--cat-text-muted)" }}>
+              {tr("registerFreeNextSteps")}
+            </p>
+          )}
         </div>
       )}
 
