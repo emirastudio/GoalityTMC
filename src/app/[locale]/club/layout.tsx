@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { db } from "@/db";
 import { clubs } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -15,6 +16,18 @@ type Props = {
 
 export default async function ClubLayout({ children, params }: Props) {
   const { locale } = await params;
+
+  // Public, PRE-authentication club routes: the visitor has no club
+  // session yet — sign-up / invite-accept are what CREATE it. These must
+  // NOT sit behind the club auth guard (it would bounce them to /login,
+  // making self-serve registration unreachable) nor wear the club chrome
+  // (sidebar/header) — they render their own full-page UI. Path comes
+  // from middleware's injected x-pathname header.
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  if (/\/club\/(register|invite)(\/|$)/.test(pathname)) {
+    return <ThemeProvider defaultTheme="dark">{children}</ThemeProvider>;
+  }
+
   const session = await getSession();
 
   if (!session || session.role !== "club" || !session.clubId) {
