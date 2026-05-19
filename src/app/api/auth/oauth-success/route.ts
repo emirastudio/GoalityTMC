@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { clubUsers, clubs, tournaments, organizations, adminUsers, teams, tournamentRegistrations } from "@/db/schema";
+import { clubUsers, tournaments, organizations, adminUsers, teams, tournamentRegistrations } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { createToken } from "@/lib/auth";
-import { sendWelcomeEmail } from "@/lib/email";
 
 function getLocale(req: NextRequest): string {
   const acceptLang = req.headers.get("accept-language") ?? "";
@@ -148,50 +147,13 @@ export async function GET(req: NextRequest) {
     return response;
   }
 
-  // ── Auto-register new club via OAuth ────────────────────
-  // One-click: Google/Facebook → account created → dashboard
-  const clubSlug = `club-${Date.now()}`;
-  const [newClub] = await db
-    .insert(clubs)
-    .values({
-      name: name || "My Club",
-      slug: clubSlug,
-      contactName: name || null,
-      contactEmail: email,
-    })
-    .returning();
-
-  const [newUser] = await db
-    .insert(clubUsers)
-    .values({
-      clubId: newClub.id,
-      email,
-      name: name || null,
-      passwordHash: "",  // OAuth user — no password
-      accessLevel: "write",
-    })
-    .returning();
-
-  // Welcome email (fire & forget)
-  sendWelcomeEmail({ to: email, clubName: newClub.name, contactName: name || null }).catch(
-    (e) => console.error("[EMAIL] OAuth welcome send failed:", e),
+  // ── No club account for this email ──────────────────────
+  // Do NOT silently create an account: that produced a passwordless
+  // club with no consent and no legal acceptance, and auto-logged the
+  // visitor in. Mirror the organizer path — send them to the explicit
+  // registration flow (prefilled), where signing up IS the consent.
+  const params = new URLSearchParams({ oauth: "1", email, name: name || "" });
+  return NextResponse.redirect(
+    `${base}/${locale}/club/register?${params}`
   );
-
-  const newToken = createToken({
-    userId: newUser.id,
-    role: "club",
-    clubId: newClub.id,
-  });
-
-  const regResponse = NextResponse.redirect(
-    `${base}/${locale}/club/dashboard`
-  );
-  regResponse.cookies.set("goality_token", newToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 604800,
-    path: "/",
-  });
-  return regResponse;
 }

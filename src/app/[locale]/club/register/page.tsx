@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -435,6 +436,23 @@ export default function RegisterPage() {
   const [verifyPhase, setVerifyPhase] = useState<"idle" | "sending" | "sent" | "checking">("idle");
   const [verifyCode, setVerifyCode] = useState("");
   const [verifyError, setVerifyError] = useState("");
+
+  // OAuth handoff: oauth-success redirects unknown Google/Facebook users
+  // here instead of silently creating a passwordless account. Prefill the
+  // verified email + name and drop straight into the create flow — the
+  // user still explicitly completes registration (= consent).
+  const searchParams = useSearchParams();
+  const oauthAppliedRef = useRef(false);
+  useEffect(() => {
+    if (oauthAppliedRef.current) return;
+    if (searchParams.get("oauth") !== "1") return;
+    oauthAppliedRef.current = true;
+    const em = searchParams.get("email") ?? "";
+    const nm = searchParams.get("name") ?? "";
+    if (em) setContactEmail(em);
+    if (nm) setContactName(nm);
+    setPhase("create");
+  }, [searchParams]);
 
   const stepIndex = FORM_STEPS.indexOf(step);
   const isFirst = stepIndex === 0;
