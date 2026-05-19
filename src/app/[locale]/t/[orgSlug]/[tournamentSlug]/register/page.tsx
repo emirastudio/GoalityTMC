@@ -509,6 +509,13 @@ export default function RegisterPage() {
   const orgSlug   = params.orgSlug as string;
   const tournamentSlug = params.tournamentSlug as string;
 
+  // ── Wizard progress persistence (sessionStorage, per tournament) ──
+  // Refresh / back / failed-submit / login-jump must not wipe the
+  // half-filled form. We persist only durable, serialisable form fields
+  // — never the password, never the logo File, never transient UI state.
+  const STORAGE_KEY = `goality:reg:${orgSlug}/${tournamentSlug}`;
+  const restoredRef = useRef(false);
+
   /* Tournament data */
   const [tournament, setTournament] = useState<TData | null>(null);
   const [classes, setClasses]   = useState<ClassData[]>([]);
@@ -627,6 +634,50 @@ export default function RegisterPage() {
       })
       .catch(() => setSessionChecked(true));
   }, []);
+
+  /* Restore in-progress wizard state — anon / new-club flow only. The
+     logged-in path is server-driven (jumps to step 4), so we never
+     override it. Runs once, after /api/auth/me resolves. */
+  useEffect(() => {
+    if (restoredRef.current || !sessionChecked) return;
+    restoredRef.current = true;
+    if (loggedInClub) return;
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.view === "search" || s.view === "join" || s.view === "create") setView(s.view as View);
+      if (typeof s.step === "number" && s.step >= 1 && s.step <= 4) setStep(s.step as Step);
+      if (typeof s.clubName === "string") setClubName(s.clubName);
+      if (typeof s.country === "string") setCountry(s.country);
+      if (typeof s.city === "string") setCity(s.city);
+      if (typeof s.contactName === "string") setContactName(s.contactName);
+      if (typeof s.contactEmail === "string") setContactEmail(s.contactEmail);
+      if (typeof s.emailVerified === "boolean") setEmailVerified(s.emailVerified);
+      if (Array.isArray(s.newClubTeams)) setNewClubTeams(s.newClubTeams);
+      if (typeof s.pickedGlobalClubId === "number" || s.pickedGlobalClubId === null) setPickedGlobalClubId(s.pickedGlobalClubId);
+      if (typeof s.pickedGlobalClubHasAdmin === "boolean") setPickedGlobalClubHasAdmin(s.pickedGlobalClubHasAdmin);
+      if (s.authMode === "login" || s.authMode === "signup") setAuthMode(s.authMode);
+    } catch { /* corrupt snapshot — ignore */ }
+  }, [sessionChecked, loggedInClub, STORAGE_KEY]);
+
+  /* Persist wizard progress. Skips the logged-in (server-driven) and
+     finished (done-*) states; never stores password or the logo File. */
+  useEffect(() => {
+    if (!restoredRef.current || loggedInClub) return;
+    if (view === "done-create" || view === "done-join") return;
+    try {
+      const hasContent = !!(clubName || contactEmail || contactName || newClubTeams.length || step > 1 || view !== "search");
+      if (!hasContent) { sessionStorage.removeItem(STORAGE_KEY); return; }
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        view, step, clubName, country, city, contactName, contactEmail,
+        emailVerified, newClubTeams, pickedGlobalClubId,
+        pickedGlobalClubHasAdmin, authMode,
+      }));
+    } catch { /* quota / disabled — non-fatal */ }
+  }, [view, step, clubName, country, city, contactName, contactEmail,
+      emailVerified, newClubTeams, pickedGlobalClubId, pickedGlobalClubHasAdmin,
+      authMode, loggedInClub, STORAGE_KEY]);
 
   /* Load existing teams when logged-in club detected. Pass tournamentId
      so currentSquads in the response reflects THIS tournament, not the
@@ -946,6 +997,7 @@ export default function RegisterPage() {
         body: JSON.stringify({ clubId: selectedClub!.id, requesterName: joinName, requesterEmail: joinEmail, role: joinRole }),
       });
       if (!r.ok) { setJoinError(tr("joinSubmitError")); return; }
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
       setView("done-join");
     } finally { setJoining(false); }
   }
@@ -982,6 +1034,7 @@ export default function RegisterPage() {
           setError(d.error || t("registrationFailed"));
           return;
         }
+        try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
         router.push("/team/overview");
       } finally { setSubmitting(false); }
       return;
@@ -1028,6 +1081,7 @@ export default function RegisterPage() {
         setError(d.error || t("registrationFailed"));
         return;
       }
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
       setView("done-create");
     } finally { setSubmitting(false); }
   }
