@@ -10,6 +10,7 @@ import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
 import { sendWelcomeEmail, sendCoachJoinedNotification, sendRegistrationReceived } from "@/lib/email";
 import { EMAIL_STRINGS, t as tStr, normaliseLocale } from "@/lib/email-i18n";
 import { isPasswordValid, PASSWORD_POLICY_MESSAGE } from "@/lib/password";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -32,8 +33,15 @@ async function logAttempt(data: {
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown";
+  const ip = (req.headers.get("x-forwarded-for")?.split(",")[0].trim())
+    ?? req.headers.get("x-real-ip") ?? "unknown";
   const ua = req.headers.get("user-agent") ?? "unknown";
+
+  // Rate-limit: this is an unauthenticated endpoint that creates an
+  // account AND writes an uploaded file — a spam/DoS target. 5 / 15 min
+  // per IP is plenty for a real person (with retries) but stops abuse.
+  const ipLimit = checkRateLimit(`clubreg:ip:${ip}`, 5, 15 * 60 * 1000);
+  if (!ipLimit.allowed) return rateLimitResponse(ipLimit.retryAfterSec);
   // Capture the user's UI locale at signup so every notification we
   // ever send to this club is rendered in their language. NEXT_LOCALE
   // is set by next-intl middleware; falls back to the Accept-Language
@@ -110,6 +118,11 @@ export async function POST(req: NextRequest) {
     await logAttempt({ ...base, status: "fail_weak_password", failReason: "password policy" });
     return NextResponse.json({ error: PASSWORD_POLICY_MESSAGE }, { status: 400 });
   }
+
+  // Per-email cap (3 / hour) — blocks scripted retries against one
+  // address even if they rotate IPs.
+  const emailLimit = checkRateLimit(`clubreg:em:${contactEmail}`, 3, 60 * 60 * 1000);
+  if (!emailLimit.allowed) return rateLimitResponse(emailLimit.retryAfterSec);
 
   const existingUser = await db.query.clubUsers.findFirst({ where: eq(clubUsers.email, contactEmail) });
   if (existingUser) {
