@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { isPasswordValid } from "@/lib/password";
 import {
   Crown, ChevronRight, ChevronLeft, Check, Plus,
   ImageIcon, ChevronDown, Search, ArrowLeft, AlertTriangle,
@@ -523,7 +524,7 @@ export default function RegisterPage() {
       if (!contactEmail.trim()) { setError(t("errors.emailRequired")); return; }
       if (!emailVerified) { setError(t("errors.emailNotVerified")); return; }
       if (!password) { setError(t("errors.passwordRequired")); return; }
-      if (password.length < 6) { setError(t("errors.passwordTooShort")); return; }
+      if (!isPasswordValid(password)) { setError(t("errors.passwordTooWeak")); return; }
       if (password !== passwordConfirm) { setError(t("errors.passwordMismatch")); return; }
     }
     if (!isLast) setStep(FORM_STEPS[stepIndex + 1]);

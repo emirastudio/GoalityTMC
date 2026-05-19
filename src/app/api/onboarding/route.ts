@@ -4,6 +4,7 @@ import { organizations, adminUsers } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
 import { slugify, isSlugAvailable } from "@/lib/tenant";
+import { isPasswordValid, PASSWORD_POLICY_MESSAGE } from "@/lib/password";
 
 export async function POST(req: NextRequest) {
   const {
@@ -16,8 +17,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "All fields are required" }, { status: 400 });
   }
 
-  if (password.length < 6) {
-    return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+  if (!isPasswordValid(password)) {
+    return NextResponse.json({ error: PASSWORD_POLICY_MESSAGE }, { status: 400 });
   }
 
   // Legal acceptance is mandatory — GDPR Art. 28 DPA and Terms must be

@@ -2,20 +2,33 @@
 
 import { useState } from "react";
 import { Eye, EyeOff, Check, X } from "lucide-react";
+// Single source of truth for the policy (also enforced server-side).
+import {
+  PASSWORD_TESTS,
+  isPasswordValid as coreIsPasswordValid,
+  getPasswordStrength as coreGetPasswordStrength,
+  type PasswordStrength,
+} from "@/lib/password";
 
-export type PasswordStrength = "empty" | "weak" | "medium" | "strong";
+export type { PasswordStrength };
 
 interface Rule {
   label: string;
   test: (v: string) => boolean;
 }
 
-const RULES: Rule[] = [
-  { label: "Min. 8 characters",        test: (v) => v.length >= 8 },
-  { label: "Uppercase letter (A–Z)",    test: (v) => /[A-Z]/.test(v) },
-  { label: "Lowercase letter (a–z)",    test: (v) => /[a-z]/.test(v) },
-  { label: "Number (0–9)",              test: (v) => /\d/.test(v) },
+// Labels live here (UI concern); the predicates come from the shared
+// policy so client and server can never drift.
+const RULE_LABELS_EN = [
+  "Min. 8 characters",
+  "Uppercase letter (A–Z)",
+  "Lowercase letter (a–z)",
+  "Number (0–9)",
 ];
+const RULES: Rule[] = PASSWORD_TESTS.map((test, i) => ({
+  label: RULE_LABELS_EN[i],
+  test,
+}));
 
 const RULE_LABELS_BY_LOCALE: Record<string, string[]> = {
   ru: [
@@ -38,17 +51,9 @@ const STRENGTH_LABELS: Record<string, [string, string, string]> = {
   et: ["Nõrk", "Keskmine", "Tugev"],
 };
 
-export function getPasswordStrength(value: string): PasswordStrength {
-  if (!value) return "empty";
-  const passed = RULES.filter((r) => r.test(value)).length;
-  if (passed <= 1) return "weak";
-  if (passed <= 3) return "medium";
-  return "strong";
-}
-
-export function isPasswordValid(value: string): boolean {
-  return RULES.every((r) => r.test(value));
-}
+// Re-exported from the shared policy so existing importers keep working.
+export const getPasswordStrength = coreGetPasswordStrength;
+export const isPasswordValid = coreIsPasswordValid;
 
 interface Props {
   name?: string;

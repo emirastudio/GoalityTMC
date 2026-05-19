@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { clubInvites, clubs, clubUsers } from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
+import { isPasswordValid, PASSWORD_POLICY_MESSAGE } from "@/lib/password";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -12,8 +13,11 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const { token } = await params;
   const { email, password, name } = await req.json();
 
-  if (!email || !password || password.length < 6) {
+  if (!email || !password) {
     return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+  }
+  if (!isPasswordValid(password)) {
+    return NextResponse.json({ error: PASSWORD_POLICY_MESSAGE }, { status: 400 });
   }
 
   const invite = await db.query.clubInvites.findFirst({

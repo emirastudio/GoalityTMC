@@ -9,6 +9,7 @@ import { eq, and, isNull, isNotNull, gt, desc, max } from "drizzle-orm";
 import { hashPassword, createToken, setSessionCookie } from "@/lib/auth";
 import { sendWelcomeEmail, sendCoachJoinedNotification, sendRegistrationReceived } from "@/lib/email";
 import { EMAIL_STRINGS, t as tStr, normaliseLocale } from "@/lib/email-i18n";
+import { isPasswordValid, PASSWORD_POLICY_MESSAGE } from "@/lib/password";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -103,6 +104,11 @@ export async function POST(req: NextRequest) {
     const reason = `Missing: ${!clubName ? "clubName " : ""}${!contactEmail ? "email " : ""}${!password ? "password" : ""}`.trim();
     await logAttempt({ ...base, status: "fail_missing_fields", failReason: reason });
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  if (!isPasswordValid(password)) {
+    await logAttempt({ ...base, status: "fail_weak_password", failReason: "password policy" });
+    return NextResponse.json({ error: PASSWORD_POLICY_MESSAGE }, { status: 400 });
   }
 
   const existingUser = await db.query.clubUsers.findFirst({ where: eq(clubUsers.email, contactEmail) });
