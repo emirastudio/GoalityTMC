@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { getCitiesForCountry } from "@/lib/cities";
 import { cn } from "@/lib/utils";
 import { MapPin } from "lucide-react";
+import { useTheme } from "@/components/ui/theme-provider";
 
 interface CityInputProps {
   value: string;
@@ -27,6 +28,11 @@ export function CityInput({
   className,
   variant = "default",
 }: CityInputProps) {
+  // Portal renders at document.body (escapes overflow-hidden parents),
+  // but that also escapes the ThemeProvider's data-theme wrapper. Stamp
+  // the active theme on the portal root so --cat-* vars resolve and the
+  // dropdown matches the page (dark fallback on a light page = invisible).
+  const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -156,6 +162,7 @@ export function CityInput({
       {showDropdown && pos && typeof document !== "undefined" && createPortal(
         <div
           ref={menuRef}
+          data-theme={theme}
           className="rounded-xl shadow-lg overflow-hidden border"
           style={{
             position: "fixed",

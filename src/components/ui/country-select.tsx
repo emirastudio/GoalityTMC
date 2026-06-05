@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ChevronDown, Search, Check } from "lucide-react";
 import { COUNTRIES } from "@/lib/countries";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/ui/theme-provider";
 
 interface CountrySelectProps {
   value: string;
@@ -27,6 +28,11 @@ export function CountrySelect({
   className,
   variant = "default",
 }: CountrySelectProps) {
+  // Portal lands at document.body — OUTSIDE the ThemeProvider's data-theme
+  // wrapper, so --cat-* CSS vars don't resolve. Stamp the active theme on
+  // the portal root so the same selectors pick up the right palette
+  // (otherwise the dark fallback paints over a light page → invisible text).
+  const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -144,6 +150,7 @@ export function CountrySelect({
       {open && pos && typeof document !== "undefined" && createPortal(
         <div
           ref={menuRef}
+          data-theme={theme}
           className="rounded-xl shadow-lg overflow-hidden border"
           style={{
             position: "fixed",
