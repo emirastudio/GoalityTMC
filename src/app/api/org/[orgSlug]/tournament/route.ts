@@ -89,7 +89,11 @@ export async function POST(
 
   const chosenPlan = ["starter", "pro", "elite"].includes(requestedPlan) ? requestedPlan : "free";
 
-  if (existingCount > 0 && chosenPlan === "free") {
+  // Super admins bypass the free-plan cap — they're platform operators
+  // acting on the org's behalf, not the org itself; the cap is a billing
+  // gate for the customer, not for us. (Same pattern as the other isSuper
+  // bypasses across the API.)
+  if (!session.isSuper && existingCount > 0 && chosenPlan === "free") {
     return NextResponse.json(
       { error: "free_limit_reached", message: "Free plan allows only 1 tournament. Please choose Starter, Pro or Elite." },
       { status: 402 }

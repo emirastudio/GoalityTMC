@@ -106,7 +106,9 @@ export function TournamentCreateModal({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || tErr("createFailed"));
+        // Prefer the human-readable `message` over the machine `error` code
+        // (otherwise the user sees raw tokens like "free_limit_reached").
+        throw new Error(data.message || data.error || tErr("createFailed"));
       }
       const { id } = await res.json();
       router.push(`/${locale}/org/${orgSlug}/admin/tournament/${id}/setup`);
@@ -127,7 +129,9 @@ export function TournamentCreateModal({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || tErr("createFailed"));
+        // Prefer the human-readable `message` over the machine `error` code
+        // (otherwise the user sees raw tokens like "free_limit_reached").
+        throw new Error(data.message || data.error || tErr("createFailed"));
       }
       const { id } = await res.json();
       router.push(`/${locale}/org/${orgSlug}/admin/tournament/${id}/setup`);
