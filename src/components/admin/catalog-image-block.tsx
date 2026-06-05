@@ -29,6 +29,9 @@ export function CatalogImageBlock({
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
+  // Surface upload failures — same silent-fail anti-pattern as tournament
+  // logo/cover (no setError on !res.ok / no try/catch on network reject).
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,15 +51,23 @@ export function CatalogImageBlock({
 
   async function uploadBlob(blob: Blob, filename = "upload.jpg") {
     setUploading(true);
+    setUploadError(null);
     try {
       const fd = new FormData();
       fd.append("file", blob, filename);
       const res = await fetch(`${apiBase}/card-image`, { method: "POST", body: fd });
-      if (res.ok) {
-        const d = await res.json();
-        setUrl(d.url ?? d.cardImageUrl ?? null);
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({} as { error?: string; message?: string }));
+        setUploadError(d.message || d.error || `HTTP ${res.status}`);
+        return;
       }
-    } finally { setUploading(false); }
+      const d = await res.json();
+      setUrl(d.url ?? d.cardImageUrl ?? null);
+    } catch {
+      setUploadError("Network error — check your connection and try again.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function handleFile(file: File) {
@@ -114,6 +125,9 @@ export function CatalogImageBlock({
           }}
         />
       </label>
+      {uploadError && (
+        <p className="text-xs mt-2" style={{ color: "#ef4444" }}>{uploadError}</p>
+      )}
       {cropSrc && (
         <ImageCropperModal
           src={cropSrc}
