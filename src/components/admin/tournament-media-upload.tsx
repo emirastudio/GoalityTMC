@@ -20,6 +20,9 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  // Inline error per target — silent failure (no setError, no log on
+  // !res.ok / network reject) is exactly what hid this bug for the user.
+  const [uploadError, setUploadError] = useState<{ target: "logo" | "cover"; msg: string } | null>(null);
 
   // Cropper state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -36,32 +39,40 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
 
   async function handleCropDone(blob: Blob) {
     if (!cropTarget) return;
-    const file = new File([blob], `${cropTarget}-${Date.now()}.png`, { type: "image/png" });
+    const target = cropTarget;
+    const file = new File([blob], `${target}-${Date.now()}.png`, { type: "image/png" });
     setCropSrc(null);
     setCropTarget(null);
+    setUploadError(null);
 
-    if (cropTarget === "logo") {
-      setUploadingLogo(true);
+    const setUploading = target === "logo" ? setUploadingLogo : setUploadingCover;
+    setUploading(true);
+    try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/logo`, { method: "POST", body: fd });
-      if (res.ok) {
-        const data = await res.json();
+      const res = await fetch(
+        `/api/org/${orgSlug}/tournament/${tournamentId}/${target}`,
+        { method: "POST", body: fd },
+      );
+      if (!res.ok) {
+        // Prefer human `message`, then `error`, then status code.
+        const data = await res.json().catch(() => ({} as { error?: string; message?: string }));
+        const msg = data.message || data.error || `HTTP ${res.status}`;
+        setUploadError({ target, msg });
+        return;
+      }
+      const data = await res.json();
+      if (target === "logo") {
         setLogoUrl(data.logoUrl);
         onLogoChange?.(data.logoUrl);
-      }
-      setUploadingLogo(false);
-    } else {
-      setUploadingCover(true);
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/cover`, { method: "POST", body: fd });
-      if (res.ok) {
-        const data = await res.json();
+      } else {
         setCoverUrl(data.coverUrl);
         onCoverChange?.(data.coverUrl);
       }
-      setUploadingCover(false);
+    } catch {
+      setUploadError({ target, msg: "Network error — check your connection and try again." });
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -202,6 +213,17 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
             </button>
           </div>
         </div>
+
+        {uploadError && (
+          <div className="px-5 py-3 border-t flex items-start gap-2"
+            style={{ borderColor: "var(--cat-card-border)", background: "rgba(239,68,68,0.06)" }}>
+            <span className="text-xs font-bold uppercase tracking-wider shrink-0"
+              style={{ color: "#ef4444" }}>
+              {uploadError.target === "logo" ? t("tournamentLogo") : t("cover")}
+            </span>
+            <p className="text-xs" style={{ color: "#ef4444" }}>{uploadError.msg}</p>
+          </div>
+        )}
       </div>
     </>
   );
