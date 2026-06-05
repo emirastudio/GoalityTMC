@@ -105,6 +105,12 @@ docker run -d --name goality-app --network host \
 `public/uploads` is a **bind-mounted volume** — user uploads persist
 across deploys (the image itself ships an empty uploads dir).
 
+> ⚠️ The dir MUST be owned by the container's app user `1001:1001`
+> (`nextjs:nodejs`); otherwise `writeFile` 500s with EACCES and every
+> logo/cover/badge upload silently fails. If a restore / volume
+> recreate / careless rsync ever changes ownership, run on the host:
+> `chown -R 1001:1001 /home/goality/app/public/uploads`.
+
 ---
 
 ## 4. Database & PITR (pgBackRest → R2)
