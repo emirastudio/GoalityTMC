@@ -76,8 +76,12 @@ async function getEnrichedTournaments(): Promise<TournamentEntry[]> {
           name: org.name,
           slug: org.slug,
           logo: org.logo,
-          city: org.city,
-          country: org.country,
+          // Prefer the tournament's OWN city/country (Setup step 1 — Location)
+          // so a Spain tournament hosted by an Estonia-based org shows Spain.
+          // Same fallback rule as the public tournament page (and listings,
+          // which were already correct).
+          city: tournament.city ?? org.city,
+          country: tournament.country ?? org.country,
           brandColor: org.brandColor ?? "#2BFEBA",
         } : null,
         classes: cls.map(c => ({ id: c.id, name: c.name, format: c.format })),

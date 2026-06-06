@@ -172,10 +172,14 @@ function TournamentCard({ entry, idx, t, locale }: {
               : <span className="text-[11px] font-bold text-white">{initials}</span>
             }
           </div>
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-sm text-[12px]"
-            style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            {getFlag(org?.country)}
-            {org?.city && <span className="text-[10px] text-white/80 ml-0.5">{org.city}</span>}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm text-[12px] max-w-[60%]"
+            style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <span className="shrink-0">{getFlag(org?.country)}</span>
+            {(org?.country || org?.city) && (
+              <span className="text-[10px] text-white/85 truncate">
+                {[org?.country, org?.city].filter(Boolean).join(" · ")}
+              </span>
+            )}
           </div>
         </div>
       </div>
