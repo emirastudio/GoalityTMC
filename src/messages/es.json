@@ -2305,7 +2305,38 @@
     "saved": "Guardado",
     "catalogImageSection": "Imagen del catálogo",
     "catalogImageHint": "Se muestra en la tarjeta del torneo en el catálogo. Recomendado 700×400 (16:9). Si no se sube, se usa la portada.",
-    "catalogImageUpload": "Subir imagen para el catálogo"
+    "catalogImageUpload": "Subir imagen para el catálogo",
+    "newsLabel": "Noticias",
+    "news": {
+      "pageTitle": "Noticias del torneo",
+      "tabDraft": "Borradores",
+      "tabScheduled": "Programadas",
+      "tabPublished": "Publicadas",
+      "tabArchived": "Archivadas",
+      "composeTitle": "Nueva publicación",
+      "editTitle": "Editar publicación",
+      "loading": "Cargando…",
+      "subjectLabel": "Título",
+      "bodyLabel": "Cuerpo (markdown)",
+      "bodyHelpMarkdown": "Admite **negrita**, *cursiva*, [enlaces](url), - listas, ### encabezados",
+      "coverLabel": "Imagen de portada (recomendado 1200×630)",
+      "coverUpload": "Subir portada",
+      "coverRemove": "Eliminar",
+      "ctaLabelField": "Texto del botón CTA (opcional)",
+      "ctaUrlField": "URL del CTA (opcional)",
+      "publishAtLabel": "Programar para más tarde (opcional)",
+      "actionSaveDraft": "Guardar borrador",
+      "actionSchedule": "Programar",
+      "actionPublishNow": "Publicar ahora",
+      "actionArchive": "Archivar",
+      "actionEdit": "Editar",
+      "confirmPublish": "¿Publicar esta entrada? Los seguidores recibirán un correo de inmediato.",
+      "confirmArchive": "¿Archivar esta entrada? Los seguidores ya no la verán.",
+      "followerCount": "{count, plural, =0 {Aún no hay seguidores} =1 {1 seguidor} other {# seguidores}}",
+      "validationRequired": "Se requiere título y cuerpo",
+      "validationPublishAt": "Fija una fecha de publicación",
+      "emptyState": "Aún no hay publicaciones"
+    }
   },
   "divisionWizard": {
     "title": "Nueva División",
@@ -3153,7 +3184,25 @@
     "allGroups": "Todos los grupos",
     "matchLocked": "Partido bloqueado",
     "matchFinal": "Final",
-    "lowRestTime": "Poco tiempo de descanso entre partidos"
+    "lowRestTime": "Poco tiempo de descanso entre partidos",
+    "navNews": "Noticias",
+    "news": {
+      "pageTitle": "Noticias del torneo",
+      "empty": "Sin noticias todavía. El organizador no ha publicado nada.",
+      "published": "Nueva",
+      "readMore": "Leer más",
+      "coverAlt": "Imagen de portada",
+      "byAuthor": "por",
+      "cta": "Leer publicación completa",
+      "backToTournament": "Volver a noticias"
+    },
+    "follow": {
+      "followButton": "Seguir",
+      "followingButton": "Siguiendo",
+      "followLoginPrompt": "Inicia sesión para seguir este torneo",
+      "followSuccess": "¡Listo!",
+      "unfollowConfirm": "¿Dejar de seguir este torneo?"
+    }
   },
   "features": {
     "badgeLabel": "Funciones de la plataforma",
@@ -4697,7 +4746,21 @@
     "myTeamMatches": "Nuestro equipo",
     "allGroupMatches": "Todos los partidos",
     "clubGroupStandings": "Clasificación del grupo",
-    "teamsCount": "{count, plural, one {# equipo} other {# equipos}}"
+    "teamsCount": "{count, plural, one {# equipo} other {# equipos}}",
+    "subscriptions": "Suscripciones",
+    "subscriptionsPage": {
+      "pageTitle": "Mis suscripciones",
+      "empty": "Aún no sigues ningún torneo. Abre el catálogo.",
+      "emptyCta": "Ver catálogo",
+      "unreadCount": "{count} sin leer",
+      "unreadShort": "nuevas",
+      "noUnread": "Todo al día",
+      "noNews": "Sin noticias",
+      "countSingular": "torneo",
+      "countPlural": "torneos",
+      "viewNews": "Ver noticias",
+      "unfollow": "Dejar de seguir"
+    }
   },
   "blog": {
     "title": "Blog",

@@ -2300,7 +2300,38 @@
     "saved": "Сохранено",
     "catalogImageSection": "Картинка в каталоге",
     "catalogImageHint": "Показывается на карточке турнира в каталоге. Рекомендуется 700×400 (16:9). Если не загружена — используется обложка.",
-    "catalogImageUpload": "Загрузить картинку для каталога"
+    "catalogImageUpload": "Загрузить картинку для каталога",
+    "newsLabel": "Новости",
+    "news": {
+      "pageTitle": "Новости турнира",
+      "tabDraft": "Черновики",
+      "tabScheduled": "Запланированные",
+      "tabPublished": "Опубликованные",
+      "tabArchived": "Архив",
+      "composeTitle": "Новый пост",
+      "editTitle": "Редактировать пост",
+      "loading": "Загрузка…",
+      "subjectLabel": "Заголовок",
+      "bodyLabel": "Текст (markdown)",
+      "bodyHelpMarkdown": "Поддерживает **жирный**, *курсив*, [ссылки](url), - списки, ### заголовки",
+      "coverLabel": "Обложка (рекомендуется 1200×630)",
+      "coverUpload": "Загрузить обложку",
+      "coverRemove": "Удалить",
+      "ctaLabelField": "Текст кнопки CTA (опционально)",
+      "ctaUrlField": "Ссылка CTA (опционально)",
+      "publishAtLabel": "Запланировать публикацию (опционально)",
+      "actionSaveDraft": "Сохранить черновик",
+      "actionSchedule": "Запланировать",
+      "actionPublishNow": "Опубликовать сейчас",
+      "actionArchive": "В архив",
+      "actionEdit": "Изменить",
+      "confirmPublish": "Опубликовать пост? Подписчики получат email сразу.",
+      "confirmArchive": "Архивировать пост? Подписчики его больше не увидят.",
+      "followerCount": "{count, plural, =0 {Пока нет подписчиков} one {# подписчик} few {# подписчика} other {# подписчиков}}",
+      "validationRequired": "Нужен заголовок и текст",
+      "validationPublishAt": "Укажите дату публикации",
+      "emptyState": "Здесь пока пусто"
+    }
   },
   "divisionWizard": {
     "title": "Новый дивизион",
@@ -3148,7 +3179,25 @@
     "allGroups": "Все группы",
     "matchLocked": "Матч заблокирован",
     "matchFinal": "Финал",
-    "lowRestTime": "Мало времени между матчами"
+    "lowRestTime": "Мало времени между матчами",
+    "navNews": "Новости",
+    "news": {
+      "pageTitle": "Новости турнира",
+      "empty": "Пока новостей нет. Организатор ничего не опубликовал.",
+      "published": "Новое",
+      "readMore": "Читать",
+      "coverAlt": "Обложка",
+      "byAuthor": "автор:",
+      "cta": "Читать полностью",
+      "backToTournament": "К новостям"
+    },
+    "follow": {
+      "followButton": "Подписаться",
+      "followingButton": "Вы подписаны",
+      "followLoginPrompt": "Войдите, чтобы подписаться на турнир",
+      "followSuccess": "Готово!",
+      "unfollowConfirm": "Отписаться от турнира?"
+    }
   },
   "features": {
     "badgeLabel": "Возможности платформы",
@@ -4690,7 +4739,21 @@
     "myTeamMatches": "Наша команда",
     "allGroupMatches": "Все матчи",
     "clubGroupStandings": "Таблица группы",
-    "teamsCount": "{count, plural, one {# команда} few {# команды} many {# команд} other {# команды}}"
+    "teamsCount": "{count, plural, one {# команда} few {# команды} many {# команд} other {# команды}}",
+    "subscriptions": "Подписки",
+    "subscriptionsPage": {
+      "pageTitle": "Мои подписки",
+      "empty": "Вы пока не подписаны ни на один турнир. Загляните в каталог.",
+      "emptyCta": "Открыть каталог",
+      "unreadCount": "{count} непрочитанных",
+      "unreadShort": "новых",
+      "noUnread": "Всё прочитано",
+      "noNews": "Новостей нет",
+      "countSingular": "турнир",
+      "countPlural": "турниров",
+      "viewNews": "Открыть новости",
+      "unfollow": "Отписаться"
+    }
   },
   "blog": {
     "title": "Блог",

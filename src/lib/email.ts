@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { EMAIL_STRINGS, t, normaliseLocale } from "./email-i18n";
+import { markdownToHtml, markdownToPlain } from "./markdown";
 
 // ─── Transport ────────────────────────────────────────────────────────────────
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -702,6 +703,98 @@ export async function sendMessageNotification({
   to: string; toName: string; subject: string; body: string; teamName: string;
 }) {
   return sendOrganizerMessage({ to, toName, clubName: "", teamName, subject, body });
+}
+
+// ─── Tournament news published (Follow feature, V1) ─────────────────────────
+//
+// Sent by the notification worker (src/worker/notifications.ts) when a
+// row of kind="tournament_news_published" is processed. One email per
+// follower with the rendered news post (cover + markdown body + CTA)
+// and a per-tournament one-click unsubscribe link in the footer.
+//
+// The List-Unsubscribe header injected by send() is global ("stop ALL
+// Goality emails"). The footer link is per-tournament — clicking it
+// removes just this follow, not the others.
+export async function sendTournamentNewsEmail({
+  to,
+  clubName,
+  locale: rawLocale,
+  tournamentName,
+  newsSubject,
+  newsBodyMarkdown,
+  coverUrl,
+  ctaLabel,
+  ctaUrl,
+  postUrl,
+  unsubscribeUrl,
+}: {
+  to: string;
+  clubName: string;
+  locale?: string | null;
+  tournamentName: string;
+  newsSubject: string;
+  newsBodyMarkdown: string;
+  coverUrl?: string | null;
+  ctaLabel?: string | null;
+  ctaUrl?: string | null;
+  postUrl: string;
+  unsubscribeUrl: string;
+}) {
+  const locale = normaliseLocale(rawLocale);
+  const N = EMAIL_STRINGS.newsPublished;
+
+  // CTA fallback chain: organizer's CTA → "Read full post" deeplink.
+  const cta = ctaLabel && ctaUrl
+    ? { label: ctaLabel, url: ctaUrl }
+    : { label: t(N, "openPost", locale), url: postUrl };
+
+  const coverBlock = coverUrl
+    ? `<img src="${coverUrl}" alt="${t(N, "coverAlt", locale)}" width="580" style="display:block;width:100%;max-width:580px;height:auto;border-radius:12px;margin:0 0 24px;" />`
+    : "";
+
+  const bodyHtml = markdownToHtml(newsBodyMarkdown);
+
+  await send({
+    to,
+    subject: t(N, "subject", locale, { tournamentName, newsSubject }),
+    text: [
+      stripTags(t(N, "intro", locale, { clubName, tournamentName })),
+      "",
+      newsSubject,
+      "",
+      markdownToPlain(newsBodyMarkdown, 1200),
+      "",
+      cta.label,
+      cta.url,
+      "",
+      `— ${t(N, "signature", locale)}`,
+      "",
+      `${t(N, "unsubscribeLabel", locale, { tournamentName })}: ${unsubscribeUrl}`,
+    ].join("\n"),
+    html: base({
+      preheader: t(N, "preheader", locale, { tournamentName }),
+      body: `
+        ${p(t(N, "intro", locale, { clubName, tournamentName }))}
+        ${coverBlock ? `<div style="margin-top:24px;">${coverBlock}</div>` : ""}
+        <h2 style="margin:${coverBlock ? "0" : "24px 0 0"};font-size:22px;font-weight:800;color:#0a0f1e;letter-spacing:-0.3px;line-height:1.3;">${escapeHtmlText(newsSubject)}</h2>
+        <div style="margin-top:16px;font-size:15px;color:#374151;line-height:1.7;">${bodyHtml}</div>
+        <p style="margin:32px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
+          ${t(N, "unsubscribeHint", locale, { tournamentName })}
+          <br/>
+          <a href="${unsubscribeUrl}" style="color:#6b7280;text-decoration:underline;">${t(N, "unsubscribeLabel", locale, { tournamentName })}</a>
+        </p>
+      `,
+      cta,
+    }),
+  });
+}
+
+function escapeHtmlText(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 export async function sendQuestionConfirmation({

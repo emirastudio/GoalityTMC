@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { LayoutDashboard, Building2, Search, LogOut, Trophy } from "lucide-react";
+import { LayoutDashboard, Building2, Search, LogOut, Trophy, Star } from "lucide-react";
 import { CoachTeamSwitcher } from "@/components/club/coach-team-switcher";
 
 type Props = {
@@ -13,6 +13,7 @@ type Props = {
 const NAV_ITEMS = [
   { key: "dashboard" as const, icon: LayoutDashboard, href: "/club/dashboard", exact: true },
   { key: "tournaments" as const, icon: Trophy, href: "/club/tournaments", exact: false },
+  { key: "subscriptions" as const, icon: Star, href: "/club/subscriptions", exact: false },
   { key: "profile" as const, icon: Building2, href: "/club/profile", exact: false },
   { key: "findTournaments" as const, icon: Search, href: "/catalog", exact: false },
 ] as const;

@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { organizations, tournaments, tournamentClasses, teams, tournamentRegistrations, tournamentInfo } from "@/db/schema";
+import { organizations, tournaments, tournamentClasses, teams, tournamentRegistrations, tournamentInfo, tournamentFollowers } from "@/db/schema";
 import { eq, and, count, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -9,6 +9,7 @@ import { TournamentPublicProvider } from "@/lib/tournament-public-context";
 import { PublicNavHeader } from "@/components/ui/public-nav-header";
 import { TournamentSidebar } from "@/components/tournament/tournament-sidebar";
 import { TournamentMobileTabs } from "@/components/tournament/tournament-mobile-tabs";
+import { getSession } from "@/lib/auth";
 
 const BASE = "https://goalityfootball.com";
 
@@ -106,6 +107,27 @@ export default async function TournamentLayout({ children, params }: Props) {
     where: eq(tournamentClasses.tournamentId, tournament.id),
     orderBy: (c, { asc }) => [asc(c.minBirthYear)],
   });
+
+  // Resolve viewer's follow state for the sidebar Follow button.
+  // Anonymous + admin viewers → null (button hides). Only logged-in
+  // clubs receive a boolean; one cheap select against the unique
+  // (clubId, tournamentId) index.
+  const session = await getSession();
+  const viewerClubId = session?.role === "club" && session.clubId ? session.clubId : null;
+  let viewerIsFollowing: boolean | null = null;
+  if (viewerClubId) {
+    const [row] = await db
+      .select({ id: tournamentFollowers.id })
+      .from(tournamentFollowers)
+      .where(
+        and(
+          eq(tournamentFollowers.clubId, viewerClubId),
+          eq(tournamentFollowers.tournamentId, tournament.id),
+        ),
+      )
+      .limit(1);
+    viewerIsFollowing = !!row;
+  }
 
   // Per-tournament Contact & Social (Step 7). Может отсутствовать —
   // тогда публичная страница падает на контакты организации.
@@ -267,6 +289,9 @@ export default async function TournamentLayout({ children, params }: Props) {
                 classes={classesWithCounts}
                 clubCount={Number(clubCount?.count ?? 0)}
                 teamCount={Number(teamCount?.count ?? 0)}
+                tournamentId={tournament.id}
+                isFollowing={viewerIsFollowing}
+                clubId={viewerClubId}
               />
               <main className="flex-1 min-w-0" style={{ paddingTop: "52px" }}>
                 {children}

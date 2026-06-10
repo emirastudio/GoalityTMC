@@ -1577,6 +1577,85 @@ export const notificationQueue = pgTable("notification_queue", {
   index("idx_notification_queue_tournament").on(table.tournamentId),
 ]);
 
+// ─── Follow Tournament + News Feed (additive, V1) ──────────
+// Клуб «звезда → подписка» на турнир, организатор публикует
+// новости с автоматической рассылкой фолловерам через
+// notificationQueue (новый kind: "tournament_news_published") +
+// inbox в /club/subscriptions. Лента публичная (вкладка News
+// на странице турнира), поэтому единичные посты shareable
+// в социалках с собственными OG-метаданными.
+//
+// Параллельная схема, дизъюнктная с inboxMessages/messageRecipients
+// (которые привязаны к registrationId). Здесь recipients = clubId,
+// без зависимости от регистрации команд.
+
+export const tournamentFollowers = pgTable("tournament_followers", {
+  id: serial("id").primaryKey(),
+  clubId: integer("club_id")
+    .references(() => clubs.id, { onDelete: "cascade" })
+    .notNull(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  // 32-char nanoid. Per-tournament one-click email unsubscribe.
+  // Rotates on re-follow → старая ссылка инвалидируется автоматически.
+  unsubscribeToken: text("unsubscribe_token").notNull().unique(),
+}, (table) => [
+  uniqueIndex("tournament_followers_club_tournament_uq").on(table.clubId, table.tournamentId),
+  index("idx_tournament_followers_tournament").on(table.tournamentId),
+  index("idx_tournament_followers_club").on(table.clubId),
+]);
+
+export const tournamentNews = pgTable("tournament_news", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id")
+    .references(() => tournaments.id, { onDelete: "cascade" })
+    .notNull(),
+  // Автор (adminUsers.id). SET NULL чтобы пост пережил удаление аккаунта.
+  authorId: integer("author_id")
+    .references(() => adminUsers.id, { onDelete: "set null" }),
+  subject: text("subject").notNull(),
+  // Markdown — рендерится через sanitize-html на стороне сервера
+  // (минимальный allowlist: p, br, strong, em, a, ul/ol/li, h3).
+  bodyMarkdown: text("body_markdown").notNull(),
+  coverUrl: text("cover_url"),
+  // Опциональная CTA-кнопка («Скачать расписание», «Купить билет»).
+  ctaLabel: text("cta_label"),
+  ctaUrl: text("cta_url"),
+  // draft | scheduled | published | archived
+  status: text("status").default("draft").notNull(),
+  // Для scheduled: когда автоматически опубликовать.
+  publishAt: timestamp("publish_at"),
+  // Когда реально опубликовали (snapshot после publish).
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  // Hot path для публичного фида турнира + админских табов.
+  index("idx_tournament_news_tournament_status").on(table.tournamentId, table.status),
+  // Hot path для scheduled-publisher worker'а.
+  index("idx_tournament_news_status_publish_at").on(table.status, table.publishAt),
+]);
+
+// Read-marker'ы для unread-бейджа в /club/subscriptions.
+// Отдельная таблица, а не computed по notificationQueue.sentAt:
+// retentionSweepOnce() в worker'е удаляет sent-строки старше 7 дней
+// (src/worker/notifications.ts:163) → бейджи бы молча сломались.
+export const tournamentNewsReads = pgTable("tournament_news_reads", {
+  id: serial("id").primaryKey(),
+  newsId: integer("news_id")
+    .references(() => tournamentNews.id, { onDelete: "cascade" })
+    .notNull(),
+  clubId: integer("club_id")
+    .references(() => clubs.id, { onDelete: "cascade" })
+    .notNull(),
+  readAt: timestamp("read_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("tournament_news_reads_news_club_uq").on(table.newsId, table.clubId),
+  index("idx_tournament_news_reads_club").on(table.clubId),
+]);
+
 // ─── Audit log изменений результатов ───────────────────────
 // Кто, когда и почему изменил счёт
 
@@ -1966,6 +2045,23 @@ export const scheduleRunsRelations = relations(scheduleRuns, ({ one }) => ({
 
 export const notificationQueueRelations = relations(notificationQueue, ({ one }) => ({
   tournament: one(tournaments, { fields: [notificationQueue.tournamentId], references: [tournaments.id] }),
+}));
+
+// ─── Follow Tournament + News Feed Relations ─────────────────
+export const tournamentFollowersRelations = relations(tournamentFollowers, ({ one }) => ({
+  club: one(clubs, { fields: [tournamentFollowers.clubId], references: [clubs.id] }),
+  tournament: one(tournaments, { fields: [tournamentFollowers.tournamentId], references: [tournaments.id] }),
+}));
+
+export const tournamentNewsRelations = relations(tournamentNews, ({ one, many }) => ({
+  tournament: one(tournaments, { fields: [tournamentNews.tournamentId], references: [tournaments.id] }),
+  author: one(adminUsers, { fields: [tournamentNews.authorId], references: [adminUsers.id] }),
+  reads: many(tournamentNewsReads),
+}));
+
+export const tournamentNewsReadsRelations = relations(tournamentNewsReads, ({ one }) => ({
+  news: one(tournamentNews, { fields: [tournamentNewsReads.newsId], references: [tournamentNews.id] }),
+  club: one(clubs, { fields: [tournamentNewsReads.clubId], references: [clubs.id] }),
 }));
 
 // ─── Public Draws (standalone /draw share-link storage) ─────────

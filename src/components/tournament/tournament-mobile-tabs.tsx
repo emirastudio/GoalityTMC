@@ -2,7 +2,7 @@
 
 import { usePathname, Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { Info, Users, BookOpen, Hotel, Handshake } from "lucide-react";
+import { Info, Users, BookOpen, Hotel, Handshake, Newspaper } from "lucide-react";
 
 type Props = {
   orgSlug: string;
@@ -19,6 +19,7 @@ export function TournamentMobileTabs({ orgSlug, tournamentSlug, brandColor }: Pr
 
   const tabs = [
     { key: "info",         label: t("navInfo"),         icon: Info,      href: base,                    exact: true },
+    { key: "news",         label: t("navNews"),         icon: Newspaper, href: `${base}/news`,          exact: false },
     { key: "teams",        label: t("navTeams"),        icon: Users,     href: `${base}/teams`,         exact: false },
     { key: "regulations",  label: t("navRegulations"),  icon: BookOpen,  href: `${base}/regulations`,   exact: false },
     { key: "participants", label: t("navParticipants"), icon: Hotel,     href: `${base}/participants`,  exact: false },

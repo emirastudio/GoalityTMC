@@ -7,7 +7,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   LayoutGrid, GitBranch, CalendarDays, FileText, Users, ShoppingBag,
-  CreditCard, MessageSquare, Settings, LayoutDashboard, Trophy, LogOut,
+  CreditCard, MessageSquare, Settings, LayoutDashboard, Trophy, LogOut, Newspaper,
   ChevronDown, ChevronLeft, Radio, Lock, Zap, Receipt, Plus, Trash2,
   ClipboardList, Hotel, Utensils, Bus, BarChart3, MapPin,
   Crown, Rocket, Gift, Users2, BookOpen,
@@ -26,6 +26,7 @@ const CLR = {
   participants: "#10b981",               // зелёный — участники
   finance:      "#f59e0b",               // янтарный — финансы
   messages:     "#8b5cf6",              // фиолетовый — сообщения
+  news:         "#06b6d4",              // голубой — новости (Follow feature)
   organization: "#ec4899",              // розовый — организация
 } as const;
 
@@ -34,6 +35,7 @@ const BG = {
   participants: "rgba(16,185,129,0.10)",
   finance:      "rgba(245,158,11,0.10)",
   messages:     "rgba(139,92,246,0.10)",
+  news:         "rgba(6,182,212,0.10)",
   organization: "rgba(236,72,153,0.10)",
 } as const;
 
@@ -821,6 +823,15 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
               bg={BG.messages}
             />
           )}
+          {/* News (Follow feature) — available on every plan */}
+          <NavLink
+            href={`${base}/news`}
+            icon={Newspaper}
+            label={t("newsLabel")}
+            isActive={isActive(`${base}/news`)}
+            color={CLR.news}
+            bg={BG.news}
+          />
         </div>
       )}
 

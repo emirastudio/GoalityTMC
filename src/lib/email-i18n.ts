@@ -152,6 +152,26 @@ export const EMAIL_STRINGS = {
     },
   },
 
+  // ─── Tournament News published (Follow feature, V1) ─────────
+  newsPublished: {
+    subject:        { en: "{tournamentName}: {newsSubject}",                                       ru: "{tournamentName}: {newsSubject}",                                          et: "{tournamentName}: {newsSubject}",                                            es: "{tournamentName}: {newsSubject}" },
+    preheader:      { en: "New update from {tournamentName}",                                       ru: "Новое сообщение от {tournamentName}",                                       et: "Uus uudis turniirilt {tournamentName}",                                       es: "Nueva actualización de {tournamentName}" },
+    intro:          { en: "Hi <strong>{clubName}</strong>, the organizer of <strong>{tournamentName}</strong> just shared news with followers.", ru: "Здравствуйте, <strong>{clubName}</strong>! Организатор турнира <strong>{tournamentName}</strong> опубликовал новость для подписчиков.", et: "Tere <strong>{clubName}</strong>! Turniiri <strong>{tournamentName}</strong> korraldaja postitas just uudise jälgijatele.", es: "Hola <strong>{clubName}</strong>, el organizador de <strong>{tournamentName}</strong> acaba de publicar una novedad para los seguidores." },
+    openPost:       { en: "Read full post →",                                                       ru: "Читать полностью →",                                                        et: "Loe täispostitust →",                                                         es: "Leer publicación completa →" },
+    unsubscribeLabel:{ en: "Unsubscribe from {tournamentName}",                                      ru: "Отписаться от {tournamentName}",                                            et: "Loobu jälgimisest: {tournamentName}",                                          es: "Cancelar suscripción a {tournamentName}" },
+    unsubscribeHint:{ en: "You're receiving this because you follow {tournamentName}. One-click unsubscribe stops emails from this tournament only.", ru: "Вы получили это письмо, потому что подписаны на {tournamentName}. Один клик — и письма от этого турнира перестанут приходить.", et: "Saate selle kirja, sest jälgite turniiri {tournamentName}. Üks klõps — ja kirjad sellelt turniirilt enam ei tule.", es: "Recibes este correo porque sigues {tournamentName}. Un clic basta para dejar de recibir correos de este torneo." },
+    signature:      { en: "Goality — Tournament Updates",                                            ru: "Goality — обновления турниров",                                             et: "Goality — turniiri uudised",                                                   es: "Goality — actualizaciones de torneos" },
+    coverAlt:       { en: "Tournament news cover",                                                   ru: "Обложка новости турнира",                                                   et: "Turniiri uudise kaanepilt",                                                    es: "Portada de la noticia del torneo" },
+  },
+
+  // ─── Public confirmation page for one-click news unsubscribe ─
+  unsubscribeNews: {
+    confirmTitle:   { en: "You're unsubscribed",                                                    ru: "Вы отписаны",                                                              et: "Olete loobunud",                                                              es: "Te has dado de baja" },
+    confirmBody:    { en: "We won't email you about <strong>{tournamentName}</strong> anymore. You can refollow anytime from the tournament page on Goality.", ru: "Мы больше не будем присылать вам письма про <strong>{tournamentName}</strong>. Вы можете подписаться снова в любой момент на странице турнира в Goality.", et: "Me ei saada teile enam kirju turniiri <strong>{tournamentName}</strong> kohta. Saate igal ajal uuesti jälgima hakata turniiri lehel Goalitys.", es: "Ya no te enviaremos correos sobre <strong>{tournamentName}</strong>. Puedes volver a suscribirte cuando quieras desde la página del torneo en Goality." },
+    backToTournament:{ en: "Back to tournament",                                                    ru: "Вернуться к турниру",                                                       et: "Tagasi turniiri juurde",                                                       es: "Volver al torneo" },
+    alreadyUnsubscribed:{ en: "This unsubscribe link is no longer active.",                          ru: "Эта ссылка больше не активна.",                                             et: "See lingiviide ei kehti enam.",                                                es: "Este enlace de cancelación ya no está activo." },
+  },
+
   // ─── API error: duplicate tournament registration ──
   registrationDuplicate: {
     aliasUsed: {

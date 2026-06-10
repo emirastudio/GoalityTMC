@@ -5,8 +5,9 @@ import { useTranslations, useLocale } from "next-intl";
 import {
   Info, Users, BookOpen, Hotel, Handshake,
   MapPin, Clock, ArrowRight, ChevronRight, Shield, Trophy, Calendar,
-  BarChart2,
+  BarChart2, Newspaper,
 } from "lucide-react";
+import { FollowButton } from "@/components/tournament/follow-button";
 
 type ClassInfo = {
   id: number;
@@ -33,6 +34,24 @@ type Props = {
   classes?: ClassInfo[];
   clubCount?: number;
   teamCount?: number;
+  /**
+   * Tournament numeric id — needed by FollowButton to call the
+   * `/api/clubs/[clubId]/follows/[tournamentId]` endpoint. Optional so
+   * existing callers compile without changes; when omitted (legacy
+   * pages, draw layouts) the Follow button simply doesn't render.
+   */
+  tournamentId?: number;
+  /**
+   * Initial follow state resolved on the server (null → viewer is not
+   * a logged-in club; the button hides). Default null preserves
+   * backward compat — anonymous visitors see nothing.
+   */
+  isFollowing?: boolean | null;
+  /**
+   * Club id of the current session, propagated from the layout RSC.
+   * Used to address the follow toggle endpoint.
+   */
+  clubId?: number | null;
 };
 
 function fmtShort(d: string | null, locale: string) {
@@ -55,6 +74,9 @@ export function TournamentSidebar({
   orgSlug, tournamentSlug, tournamentName, orgName,
   logoUrl, registrationOpen, startDate, endDate, city, country,
   classes = [], clubCount = 0, teamCount = 0,
+  tournamentId,
+  isFollowing = null,
+  clubId = null,
 }: Props) {
   const pathname = usePathname();
   const t = useTranslations("tournament");
@@ -63,6 +85,7 @@ export function TournamentSidebar({
 
   const navItems = [
     { key: "info",         label: t("navInfo"),         icon: Info,       href: base },
+    { key: "news",         label: t("navNews"),         icon: Newspaper,  href: `${base}/news` },
     { key: "teams",        label: t("navTeams"),        icon: Users,      href: `${base}/teams` },
     { key: "schedule",     label: t("navSchedule"),     icon: Calendar,   href: `${base}/schedule` },
     { key: "standings",    label: t("navStandings"),    icon: BarChart2,  href: `${base}/standings` },
@@ -186,6 +209,17 @@ export function TournamentSidebar({
               );
             })}
           </nav>
+
+          {/* Follow toggle — visible only to logged-in clubs (clubId !== null) */}
+          {clubId && tournamentId && (
+            <div className="p-3 pb-1">
+              <FollowButton
+                clubId={clubId}
+                tournamentId={tournamentId}
+                initialFollowing={isFollowing ?? false}
+              />
+            </div>
+          )}
 
           {/* CTA */}
           {registrationOpen && (
