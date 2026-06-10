@@ -32,12 +32,28 @@ export async function generateMetadata({
   if (!data) return {};
 
   const { org, tournament } = data;
-  const title = `${tournament.name} ${tournament.year} | ${org.name}`;
+  // Не дублировать год, если он уже в имени ("Kings Cup Spain 2026" + 2026 → "Kings Cup Spain 2026 2026")
+  const yearStr = String(tournament.year);
+  const nameHasYear = new RegExp(`\\b${yearStr}\\b`).test(tournament.name);
+  const nameWithYear = nameHasYear ? tournament.name : `${tournament.name} ${yearStr}`;
+  const title = `${nameWithYear} | ${org.name}`;
   const metaCity = (tournament.city && tournament.city.trim()) ? tournament.city : org.city;
   const description = tournament.description
     ?? `${tournament.name} — футбольный турнир ${tournament.year}${metaCity ? ` в ${metaCity}` : ""}. Расписание, результаты, таблицы.`;
 
-  const coverImage = tournament.coverUrl ?? tournament.cardImageUrl ?? `${BASE}/defaults/tournament-cover-default.jpg`;
+  // ?? не проваливается на "" — пустая строка из БД ломала OG image,
+  // и мессенджер падал на favicon /src/app/icon.png (Play.Grow.Win.)
+  const nonEmpty = (s?: string | null) => (s && s.trim() ? s : null);
+  // og:image ДОЛЖЕН быть абсолютным — WhatsApp/Telegram/Facebook молча
+  // игнорируют относительные ("/uploads/...") и проваливаются на site-wide
+  // fallback (зелёный Play.Grow.Win.). Префиксуем BASE для всего, что не http(s)://
+  const toAbs = (u: string | null) =>
+    !u ? null : (/^https?:\/\//i.test(u) ? u : `${BASE}${u.startsWith("/") ? "" : "/"}${u}`);
+  // Для соцпревью предпочитаем cardImageUrl — это рекламная карточка
+  // из каталога (богаче по композиции), cover — лишь подстраховка.
+  const coverImage = toAbs(nonEmpty(tournament.cardImageUrl))
+    ?? toAbs(nonEmpty(tournament.coverUrl))
+    ?? `${BASE}/defaults/tournament-cover-default.jpg`;
   const canonicalPath = `/t/${orgSlug}/${tournamentSlug}`;
 
   return {
@@ -174,7 +190,13 @@ export default async function TournamentLayout({ children, params }: Props) {
     "name": tournament.name,
     "description": tournament.description ?? undefined,
     "url": `${BASE}/${locale}/t/${orgSlug}/${tournamentSlug}`,
-    "image": tournament.coverUrl ?? tournament.cardImageUrl ?? undefined,
+    // schema.org image — absolute URL (consistent with og:image fix above)
+    "image": (() => {
+      const nonEmpty = (s?: string | null) => (s && s.trim() ? s : null);
+      const toAbs = (u: string | null) =>
+        !u ? null : (/^https?:\/\//i.test(u) ? u : `${BASE}${u.startsWith("/") ? "" : "/"}${u}`);
+      return toAbs(nonEmpty(tournament.cardImageUrl)) ?? toAbs(nonEmpty(tournament.coverUrl)) ?? undefined;
+    })(),
     ...(tournament.startDate ? { "startDate": tournament.startDate.toISOString() } : {}),
     ...(tournament.endDate   ? { "endDate":   tournament.endDate.toISOString()   } : {}),
     "sport": "Soccer",
