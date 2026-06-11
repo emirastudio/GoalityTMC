@@ -301,7 +301,9 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#2BFEBA",
     related: ["tournament-website", "org-listing", "follow-news"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
+    ctaPrimaryHref: "/catalog",
+    ctaSecondaryHref: "/onboarding",
   },
   {
     slug: "security-infrastructure",
@@ -311,7 +313,7 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#8B5CF6",
     related: ["players-roster", "organizer-dashboard", "team-workspace"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
   },
 ];
 
