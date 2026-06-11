@@ -197,7 +197,9 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#22C55E",
     related: ["live-standings", "referees", "brackets-stages"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
+    ctaPrimaryHref: "/catalog",
+    ctaSecondaryHref: "/onboarding",
   },
   {
     slug: "brackets-stages",
@@ -207,7 +209,9 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#A855F7",
     related: ["auto-schedule", "live-standings", "match-operations"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
+    ctaPrimaryHref: "/catalog",
+    ctaSecondaryHref: "/onboarding",
   },
   {
     slug: "referees",
@@ -217,7 +221,7 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#EF4444",
     related: ["match-operations", "auto-schedule", "stadiums-fields"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
   },
   {
     slug: "services-packages",
@@ -227,7 +231,7 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#2BFEBA",
     related: ["team-shop", "accommodation-logistics", "team-registration"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
   },
   {
     slug: "accommodation-logistics",
@@ -237,7 +241,7 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#3B82F6",
     related: ["services-packages", "stadiums-fields", "team-workspace"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
   },
 
   // ── Cluster 4 — Участники ──────────────────────────────────────────
