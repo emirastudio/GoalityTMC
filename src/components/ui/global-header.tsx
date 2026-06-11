@@ -120,10 +120,12 @@ function NavItem({ link }: { link: NavLink }) {
         <div
           className="rounded-2xl p-2 min-w-[280px] flex flex-col gap-0.5"
           style={{
-            background: "var(--cat-card-bg)",
+            // Use dropdown-specific opaque token so the panel doesn't
+            // bleed into the page content behind it (the card token is
+            // intentionally semi-transparent for card grids).
+            background: "var(--cat-dropdown-bg)",
             border: "1px solid var(--cat-card-border)",
-            boxShadow: "0 20px 60px -10px rgba(0,0,0,0.25)",
-            backdropFilter: "blur(12px)",
+            boxShadow: "0 20px 60px -10px rgba(0,0,0,0.55)",
           }}
         >
           {link.children!.map((child) => (

@@ -7,16 +7,24 @@ import { GlobalHeader, PublicHeaderActions } from "@/components/ui/global-header
 export function PublicNavHeader() {
   const t = useTranslations("landing");
 
-  // "Возможности" is now a dropdown — top-level link still goes to
-  // /features (full catalog of features), and the panel surfaces the
-  // two highlight entry points (platform + Draw Show standalone)
-  // without forcing the user to scroll the grid.
+  // Top nav order: Home → Tournaments → TMC → Listing.
+  // TMC is the umbrella for everything product-marketing — it's a
+  // dropdown that surfaces the About hub, Features catalog and
+  // Draw Show. Pricing lives only in page footers now (kept link-rich
+  // but off the global header to reduce noise).
   const navLinks = [
     { label: t("navHome"),     href: "/" },
+    { label: t("navCatalog"),  href: "/catalog" },
     {
-      label: t("navFeatures"),
-      href: "/features",
+      label: t("navAbout"),
+      href: "/about",
       children: [
+        {
+          label: t("navAboutHub"),
+          description: t("navAboutHubDesc"),
+          href: "/about",
+          badge: "NEW",
+        },
         {
           label: t("navFeaturesPlatform"),
           description: t("navFeaturesPlatformDesc"),
@@ -26,13 +34,10 @@ export function PublicNavHeader() {
           label: t("navFeaturesDrawShow"),
           description: t("navFeaturesDrawShowDesc"),
           href: "/draw",
-          badge: "NEW",
         },
       ],
     },
-    { label: t("navCatalog"),  href: "/catalog" },
     { label: t("navListing"),  href: "/listing" },
-    { label: t("navPricing"),  href: "/pricing" },
   ];
 
   return (

@@ -2,6 +2,7 @@ import { MetadataRoute } from "next";
 import { db } from "@/db";
 import { organizations, tournaments } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { ABOUT_PUBLISHED_SLUGS } from "@/lib/about/content";
 
 const BASE = "https://goalityfootball.com";
 const LOCALES = ["en", "ru", "et", "es"] as const;
@@ -24,6 +25,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...url("/blog", 0.7, "weekly"),
     ...url("/features", 0.7, "monthly"),
     ...url("/features/schedule-planner", 0.6, "monthly"),
+    ...url("/about", 0.8, "weekly"),
+    ...ABOUT_PUBLISHED_SLUGS.flatMap((slug) => url(`/about/${slug}`, 0.7, "monthly")),
     ...url("/login", 0.4, "monthly"),
   ];
 
