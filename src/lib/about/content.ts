@@ -253,7 +253,9 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#2BFEBA",
     related: ["players-roster", "team-shop", "follow-news"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
+    ctaPrimaryHref: "/catalog",
+    ctaSecondaryHref: "/onboarding",
   },
   {
     slug: "players-roster",
@@ -263,7 +265,7 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#3B82F6",
     related: ["team-workspace", "regulations-documents", "team-registration"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
   },
   {
     slug: "team-shop",
@@ -273,7 +275,9 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#F59E0B",
     related: ["services-packages", "team-workspace", "accommodation-logistics"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
+    ctaPrimaryHref: "/catalog",
+    ctaSecondaryHref: "/onboarding",
   },
   {
     slug: "follow-news",
@@ -283,7 +287,9 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#A855F7",
     related: ["tournament-website", "live-standings", "team-workspace"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
+    ctaPrimaryHref: "/catalog",
+    ctaSecondaryHref: "/onboarding",
   },
 
   // ── Cluster 5 — Доверие ────────────────────────────────────────────
