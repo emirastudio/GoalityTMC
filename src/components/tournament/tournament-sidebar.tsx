@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import {
   Info, Users, BookOpen, Hotel, Handshake,
   MapPin, Clock, ArrowRight, ChevronRight, Shield, Trophy, Calendar,
-  BarChart2, Newspaper,
+  BarChart2, Newspaper, Star,
 } from "lucide-react";
 import { FollowButton } from "@/components/tournament/follow-button";
 
@@ -210,14 +210,29 @@ export function TournamentSidebar({
             })}
           </nav>
 
-          {/* Follow toggle — visible only to logged-in clubs (clubId !== null) */}
-          {clubId && tournamentId && (
+          {/* Follow toggle (clubs) OR login-prompt CTA (everyone else) */}
+          {tournamentId && (
             <div className="p-3 pb-1">
-              <FollowButton
-                clubId={clubId}
-                tournamentId={tournamentId}
-                initialFollowing={isFollowing ?? false}
-              />
+              {clubId ? (
+                <FollowButton
+                  clubId={clubId}
+                  tournamentId={tournamentId}
+                  initialFollowing={isFollowing ?? false}
+                />
+              ) : (
+                <Link
+                  href={`/login?next=/t/${orgSlug}/${tournamentSlug}`}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-[12px] font-bold border transition-all hover:opacity-90"
+                  style={{
+                    background: "var(--cat-tag-bg)",
+                    borderColor: "var(--cat-card-border)",
+                    color: "var(--cat-text-secondary)",
+                  }}
+                >
+                  <Star className="w-3.5 h-3.5" />
+                  <span>{t("follow.followLoginPrompt")}</span>
+                </Link>
+              )}
             </div>
           )}
 
