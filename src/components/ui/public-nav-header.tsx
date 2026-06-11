@@ -28,7 +28,7 @@ export function PublicNavHeader() {
         {
           label: t("navFeaturesPlatform"),
           description: t("navFeaturesPlatformDesc"),
-          href: "/features",
+          href: "/about/overview",
         },
         {
           label: t("navFeaturesDrawShow"),

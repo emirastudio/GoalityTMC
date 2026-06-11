@@ -23,9 +23,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...url("/pricing", 0.8, "monthly"),
     ...url("/catalog", 0.8, "daily"),
     ...url("/blog", 0.7, "weekly"),
-    ...url("/features", 0.7, "monthly"),
+    // /features is a 308 redirect to /about/overview now — don't list it.
     ...url("/features/schedule-planner", 0.6, "monthly"),
     ...url("/about", 0.8, "weekly"),
+    ...url("/about/overview", 0.85, "monthly"),
     ...ABOUT_PUBLISHED_SLUGS.flatMap((slug) => url(`/about/${slug}`, 0.7, "monthly")),
     ...url("/login", 0.4, "monthly"),
   ];

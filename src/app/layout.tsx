@@ -23,6 +23,13 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Goality TMC",
   },
+  // GSC / Yandex verification slots — set the env var on prod and a
+  // <meta name="google-site-verification"> tag appears automatically.
+  // No code change needed when you rotate the token.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    yandex: process.env.YANDEX_SITE_VERIFICATION,
+  },
 };
 
 export const viewport: Viewport = {

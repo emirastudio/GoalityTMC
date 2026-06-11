@@ -577,7 +577,7 @@ export default function PricingPage() {
                   style={{ background: "linear-gradient(90deg, #2BFEBA, #00D98F)", color: "#0A0E14", boxShadow: "0 8px 30px rgba(43,254,186,0.3)" }}>
                   {t("ctaCreate")} <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link href="/features"
+                <Link href="/about/overview"
                   className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-[15px] font-semibold border transition-all hover:opacity-80"
                   style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", color: "var(--cat-text)" }}>
                   {t("ctaFeatures")}
@@ -593,7 +593,7 @@ export default function PricingPage() {
             <span>&copy; {new Date().getFullYear()} Goality. {t("footerCopyright")}</span>
             <div className="flex items-center gap-4">
               <Link href="/" className="hover:opacity-80">{t("footerHome")}</Link>
-              <Link href="/features" className="hover:opacity-80">{t("footerFeatures")}</Link>
+              <Link href="/about/overview" className="hover:opacity-80">{t("footerFeatures")}</Link>
               <Link href="/catalog" className="hover:opacity-80">{t("footerCatalog")}</Link>
               <Link href="/pricing" className="hover:opacity-80" style={{ color: "var(--cat-accent)" }}>{t("footerPricing")}</Link>
             </div>
