@@ -129,7 +129,7 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#3B82F6",
     related: ["pricing-tiers", "org-listing", "divisions"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
   },
   {
     slug: "divisions",
@@ -139,7 +139,7 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#22C55E",
     related: ["team-registration", "brackets-stages", "auto-schedule"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
   },
   {
     slug: "stadiums-fields",
@@ -149,7 +149,7 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#22C55E",
     related: ["auto-schedule", "match-operations", "accommodation-logistics"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
   },
   {
     slug: "regulations-documents",
@@ -159,7 +159,7 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#8B5CF6",
     related: ["tournament-website", "team-registration", "players-roster"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
   },
   {
     slug: "org-listing",
@@ -169,7 +169,10 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#00E5FF",
     related: ["tournament-website", "catalog", "organizer-dashboard"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
+    // Primary CTA = "See live org listings" → real /catalog with organizations.
+    ctaPrimaryHref: "/catalog",
+    ctaSecondaryHref: "/onboarding",
   },
   {
     slug: "pricing-tiers",
@@ -179,7 +182,10 @@ export const ABOUT_PAGES: AboutPage[] = [
     accentTo: "#2BFEBA",
     related: ["organizer-dashboard", "team-registration", "services-packages"],
     featureCount: 6, faqCount: 4, forWhomCount: 4,
-    published: false,
+    published: true,
+    // Primary CTA → /pricing (real pricing page).
+    ctaPrimaryHref: "/pricing",
+    ctaSecondaryHref: "/onboarding",
   },
 
   // ── Cluster 3 — Операции ────────────────────────────────────────────
