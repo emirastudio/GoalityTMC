@@ -540,7 +540,7 @@ export default function ListingPage() {
             <span>© {new Date().getFullYear()} Goality Sport Group</span>
             <div className="flex items-center gap-6">
               <Link href="/catalog" className="hover:opacity-80 transition-opacity">{t("li1").split(" ")[0]}</Link>
-              <Link href="/features" className="hover:opacity-80 transition-opacity">Features</Link>
+              <Link href="/about/overview" className="hover:opacity-80 transition-opacity">Features</Link>
               <Link href="/pricing" className="hover:opacity-80 transition-opacity">Pricing</Link>
             </div>
           </div>
