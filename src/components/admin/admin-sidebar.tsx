@@ -18,6 +18,7 @@ import {
   CreditCard,
   Sparkles,
   Tag,
+  Bug,
 } from "lucide-react";
 
 const navItems = [
@@ -31,6 +32,7 @@ const navItems = [
   { key: "drawEvents",     icon: Sparkles,        href: "/admin/draw-events" },
   { key: "drawPromos",     icon: Tag,             href: "/admin/draw-promos" },
   { key: "blog",           icon: BookOpen,        href: "/admin/blog" },
+  { key: "bugReports",     icon: Bug,             href: "/admin/bug-reports" },
   { key: "health",         icon: Activity,        href: "/admin/health" },
   { key: "settings",       icon: Settings,        href: "/admin/settings" },
 ] as const;

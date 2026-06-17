@@ -478,7 +478,8 @@
     "clubDashboard": "Club Dashboard",
     "referees": "Referees",
     "organizations": "Organizations",
-    "deleteRequests": "Delete Requests"
+    "deleteRequests": "Delete Requests",
+    "bugReports": "Bug Reports"
   },
   "team": {
     "regNumber": "Registration number",
@@ -6450,5 +6451,75 @@
         "ctaButton": "Start a tournament"
       }
     }
+  },
+  "bugReporter": {
+    "buttonLabel": "Report bug",
+    "modalTitle": "Report a bug",
+    "modalSubtitle": "Help us fix it — describe what went wrong",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. Team list doesn't sort by date",
+    "severityLabel": "Severity",
+    "severity": {
+      "low": "Low",
+      "medium": "Med",
+      "high": "High",
+      "critical": "Crit"
+    },
+    "descriptionLabel": "What happened?",
+    "descriptionPlaceholder": "Steps to reproduce, expected vs actual behavior. Be specific.",
+    "screenshotLabel": "Screenshot (optional)",
+    "screenshotHint": "Click to upload a screenshot",
+    "uploading": "Uploading…",
+    "cancel": "Cancel",
+    "submit": "Send",
+    "sending": "Sending…",
+    "thanks": "Thanks!",
+    "thanksDetail": "Bug #{id} saved.",
+    "autoFooter": "Auto-included: page URL, browser, viewport, console errors"
+  },
+  "bugReportsAdmin": {
+    "title": "Bug Reports",
+    "totalCount": "{count} reports total",
+    "filterStatus": "Status",
+    "filterSeverity": "Severity",
+    "all": "All",
+    "empty": "No bug reports yet",
+    "severity": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "status": {
+      "new": "New",
+      "in_progress": "In progress",
+      "fixed": "Fixed",
+      "wont_fix": "Won't fix",
+      "duplicate": "Duplicate"
+    },
+    "col": {
+      "severity": "Severity",
+      "title": "Title",
+      "reporter": "Reporter",
+      "page": "Page",
+      "status": "Status",
+      "date": "Date"
+    },
+    "description": "Description",
+    "screenshot": "Screenshot",
+    "reporter": "Reporter",
+    "page": "Page",
+    "viewport": "Viewport",
+    "locale": "Locale",
+    "userAgent": "User-Agent",
+    "created": "Created",
+    "consoleSnapshot": "Console snapshot",
+    "changeStatus": "Change status",
+    "internalNotes": "Internal notes",
+    "internalNotesPlaceholder": "Triage notes, link to PR / Linear ticket, etc.",
+    "delete": "Delete",
+    "close": "Close",
+    "save": "Save changes",
+    "confirmDelete": "Delete this bug report? This cannot be undone."
   }
 }

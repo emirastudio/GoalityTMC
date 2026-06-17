@@ -478,7 +478,8 @@
     "clubDashboard": "Дашборд клуба",
     "referees": "Судьи",
     "organizations": "Организации",
-    "deleteRequests": "Запросы на удаление"
+    "deleteRequests": "Запросы на удаление",
+    "bugReports": "Баг-репорты"
   },
   "team": {
     "regNumber": "Регистрационный номер",
@@ -6450,5 +6451,75 @@
         "ctaButton": "Создать турнир"
       }
     }
+  },
+  "bugReporter": {
+    "buttonLabel": "Сообщить о баге",
+    "modalTitle": "Сообщить о баге",
+    "modalSubtitle": "Помогите исправить — опишите, что пошло не так",
+    "titleLabel": "Заголовок",
+    "titlePlaceholder": "Напр.: список команд не сортируется по дате",
+    "severityLabel": "Критичность",
+    "severity": {
+      "low": "Низк",
+      "medium": "Сред",
+      "high": "Выс",
+      "critical": "Крит"
+    },
+    "descriptionLabel": "Что произошло?",
+    "descriptionPlaceholder": "Шаги воспроизведения, ожидаемое и фактическое поведение. Конкретно.",
+    "screenshotLabel": "Скриншот (необязательно)",
+    "screenshotHint": "Нажмите чтобы загрузить скриншот",
+    "uploading": "Загрузка…",
+    "cancel": "Отмена",
+    "submit": "Отправить",
+    "sending": "Отправка…",
+    "thanks": "Спасибо!",
+    "thanksDetail": "Баг #{id} сохранён.",
+    "autoFooter": "Авто: URL страницы, браузер, размер окна, ошибки консоли"
+  },
+  "bugReportsAdmin": {
+    "title": "Баг-репорты",
+    "totalCount": "Всего: {count}",
+    "filterStatus": "Статус",
+    "filterSeverity": "Критичность",
+    "all": "Все",
+    "empty": "Пока нет баг-репортов",
+    "severity": {
+      "low": "Низкая",
+      "medium": "Средняя",
+      "high": "Высокая",
+      "critical": "Критич."
+    },
+    "status": {
+      "new": "Новый",
+      "in_progress": "В работе",
+      "fixed": "Исправлен",
+      "wont_fix": "Не будет",
+      "duplicate": "Дубль"
+    },
+    "col": {
+      "severity": "Критичность",
+      "title": "Заголовок",
+      "reporter": "Автор",
+      "page": "Страница",
+      "status": "Статус",
+      "date": "Дата"
+    },
+    "description": "Описание",
+    "screenshot": "Скриншот",
+    "reporter": "Автор",
+    "page": "Страница",
+    "viewport": "Размер окна",
+    "locale": "Язык",
+    "userAgent": "Браузер",
+    "created": "Создан",
+    "consoleSnapshot": "Снимок консоли",
+    "changeStatus": "Сменить статус",
+    "internalNotes": "Внутренние заметки",
+    "internalNotesPlaceholder": "Заметки по триажу, ссылка на PR / тикет в Linear, и т. д.",
+    "delete": "Удалить",
+    "close": "Закрыть",
+    "save": "Сохранить",
+    "confirmDelete": "Удалить этот баг-репорт? Действие необратимо."
   }
 }

@@ -2375,3 +2375,60 @@ export const dealPayments = pgTable("deal_payments", {
 }, (t) => [
   index("deal_payments_deal_idx").on(t.dealId),
 ]);
+
+// ═══════════════════════════════════════════════════════════
+// BUG REPORTS — Internal QA tool. Floating button in admin
+// shell lets tester submit bugs from any page. Stored here,
+// shown in /admin/bug-reports, mirrored to Telegram chat.
+// ═══════════════════════════════════════════════════════════
+
+export const bugSeverityEnum = pgEnum("bug_severity", [
+  "low",
+  "medium",
+  "high",
+  "critical",
+]);
+
+export const bugStatusEnum = pgEnum("bug_status", [
+  "new",
+  "in_progress",
+  "fixed",
+  "wont_fix",
+  "duplicate",
+]);
+
+export const bugReports = pgTable("bug_reports", {
+  id: serial("id").primaryKey(),
+  // Org context — useful but optional (super-admin reports may have none).
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "set null" }),
+  // Reporter — adminUsers row. Nullable in case the reporter is later deleted.
+  reporterId: integer("reporter_id")
+    .references(() => adminUsers.id, { onDelete: "set null" }),
+  reporterEmail: text("reporter_email").notNull(),  // snapshot at submit-time
+  reporterName: text("reporter_name").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  severity: bugSeverityEnum("severity").notNull().default("medium"),
+  status: bugStatusEnum("status").notNull().default("new"),
+  // Auto-captured context
+  pageUrl: text("page_url").notNull(),
+  pagePath: text("page_path").notNull(),
+  userAgent: text("user_agent"),
+  viewport: varchar("viewport", { length: 20 }),       // "1920x1080"
+  locale: varchar("locale", { length: 5 }),
+  consoleSnapshot: jsonb("console_snapshot"),           // last N console errors
+  screenshotUrl: text("screenshot_url"),
+  // Internal triage
+  assigneeId: integer("assignee_id")
+    .references(() => adminUsers.id, { onDelete: "set null" }),
+  internalNotes: text("internal_notes"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => [
+  index("bug_reports_status_idx").on(t.status),
+  index("bug_reports_severity_idx").on(t.severity),
+  index("bug_reports_created_at_idx").on(t.createdAt),
+  index("bug_reports_reporter_idx").on(t.reporterId),
+]);

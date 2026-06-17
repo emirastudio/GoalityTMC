@@ -7,6 +7,7 @@ import { authorizeOrg } from "@/lib/tenant";
 import { redirect } from "next/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { GlobalHeader, AdminHeaderActions } from "@/components/ui/global-header";
+import { BugReporter } from "@/components/bug-reporter/bug-reporter";
 import { getTranslations } from "next-intl/server";
 
 type Props = {
@@ -54,6 +55,7 @@ export default async function OrgAdminLayout({ children, params }: Props) {
         {!isListing && (
           <OrgAdminMobileNav orgSlug={orgSlug} orgName={organization.name} orgLogo={organization.logo ?? null} />
         )}
+        <BugReporter shouldShow={true} />
       </div>
     </ThemeProvider>
   );

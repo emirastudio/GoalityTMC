@@ -478,7 +478,8 @@
     "clubDashboard": "Panel del club",
     "referees": "Árbitros",
     "organizations": "Organizaciones",
-    "deleteRequests": "Solicitudes de eliminación"
+    "deleteRequests": "Solicitudes de eliminación",
+    "bugReports": "Reportes de bugs"
   },
   "team": {
     "regNumber": "Número de registro",
@@ -6490,5 +6491,75 @@
         "ctaButton": "Lanzar un torneo"
       }
     }
+  },
+  "bugReporter": {
+    "buttonLabel": "Reportar bug",
+    "modalTitle": "Reportar un bug",
+    "modalSubtitle": "Ayúdanos a arreglarlo — describe qué falló",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Ej.: la lista de equipos no se ordena por fecha",
+    "severityLabel": "Severidad",
+    "severity": {
+      "low": "Baja",
+      "medium": "Med",
+      "high": "Alta",
+      "critical": "Crít"
+    },
+    "descriptionLabel": "¿Qué pasó?",
+    "descriptionPlaceholder": "Pasos para reproducir, comportamiento esperado y real. Sé específico.",
+    "screenshotLabel": "Captura (opcional)",
+    "screenshotHint": "Pulsa para subir una captura",
+    "uploading": "Subiendo…",
+    "cancel": "Cancelar",
+    "submit": "Enviar",
+    "sending": "Enviando…",
+    "thanks": "¡Gracias!",
+    "thanksDetail": "Bug #{id} guardado.",
+    "autoFooter": "Automático: URL, navegador, tamaño de ventana, errores de consola"
+  },
+  "bugReportsAdmin": {
+    "title": "Reportes de bugs",
+    "totalCount": "{count} reportes en total",
+    "filterStatus": "Estado",
+    "filterSeverity": "Severidad",
+    "all": "Todos",
+    "empty": "Aún no hay reportes",
+    "severity": {
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta",
+      "critical": "Crítica"
+    },
+    "status": {
+      "new": "Nuevo",
+      "in_progress": "En progreso",
+      "fixed": "Arreglado",
+      "wont_fix": "No se arreglará",
+      "duplicate": "Duplicado"
+    },
+    "col": {
+      "severity": "Severidad",
+      "title": "Título",
+      "reporter": "Reportado por",
+      "page": "Página",
+      "status": "Estado",
+      "date": "Fecha"
+    },
+    "description": "Descripción",
+    "screenshot": "Captura",
+    "reporter": "Reportado por",
+    "page": "Página",
+    "viewport": "Ventana",
+    "locale": "Idioma",
+    "userAgent": "Navegador",
+    "created": "Creado",
+    "consoleSnapshot": "Snapshot de consola",
+    "changeStatus": "Cambiar estado",
+    "internalNotes": "Notas internas",
+    "internalNotesPlaceholder": "Notas de triaje, enlace a PR / ticket de Linear, etc.",
+    "delete": "Eliminar",
+    "close": "Cerrar",
+    "save": "Guardar",
+    "confirmDelete": "¿Eliminar este reporte? No se puede deshacer."
   }
 }

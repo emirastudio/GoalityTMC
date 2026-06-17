@@ -288,6 +288,13 @@
       "when": 1781712000000,
       "tag": "0040_tournament_followers_news",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1781715404000,
+      "tag": "0041_bug_reports",
+      "breakpoints": true
     }
   ]
 }

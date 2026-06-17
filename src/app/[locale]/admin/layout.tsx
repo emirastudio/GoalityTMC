@@ -1,6 +1,7 @@
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { GlobalHeader, AdminHeaderActions } from "@/components/ui/global-header";
+import { BugReporter } from "@/components/bug-reporter/bug-reporter";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -32,6 +33,7 @@ export default async function AdminLayout({ children, params }: Props) {
           <AdminSidebar />
           <main className="flex-1 p-8" style={{ background: "var(--cat-bg)" }}>{children}</main>
         </div>
+        <BugReporter shouldShow={true} />
       </div>
     </ThemeProvider>
   );

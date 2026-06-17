@@ -478,7 +478,8 @@
     "clubDashboard": "Klubi töölaud",
     "referees": "Kohtunikud",
     "organizations": "Organisatsioonid",
-    "deleteRequests": "Kustutamistaotlused"
+    "deleteRequests": "Kustutamistaotlused",
+    "bugReports": "Veateated"
   },
   "team": {
     "regNumber": "Registreerimisnumber",
@@ -6450,5 +6451,75 @@
         "ctaButton": "Alusta turniiri"
       }
     }
+  },
+  "bugReporter": {
+    "buttonLabel": "Teata veast",
+    "modalTitle": "Teata veast",
+    "modalSubtitle": "Aita meil parandada — kirjelda, mis valesti läks",
+    "titleLabel": "Pealkiri",
+    "titlePlaceholder": "Nt: tiimide nimekiri ei sorteeri kuupäeva järgi",
+    "severityLabel": "Raskusaste",
+    "severity": {
+      "low": "Madal",
+      "medium": "Kesk",
+      "high": "Kõrge",
+      "critical": "Krit"
+    },
+    "descriptionLabel": "Mis juhtus?",
+    "descriptionPlaceholder": "Sammud taastootmiseks, oodatav ja tegelik käitumine. Ole konkreetne.",
+    "screenshotLabel": "Ekraanitõmmis (valikuline)",
+    "screenshotHint": "Vajuta, et laadida ekraanitõmmis",
+    "uploading": "Laadimine…",
+    "cancel": "Tühista",
+    "submit": "Saada",
+    "sending": "Saatmine…",
+    "thanks": "Aitäh!",
+    "thanksDetail": "Veateade #{id} salvestatud.",
+    "autoFooter": "Automaatselt: lehe URL, brauser, akna suurus, konsoolivead"
+  },
+  "bugReportsAdmin": {
+    "title": "Veateated",
+    "totalCount": "Kokku: {count}",
+    "filterStatus": "Olek",
+    "filterSeverity": "Raskusaste",
+    "all": "Kõik",
+    "empty": "Veateateid pole",
+    "severity": {
+      "low": "Madal",
+      "medium": "Keskmine",
+      "high": "Kõrge",
+      "critical": "Kriitiline"
+    },
+    "status": {
+      "new": "Uus",
+      "in_progress": "Töös",
+      "fixed": "Parandatud",
+      "wont_fix": "Ei paranda",
+      "duplicate": "Duplikaat"
+    },
+    "col": {
+      "severity": "Raskusaste",
+      "title": "Pealkiri",
+      "reporter": "Esitaja",
+      "page": "Leht",
+      "status": "Olek",
+      "date": "Kuupäev"
+    },
+    "description": "Kirjeldus",
+    "screenshot": "Ekraanitõmmis",
+    "reporter": "Esitaja",
+    "page": "Leht",
+    "viewport": "Akna suurus",
+    "locale": "Keel",
+    "userAgent": "Brauser",
+    "created": "Loodud",
+    "consoleSnapshot": "Konsooli koopia",
+    "changeStatus": "Muuda olekut",
+    "internalNotes": "Sisemised märkmed",
+    "internalNotesPlaceholder": "Triaažimärkmed, link PR-le / Linear-piletile jne.",
+    "delete": "Kustuta",
+    "close": "Sulge",
+    "save": "Salvesta",
+    "confirmDelete": "Kustuta see veateade? Seda ei saa tagasi võtta."
   }
 }
