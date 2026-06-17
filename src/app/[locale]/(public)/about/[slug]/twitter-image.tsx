@@ -1,11 +1,8 @@
-// Re-uses the same generator as opengraph-image so Twitter cards match
-// the OG card pixel-for-pixel. Next.js requires the file convention to
-// live next to the route, so we re-export rather than symlink.
-export {
-  default,
-  contentType,
-  size,
-  alt,
-  runtime,
-  generateImageMetadata,
-} from "./opengraph-image";
+// Reuses the OG image generator pixel-for-pixel. See twitter-image.tsx
+// at /about/ — same reason for the inline constants instead of re-exports.
+export const runtime = "nodejs";
+export const contentType = "image/png";
+export const size = { width: 1200, height: 630 };
+export const alt = "Goality TMC";
+
+export { default, generateImageMetadata } from "./opengraph-image";
