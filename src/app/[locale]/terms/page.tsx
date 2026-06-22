@@ -108,7 +108,7 @@ export default function TermsPage() {
                 <p style={{ margin: 0 }}>Under Article 16(m) of the EU Consumer Rights Directive (2011/83/EU), the statutory 14-day right of withdrawal does <strong>not</strong> apply to digital content that has been supplied with your prior express consent and your acknowledgement that you thereby lose your right of withdrawal. When you activate a paid plan on Goality TMC, you <strong>explicitly consent to immediate performance</strong> of the service and <strong>acknowledge that you thereby lose the right of withdrawal</strong>. Your consent is recorded at checkout.</p>
               </div>
               <p style={{ margin: 0 }}>
-                <strong style={{ color: "var(--cat-text)" }}>All payments are non-refundable</strong> except where required by mandatory law. If you believe there is a billing error or a charge was made in error, contact <a href="mailto:legal@goality.app" style={{ color: "var(--cat-accent)" }}>legal@goality.app</a> within 14 days of the charge and we will investigate in good faith.
+                <strong style={{ color: "var(--cat-text)" }}>All payments are non-refundable</strong> except where required by mandatory law. If you believe there is a billing error or a charge was made in error, contact <a href="mailto:legal@goalityfootball.com" style={{ color: "var(--cat-accent)" }}>legal@goalityfootball.com</a> within 14 days of the charge and we will investigate in good faith.
               </p>
             </section>
 
@@ -137,7 +137,7 @@ export default function TermsPage() {
               <div style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", borderRadius: "12px", padding: "16px" }}>
                 <p style={{ fontWeight: 700, color: "var(--cat-text)", margin: "0 0 2px 0" }}>Goality Sport Group OÜ (17232252)</p>
                 <p style={{ color: "var(--cat-text-muted)", margin: "0 0 2px 0" }}>Tallinn, Estonia</p>
-                <a href="mailto:legal@goality.app" style={{ color: "var(--cat-accent)" }}>legal@goality.app</a>
+                <a href="mailto:legal@goalityfootball.com" style={{ color: "var(--cat-accent)" }}>legal@goalityfootball.com</a>
               </div>
             </section>
 

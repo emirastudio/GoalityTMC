@@ -71,7 +71,7 @@ export default function DataDeletionPage() {
                 <p style={{ fontWeight: 700, color: "var(--cat-text)", marginTop: 0, marginBottom: "10px" }}>Option B — by email</p>
                 <p style={{ margin: 0 }}>
                   Send a deletion request to{" "}
-                  <a href="mailto:privacy@goality.app" style={{ color: "var(--cat-accent)", fontWeight: 600 }}>privacy@goality.app</a>{" "}
+                  <a href="mailto:privacy@goalityfootball.com" style={{ color: "var(--cat-accent)", fontWeight: 600 }}>privacy@goalityfootball.com</a>{" "}
                   with the subject line <strong style={{ color: "var(--cat-text)" }}>&quot;Data Deletion Request&quot;</strong> and the email address associated with your account. We may contact you to verify your identity before acting on the request.
                 </p>
               </div>
@@ -86,7 +86,7 @@ export default function DataDeletionPage() {
               <div style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", borderRadius: "12px", padding: "16px" }}>
                 <p style={{ fontWeight: 700, color: "var(--cat-text)", margin: "0 0 2px 0" }}>Goality Sport Group OÜ (17232252)</p>
                 <p style={{ color: "var(--cat-text-muted)", margin: "0 0 2px 0" }}>Tallinn, Estonia</p>
-                <a href="mailto:privacy@goality.app" style={{ color: "var(--cat-accent)" }}>privacy@goality.app</a>
+                <a href="mailto:privacy@goalityfootball.com" style={{ color: "var(--cat-accent)" }}>privacy@goalityfootball.com</a>
               </div>
             </section>
 

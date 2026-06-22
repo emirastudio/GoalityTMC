@@ -186,7 +186,7 @@ export default function PrivacyPage() {
               <div style={{ background: "var(--cat-card-bg)", border: "1px solid var(--cat-card-border)", borderRadius: "12px", padding: "16px" }}>
                 <p style={{ fontWeight: 700, color: "var(--cat-text)", margin: "0 0 2px 0" }}>Goality Sport Group OÜ (17232252)</p>
                 <p style={{ color: "var(--cat-text-muted)", margin: "0 0 2px 0" }}>Tallinn, Estonia</p>
-                <a href="mailto:privacy@goality.app" style={{ color: "var(--cat-accent)" }}>privacy@goality.app</a>
+                <a href="mailto:privacy@goalityfootball.com" style={{ color: "var(--cat-accent)" }}>privacy@goalityfootball.com</a>
               </div>
             </section>
 

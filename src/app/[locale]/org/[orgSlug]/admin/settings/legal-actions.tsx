@@ -7,7 +7,7 @@ import { AlertTriangle, Check, Download, Loader2, Trash2 } from "lucide-react";
 /**
  * GDPR self-service actions for an organisation admin:
  *   - Art. 15 / 20: download a JSON export
- *   - Art. 17: request account deletion (email to privacy@goality.app)
+ *   - Art. 17: request account deletion (email to privacy@goalityfootball.com)
  *
  * Destructive action uses a two-step typed confirmation — the admin
  * must type the organisation name exactly to enable the Confirm button.

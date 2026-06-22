@@ -151,7 +151,7 @@ export async function GET(
         name: "Goality Sport Group OÜ",
         registryCode: "17232252",
         address: "Tallinn, Estonia",
-        contactEmail: "privacy@goality.app",
+        contactEmail: "privacy@goalityfootball.com",
       },
       clubId: cid,
       counts: {
@@ -162,7 +162,7 @@ export async function GET(
         orders: ordersRows.length,
         matchesReferenced: matchSummaries.length,
       },
-      note: "This export covers personal data we process as a processor on behalf of the organisers and as a controller for your account. Tournament schedules and standings are public data and can be viewed directly on the platform. If something is missing, contact privacy@goality.app — under GDPR we have 30 days to provide any additional records.",
+      note: "This export covers personal data we process as a processor on behalf of the organisers and as a controller for your account. Tournament schedules and standings are public data and can be viewed directly on the platform. If something is missing, contact privacy@goalityfootball.com — under GDPR we have 30 days to provide any additional records.",
     },
     club,
     accounts: {

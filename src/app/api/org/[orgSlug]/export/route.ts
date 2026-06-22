@@ -130,7 +130,7 @@ export async function GET(
         name: "Goality Sport Group OÜ",
         registryCode: "17232252",
         address: "Tallinn, Estonia",
-        contactEmail: "privacy@goality.app",
+        contactEmail: "privacy@goalityfootball.com",
       },
       organizationId: org.id,
       organizationSlug: org.slug,
