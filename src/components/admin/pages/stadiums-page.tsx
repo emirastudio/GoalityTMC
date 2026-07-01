@@ -68,6 +68,7 @@ interface QuickAddFieldProps {
 }
 
 function QuickAddField({ stadiumId, existingNames, onAdded, apiBase }: QuickAddFieldProps) {
+  const t = useTranslations("orgAdmin");
   const [customName, setCustomName] = useState("");
   const [adding, setAdding] = useState<string | null>(null);
   const [showCustom, setShowCustom] = useState(false);
@@ -99,7 +100,7 @@ function QuickAddField({ stadiumId, existingNames, onAdded, apiBase }: QuickAddF
     <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--cat-card-border)" }}>
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-semibold" style={{ color: "var(--cat-text-muted)" }}>
-          + Площадка:
+          {t("quickAddFieldLabel")}
         </span>
         {QUICK_LETTERS.filter(l => !existingNames.includes(l)).slice(0, 5).map(letter => (
           <button
@@ -121,7 +122,7 @@ function QuickAddField({ stadiumId, existingNames, onAdded, apiBase }: QuickAddF
               value={customName}
               onChange={e => setCustomName(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") addField(customName); if (e.key === "Escape") setShowCustom(false); }}
-              placeholder="Своё название"
+              placeholder={t("customFieldNamePlaceholder")}
               autoFocus
               style={{ ...inputStyle, width: "130px", padding: "5px 10px", fontSize: "13px" }}
             />
@@ -140,13 +141,13 @@ function QuickAddField({ stadiumId, existingNames, onAdded, apiBase }: QuickAddF
           <button type="button" onClick={() => setShowCustom(true)}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
             style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-            <Plus className="w-3 h-3" /> Своё
+            <Plus className="w-3 h-3" /> {t("customFieldBtn")}
           </button>
         )}
 
         {nextLetter && (
           <span className="text-xs ml-1" style={{ color: "var(--cat-text-secondary)" }}>
-            {existingNames.length > 0 && `Добавлено: ${existingNames.join(", ")}`}
+            {existingNames.length > 0 && t("addedFieldsLabel", { names: existingNames.join(", ") })}
           </span>
         )}
       </div>
@@ -163,20 +164,21 @@ interface FieldPillProps {
 }
 
 function FieldPill({ field, onDelete, deleting }: FieldPillProps) {
+  const t = useTranslations("orgAdmin");
   const [confirm, setConfirm] = useState(false);
 
   if (confirm) {
     return (
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
         style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-        <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>Удалить {field.name}?</span>
+        <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>{t("deleteFieldConfirm", { name: field.name })}</span>
         <button type="button" onClick={() => onDelete(field.id)} disabled={deleting}
           className="text-xs font-black px-2 py-0.5 rounded-md" style={{ background: "#ef4444", color: "#fff" }}>
-          {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : "Да"}
+          {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : t("yesBtn")}
         </button>
         <button type="button" onClick={() => setConfirm(false)}
           className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-          Нет
+          {t("noBtn")}
         </button>
       </div>
     );
@@ -208,6 +210,7 @@ interface StadiumCardProps {
 }
 
 function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onFieldDeleted }: StadiumCardProps) {
+  const t = useTranslations("orgAdmin");
   const [expanded, setExpanded] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -340,7 +343,7 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
           />
           <button
             onClick={removePhoto}
-            title="Remove photo"
+            title={t("removePhotoTitle")}
             className="absolute top-2 right-2 w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-90"
             style={{
               background: "rgba(0,0,0,0.55)",
@@ -363,12 +366,12 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
           {uploading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm font-semibold">Uploading…</span>
+              <span className="text-sm font-semibold">{t("uploadingPhoto")}</span>
             </>
           ) : (
             <>
               <ImagePlus className="w-4 h-4" />
-              <span className="text-sm font-semibold">Добавить фото стадиона</span>
+              <span className="text-sm font-semibold">{t("addStadiumPhotoBtn")}</span>
             </>
           )}
           <input
@@ -406,7 +409,7 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
                   {saved && <CheckCircle className="w-4 h-4" style={{ color: "#2BFEBA" }} />}
                   <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
                     style={{ background: `${ACCENT}12`, color: ACCENT }}>
-                    {stadium.fields.length} площадок
+                    {t("fieldsCountBadge", { count: stadium.fields.length })}
                   </span>
                 </div>
 
@@ -451,37 +454,37 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="col-span-2">
-                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Название *</label>
+                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("stadiumNameLabel")} *</label>
                     <input value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
                       placeholder="Infonet Arena" style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
                   </div>
                   <div className="col-span-2">
-                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Адрес</label>
+                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("address")}</label>
                     <input value={draft.address} onChange={e => setDraft(d => ({ ...d, address: e.target.value }))}
                       placeholder="Raua 6, Tallinn" style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Контакт (имя)</label>
+                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("contactNameLabel")}</label>
                     <input value={draft.contactName} onChange={e => setDraft(d => ({ ...d, contactName: e.target.value }))}
                       placeholder="Danny Smith" style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Телефон</label>
+                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("phoneLabel")}</label>
                     <input value={draft.contactPhone} onChange={e => setDraft(d => ({ ...d, contactPhone: e.target.value }))}
                       placeholder="+372 5xxx xxxx" style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Google Maps URL</label>
+                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("googleMapsLink")}</label>
                     <input value={draft.mapsUrl} onChange={e => setDraft(d => ({ ...d, mapsUrl: e.target.value }))}
                       placeholder="https://maps.google.com/..." style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Waze URL</label>
+                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("wazeUrlLabel")}</label>
                     <input value={draft.wazeUrl} onChange={e => setDraft(d => ({ ...d, wazeUrl: e.target.value }))}
                       placeholder="https://waze.com/ul?..." style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
                   </div>
                   <div className="col-span-2">
-                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Примечание</label>
+                    <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("notes")}</label>
                     <input value={draft.notes} onChange={e => setDraft(d => ({ ...d, notes: e.target.value }))}
                       placeholder="Enter from Raua street" style={{ ...inputStyle, fontSize: "13px", padding: "7px 11px" }} />
                   </div>
@@ -492,12 +495,12 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold disabled:opacity-50 transition-all"
                     style={{ background: ACCENT, color: "#fff" }}>
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                    Сохранить
+                    {t("save")}
                   </button>
                   <button type="button" onClick={() => { setEditing(false); setDraft({ name: stadium.name, address: stadium.address ?? "", contactName: stadium.contactName ?? "", contactPhone: stadium.contactPhone ?? "", mapsUrl: stadium.mapsUrl ?? "", wazeUrl: stadium.wazeUrl ?? "", notes: stadium.notes ?? "", photoUrl: stadium.photoUrl ?? "" }); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all hover:opacity-70"
                     style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-                    <X className="w-3.5 h-3.5" /> Отмена
+                    <X className="w-3.5 h-3.5" /> {t("cancel")}
                   </button>
                 </div>
               </div>
@@ -517,12 +520,12 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
                   <button type="button" onClick={deleteStadium} disabled={deleting}
                     className="px-2.5 py-1 rounded-lg text-xs font-bold"
                     style={{ background: "#ef4444", color: "#fff" }}>
-                    {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : "Удалить"}
+                    {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : t("deleteCover")}
                   </button>
                   <button type="button" onClick={() => setConfirmDelete(false)}
                     className="px-2 py-1 rounded-lg text-xs"
                     style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-                    Нет
+                    {t("noBtn")}
                   </button>
                 </div>
               ) : (
@@ -557,7 +560,7 @@ function StadiumCard({ stadium, apiBase, onUpdated, onDeleted, onFieldAdded, onF
               </div>
             ) : (
               <p className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>
-                Нет площадок — добавьте ниже
+                {t("noFieldsInStadiumHint")}
               </p>
             )}
 
@@ -582,6 +585,7 @@ interface AddStadiumFormProps {
 }
 
 function AddStadiumForm({ apiBase, onAdded }: AddStadiumFormProps) {
+  const t = useTranslations("orgAdmin");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -616,7 +620,7 @@ function AddStadiumForm({ apiBase, onAdded }: AddStadiumFormProps) {
         className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-dashed transition-all hover:opacity-80"
         style={{ borderColor: `${ACCENT}30`, color: ACCENT }}>
         <Plus className="w-5 h-5" />
-        <span className="font-bold text-sm">Добавить стадион</span>
+        <span className="font-bold text-sm">{t("addStadium")}</span>
       </button>
     );
   }
@@ -627,7 +631,7 @@ function AddStadiumForm({ apiBase, onAdded }: AddStadiumFormProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4" style={{ color: ACCENT }} />
-          <span className="font-black text-sm" style={{ color: "var(--cat-text)" }}>Новый стадион</span>
+          <span className="font-black text-sm" style={{ color: "var(--cat-text)" }}>{t("newStadiumTitle")}</span>
         </div>
         <button type="button" onClick={() => setOpen(false)}
           className="w-7 h-7 rounded-lg flex items-center justify-center hover:opacity-70"
@@ -638,49 +642,49 @@ function AddStadiumForm({ apiBase, onAdded }: AddStadiumFormProps) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Название *</label>
+          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("stadiumNameLabel")} *</label>
           <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
             onKeyDown={e => e.key === "Enter" && submit()}
             placeholder="Infonet Arena" style={inputStyle} autoFocus />
         </div>
         <div className="col-span-2">
-          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Адрес</label>
+          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("address")}</label>
           <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
             placeholder="Raua 6, Tallinn" style={inputStyle} />
         </div>
         <div>
-          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Контакт (имя)</label>
+          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("contactNameLabel")}</label>
           <input value={form.contactName} onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))}
             placeholder="Danny Smith" style={inputStyle} />
         </div>
         <div>
-          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Телефон</label>
+          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("phoneLabel")}</label>
           <input value={form.contactPhone} onChange={e => setForm(f => ({ ...f, contactPhone: e.target.value }))}
             placeholder="+372 5xxx xxxx" style={inputStyle} />
         </div>
         <div>
           <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>
-            Google Maps URL
+            {t("googleMapsLink")}
           </label>
           <input value={form.mapsUrl} onChange={e => setForm(f => ({ ...f, mapsUrl: e.target.value }))}
             placeholder="https://maps.google.com/..." style={inputStyle} />
         </div>
         <div>
           <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>
-            Waze URL
+            {t("wazeUrlLabel")}
           </label>
           <input value={form.wazeUrl} onChange={e => setForm(f => ({ ...f, wazeUrl: e.target.value }))}
             placeholder="https://waze.com/ul?..." style={inputStyle} />
         </div>
         <div className="col-span-2">
-          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>Примечание</label>
+          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--cat-text-muted)" }}>{t("notes")}</label>
           <input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
             placeholder="Enter from Raua street..." style={inputStyle} />
         </div>
       </div>
 
       <p className="text-xs" style={{ color: "var(--cat-text-secondary)" }}>
-        После создания стадиона добавьте площадки (A, B, C, D...) кнопками внутри карточки.
+        {t("createStadiumHint")}
       </p>
 
       <div className="flex items-center gap-2">
@@ -688,12 +692,12 @@ function AddStadiumForm({ apiBase, onAdded }: AddStadiumFormProps) {
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50 transition-all"
           style={{ background: `linear-gradient(135deg, ${ACCENT}, #db2777)`, color: "#fff" }}>
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-          Создать стадион
+          {t("createStadiumBtn")}
         </button>
         <button type="button" onClick={() => setOpen(false)}
           className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-70"
           style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
-          Отмена
+          {t("cancel")}
         </button>
       </div>
     </div>
@@ -703,6 +707,7 @@ function AddStadiumForm({ apiBase, onAdded }: AddStadiumFormProps) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function StadiumsPageContent({ onCountChange }: { onCountChange?: (count: number) => void } = {}) {
+  const t = useTranslations("orgAdmin");
   const ctx = useTournament();
   const orgSlug = ctx?.orgSlug ?? "";
   const tournamentId = ctx?.tournamentId ?? 0;
@@ -755,7 +760,7 @@ export function StadiumsPageContent({ onCountChange }: { onCountChange?: (count:
     return (
       <div className="flex items-center gap-2 py-20 justify-center" style={{ color: "var(--cat-text-muted)" }}>
         <Loader2 className="w-5 h-5 animate-spin" />
-        <span className="text-sm">Загрузка...</span>
+        <span className="text-sm">{t("loading")}</span>
       </div>
     );
   }
@@ -770,9 +775,9 @@ export function StadiumsPageContent({ onCountChange }: { onCountChange?: (count:
           <MapPin className="w-5 h-5" style={{ color: ACCENT }} />
         </div>
         <div>
-          <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>Стадионы и площадки</h1>
+          <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>{t("stadiumsPageTitle")}</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-            Стадион → адрес и контакт · Площадки (A/B/C/D) → идут в расписание матчей
+            {t("stadiumsPageSubtitle")}
           </p>
         </div>
       </div>
@@ -782,9 +787,9 @@ export function StadiumsPageContent({ onCountChange }: { onCountChange?: (count:
         <div className="rounded-2xl border-2 border-dashed py-14 flex flex-col items-center gap-3"
           style={{ borderColor: `${ACCENT}20` }}>
           <MapPin className="w-10 h-10" style={{ color: `${ACCENT}40` }} />
-          <p className="font-bold text-sm" style={{ color: "var(--cat-text-muted)" }}>Стадионов пока нет</p>
+          <p className="font-bold text-sm" style={{ color: "var(--cat-text-muted)" }}>{t("stadiumsEmptyTitle")}</p>
           <p className="text-xs text-center max-w-xs" style={{ color: "var(--cat-text-secondary)" }}>
-            Добавьте стадион — укажите адрес и контакт, затем разделите на площадки A, B, C...
+            {t("stadiumsEmptyHint")}
           </p>
         </div>
       )}

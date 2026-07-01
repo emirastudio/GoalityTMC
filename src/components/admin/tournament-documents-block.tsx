@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { FileText, Upload, Trash2, Loader2, Pencil, Check, X, AlertCircle } from "lucide-react";
 
 interface DocumentRow {
@@ -23,6 +24,7 @@ export function TournamentDocumentsBlock({
   orgSlug: string;
   tournamentId: number;
 }) {
+  const t = useTranslations("orgAdmin");
   const [docs, setDocs] = useState<DocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [planLocked, setPlanLocked] = useState(false);
@@ -40,7 +42,7 @@ export function TournamentDocumentsBlock({
       if (res.status === 402) {
         const data = await res.json().catch(() => ({}));
         setPlanLocked(true);
-        setError(data.error ?? "Plan upgrade required for documents.");
+        setError(data.error ?? t("docsPlanLockedMsg"));
         setDocs([]);
         return;
       }
@@ -70,7 +72,7 @@ export function TournamentDocumentsBlock({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Upload failed");
+        setError(data.error ?? t("docsUploadFailed"));
         return;
       }
       await load();
@@ -81,14 +83,14 @@ export function TournamentDocumentsBlock({
   }
 
   async function deleteDoc(id: number, name: string) {
-    if (!confirm(`Удалить «${name}»? Документ исчезнет с публичной страницы регламента.`)) return;
+    if (!confirm(t("docsDeleteConfirm", { name }))) return;
     setBusyId(id);
     setError(null);
     try {
       const res = await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/documents/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Delete failed");
+        setError(data.error ?? t("docsDeleteFailed"));
         return;
       }
       await load();
@@ -109,7 +111,7 @@ export function TournamentDocumentsBlock({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Rename failed");
+        setError(data.error ?? t("docsRenameFailed"));
         return;
       }
       setEditing(null);
@@ -133,10 +135,10 @@ export function TournamentDocumentsBlock({
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>
-            Регламент и документы
+            {t("docsTitle")}
           </p>
           <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-            Публикуются на странице турнира → «Регламент». PDF, DOC, DOCX, TXT — до 20 МБ.
+            {t("docsSubtitle")}
           </p>
         </div>
         <input
@@ -157,7 +159,7 @@ export function TournamentDocumentsBlock({
           style={{ background: "var(--cat-accent)", color: "#000" }}
         >
           {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-          {uploading ? "Загружаем…" : "Загрузить документ"}
+          {uploading ? t("docsUploading") : t("docsUploadBtn")}
         </button>
       </div>
 
@@ -165,7 +167,7 @@ export function TournamentDocumentsBlock({
         <div className="px-3 py-2 rounded-xl border text-[12px] flex items-start gap-2"
           style={{ background: "rgba(245,158,11,0.08)", borderColor: "rgba(245,158,11,0.35)", color: "#b45309" }}>
           <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-          <span>Документы доступны на тарифе Starter и выше — обновите план чтобы публиковать регламент.</span>
+          <span>{t("docsPlanLockedMsg")}</span>
         </div>
       )}
 
@@ -180,7 +182,7 @@ export function TournamentDocumentsBlock({
       ) : docs.length === 0 && !planLocked ? (
         <div className="py-6 rounded-xl border border-dashed text-center text-[12px]"
           style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-muted)" }}>
-          Нет документов — загрузите регламент, чтобы он появился на странице турнира.
+          {t("docsEmpty")}
         </div>
       ) : (
         <ul className="space-y-2">
@@ -243,7 +245,7 @@ export function TournamentDocumentsBlock({
                     <button type="button"
                       onClick={() => setEditing({ id: doc.id, name: doc.name })}
                       disabled={busy}
-                      title="Переименовать"
+                      title={t("docsRenameTitle")}
                       className="p-1.5 rounded-lg hover:opacity-70 cursor-pointer disabled:opacity-40"
                       style={{ color: "var(--cat-text-muted)" }}>
                       <Pencil className="w-3.5 h-3.5" />
@@ -251,7 +253,7 @@ export function TournamentDocumentsBlock({
                     <button type="button"
                       onClick={() => deleteDoc(doc.id, doc.name)}
                       disabled={busy}
-                      title="Удалить"
+                      title={t("deleteCover")}
                       className="p-1.5 rounded-lg hover:opacity-70 cursor-pointer disabled:opacity-40"
                       style={{ color: "#ef4444" }}>
                       {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}

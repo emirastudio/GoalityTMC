@@ -1216,11 +1216,11 @@ function StepProducts({ orgSlug, tournamentId }: { orgSlug: string; tournamentId
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>
-              Каталог услуг и пакеты
+              {t("productsCatalogTitle")}
             </p>
             <p className="text-[12px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-              {v3Count === null ? "—" : v3Count === 0 ? "Услуг пока нет" : `Услуг настроено: ${v3Count}`}
-              {" · открыть для редактирования →"}
+              {v3Count === null ? "—" : v3Count === 0 ? t("productsNoneYet") : t("productsConfiguredCount", { count: v3Count })}
+              {" "}{t("productsOpenToEdit")}
             </p>
           </div>
         </div>
@@ -1229,8 +1229,7 @@ function StepProducts({ orgSlug, tournamentId }: { orgSlug: string; tournamentId
         style={{ background: "rgba(59,130,246,0.06)", borderColor: "rgba(59,130,246,0.2)" }}>
         <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#3b82f6" }} />
         <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
-          Услуги (взнос, проживание, питание, трансфер) и пакеты теперь живут в разделе <strong>Offerings</strong>.
-          Там можно собирать пакеты, назначать индивидуальные сделки и видеть оплату — это богаче, чем простой список.
+          {t.rich("productsOfferingsHint", { strong: (chunks) => <strong>{chunks}</strong> })}
         </p>
       </div>
     </div>

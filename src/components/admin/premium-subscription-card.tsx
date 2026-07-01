@@ -13,7 +13,7 @@ import { Crown, CheckCircle, Zap, Shield } from "lucide-react";
  * fires checkout via /api/billing/subscribe.
  */
 export function PremiumSubscriptionCard({ orgSlug }: { orgSlug: string }) {
-  const t = useTranslations("orgAdmin");
+  const t = useTranslations("billing");
   const [hasSub, setHasSub] = useState<boolean | null>(null);
   const [periodEnd, setPeriodEnd] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
