@@ -189,10 +189,11 @@ export default function DivisionStandingsPage() {
       if (showLoader) setLoading(true);
       fetch(`/api/public/t/${org.slug}/${tourney.slug}/standings?classId=${classId}`)
         .then(r => r.ok ? r.json() : [])
-        .then((data: Stage[]) => {
+        .then((data: Stage[] | { stages: Stage[] }) => {
           if (cancelled) return;
-          setStages(data);
-          if (data.length > 0 && !activeStage) setActiveStage(data[0].id);
+          const stagesArr = Array.isArray(data) ? data : data.stages;
+          setStages(stagesArr);
+          if (stagesArr.length > 0 && !activeStage) setActiveStage(stagesArr[0].id);
         })
         .finally(() => { if (!cancelled) setLoading(false); });
     }
