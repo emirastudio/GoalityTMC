@@ -135,6 +135,40 @@ export function OfferingsCatalogTab({
     setCreateOpen(true);
   }
 
+  // Client-side duplicate for a template — reuses the same POST as
+  // "create custom template", with a localised « (copy) » suffix.
+  async function duplicateTemplate(tmpl: OfferingTemplate) {
+    const suffix = ` ${t("copySuffix")}`;
+    const body = {
+      title: `${tmpl.title}${suffix}`,
+      titleRu: tmpl.titleRu ? `${tmpl.titleRu}${suffix}` : null,
+      titleEt: tmpl.titleEt ? `${tmpl.titleEt}${suffix}` : null,
+      titleEs: tmpl.titleEs ? `${tmpl.titleEs}${suffix}` : null,
+      description: tmpl.description,
+      descriptionRu: tmpl.descriptionRu,
+      descriptionEt: tmpl.descriptionEt,
+      descriptionEs: tmpl.descriptionEs,
+      icon: tmpl.icon,
+      kind: tmpl.kind,
+      inclusion: tmpl.inclusion,
+      priceModel: tmpl.priceModel,
+      defaultPriceCents: tmpl.defaultPriceCents,
+      currency: tmpl.currency,
+      nightsCount: tmpl.nightsCount,
+      sortOrder: tmpl.sortOrder + 1,
+    };
+    setTemplatesBusy(true);
+    try {
+      await fetch(`/api/org/${orgSlug}/offering-templates`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      await reloadTemplates();
+    } finally { setTemplatesBusy(false); }
+  }
+
   async function deleteTemplate(id: number) {
     if (!confirm(t("templates.confirmDelete"))) return;
     setTemplatesBusy(true);
@@ -272,6 +306,7 @@ export function OfferingsCatalogTab({
         busy={templatesBusy}
         onUse={(tmpl) => useTemplate(tmpl, locale)}
         onEdit={(tmpl) => setEditingTemplate(tmpl)}
+        onDuplicate={(tmpl) => duplicateTemplate(tmpl)}
         onDelete={(id) => deleteTemplate(id)}
         onCreate={() => setEditingTemplate("new")}
         onReset={() => resetTemplates()}
@@ -372,13 +407,14 @@ function EmptyCatalog({ t, onCreate }: { t: (k: string) => string; onCreate: () 
 // (создать услугу с pre-fill). Edit/Delete — кнопки по hover.
 function TemplatesBlock({
   templates, locale, busy,
-  onUse, onEdit, onDelete, onCreate, onReset, t,
+  onUse, onEdit, onDuplicate, onDelete, onCreate, onReset, t,
 }: {
   templates: OfferingTemplate[];
   locale: string;
   busy: boolean;
   onUse: (t: OfferingTemplate) => void;
   onEdit: (t: OfferingTemplate) => void;
+  onDuplicate: (t: OfferingTemplate) => void;
   onDelete: (id: number) => void;
   onCreate: () => void;
   onReset: () => void;
@@ -461,10 +497,12 @@ function TemplatesBlock({
               priceModelLabel={t(`pm_${tmpl.priceModel}`)}
               useLabel={t("templates.use")}
               editLabel={t("templates.edit")}
+              duplicateLabel={t("templates.duplicate")}
               deleteLabel={t("templates.delete")}
               builtinLabel={t("templates.builtin")}
               onUse={() => onUse(tmpl)}
               onEdit={() => onEdit(tmpl)}
+              onDuplicate={() => onDuplicate(tmpl)}
               onDelete={() => onDelete(tmpl.id)}
             />
           ))}
@@ -475,18 +513,20 @@ function TemplatesBlock({
 }
 
 function TemplateCard({
-  tmpl, locale, priceModelLabel, useLabel, editLabel, deleteLabel, builtinLabel,
-  onUse, onEdit, onDelete,
+  tmpl, locale, priceModelLabel, useLabel, editLabel, duplicateLabel, deleteLabel, builtinLabel,
+  onUse, onEdit, onDuplicate, onDelete,
 }: {
   tmpl: OfferingTemplate;
   locale: string;
   priceModelLabel: string;
   useLabel: string;
   editLabel: string;
+  duplicateLabel: string;
   deleteLabel: string;
   builtinLabel: string;
   onUse: () => void;
   onEdit: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 }) {
   const title = pickLocaleTitle(tmpl, locale);
@@ -582,6 +622,18 @@ function TemplateCard({
             }}
           >
             <Edit3 className="w-3 h-3" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+            className="p-1.5 rounded-lg"
+            title={duplicateLabel}
+            style={{
+              background: "var(--cat-card-bg)",
+              color: "var(--cat-text-muted)",
+              border: "1px solid var(--cat-card-border)",
+            }}
+          >
+            <Copy className="w-3 h-3" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}

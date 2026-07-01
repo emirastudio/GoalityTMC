@@ -286,6 +286,7 @@
       "subtitle": "Loo teenus ühe klikiga valmis mallist. Muudetavad organisatsiooni tasemel.",
       "use": "Kasuta",
       "edit": "Muuda",
+      "duplicate": "Kopeeri",
       "delete": "Kustuta",
       "builtin": "Vaikimisi",
       "createCustom": "Loo mall",

@@ -286,6 +286,7 @@
       "subtitle": "Create a service in one click from ready-made presets. Editable per organisation.",
       "use": "Click to use",
       "edit": "Edit",
+      "duplicate": "Duplicate",
       "delete": "Delete",
       "builtin": "Default",
       "createCustom": "Create template",

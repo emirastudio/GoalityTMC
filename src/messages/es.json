@@ -286,6 +286,7 @@
       "subtitle": "Cree un servicio con un clic a partir de preajustes predefinidos. Editables por organización.",
       "use": "Haga clic para usar",
       "edit": "Editar",
+      "duplicate": "Duplicar",
       "delete": "Eliminar",
       "builtin": "Predeterminado",
       "createCustom": "Crear plantilla",

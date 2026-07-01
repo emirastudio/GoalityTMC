@@ -614,6 +614,7 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
                         borderLeft:  `2px solid ${isThisActive ? CLR.division : "transparent"}`,
                         color:       isThisActive ? "var(--cat-text)" : "var(--cat-text-secondary)",
                         fontWeight:  isThisActive || isOpen ? 600 : 400,
+                        paddingRight: isOpen ? "34px" : undefined,
                       }}
                     >
                       {/* Аватар дивизиона */}
@@ -651,7 +652,7 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
                         title={tAdmin("deleteDivision")}
                         onClick={e => { e.stopPropagation(); deleteClass(cls.id, cls.name); }}
                         disabled={deletingClassId === cls.id}
-                        className="absolute right-1 top-1 w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:opacity-80 cursor-pointer disabled:cursor-default"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:opacity-80 cursor-pointer disabled:cursor-default"
                         style={{ color: "#ef4444", background: "rgba(239,68,68,0.08)", opacity: deletingClassId === cls.id ? 0.4 : undefined }}
                       >
                         <Trash2 className="w-3 h-3" />
