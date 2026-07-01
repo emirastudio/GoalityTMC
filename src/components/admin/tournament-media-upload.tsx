@@ -136,14 +136,14 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
             <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity"
               style={{ background: "rgba(0,0,0,0.5)" }}>
               <button
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer"
                 style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
                 onClick={e => { e.stopPropagation(); coverRef.current?.click(); }}
               >
                 <Camera className="w-4 h-4" /> {t("changeCover")}
               </button>
               <button
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer"
                 style={{ background: "rgba(239,68,68,0.25)", color: "#EF4444", backdropFilter: "blur(8px)" }}
                 onClick={e => { e.stopPropagation(); deleteCover(); }}
               >
@@ -207,7 +207,7 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
             <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
               {t("logoHint")}
             </p>
-            <button className="text-xs font-medium mt-1.5" style={{ color: "var(--cat-accent)" }}
+            <button className="text-xs font-medium mt-1.5 cursor-pointer" style={{ color: "var(--cat-accent)" }}
               onClick={() => logoRef.current?.click()}>
               {logoUrl ? t("changeLogo") : t("uploadLogo")}
             </button>

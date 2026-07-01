@@ -608,7 +608,7 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
                     {/* Заголовок дивизиона */}
                     <button
                       onClick={() => toggleClass(cls.id)}
-                      className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm transition-all text-left"
+                      className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm transition-all text-left cursor-pointer"
                       style={{
                         background:  isThisActive ? BG.division : isOpen ? `${CLR.division}05` : "transparent",
                         borderLeft:  `2px solid ${isThisActive ? CLR.division : "transparent"}`,
@@ -651,7 +651,7 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
                         title={tAdmin("deleteDivision")}
                         onClick={e => { e.stopPropagation(); deleteClass(cls.id, cls.name); }}
                         disabled={deletingClassId === cls.id}
-                        className="absolute right-1 top-1 w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:opacity-80"
+                        className="absolute right-1 top-1 w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:opacity-80 cursor-pointer disabled:cursor-default"
                         style={{ color: "#ef4444", background: "rgba(239,68,68,0.08)", opacity: deletingClassId === cls.id ? 0.4 : undefined }}
                       >
                         <Trash2 className="w-3 h-3" />
