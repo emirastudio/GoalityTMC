@@ -1201,7 +1201,7 @@ export default function RegisterPage() {
 
   /* ─── SEARCH VIEW ── */
   if (view === "search") return (
-    <div className="max-w-lg mx-auto py-6 space-y-6">
+    <div className="max-w-lg mx-auto pt-24 pb-6 space-y-6">
       <div>
         <div className="flex items-center gap-2 mb-1">
           <div className="w-6 h-6 rounded-lg flex items-center justify-center"
@@ -1336,7 +1336,7 @@ export default function RegisterPage() {
 
   /* ─── JOIN REQUEST VIEW ── */
   if (view === "join") return (
-    <div className="max-w-lg mx-auto py-6 space-y-5">
+    <div className="max-w-lg mx-auto pt-24 pb-6 space-y-5">
       <button onClick={() => setView("search")}
         className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
         style={{ color: "var(--cat-text-muted)" }}>
@@ -1415,7 +1415,7 @@ export default function RegisterPage() {
 
   /* ─── CREATE WIZARD VIEW ── */
   return (
-    <div className="max-w-lg mx-auto py-6 space-y-5">
+    <div className="max-w-lg mx-auto pt-24 pb-6 space-y-5">
       <button onClick={() => {
         if (loggedInClub) return; // logged-in club can't go back in wizard
         if (isFirstStep) { setView("search"); return; }
