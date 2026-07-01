@@ -295,6 +295,13 @@
       "when": 1781715404000,
       "tag": "0041_bug_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1781715405000,
+      "tag": "0042_registration_attempts_tournament_scope",
+      "breakpoints": true
     }
   ]
 }

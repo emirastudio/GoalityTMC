@@ -18,7 +18,7 @@ async function logAttempt(data: {
   clubName?: string; contactEmail?: string; contactName?: string;
   country?: string; city?: string;
   hasLogo?: boolean; status: string; failReason?: string; clubId?: number;
-  ip: string; userAgent: string;
+  tournamentId?: number | null; ip: string; userAgent: string;
 }) {
   try {
     await db.insert(registrationAttempts).values({
@@ -27,7 +27,8 @@ async function logAttempt(data: {
       city: data.city ?? null,
       hasLogo: data.hasLogo ?? false,
       status: data.status, failReason: data.failReason ?? null,
-      clubId: data.clubId ?? null, ip: data.ip, userAgent: data.userAgent.slice(0, 500),
+      clubId: data.clubId ?? null, tournamentId: data.tournamentId ?? null,
+      ip: data.ip, userAgent: data.userAgent.slice(0, 500),
     });
   } catch (e) { console.error("[REGISTER] Failed to write attempt log:", e); }
 }
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
   }
 
   console.log(`[REGISTER] attempt — club="${clubName}" email="${contactEmail}" ip=${ip}`);
-  const base = { clubName, contactEmail, contactName, country, city, ip, userAgent: ua };
+  const base = { clubName, contactEmail, contactName, country, city, tournamentId, ip, userAgent: ua };
 
   if (!clubName || !contactEmail || !password) {
     const reason = `Missing: ${!clubName ? "clubName " : ""}${!contactEmail ? "email " : ""}${!password ? "password" : ""}`.trim();

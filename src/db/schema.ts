@@ -1694,6 +1694,7 @@ export const registrationAttempts = pgTable("registration_attempts", {
   status: text("status").notNull(),    // "success" | "fail" | "duplicate_email" | "no_tournament" | ...
   failReason: text("fail_reason"),     // human-readable reason on failure
   clubId: integer("club_id"),          // set on success
+  tournamentId: integer("tournament_id"), // which tournament's reg form this came from (tenant scoping)
   // Request metadata
   ip: text("ip"),
   userAgent: text("user_agent"),
