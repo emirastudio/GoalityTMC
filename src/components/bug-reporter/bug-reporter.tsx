@@ -121,7 +121,7 @@ export function BugReporter({ shouldShow }: { shouldShow: boolean }) {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const res = await fetch("/api/bug-reports/upload", { method: "POST", body: fd });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || `Upload failed (${res.status})`);
