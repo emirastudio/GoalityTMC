@@ -810,7 +810,10 @@ export function TeamsPageContent() {
                       return (
                         <tr key={team.id}
                           onClick={() => navigateToTeam(team)}
-                          className="group cursor-pointer transition-all hover:opacity-80"
+                          // bg-only hover (not opacity) — opacity creates a new
+                          // stacking context on the row, trapping the status
+                          // dropdown's z-index so the next row painted over it.
+                          className="group cursor-pointer transition-colors hover:bg-[var(--cat-tag-bg)]"
                           style={{
                             borderBottom: "1px solid var(--cat-card-border)",
                             background: isSelected ? "var(--cat-badge-open-bg)" : undefined,

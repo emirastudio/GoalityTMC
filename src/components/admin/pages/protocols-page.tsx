@@ -160,7 +160,7 @@ function MatchRow({
   const hasCardInfo = summary.homeCards.length > 0 || summary.awayCards.length > 0;
   const showExpand = evs.length > 0 && (hasGoalInfo || hasCardInfo);
   const stageLabel = match.stage?.nameRu || match.stage?.name || "";
-  const groupLabel = match.group?.name ? `Гр. ${match.group.name}` : "";
+  const groupLabel = match.group?.name ? `${t("protocols.groupAbbr")} ${match.group.name}` : "";
   const roundLabel = match.round?.name || "";
 
   function openProtocol(e: React.MouseEvent) {
@@ -260,7 +260,7 @@ function MatchRow({
         {/* Open protocol */}
         <button onClick={openProtocol}
           className="p-1.5 rounded-lg hover:opacity-70 transition-opacity shrink-0"
-          title="Открыть протокол"
+          title={t("protocols.openProtocolTitle")}
           style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}>
           <ExternalLink className="w-3.5 h-3.5" />
         </button>
@@ -310,9 +310,10 @@ function MatchRow({
 // ─── Date group ───────────────────────────────────────────────────────────────
 
 function DateGroup({
-  date, matches, orgSlug, tournamentId, locale,
+  date, matches, orgSlug, tournamentId, locale, t,
 }: {
   date: string; matches: Match[]; orgSlug: string; tournamentId: number; locale: string;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const filledCount = matches.filter(m => m.status === "finished" && (m.events?.length ?? 0) > 0).length;
   const finishedCount = matches.filter(m => m.status === "finished").length;
@@ -324,13 +325,13 @@ function DateGroup({
         <div className="flex items-center gap-2">
           <Calendar className="w-3.5 h-3.5" style={{ color: "var(--cat-text-muted)" }} />
           <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>
-            {date === "unscheduled" ? "Без даты" : fmtDate(date + "T12:00:00", locale)}
+            {date === "unscheduled" ? t("protocols.noDateLabel") : fmtDate(date + "T12:00:00", locale)}
           </span>
         </div>
         <div className="flex-1 h-px" style={{ background: "var(--cat-card-border)" }} />
         <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--cat-text-muted)" }}>
-          {matches.length} {matches.length === 1 ? "match" : "matches"}
-          {finishedCount > 0 && ` · ${filledCount}/${finishedCount} protocols`}
+          {t("protocols.matchesCount", { count: matches.length })}
+          {finishedCount > 0 && ` · ${t("protocols.protocolsRatio", { filled: filledCount, total: finishedCount })}`}
         </span>
       </div>
 
@@ -424,12 +425,12 @@ export function ProtocolsPage() {
   const groups = groupMatchesByDate(filtered);
 
   type FilterKey = typeof filter;
-  const filters: { key: FilterKey; label: string; count: number; color: string }[] = [
-    { key: "all",       label: "Все",           count: stats.total,   color: "var(--cat-text-muted)" },
-    { key: "live",      label: "Live",          count: stats.live,    color: "#ef4444" },
-    { key: "filled",    label: "Заполнены",     count: stats.filled,  color: "#10b981" },
-    { key: "empty",     label: "Без событий",   count: stats.empty,   color: "#f59e0b" },
-    { key: "scheduled", label: "Не начались",   count: stats.pending, color: "var(--cat-text-muted)" },
+  const filters: { key: FilterKey; label: string; color: string }[] = [
+    { key: "all",       label: t("protocols.filterAll", { count: stats.total }),        color: "var(--cat-text-muted)" },
+    { key: "live",      label: t("protocols.filterLive", { count: stats.live }),         color: "#ef4444" },
+    { key: "filled",    label: t("protocols.filterFilled", { count: stats.filled }),     color: "#10b981" },
+    { key: "empty",     label: t("protocols.filterEmpty", { count: stats.empty }),       color: "#f59e0b" },
+    { key: "scheduled", label: t("protocols.filterNotStarted", { count: stats.pending }), color: "var(--cat-text-muted)" },
   ];
 
   return (
@@ -439,10 +440,10 @@ export function ProtocolsPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--cat-text)" }}>
-            {className ? `Протоколы · ${className}` : "Протоколы"}
+            {className ? t("protocols.titleWithClass", { className }) : t("protocols.title")}
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-            Архив матчей, статусы протоколов и ввод событий
+            {t("protocols.subtitle")}
           </p>
         </div>
         <button onClick={load}
@@ -456,26 +457,26 @@ export function ProtocolsPage() {
       {!loading && stats.total > 0 && (
         <div className="flex gap-3 flex-wrap">
           <StatCard
-            label="Всего матчей"
+            label={t("protocols.statTotalMatches")}
             value={stats.total}
             color="var(--cat-text-muted)"
             icon={<Trophy className="w-3.5 h-3.5" />}
           />
           <StatCard
-            label="Протоколов"
+            label={t("protocols.statProtocolsLabel")}
             value={stats.filled}
             color="#10b981"
             icon={<CheckCircle2 className="w-3.5 h-3.5" />}
           />
           <StatCard
-            label="Без событий"
+            label={t("protocols.statusEmpty")}
             value={stats.empty}
             color="#f59e0b"
             icon={<FileText className="w-3.5 h-3.5" />}
           />
           {stats.live > 0 && (
             <StatCard
-              label="Сейчас Live"
+              label={t("protocols.statLiveNow")}
               value={stats.live}
               color="#ef4444"
               icon={<span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#ef4444" }} />}
@@ -497,11 +498,10 @@ export function ProtocolsPage() {
                     color: f.color, border: `1.5px solid ${f.color}` }
                 : { background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)",
                     border: "1.5px solid transparent" }}>
-              {f.key === "live" && f.count > 0 && (
+              {f.key === "live" && stats.live > 0 && (
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#ef4444" }} />
               )}
               {f.label}
-              <span className="font-black">{f.count}</span>
             </button>
           ))}
         </div>
@@ -512,17 +512,17 @@ export function ProtocolsPage() {
         <div className="flex items-center justify-center gap-2 py-16"
           style={{ color: "var(--cat-text-muted)" }}>
           <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-sm">Загрузка...</span>
+          <span className="text-sm">{t("protocols.loading")}</span>
         </div>
       ) : groups.length === 0 ? (
         <div className="rounded-2xl border py-16 flex flex-col items-center gap-3"
           style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
           <Trophy className="w-12 h-12 opacity-20" style={{ color: "var(--cat-text)" }} />
           <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>
-            Матчей не найдено
+            {t("protocols.noMatches")}
           </p>
           <p className="text-xs opacity-60 text-center max-w-xs" style={{ color: "var(--cat-text-muted)" }}>
-            Сгенерируйте матчи в разделе Расписание → Этапы
+            {t("protocols.noMatchesHint")}
           </p>
         </div>
       ) : (
@@ -535,6 +535,7 @@ export function ProtocolsPage() {
               orgSlug={orgSlug}
               tournamentId={tournamentId}
               locale={locale}
+              t={t}
             />
           ))}
         </div>

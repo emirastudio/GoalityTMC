@@ -494,6 +494,7 @@
     "draft": "Mustand",
     "open": "Avatud muutmiseks",
     "confirmed": "Kinnitatud",
+    "rejected": "Tagasi lükatud",
     "cancelled": "Tühistatud",
     "uploadBadge": "Lae üles klubi embleem",
     "badgeHint": "PNG formaat, 500×500px, läbipaistev taust",
@@ -1394,7 +1395,14 @@
       "noMatches": "Mänge pole",
       "noMatchesHint": "Loo mängud jaotuses Ajakava → Etapid",
       "eventsCount": "{count} sündmust",
-      "groupAbbr": "Gr."
+      "groupAbbr": "Gr.",
+      "statTotalMatches": "Matše kokku",
+      "statProtocolsLabel": "Protokolle",
+      "statLiveNow": "Praegu Live",
+      "noDateLabel": "Kuupäevata",
+      "matchesCount": "{count, plural, one {# mäng} other {# mängu}}",
+      "protocolsRatio": "{filled}/{total} protokolli",
+      "openProtocolTitle": "Ava protokoll"
     },
     "results": {
       "title": "Tulemused · {className}",

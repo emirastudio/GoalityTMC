@@ -494,6 +494,7 @@
     "draft": "Черновик",
     "open": "Открыта для редактирования",
     "confirmed": "Подтверждена",
+    "rejected": "Отклонена",
     "cancelled": "Отменена",
     "uploadBadge": "Загрузить эмблему клуба",
     "badgeHint": "Формат PNG, 500×500px, прозрачный фон",
@@ -1394,7 +1395,14 @@
       "noMatches": "Матчей нет",
       "noMatchesHint": "Сгенерируйте матчи в разделе Расписание → Этапы",
       "eventsCount": "{count} событий",
-      "groupAbbr": "Гр."
+      "groupAbbr": "Гр.",
+      "statTotalMatches": "Всего матчей",
+      "statProtocolsLabel": "Протоколов",
+      "statLiveNow": "Сейчас Live",
+      "noDateLabel": "Без даты",
+      "matchesCount": "{count, plural, one {# матч} few {# матча} many {# матчей} other {# матчей}}",
+      "protocolsRatio": "{filled}/{total} протоколов",
+      "openProtocolTitle": "Открыть протокол"
     },
     "results": {
       "title": "Результаты · {className}",

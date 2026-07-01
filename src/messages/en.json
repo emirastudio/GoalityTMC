@@ -494,6 +494,7 @@
     "draft": "Draft",
     "open": "Open for edit",
     "confirmed": "Confirmed",
+    "rejected": "Rejected",
     "cancelled": "Cancelled",
     "uploadBadge": "Upload club badge",
     "badgeHint": "PNG format, 500×500px, transparent background",
@@ -1394,7 +1395,14 @@
       "noMatches": "No matches",
       "noMatchesHint": "Generate matches in Schedule → Stages",
       "eventsCount": "{count} events",
-      "groupAbbr": "Gr."
+      "groupAbbr": "Gr.",
+      "statTotalMatches": "Total matches",
+      "statProtocolsLabel": "Protocols",
+      "statLiveNow": "Live now",
+      "noDateLabel": "No date",
+      "matchesCount": "{count, plural, one {# match} other {# matches}}",
+      "protocolsRatio": "{filled}/{total} protocols",
+      "openProtocolTitle": "Open protocol"
     },
     "results": {
       "title": "Results · {className}",

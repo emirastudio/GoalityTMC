@@ -494,6 +494,7 @@
     "draft": "Borrador",
     "open": "Abierto para edición",
     "confirmed": "Confirmado",
+    "rejected": "Rechazado",
     "cancelled": "Cancelado",
     "uploadBadge": "Subir escudo del club",
     "badgeHint": "Formato PNG, 500×500 px, fondo transparente",
@@ -1400,7 +1401,14 @@
       "noMatches": "Sin partidos",
       "noMatchesHint": "Genere partidos en Calendario → Fases",
       "eventsCount": "{count} eventos",
-      "groupAbbr": "Gr."
+      "groupAbbr": "Gr.",
+      "statTotalMatches": "Partidos totales",
+      "statProtocolsLabel": "Protocolos",
+      "statLiveNow": "En vivo ahora",
+      "noDateLabel": "Sin fecha",
+      "matchesCount": "{count, plural, one {# partido} other {# partidos}}",
+      "protocolsRatio": "{filled}/{total} protocolos",
+      "openProtocolTitle": "Abrir protocolo"
     },
     "results": {
       "title": "Resultados · {className}",

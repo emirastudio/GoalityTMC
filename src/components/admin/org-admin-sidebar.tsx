@@ -828,7 +828,7 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
           <NavLink
             href={`${base}/news`}
             icon={Newspaper}
-            label={t("newsLabel")}
+            label={tAdmin("newsLabel")}
             isActive={isActive(`${base}/news`)}
             color={CLR.news}
             bg={BG.news}
