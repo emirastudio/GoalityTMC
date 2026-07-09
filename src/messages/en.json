@@ -4119,6 +4119,7 @@
     "drawAuto": "Auto draw",
     "applyDraw": "Apply draw",
     "showDraw": "Draw Show",
+    "showDrawNeedsGroups": "Needs at least 2 filled groups to start the draw",
     "revertToApplied": "Revert to applied",
     "lockBannerPublishedTitle": "Tournament schedule is published",
     "lockBannerPublishedBody": "The draw is locked. Unpublish the schedule to edit groups or pairings.",

@@ -149,6 +149,13 @@ export function DrawShowLauncher(props: Props) {
     (sum, g) => sum + g.length,
     0,
   ) ?? 0;
+  // The engine requires >= 2 groups for mode="groups" — a single filled
+  // group (e.g. a division with just "Main Group", no A/B/C split) used to
+  // pass the team-count check below and then throw once DrawStage actually
+  // called buildDrawPlan(). Gate on group count too.
+  const filledGroupCount = engineConfig.preAssignedGroups?.filter(
+    (g) => g.length > 0,
+  ).length ?? 0;
 
   // Set of team ids actually placed in a group — used to compute the
   // "team not in any group" remainder we surface in the done summary.
@@ -159,9 +166,9 @@ export function DrawShowLauncher(props: Props) {
   }, [props.groups]);
 
   const handleOpen = useCallback(() => {
-    if (assignedTeamCount < 2) return;
+    if (assignedTeamCount < 2 || filledGroupCount < 2) return;
     setOpen(true);
-  }, [assignedTeamCount]);
+  }, [assignedTeamCount, filledGroupCount]);
 
   const handleClose = useCallback(() => setOpen(false), []);
 
@@ -208,13 +215,14 @@ export function DrawShowLauncher(props: Props) {
     );
   }
 
-  const canStart = assignedTeamCount >= 2;
+  const canStart = assignedTeamCount >= 2 && filledGroupCount >= 2;
 
   return (
     <>
       <button
         onClick={handleOpen}
         disabled={!canStart}
+        title={!canStart && filledGroupCount < 2 ? t("showDrawNeedsGroups") : undefined}
         className="inline-flex items-center gap-1.5 rounded-lg font-semibold px-3 py-1.5 text-xs transition-opacity hover:opacity-80 disabled:opacity-40"
         style={{
           background: "transparent",

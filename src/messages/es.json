@@ -4124,6 +4124,7 @@
     "drawAuto": "Sorteo automático",
     "applyDraw": "Aplicar sorteo",
     "showDraw": "Mostrar Sorteo",
+    "showDrawNeedsGroups": "Se necesitan al menos 2 grupos completos para iniciar el sorteo",
     "revertToApplied": "Revertir al aplicado",
     "lockBannerPublishedTitle": "El calendario del torneo está publicado",
     "lockBannerPublishedBody": "El sorteo está bloqueado. Despublique el calendario para editar grupos o emparejamientos.",

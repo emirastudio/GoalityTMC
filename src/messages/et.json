@@ -4119,6 +4119,7 @@
     "drawAuto": "Automaatne loosimine",
     "applyDraw": "Rakenda loosimine",
     "showDraw": "Loosimise show",
+    "showDrawNeedsGroups": "Loosimise käivitamiseks on vaja vähemalt 2 täidetud gruppi",
     "revertToApplied": "Taasta rakendatud",
     "lockBannerPublishedTitle": "Turniiri ajakava on avaldatud",
     "lockBannerPublishedBody": "Loosimine on lukus. Ajakava muutmiseks võta avaldamine maha.",
