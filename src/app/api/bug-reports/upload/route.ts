@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, isError } from "@/lib/api-auth";
+import { requireAdminOrClub, isError } from "@/lib/api-auth";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { randomUUID } from "crypto";
 
-/** POST /api/bug-reports/upload — screenshot upload for the bug reporter. Auth: any admin (incl. super), no tournament required. */
+/** POST /api/bug-reports/upload — screenshot upload for the bug reporter. Auth: any admin or club user, no tournament required. */
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "bug-reports");
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB — modern phone shots run 5–8 MB.
 const ALLOWED_TYPES = new Set([
@@ -16,7 +16,7 @@ const ALLOWED_TYPES = new Set([
 const ALLOWED_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif", "heic", "heif"]);
 
 export async function POST(req: NextRequest) {
-  const session = await requireAdmin();
+  const session = await requireAdminOrClub();
   if (isError(session)) return session;
 
   let formData: FormData;

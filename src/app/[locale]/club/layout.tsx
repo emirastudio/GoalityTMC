@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { GlobalHeader, AdminHeaderActions } from "@/components/ui/global-header";
 import { getTranslations } from "next-intl/server";
 import { ClubSidebar } from "./club-sidebar";
+import { BugReporter } from "@/components/bug-reporter/bug-reporter";
 
 type Props = {
   children: React.ReactNode;
@@ -66,6 +67,7 @@ export default async function ClubLayout({ children, params }: Props) {
             {children}
           </main>
         </div>
+        <BugReporter shouldShow={true} />
       </div>
     </ThemeProvider>
   );

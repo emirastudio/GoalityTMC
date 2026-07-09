@@ -88,6 +88,18 @@ export async function requireAdmin(): Promise<TokenPayload | NextResponse> {
 }
 
 /**
+ * Any logged-in user, admin or club — for tools every account type may
+ * use (e.g. the bug reporter).
+ */
+export async function requireAdminOrClub(): Promise<TokenPayload | NextResponse> {
+  const session = await getSession();
+  if (!session || (session.role !== "admin" && session.role !== "club")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return session;
+}
+
+/**
  * Check if result is a NextResponse (error).
  */
 export function isError(result: unknown): result is NextResponse {

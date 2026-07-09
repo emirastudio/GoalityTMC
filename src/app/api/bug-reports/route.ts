@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { bugReports, adminUsers } from "@/db/schema";
-import { requireAdmin, isError } from "@/lib/api-auth";
+import { bugReports, adminUsers, clubUsers } from "@/db/schema";
+import { requireAdminOrClub, isError } from "@/lib/api-auth";
 import { eq } from "drizzle-orm";
 import { sendTelegram, escTg } from "@/lib/telegram";
 
-/** POST /api/bug-reports — submit a bug. Auth: any admin (incl. super). */
+/** POST /api/bug-reports — submit a bug. Auth: any admin or club user. */
 export async function POST(req: NextRequest) {
-  const session = await requireAdmin();
+  const session = await requireAdminOrClub();
   if (isError(session)) return session;
 
   let body: unknown;
@@ -43,23 +43,43 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid severity" }, { status: 400 });
   }
 
-  // Lookup reporter name/email (snapshot — survives later user deletion)
-  const reporter = await db.query.adminUsers.findFirst({
-    where: eq(adminUsers.id, session.userId),
-    columns: { id: true, email: true, name: true },
-  });
+  // Lookup reporter name/email (snapshot — survives later user deletion).
+  // reporterId's FK only points at admin_users, so club reporters keep it
+  // null and rely on the email/name snapshot below.
+  let reporterId: number | null = null;
+  let reporterEmail: string;
+  let reporterName: string;
 
-  if (!reporter) {
-    return NextResponse.json({ error: "Reporter not found" }, { status: 404 });
+  if (session.role === "admin") {
+    const reporter = await db.query.adminUsers.findFirst({
+      where: eq(adminUsers.id, session.userId),
+      columns: { id: true, email: true, name: true },
+    });
+    if (!reporter) {
+      return NextResponse.json({ error: "Reporter not found" }, { status: 404 });
+    }
+    reporterId = reporter.id;
+    reporterEmail = reporter.email;
+    reporterName = reporter.name;
+  } else {
+    const reporter = await db.query.clubUsers.findFirst({
+      where: eq(clubUsers.id, session.userId),
+      columns: { email: true, name: true },
+    });
+    if (!reporter) {
+      return NextResponse.json({ error: "Reporter not found" }, { status: 404 });
+    }
+    reporterEmail = reporter.email;
+    reporterName = reporter.name ?? reporter.email;
   }
 
   const [inserted] = await db
     .insert(bugReports)
     .values({
       organizationId: session.organizationId ?? null,
-      reporterId: reporter.id,
-      reporterEmail: reporter.email,
-      reporterName: reporter.name,
+      reporterId,
+      reporterEmail,
+      reporterName,
       title,
       description,
       severity: severity!,
@@ -79,7 +99,7 @@ export async function POST(req: NextRequest) {
     title,
     description,
     severity: severity!,
-    reporter: `${reporter.name} <${reporter.email}>`,
+    reporter: `${reporterName} <${reporterEmail}>`,
     pageUrl,
     screenshotUrl,
   });
