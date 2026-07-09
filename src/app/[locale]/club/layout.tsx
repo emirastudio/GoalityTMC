@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { GlobalHeader, AdminHeaderActions } from "@/components/ui/global-header";
 import { getTranslations } from "next-intl/server";
 import { ClubSidebar } from "./club-sidebar";
+import { ClubMobileNav } from "./club-mobile-nav";
 import { BugReporter } from "@/components/bug-reporter/bug-reporter";
 
 type Props = {
@@ -63,10 +64,11 @@ export default async function ClubLayout({ children, params }: Props) {
               clubBadge={club.badgeUrl ?? null}
             />
           </div>
-          <main className="flex-1 p-4 md:p-8 min-w-0 admin-main-bg">
+          <main className="flex-1 p-4 md:p-8 min-w-0 admin-main-bg mobile-nav-offset">
             {children}
           </main>
         </div>
+        <ClubMobileNav clubName={club.name} clubBadge={club.badgeUrl ?? null} />
         <BugReporter shouldShow={true} />
       </div>
     </ThemeProvider>
