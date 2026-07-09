@@ -440,6 +440,13 @@ function MatchCard({
         </div>
 
         {compact ? (
+          !match.homeTeamId && !match.awayTeamId ? (
+            <div className="flex items-center gap-1">
+              <span className="opacity-40 italic text-xs truncate" style={{ color: "var(--cat-text)" }}>
+                TBD vs TBD
+              </span>
+            </div>
+          ) : (
           <>
             <div className="flex items-center gap-1">
               <TeamBadge team={match.homeTeam ?? null} size={14} />
@@ -454,6 +461,7 @@ function MatchCard({
               </div>
             </div>
           </>
+          )
         ) : (
           <>
             <div className="flex items-center gap-1.5 mt-0.5">
