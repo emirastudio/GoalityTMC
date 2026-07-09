@@ -1,9 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { clubUsers, tournaments, organizations, adminUsers, teams, tournamentRegistrations } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { clubUsers, tournaments, organizations, adminUsers, teams, tournamentRegistrations, emailVerifications } from "@/db/schema";
+import { eq, desc, and, isNull } from "drizzle-orm";
 import { createToken } from "@/lib/auth";
+import { randomUUID } from "crypto";
+import bcrypt from "bcryptjs";
+
+// Google/Facebook OAuth already proves the visitor controls this inbox —
+// don't make them re-prove it with a 6-digit email code on top. Insert a
+// pre-verified emailVerifications row so /api/clubs/register's "recently
+// verified" check passes without the code step. codeHash is a random,
+// never-checked value (verifiedAt is what register/route.ts looks at).
+async function markEmailVerifiedFromOAuth(email: string) {
+  await db
+    .update(emailVerifications)
+    .set({ usedAt: new Date() })
+    .where(and(eq(emailVerifications.email, email), isNull(emailVerifications.usedAt)));
+  const codeHash = await bcrypt.hash(randomUUID(), 8);
+  await db.insert(emailVerifications).values({
+    email,
+    codeHash,
+    verifiedAt: new Date(),
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+  });
+}
 
 function getLocale(req: NextRequest): string {
   const acceptLang = req.headers.get("accept-language") ?? "";
@@ -152,6 +173,9 @@ export async function GET(req: NextRequest) {
   // club with no consent and no legal acceptance, and auto-logged the
   // visitor in. Mirror the organizer path — send them to the explicit
   // registration flow (prefilled), where signing up IS the consent.
+  // Google already proved they own this inbox, so skip the 6-digit
+  // email code the manual-signup path still requires.
+  await markEmailVerifiedFromOAuth(email);
   const params = new URLSearchParams({ oauth: "1", email, name: name || "" });
   return NextResponse.redirect(
     `${base}/${locale}/club/register?${params}`

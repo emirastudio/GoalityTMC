@@ -440,7 +440,9 @@ export default function RegisterPage() {
   // OAuth handoff: oauth-success redirects unknown Google/Facebook users
   // here instead of silently creating a passwordless account. Prefill the
   // verified email + name and drop straight into the create flow — the
-  // user still explicitly completes registration (= consent).
+  // user still explicitly completes registration (= consent). oauth-success
+  // already inserted a verified emailVerifications row for this address
+  // (Google proved inbox ownership), so skip the 6-digit code step too.
   const searchParams = useSearchParams();
   const oauthAppliedRef = useRef(false);
   useEffect(() => {
@@ -451,6 +453,7 @@ export default function RegisterPage() {
     const nm = searchParams.get("name") ?? "";
     if (em) setContactEmail(em);
     if (nm) setContactName(nm);
+    setEmailVerified(true);
     setPhase("create");
   }, [searchParams]);
 
