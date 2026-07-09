@@ -67,7 +67,7 @@ function toDateInput(iso: string | null): string {
 }
 
 export function PaymentsPageContent() {
-  const t = useTranslations("orgAdmin.payments");
+  const t = useTranslations("landing.payments");
   const adminFetch = useAdminFetch();
 
   const [payments, setPayments] = useState<Payment[]>([]);

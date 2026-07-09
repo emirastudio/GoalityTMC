@@ -42,7 +42,14 @@ const PRICE_MODEL_GROUPS: { key: string; models: OfferingPriceModel[] }[] = [
   { key: "priceModelGroupPerson", models: ["per_person", "per_player", "per_staff", "per_accompanying"] },
   { key: "priceModelGroupTimePerson", models: ["per_night", "per_meal"] },
 ];
-const INCLUSIONS: OfferingInclusion[] = ["required", "default", "optional"];
+const INCLUSIONS: OfferingInclusion[] = ["required", "default", "optional", "package_only"];
+
+// Archetypes whose simple-mode inclusion picker collapses to a single
+// binary toggle (show to every club vs. package-only) instead of the full
+// 3/4-way pill grid — "fee" is the case that actually needs this (a
+// registration fee is either universal or bundled, rarely a manual
+// per-team optional add-on).
+const BINARY_VISIBILITY_ARCHETYPES: ArchetypeKey[] = ["fee"];
 
 /**
  * Combined create+edit dialog for offerings and packages.
@@ -378,7 +385,7 @@ export function CreateOfferingDialog({
           {!simple && (
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--cat-text-muted)" }}>{t("inclusionLabel")}</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {INCLUSIONS.map(i => {
                 const active = inclusion === i;
                 return (
@@ -547,14 +554,47 @@ export function CreateOfferingDialog({
             t={t}
           />
 
-          {/* Компактный inclusion-toggle в упрощённом режиме. Полный
-              picker всё равно доступен через «Все опции». */}
-          {simple && (
+          {/* Binary visibility toggle for archetypes like "fee" — a
+              registration fee is either universal or bundled, so the
+              3/4-way inclusion grid is unnecessary noise here. Choosing
+              "show to all clubs" attaches it to every already-registered
+              team immediately (see backfillRequiredDeals server-side). */}
+          {simple && archetype && BINARY_VISIBILITY_ARCHETYPES.includes(archetype) && (
+            <div className="rounded-xl border p-1 grid grid-cols-2 gap-1"
+              style={{ borderColor: "var(--cat-card-border)", background: "var(--cat-tag-bg)" }}>
+              {(["required", "package_only"] as OfferingInclusion[]).map((i) => {
+                const active = inclusion === i;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setInclusion(i)}
+                    className="flex flex-col items-start gap-0.5 px-3 py-2 rounded-lg text-left transition-all"
+                    style={{
+                      background: active ? "var(--cat-card-bg)" : "transparent",
+                      boxShadow: active ? "0 0 0 1px var(--cat-accent)" : "none",
+                    }}
+                  >
+                    <span className="text-xs font-bold" style={{ color: active ? "var(--cat-accent)" : "var(--cat-text)" }}>
+                      {i === "required" ? t("visibilityShowAllClubs") : t("visibilityPackageOnly")}
+                    </span>
+                    <span className="text-[10px] leading-snug" style={{ color: "var(--cat-text-muted)" }}>
+                      {i === "required" ? t("visibilityShowAllClubsHint") : t("visibilityPackageOnlyHint")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Компактный inclusion-toggle в упрощённом режиме для остальных
+              архетипов. Полный picker всё равно доступен через «Все опции». */}
+          {simple && archetype && !BINARY_VISIBILITY_ARCHETYPES.includes(archetype) && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
                 {t("inclusionLabel")}:
               </span>
-              {INCLUSIONS.map((i) => {
+              {(["required", "default", "optional"] as OfferingInclusion[]).map((i) => {
                 const active = inclusion === i;
                 return (
                   <button

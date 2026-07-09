@@ -36,7 +36,7 @@ interface DealRow {
   offeringId: number;
   offeringTitle: string;
   offeringKind: "single" | "package";
-  offeringInclusion: "required" | "default" | "optional";
+  offeringInclusion: "required" | "default" | "optional" | "package_only";
   offeringIcon: string | null;
   state: string;
   isPublished: boolean;
@@ -91,7 +91,8 @@ export function TeamDealBlock({
   const dealIds = new Set(deals.map(d => d.offeringId));
   const packageOptions = catalog.filter(o => o.kind === "package");
   const addOnOptions = catalog.filter(o =>
-    o.kind === "single" && !dealIds.has(o.id) && o.inclusion !== "required"
+    o.kind === "single" && !dealIds.has(o.id) &&
+    o.inclusion !== "required" && o.inclusion !== "package_only"
   );
   // Primary = the team's package deal (if any). Single services — even
   // a required one — render as add-ons so the UI doesn't force-promote

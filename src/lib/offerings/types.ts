@@ -5,7 +5,7 @@
  */
 
 export type OfferingKind = "single" | "package";
-export type OfferingInclusion = "required" | "default" | "optional";
+export type OfferingInclusion = "required" | "default" | "optional" | "package_only";
 export type OfferingPriceModel =
   | "flat" | "per_team" | "per_person" | "per_player" | "per_staff"
   | "per_accompanying" | "per_night" | "per_meal" | "per_unit";

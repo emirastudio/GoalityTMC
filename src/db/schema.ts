@@ -79,13 +79,15 @@ export const bookingTypeEnum = pgEnum("booking_type", [
 export const offeringKindEnum = pgEnum("offering_kind", ["single", "package"]);
 
 // Whether a club can/must have this offering in its cart.
-// required  — cannot be removed. Tournament fee lives here.
-// default   — added by default, club may remove.
-// optional  — club adds manually from the catalog.
+// required     — shown to every club, auto-attached to all registrations.
+// default      — added by default, club may remove.
+// optional     — club adds manually from the catalog.
+// package_only — never shown standalone; only usable as a package component.
 export const offeringInclusionEnum = pgEnum("offering_inclusion", [
   "required",
   "default",
   "optional",
+  "package_only",
 ]);
 
 export const offeringPriceModelEnum = pgEnum("offering_price_model", [

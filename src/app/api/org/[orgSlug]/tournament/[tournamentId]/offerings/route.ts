@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { offerings, packageContents } from "@/db/schema";
 import { and, eq, asc, inArray } from "drizzle-orm";
 import { requireV3Tournament } from "@/lib/offerings/guard";
+import { backfillRequiredDeals } from "@/lib/offerings/backfill";
 
 type Params = { orgSlug: string; tournamentId: string };
 
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Param
     tournamentId: guard.tournament.id,
     kind: body.kind === "package" ? "package" : "single",
     inclusion:
-      body.inclusion === "required" || body.inclusion === "default" ? body.inclusion : "optional",
+      ["required", "default", "package_only"].includes(body.inclusion) ? body.inclusion : "optional",
     title,
     titleRu: body.titleRu ?? null,
     titleEt: body.titleEt ?? null,
@@ -106,6 +107,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Param
         );
       }
     }
+  }
+
+  // "Required" = shown to every club — attach it to every already-registered
+  // team right away instead of leaving it unassignable (there's no per-team
+  // "add" path for required offerings; see team-deal-block.tsx's filter).
+  if (row.inclusion === "required") {
+    await backfillRequiredDeals(guard.tournament.id, row.id, guard.userId);
   }
 
   return NextResponse.json({ offering: row }, { status: 201 });

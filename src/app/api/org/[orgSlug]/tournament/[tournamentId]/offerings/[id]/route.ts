@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { offerings, packageContents, teamOfferingDeals } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { requireV3Tournament } from "@/lib/offerings/guard";
+import { backfillRequiredDeals } from "@/lib/offerings/backfill";
 
 type Params = { orgSlug: string; tournamentId: string; id: string };
 
@@ -55,7 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<Para
   for (const k of allowedStrings) {
     if (k in body) patch[k] = body[k] ?? null;
   }
-  if ("inclusion" in body && ["required", "default", "optional"].includes(body.inclusion)) {
+  if ("inclusion" in body && ["required", "default", "optional", "package_only"].includes(body.inclusion)) {
     patch.inclusion = body.inclusion;
   }
   if ("priceModel" in body && typeof body.priceModel === "string") patch.priceModel = body.priceModel;
@@ -82,6 +83,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<Para
   if ("isArchived" in body) patch.isArchived = Boolean(body.isArchived);
 
   const [updated] = await db.update(offerings).set(patch).where(eq(offerings.id, offeringId)).returning();
+
+  // Switching an existing offering to "required" mid-tournament — attach it
+  // to every already-registered team right away (see backfillRequiredDeals).
+  if (patch.inclusion === "required" && current.inclusion !== "required") {
+    await backfillRequiredDeals(guard.tournament.id, offeringId, guard.userId);
+  }
 
   // Handle child offerings wholesale replace if provided and this is a package.
   if (updated.kind === "package" && Array.isArray(body.childOfferingIds)) {

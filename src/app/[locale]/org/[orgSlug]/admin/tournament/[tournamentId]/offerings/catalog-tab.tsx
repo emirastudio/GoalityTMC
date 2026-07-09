@@ -36,9 +36,10 @@ export type OfferingTemplate = {
 };
 
 const INCLUSION_COLOR: Record<string, { bg: string; fg: string; border: string }> = {
-  required: { bg: "rgba(239,68,68,0.10)", fg: "#ef4444", border: "rgba(239,68,68,0.30)" },
-  default:  { bg: "rgba(59,130,246,0.10)", fg: "#3b82f6", border: "rgba(59,130,246,0.30)" },
-  optional: { bg: "var(--cat-tag-bg)", fg: "var(--cat-text-muted)", border: "var(--cat-card-border)" },
+  required:     { bg: "rgba(239,68,68,0.10)", fg: "#ef4444", border: "rgba(239,68,68,0.30)" },
+  default:      { bg: "rgba(59,130,246,0.10)", fg: "#3b82f6", border: "rgba(59,130,246,0.30)" },
+  optional:     { bg: "var(--cat-tag-bg)", fg: "var(--cat-text-muted)", border: "var(--cat-card-border)" },
+  package_only: { bg: "rgba(139,92,246,0.10)", fg: "#8b5cf6", border: "rgba(139,92,246,0.30)" },
 };
 
 /**
@@ -233,6 +234,29 @@ export function OfferingsCatalogTab({
     if (res.ok) { load(); onChange(); }
   }
 
+  // Manual re-sync for "required" offerings — covers teams that registered
+  // after the offering was created/last synced (backfillRequiredDeals only
+  // runs automatically on create / on flipping inclusion to "required").
+  const [syncingId, setSyncingId] = useState<number | null>(null);
+  const [syncMsg, setSyncMsg] = useState<{ id: number; created: number } | null>(null);
+  async function syncOffering(id: number) {
+    setSyncingId(id);
+    setSyncMsg(null);
+    try {
+      const res = await fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/offerings/${id}/sync`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setSyncMsg({ id, created: d.created ?? 0 });
+        onChange();
+      }
+    } finally {
+      setSyncingId(null);
+    }
+  }
+
   if (loading || !offerings) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -280,10 +304,14 @@ export function OfferingsCatalogTab({
                 edit: t("edit"),
                 delete: t("delete"),
                 duplicate: t("duplicate"),
+                sync: t("syncRequired"),
               }}
               onEdit={() => setEditing(o)}
               onDuplicate={() => duplicateOffering(o)}
               onDelete={() => removeOffering(o.id)}
+              onSync={o.inclusion === "required" ? () => syncOffering(o.id) : undefined}
+              syncing={syncingId === o.id}
+              syncResult={syncMsg?.id === o.id ? syncMsg.created : null}
             />
           ))}
         </div>
@@ -660,13 +688,19 @@ function OfferingCard({
   onEdit,
   onDuplicate,
   onDelete,
+  onSync,
+  syncing,
+  syncResult,
 }: {
   offering: OfferingDTO;
-  label: { inclusion: string; priceModel: string; edit: string; delete: string; duplicate: string };
+  label: { inclusion: string; priceModel: string; edit: string; delete: string; duplicate: string; sync: string };
   locale: string;
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onSync?: () => void;
+  syncing?: boolean;
+  syncResult?: number | null;
 }) {
   const incColor = INCLUSION_COLOR[o.inclusion];
   const priceCents = o.kind === "package" ? (o.packagePriceOverrideCents ?? 0) : o.priceCents;
@@ -693,10 +727,17 @@ function OfferingCard({
           }}>
           <OfferingIcon iconKey={o.icon} size={22} />
         </div>
-        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full border"
-          style={{ background: incColor.bg, color: incColor.fg, borderColor: incColor.border }}>
-          {label.inclusion}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full border"
+            style={{ background: incColor.bg, color: incColor.fg, borderColor: incColor.border }}>
+            {label.inclusion}
+          </span>
+          {syncResult != null && (
+            <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
+              +{syncResult}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Title + description */}
@@ -742,6 +783,21 @@ function OfferingCard({
         >
           <Edit3 className="w-3.5 h-3.5" /> {label.edit}
         </button>
+        {onSync && (
+          <button
+            onClick={onSync}
+            disabled={syncing}
+            className="inline-flex items-center justify-center px-3 py-2 rounded-lg transition-colors hover:opacity-80 disabled:opacity-50"
+            title={label.sync}
+            style={{
+              background: "var(--cat-card-bg)",
+              color: "var(--cat-text-muted)",
+              border: "1px solid var(--cat-card-border)",
+            }}
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+          </button>
+        )}
         <button
           onClick={onDuplicate}
           className="inline-flex items-center justify-center px-3 py-2 rounded-lg transition-colors hover:opacity-80"
