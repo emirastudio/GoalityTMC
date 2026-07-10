@@ -45,9 +45,16 @@ type Props = {
   tournamentId: number;
   /** Current stage id — used as part of the seed so re-opening produces same show. */
   stageId: number;
-  /** Groups with their currently assigned team ids (from the Draw tab state). */
+  /**
+   * "groups" — distribute teams into the groups already laid out on the
+   * Draw tab (reveal-only; `groups` prop carries the assignment).
+   * "league" — round-robin reveal over every team in the division; no
+   * group assignment needed, `groups` is ignored.
+   */
+  mode: "groups" | "league";
+  /** Groups with their currently assigned team ids (from the Draw tab state). Ignored when mode="league". */
   groups: LauncherGroup[];
-  /** Full team pool (for name/logo lookup). */
+  /** Full team pool (for name/logo lookup, and the full roster when mode="league"). */
   allTeams: LauncherTeam[];
   /**
    * Division / age-class name shown as the subtitle on the stage header
@@ -104,7 +111,7 @@ export function DrawShowLauncher(props: Props) {
     };
   }, [props.orgSlug, props.tournamentId]);
 
-  // ── Build engine-shaped teams + preAssignedGroups ─────────────────
+  // ── Build engine-shaped teams + config ─────────────────────────────
   // Memoized because it's passed to DrawStage which memoizes buildDrawPlan
   // by reference equality — we don't want a fresh array on every render.
   const { engineTeams, engineConfig } = useMemo(() => {
@@ -117,6 +124,24 @@ export function DrawShowLauncher(props: Props) {
       clubName: team.clubName ?? null,
       pot: team.pot ?? null,
     }));
+
+    if (props.mode === "league") {
+      // Round-robin reveal over the whole roster — no group assignment
+      // needed, so the seed is just the stage + team-id set (stable across
+      // reopens, changes if the roster changes).
+      const seed = [
+        "stage",
+        props.stageId,
+        "league",
+        ...teams.map((t) => t.id).sort(),
+      ].join(":");
+      const config: DrawConfig = {
+        mode: "league",
+        seedingMode: "random",
+        seed,
+      };
+      return { engineTeams: teams, engineConfig: config };
+    }
 
     // preAssignedGroups[groupIndex][slotIndex] = teamId (string)
     const preAssignedGroups: string[][] = props.groups
@@ -143,32 +168,33 @@ export function DrawShowLauncher(props: Props) {
     };
 
     return { engineTeams: teams, engineConfig: config };
-  }, [props.allTeams, props.groups, props.stageId]);
+  }, [props.mode, props.allTeams, props.groups, props.stageId]);
 
-  const assignedTeamCount = engineConfig.preAssignedGroups?.reduce(
-    (sum, g) => sum + g.length,
-    0,
-  ) ?? 0;
+  const assignedTeamCount = props.mode === "league"
+    ? props.allTeams.length
+    : engineConfig.preAssignedGroups?.reduce((sum, g) => sum + g.length, 0) ?? 0;
   // The engine requires >= 2 groups for mode="groups" — a single filled
   // group (e.g. a division with just "Main Group", no A/B/C split) used to
   // pass the team-count check below and then throw once DrawStage actually
-  // called buildDrawPlan(). Gate on group count too.
-  const filledGroupCount = engineConfig.preAssignedGroups?.filter(
-    (g) => g.length > 0,
-  ).length ?? 0;
+  // called buildDrawPlan(). Gate on group count too. Not applicable in
+  // league mode — round-robin just needs >= 2 teams, no groups at all.
+  const needsMoreGroups = props.mode === "groups"
+    && (engineConfig.preAssignedGroups?.filter((g) => g.length > 0).length ?? 0) < 2;
 
   // Set of team ids actually placed in a group — used to compute the
   // "team not in any group" remainder we surface in the done summary.
+  // Every team participates in league mode, so nothing is "unassigned".
   const assignedIds = useMemo(() => {
+    if (props.mode === "league") return new Set(props.allTeams.map((t) => t.id));
     const s = new Set<number>();
     for (const g of props.groups) for (const id of g.teamIds) s.add(id);
     return s;
-  }, [props.groups]);
+  }, [props.mode, props.groups, props.allTeams]);
 
   const handleOpen = useCallback(() => {
-    if (assignedTeamCount < 2 || filledGroupCount < 2) return;
+    if (assignedTeamCount < 2 || needsMoreGroups) return;
     setOpen(true);
-  }, [assignedTeamCount, filledGroupCount]);
+  }, [assignedTeamCount, needsMoreGroups]);
 
   const handleClose = useCallback(() => setOpen(false), []);
 
@@ -215,14 +241,14 @@ export function DrawShowLauncher(props: Props) {
     );
   }
 
-  const canStart = assignedTeamCount >= 2 && filledGroupCount >= 2;
+  const canStart = assignedTeamCount >= 2 && !needsMoreGroups;
 
   return (
     <>
       <button
         onClick={handleOpen}
         disabled={!canStart}
-        title={!canStart && filledGroupCount < 2 ? t("showDrawNeedsGroups") : undefined}
+        title={!canStart && needsMoreGroups ? t("showDrawNeedsGroups") : undefined}
         className="inline-flex items-center gap-1.5 rounded-lg font-semibold px-3 py-1.5 text-xs transition-opacity hover:opacity-80 disabled:opacity-40"
         style={{
           background: "transparent",

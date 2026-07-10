@@ -1903,6 +1903,8 @@ function DrawTab({
   }
 
   const noTeamsRegistered = allTeams.length === 0;
+  const selectedStage = stages.find(s => s.id === selectedStageId);
+  const isLeagueStage = selectedStage?.type === "league";
 
   return (
     <div className="space-y-5" onClick={() => { setBasketPopover(null); setGroupPopover(null); }}>
@@ -1929,20 +1931,40 @@ function DrawTab({
                 <RefreshCw className="w-3.5 h-3.5" /> {t("revertToApplied")}
               </Btn>
             )}
-            {selectedStageId && Object.values(assignMap).some(ids => ids.length > 0) && (
-              <DrawShowLauncher
-                orgSlug={orgSlug}
-                tournamentId={tournamentId}
-                stageId={selectedStageId}
-                groups={groups.map(g => ({ id: g.id, teamIds: assignMap[g.id] ?? [] }))}
-                allTeams={allTeams.map(tm => ({
-                  id: tm.id,
-                  name: tm.name,
-                  logoUrl: tm.clubBadgeUrl ?? null,
-                  clubName: tm.clubName ?? null,
-                }))}
-                divisionName={tournamentTitle}
-              />
+            {selectedStageId && (
+              isLeagueStage
+                ? allTeams.length >= 2 && (
+                  <DrawShowLauncher
+                    orgSlug={orgSlug}
+                    tournamentId={tournamentId}
+                    stageId={selectedStageId}
+                    mode="league"
+                    groups={[]}
+                    allTeams={allTeams.map(tm => ({
+                      id: tm.id,
+                      name: tm.name,
+                      logoUrl: tm.clubBadgeUrl ?? null,
+                      clubName: tm.clubName ?? null,
+                    }))}
+                    divisionName={tournamentTitle}
+                  />
+                )
+                : Object.values(assignMap).some(ids => ids.length > 0) && (
+                  <DrawShowLauncher
+                    orgSlug={orgSlug}
+                    tournamentId={tournamentId}
+                    stageId={selectedStageId}
+                    mode="groups"
+                    groups={groups.map(g => ({ id: g.id, teamIds: assignMap[g.id] ?? [] }))}
+                    allTeams={allTeams.map(tm => ({
+                      id: tm.id,
+                      name: tm.name,
+                      logoUrl: tm.clubBadgeUrl ?? null,
+                      clubName: tm.clubName ?? null,
+                    }))}
+                    divisionName={tournamentTitle}
+                  />
+                )
             )}
             {selectedStageId && (
               <Btn variant="primary" size="sm" onClick={applyDraw} loading={applyingDraw}>
