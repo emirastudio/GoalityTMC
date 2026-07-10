@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { requireGameAdmin, isError } from "@/lib/game-auth";
 import { eq, and, asc, inArray } from "drizzle-orm";
+import { firstPlayRound } from "@/lib/playoff-rounds";
 
 type Params = { orgSlug: string; tournamentId: string; stageId: string };
 
@@ -184,11 +185,14 @@ export async function POST(
 
     // ── Knockout: заполняем матчи первого раунда
     if (targetStage.type === "knockout") {
-      // Берём раунд с наименьшим order = первый игровой раунд (R32, R16, QF и т.д.)
-      const firstRound = await db.query.matchRounds.findFirst({
+      // Первый игровой раунд (R32/R16/QF…) — независимо от того, какой
+      // конвенцией order записана сетка (см. playoff-rounds.ts). Раньше
+      // здесь бралось min(order), что для конвенции «order 1 = финал»
+      // ошибочно указывало на финал.
+      const targetRounds = await db.query.matchRounds.findMany({
         where: eq(matchRounds.stageId, targetStage.id),
-        orderBy: [asc(matchRounds.order)],
       });
+      const firstRound = firstPlayRound(targetRounds);
       if (!firstRound) continue;
 
       const roundMatches = await db.query.matches.findMany({
