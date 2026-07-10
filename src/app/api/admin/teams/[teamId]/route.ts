@@ -1,10 +1,94 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { teams, tournamentRegistrations, clubs, tournaments } from "@/db/schema";
+import {
+  teams,
+  tournamentRegistrations,
+  clubs,
+  tournaments,
+  tournamentStages,
+  stageGroups,
+  groupTeams,
+  matches,
+  standings,
+} from "@/db/schema";
 import { requireAdmin, isError } from "@/lib/api-auth";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { scheduleStatusEmail } from "@/lib/email-batch";
+import { recalculateGroupStandings } from "@/lib/standings-calculator";
 import { tournamentClasses } from "@/db/schema";
+
+// Withdraw a team from a single division (tournament + class): remove it
+// from stage groups, delete its matches in that division, drop its standings
+// rows, and recalc the affected groups. Called when a registration is
+// cancelled/rejected — otherwise the team keeps showing in the draw,
+// schedule and results despite being out of the tournament.
+async function withdrawTeamFromDivision(
+  tournamentId: number,
+  classId: number | null,
+  teamId: number,
+) {
+  const stageRows = await db
+    .select({ id: tournamentStages.id })
+    .from(tournamentStages)
+    .where(
+      and(
+        eq(tournamentStages.tournamentId, tournamentId),
+        classId == null
+          ? isNull(tournamentStages.classId)
+          : eq(tournamentStages.classId, classId),
+      ),
+    );
+  const stageIds = stageRows.map((s) => s.id);
+  if (stageIds.length === 0) return;
+
+  const groupRows = await db
+    .select({ id: stageGroups.id })
+    .from(stageGroups)
+    .where(inArray(stageGroups.stageId, stageIds));
+  const groupIds = groupRows.map((g) => g.id);
+
+  // Groups the team is actually in — recalc only these afterwards.
+  const teamGroupRows = groupIds.length
+    ? await db
+        .select({ groupId: groupTeams.groupId })
+        .from(groupTeams)
+        .where(
+          and(inArray(groupTeams.groupId, groupIds), eq(groupTeams.teamId, teamId)),
+        )
+    : [];
+  const affectedGroupIds = teamGroupRows.map((r) => r.groupId);
+
+  // 1) Pull out of group assignments
+  if (groupIds.length) {
+    await db
+      .delete(groupTeams)
+      .where(and(inArray(groupTeams.groupId, groupIds), eq(groupTeams.teamId, teamId)));
+  }
+
+  // 2) Delete the team's matches within this division (children — events,
+  //    referees, etc. — cascade via FK onDelete).
+  await db
+    .delete(matches)
+    .where(
+      and(
+        eq(matches.tournamentId, tournamentId),
+        inArray(matches.stageId, stageIds),
+        or(eq(matches.homeTeamId, teamId), eq(matches.awayTeamId, teamId)),
+      ),
+    );
+
+  // 3) Drop the team's standings rows
+  if (groupIds.length) {
+    await db
+      .delete(standings)
+      .where(and(inArray(standings.groupId, groupIds), eq(standings.teamId, teamId)));
+  }
+
+  // 4) Recalc the remaining teams in the groups the team left
+  for (const gId of affectedGroupIds) {
+    await recalculateGroupStandings(gId);
+  }
+}
 
 // DELETE удаляет команду глобально (каскадно удаляет все её регистрации)
 export async function DELETE(
@@ -72,6 +156,27 @@ export async function PATCH(
         await db.update(tournamentRegistrations).set(regUpdates)
           .where(eq(tournamentRegistrations.id, latestReg.id));
       }
+    }
+  }
+
+  // Cascade: a cancelled/rejected team must leave its division entirely
+  // (groups, matches, standings) — not just carry a status flag, otherwise
+  // it keeps appearing in the draw, schedule and results.
+  if (regUpdates.status === "cancelled" || regUpdates.status === "rejected") {
+    const affectedReg = body.registrationId
+      ? await db.query.tournamentRegistrations.findFirst({
+          where: eq(tournamentRegistrations.id, body.registrationId),
+        })
+      : await db.query.tournamentRegistrations.findFirst({
+          where: eq(tournamentRegistrations.teamId, tid),
+          orderBy: (r, { desc }) => [desc(r.id)],
+        });
+    if (affectedReg) {
+      await withdrawTeamFromDivision(
+        affectedReg.tournamentId,
+        affectedReg.classId,
+        affectedReg.teamId,
+      );
     }
   }
 

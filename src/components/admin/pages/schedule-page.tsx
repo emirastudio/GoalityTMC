@@ -56,8 +56,23 @@ interface Round {
 interface Team {
   id: number;
   name: string;
+  squadAlias?: string | null;
   clubName?: string | null;
   clubBadgeUrl?: string | null;
+}
+
+// Squad alias badge ("Blue"/"Black"/…) so two same-named squads of one club
+// stay distinguishable in the draw UI, mirroring the roster list.
+function SquadAliasBadge({ alias }: { alias?: string | null }) {
+  if (!alias) return null;
+  return (
+    <span
+      className="text-[9px] font-bold px-1 py-0.5 rounded shrink-0 leading-none"
+      style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-muted)" }}
+    >
+      {alias}
+    </span>
+  );
 }
 
 interface Match {
@@ -1912,6 +1927,16 @@ function DrawTab({
   const isKnockoutStage = selectedStage?.type === "knockout";
   const isFreeDrawStage = isLeagueStage || isKnockoutStage;
 
+  // A "group" stage that ends up with a single filled group is really a
+  // one-table league. The group draw-show engine needs >= 2 groups, so
+  // rather than leaving the Show button permanently disabled, reveal that
+  // group's teams as a league (round-robin) draw instead.
+  const filledDrawGroups = groups.filter(g => (assignMap[g.id]?.length ?? 0) > 0);
+  const singleGroupLeagueShow = !isFreeDrawStage && filledDrawGroups.length === 1;
+  const singleGroupTeamIds = singleGroupLeagueShow
+    ? new Set(assignMap[filledDrawGroups[0].id] ?? [])
+    : null;
+
   return (
     <div className="space-y-5" onClick={() => { setBasketPopover(null); setGroupPopover(null); }}>
       {/* ── Header ── */}
@@ -1952,7 +1977,7 @@ function DrawTab({
                     groups={[]}
                     allTeams={allTeams.map(tm => ({
                       id: tm.id,
-                      name: tm.name,
+                      name: tm.squadAlias ? `${tm.name} (${tm.squadAlias})` : tm.name,
                       logoUrl: tm.clubBadgeUrl ?? null,
                       clubName: tm.clubName ?? null,
                     }))}
@@ -1964,14 +1989,16 @@ function DrawTab({
                     orgSlug={orgSlug}
                     tournamentId={tournamentId}
                     stageId={selectedStageId}
-                    mode="groups"
-                    groups={groups.map(g => ({ id: g.id, teamIds: assignMap[g.id] ?? [] }))}
-                    allTeams={allTeams.map(tm => ({
-                      id: tm.id,
-                      name: tm.name,
-                      logoUrl: tm.clubBadgeUrl ?? null,
-                      clubName: tm.clubName ?? null,
-                    }))}
+                    mode={singleGroupLeagueShow ? "league" : "groups"}
+                    groups={singleGroupLeagueShow ? [] : groups.map(g => ({ id: g.id, teamIds: assignMap[g.id] ?? [] }))}
+                    allTeams={allTeams
+                      .filter(tm => !singleGroupTeamIds || singleGroupTeamIds.has(tm.id))
+                      .map(tm => ({
+                        id: tm.id,
+                        name: tm.squadAlias ? `${tm.name} (${tm.squadAlias})` : tm.name,
+                        logoUrl: tm.clubBadgeUrl ?? null,
+                        clubName: tm.clubName ?? null,
+                      }))}
                     divisionName={tournamentTitle}
                   />
                 )
@@ -2145,6 +2172,7 @@ function DrawTab({
                               </div>
                           }
                           {team.name}
+                          <SquadAliasBadge alias={team.squadAlias} />
                           <button
                             onMouseDown={e => e.stopPropagation()}
                             onClick={e => { e.stopPropagation(); removeTeamFromBasket(basket.id, team.id); }}
@@ -2185,6 +2213,7 @@ function DrawTab({
                                       </div>
                                   }
                                   {team.name}
+                                  <SquadAliasBadge alias={team.squadAlias} />
                                 </button>
                               ))}
                             </div>
@@ -2229,6 +2258,7 @@ function DrawTab({
                         opacity: basketDrag?.teamId === tm.id ? 0.4 : 1,
                       }}>
                       {tm.name}
+                      <SquadAliasBadge alias={tm.squadAlias} />
                     </span>
                   ))}
                   {unbasketedTeams.length === 0 && (
@@ -2294,6 +2324,7 @@ function DrawTab({
                     </div>
                 }
                 {team_.name}
+                <SquadAliasBadge alias={team_.squadAlias} />
               </span>
             ))}
           </div>
@@ -2400,8 +2431,9 @@ function DrawTab({
                             {(team.name ?? "?")[0].toUpperCase()}
                           </div>
                       }
-                      <span className="flex-1 text-xs font-semibold truncate" style={{ color: "var(--cat-text)" }}>
-                        {team.name}
+                      <span className="flex-1 text-xs font-semibold truncate flex items-center gap-1.5" style={{ color: "var(--cat-text)" }}>
+                        <span className="truncate">{team.name}</span>
+                        <SquadAliasBadge alias={team.squadAlias} />
                       </span>
                       <button
                         onMouseDown={e => e.stopPropagation()}
@@ -2446,6 +2478,7 @@ function DrawTab({
                                 </div>
                             }
                             {team_.name}
+                            <SquadAliasBadge alias={team_.squadAlias} />
                           </button>
                         ))}
                       </div>

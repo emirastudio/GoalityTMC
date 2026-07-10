@@ -19,13 +19,15 @@ export async function GET(
   const classIdParam = req.nextUrl.searchParams.get("classId");
   const classId = classIdParam ? parseInt(classIdParam) : null;
 
-  // Находим регистрации для этого турнира, опционально фильтруя по дивизиону
-  const whereClause = classId
-    ? and(
-        eq(tournamentRegistrations.tournamentId, ctx.tournament.id),
-        eq(tournamentRegistrations.classId, classId)
-      )
-    : eq(tournamentRegistrations.tournamentId, ctx.tournament.id);
+  // Находим регистрации для этого турнира, опционально фильтруя по дивизиону.
+  // Только подтверждённые (confirmed) команды попадают в игровую логику —
+  // всё, что организатор ещё не принял (open/rejected/cancelled/draft),
+  // остаётся за пределами Draw/Fixtures, пока он не подтвердит заявку.
+  const whereClause = and(
+    eq(tournamentRegistrations.tournamentId, ctx.tournament.id),
+    eq(tournamentRegistrations.status, "confirmed"),
+    classId ? eq(tournamentRegistrations.classId, classId) : undefined
+  );
 
   const regs = await db.query.tournamentRegistrations.findMany({
     where: whereClause,
@@ -59,6 +61,7 @@ export async function GET(
       id: reg.teamId,
       registrationId: reg.id,
       name: displayName,
+      squadAlias: reg.squadAlias || null,
       regNumber: reg.regNumber,
       status: reg.status,
       clubId: club?.clubId ?? null,
