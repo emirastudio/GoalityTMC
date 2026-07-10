@@ -3165,6 +3165,7 @@
     "matchesAfterPublish": "Mängud ilmuvad pärast ajakava avaldamist",
     "final": "Finaal",
     "thirdPlaceMatch": "Pronksimäng",
+    "placementMatch": "Kohad {a}–{b}",
     "tournamentWinner": "Turniiri võitja",
     "teamTabOverview": "Ülevaade",
     "teamTabSquad": "Koosseis",

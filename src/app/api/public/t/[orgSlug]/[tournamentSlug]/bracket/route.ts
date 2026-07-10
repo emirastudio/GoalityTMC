@@ -149,14 +149,23 @@ export async function GET(
         const slots = slotsByRound[round.id] ?? { home: [], away: [] };
 
         // Добавляем слот-лейбл к каждому матчу по позиции.
-        // Матч(и) с индексом >= matchCount при hasThirdPlace=true — это матч(и) за 3-е место.
+        // Матчи с индексом >= matchCount при hasThirdPlace=true — это матчи за
+        // места. Первый (mi=matchCount) — за 3-е место, следующие — за 5-е,
+        // 7-е и т.д. (bracket за все места, напр. Champions/Europa Playoff).
+        // `placeRank` = наименьшее из двух разыгрываемых мест (3,5,7,…);
+        // `isThirdPlace` оставлен для обратной совместимости (= placeRank != null).
+        const placementFor = (mi: number): number | null =>
+          round.hasThirdPlace && mi >= round.matchCount
+            ? 3 + 2 * (mi - round.matchCount)
+            : null;
         const matchesWithSlots = roundMatches.map((m, mi) => ({
           ...m,
           homeSlotLabel:   slots.home[mi]?.slotLabel   ?? null,
           homeSlotLabelRu: slots.home[mi]?.slotLabelRu ?? null,
           awaySlotLabel:   slots.away[mi]?.slotLabel   ?? null,
           awaySlotLabelRu: slots.away[mi]?.slotLabelRu ?? null,
-          isThirdPlace:    round.hasThirdPlace && mi >= round.matchCount,
+          placeRank:       placementFor(mi),
+          isThirdPlace:    placementFor(mi) !== null,
         }));
 
         // Для TBD-слотов (матчей ещё нет) — виртуальные заглушки

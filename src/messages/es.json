@@ -3170,6 +3170,7 @@
     "matchesAfterPublish": "Los partidos aparecerán una vez publicado el calendario",
     "final": "Final",
     "thirdPlaceMatch": "Partido por el 3.er lugar",
+    "placementMatch": "Puestos {a}–{b}",
     "tournamentWinner": "Campeón del torneo",
     "teamTabOverview": "Resumen",
     "teamTabSquad": "Plantilla",

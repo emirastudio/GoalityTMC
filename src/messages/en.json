@@ -3183,6 +3183,7 @@
     "matchesAfterPublish": "Matches will appear after the schedule is published",
     "final": "Final",
     "thirdPlaceMatch": "3rd Place Match",
+    "placementMatch": "Places {a}–{b}",
     "tournamentWinner": "Tournament winner",
     "teamTabOverview": "Overview",
     "teamTabSquad": "Squad",

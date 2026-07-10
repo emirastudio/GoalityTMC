@@ -3165,6 +3165,7 @@
     "matchesAfterPublish": "Матчи появятся после публикации расписания",
     "final": "Финал",
     "thirdPlaceMatch": "Матч за 3-е место",
+    "placementMatch": "Места {a}–{b}",
     "tournamentWinner": "Победитель турнира",
     "teamTabOverview": "Обзор",
     "teamTabSquad": "Состав",

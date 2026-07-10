@@ -23,6 +23,8 @@ interface BracketMatch {
   awayTeam?: { name: string; club?: { badgeUrl?: string | null } | null } | null;
   field?: { name: string } | null;
   isThirdPlace?: boolean;
+  /** Lowest of the two places contested (3,5,7,…) for placement matches; null otherwise. */
+  placeRank?: number | null;
 }
 
 interface BracketRound {
@@ -144,16 +146,21 @@ function TeamRow({
 // ─── Match Card ──────────────────────────────────────────────────────────────
 
 function BracketMatchCard({
-  match, brand, isFinal, isThirdPlace, tFinal, tThirdPlace, locale,
+  match, brand, isFinal, isThirdPlace, tFinal, tThirdPlace, formatPlacement, locale,
 }: {
   match: BracketMatch | null;
   brand: string;
   tFinal?: string;
   tThirdPlace?: string;
+  /** Formats the label for a placement match at ranks a–b (e.g. "5–6 place"). */
+  formatPlacement?: (a: number, b: number) => string;
   isFinal?: boolean;
   isThirdPlace?: boolean;
   locale: string;
 }) {
+  // A placement match beyond 3rd place (5th/7th/… place) — labelled by range.
+  const placeRank = match?.placeRank ?? null;
+  const isLowerPlacement = placeRank != null && placeRank > 3;
   const isFinished = match?.status === "finished";
   const isLive = match?.status === "live";
   const homeWon = isFinished && (match!.homeScore ?? 0) > (match!.awayScore ?? 0);
@@ -213,7 +220,9 @@ function BracketMatchCard({
         >
           <span className="text-[9px] font-bold uppercase tracking-wider"
             style={{ color: isThirdPlace ? "#CD7F32" : isFinal ? brand : "var(--cat-text-muted)" }}>
-            {isThirdPlace
+            {isLowerPlacement
+              ? <>🏅 {formatPlacement ? formatPlacement(placeRank!, placeRank! + 1) : `${placeRank}–${placeRank! + 1}`}</>
+              : isThirdPlace
               ? <>🥉 {tThirdPlace ?? "3rd Place"}</>
               : isFinal
               ? <><Crown className="inline w-2.5 h-2.5 mr-1 mb-0.5" />{tFinal ?? "Final"}</>
@@ -258,7 +267,7 @@ function BracketMatchCard({
 // ─── Round Column с SVG-соединителями ────────────────────────────────────────
 
 function RoundColumn({
-  round, nextRoundMatchCount, brand, isLast, totalRounds, tFinal, tThirdPlace, locale, tMatchSingular, tMatchPlural,
+  round, nextRoundMatchCount, brand, isLast, totalRounds, tFinal, tThirdPlace, formatPlacement, locale, tMatchSingular, tMatchPlural,
 }: {
   round: BracketRound;
   nextRoundMatchCount: number;
@@ -267,6 +276,7 @@ function RoundColumn({
   totalRounds: number;
   tFinal: string;
   tThirdPlace: string;
+  formatPlacement: (a: number, b: number) => string;
   locale: string;
   tMatchSingular: string;
   tMatchPlural: string;
@@ -322,6 +332,7 @@ function RoundColumn({
             isThirdPlace={match?.isThirdPlace}
             tFinal={tFinal}
             tThirdPlace={tThirdPlace}
+            formatPlacement={formatPlacement}
             locale={locale}
           />
         ))}
@@ -687,6 +698,7 @@ export default function DivisionBracketPage() {
                     totalRounds={current.rounds.length}
                     tFinal={t("final")}
                     tThirdPlace={t("thirdPlaceMatch")}
+                    formatPlacement={(a, b) => t("placementMatch", { a, b })}
                     locale={locale}
                     tMatchSingular={t("matchSingular")}
                     tMatchPlural={t("matchPlural")}
