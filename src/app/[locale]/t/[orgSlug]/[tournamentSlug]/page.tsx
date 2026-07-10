@@ -128,7 +128,7 @@ export default function TournamentInfoPage() {
       <TournamentProgressBar orgSlug={org.slug} tournamentSlug={tourney.slug} locale={locale} />
 
       {/* Registration status */}
-      <div className="rounded-2xl p-4 border flex items-center justify-between gap-4"
+      <div className="rounded-2xl p-4 border flex flex-wrap items-center justify-between gap-4"
         style={{
           background: tourney.registrationOpen
             ? "var(--cat-badge-open-bg)"
@@ -137,12 +137,12 @@ export default function TournamentInfoPage() {
             ? "var(--cat-badge-open-border)"
             : "var(--cat-card-border)",
         }}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {tourney.registrationOpen
             ? <CheckCircle className="w-5 h-5 shrink-0" style={{ color: "var(--cat-accent)" }} />
             : <Clock className="w-5 h-5 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
           }
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-bold"
               style={{ color: tourney.registrationOpen ? "var(--cat-accent)" : "var(--cat-text)" }}>
               {tourney.registrationOpen ? t("registrationOpen") : t("registrationClosed")}
@@ -156,7 +156,7 @@ export default function TournamentInfoPage() {
         </div>
         {tourney.registrationOpen && (
           <Link href={`/t/${org.slug}/${tourney.slug}/register`}
-            className="shrink-0 inline-flex items-center gap-1.5 text-xs font-black px-4 py-2 rounded-xl transition-opacity hover:opacity-90"
+            className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-1.5 text-xs font-black px-4 py-2 rounded-xl transition-opacity hover:opacity-90"
             style={{
               background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))",
               color: "var(--cat-accent-text)",
@@ -196,9 +196,9 @@ export default function TournamentInfoPage() {
             <p className="text-[11px] font-black uppercase tracking-widest"
               style={{ color: "var(--cat-text-muted)" }}>{t("keyDates")}</p>
           </div>
-          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {tourney.registrationDeadline && (
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border min-w-0"
                 style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
                 <Clock className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
                 <div className="min-w-0">
@@ -208,7 +208,7 @@ export default function TournamentInfoPage() {
               </div>
             )}
             {tourney.startDate && (
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border min-w-0"
                 style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
                 <Calendar className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
                 <div className="min-w-0">
@@ -218,7 +218,7 @@ export default function TournamentInfoPage() {
               </div>
             )}
             {tourney.endDate && (
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border"
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border min-w-0"
                 style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
                 <Trophy className="w-4 h-4 shrink-0" style={{ color: "var(--cat-accent)" }} />
                 <div className="min-w-0">
@@ -250,7 +250,7 @@ export default function TournamentInfoPage() {
               const ac = getAgeColor(cls.name);
               return (
                 <div key={cls.id}
-                  className="flex items-center gap-2.5 p-3 rounded-xl border"
+                  className="flex items-center gap-2.5 p-3 rounded-xl border min-w-0"
                   style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}>
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-[11px] font-black border"
                     style={{ background: ac.bg, color: ac.text, borderColor: ac.border }}>

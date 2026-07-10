@@ -58,7 +58,7 @@ export function UserAvatarMenu({
   // Not authenticated — show Sign in + Get started
   if (!me.authenticated) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Link
           href="/login"
           className="px-3 py-1.5 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70"
@@ -68,7 +68,7 @@ export function UserAvatarMenu({
         </Link>
         <Link
           href="/onboarding"
-          className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90"
           style={{
             background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))",
             color: "var(--cat-accent-text)",

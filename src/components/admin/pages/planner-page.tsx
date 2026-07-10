@@ -2911,7 +2911,7 @@ export function PlannerPage() {
       )}
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between mb-4 shrink-0 gap-4">
+      <div className="flex items-start justify-between mb-4 shrink-0 gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--cat-text)" }}>{t("planner.plannerTitle")}</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
@@ -2919,7 +2919,7 @@ export function PlannerPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 flex-wrap min-w-0">
           {/* Conflict badges */}
           {conflictCount.errors > 0 && (
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold"
@@ -3344,10 +3344,10 @@ export function PlannerPage() {
       </div>
 
       {/* ── Main layout ───────────────────────────────────────────────────── */}
-      <div className="flex gap-4 flex-1 min-h-0">
+      <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
 
         {/* ── Unscheduled sidebar ──────────────────────────────────────────── */}
-        <div className="w-56 shrink-0 flex flex-col gap-1.5"
+        <div className="w-full md:w-56 md:shrink-0 flex flex-col gap-1.5"
           style={{ height: "calc(100vh - 320px)", overflowY: "auto" }}>
 
           <div className="flex items-center justify-between mb-1 sticky top-0 pb-2 z-10"

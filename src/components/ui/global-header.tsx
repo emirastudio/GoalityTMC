@@ -1,11 +1,12 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { ThemeToggle } from "@/components/ui/theme-provider";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { DevNavWidget } from "@/components/ui/dev-nav-widget";
 import { UserAvatarMenu } from "@/components/ui/user-avatar-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 
 export type NavLink = {
   label: string;
@@ -35,8 +36,31 @@ type Props = {
 };
 
 export function GlobalHeader({ navLinks = [], rightContent }: Props) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Close the mobile panel on outside click / Escape / route change.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function onPointerDown(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setMobileOpen(false);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setMobileOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mobileOpen]);
+
+  const closeMobile = () => setMobileOpen(false);
+
   return (
     <header
+      ref={panelRef}
       className="gh-root sticky top-0 z-50 backdrop-blur-xl border-b shrink-0"
       style={{ background: "var(--cat-header-bg)", borderColor: "var(--cat-header-border)" }}
     >
@@ -44,7 +68,7 @@ export function GlobalHeader({ navLinks = [], rightContent }: Props) {
       <div className="h-14 w-full px-4 md:w-[90%] md:px-0 max-w-[1400px] mx-auto grid grid-cols-[auto_1fr_auto] items-center gap-4 md:gap-6">
 
         {/* ── Left: Logo ── */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+        <Link href="/" className="flex items-center gap-2.5 shrink-0" onClick={closeMobile}>
           <div
             className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
             style={{
@@ -59,26 +83,82 @@ export function GlobalHeader({ navLinks = [], rightContent }: Props) {
           </span>
         </Link>
 
-        {/* ── Center: Nav links ── */}
+        {/* ── Center: Nav links (desktop only) ── */}
         <nav className="hidden md:flex items-center justify-center gap-1">
           {navLinks.map((link) => (
             <NavItem key={link.href} link={link} />
           ))}
         </nav>
 
-        {/* ── Right: Controls + custom content ── */}
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
-          <LanguageSwitcher />
-          {rightContent && (
-            <>
-              {/* Thin separator */}
-              <div className="w-px h-4 shrink-0" style={{ background: "var(--cat-card-border)" }} />
-              {rightContent}
-            </>
-          )}
+        {/* ── Right: Controls + custom content (desktop) / hamburger (mobile) ──
+            Both live in the same grid cell — only one is ever visible — so
+            the 3-column track never has to reflow a 4th item onto a new row. */}
+        <div className="flex items-center">
+          <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
+            <LanguageSwitcher />
+            {rightContent && (
+              <>
+                {/* Thin separator */}
+                <div className="w-px h-4 shrink-0" style={{ background: "var(--cat-card-border)" }} />
+                {rightContent}
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center border transition-colors"
+            style={{ background: "var(--cat-tag-bg)", borderColor: "var(--cat-card-border)" }}
+            onClick={() => setMobileOpen((o) => !o)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? (
+              <X className="w-4.5 h-4.5" style={{ color: "var(--cat-text-secondary)" }} />
+            ) : (
+              <Menu className="w-4.5 h-4.5" style={{ color: "var(--cat-text-secondary)" }} />
+            )}
+          </button>
         </div>
       </div>
+
+      {/* ── Mobile panel ── */}
+      {mobileOpen && (
+        <div
+          className="md:hidden absolute inset-x-0 top-full border-b overflow-y-auto"
+          style={{
+            background: "var(--cat-dropdown-bg)",
+            borderColor: "var(--cat-header-border)",
+            maxHeight: "calc(100vh - 56px)",
+          }}
+        >
+          <div className="px-4 py-3 flex flex-col">
+            {navLinks.length > 0 && (
+              <nav className="flex flex-col gap-0.5 pb-2 mb-2 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
+                {navLinks.map((link) => (
+                  <MobileNavItem key={link.href} link={link} onNavigate={closeMobile} />
+                ))}
+              </nav>
+            )}
+
+            <div className="flex items-center justify-between gap-3 py-2">
+              <LanguageSwitcher />
+              <ThemeToggle />
+            </div>
+
+            {rightContent && (
+              <div
+                className="pt-3 mt-1 border-t flex flex-col items-stretch gap-2"
+                style={{ borderColor: "var(--cat-card-border)" }}
+                onClick={closeMobile}
+              >
+                {rightContent}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
@@ -169,6 +249,60 @@ function DropdownItem({ child }: { child: NavLinkChild }) {
     </a>
   ) : (
     <Link href={child.href}>{body}</Link>
+  );
+}
+
+/**
+ * Mobile nav item — flat, always-expanded (no hover, touch has no
+ * hover state). Top-level label is a link; children (if any) render
+ * indented right below it instead of in a floating panel.
+ */
+function MobileNavItem({ link, onNavigate }: { link: NavLink; onNavigate: () => void }) {
+  const hasDropdown = !!link.children && link.children.length > 0;
+  const linkClass = "block px-2 py-2.5 rounded-lg text-[14px] font-semibold transition-colors";
+  const linkStyle = { color: "var(--cat-text)" };
+
+  return (
+    <div>
+      {link.anchor ? (
+        <a href={link.href} onClick={onNavigate} className={linkClass} style={linkStyle}>
+          {link.label}
+        </a>
+      ) : (
+        <Link href={link.href} onClick={onNavigate} className={linkClass} style={linkStyle}>
+          {link.label}
+        </Link>
+      )}
+      {hasDropdown && (
+        <div className="pl-3 flex flex-col gap-0.5 pb-1.5">
+          {link.children!.map((child) =>
+            child.external ? (
+              <a
+                key={child.href}
+                href={child.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={onNavigate}
+                className="px-2 py-2 rounded-lg text-[13px]"
+                style={{ color: "var(--cat-text-secondary)" }}
+              >
+                {child.label}
+              </a>
+            ) : (
+              <Link
+                key={child.href}
+                href={child.href}
+                onClick={onNavigate}
+                className="px-2 py-2 rounded-lg text-[13px]"
+                style={{ color: "var(--cat-text-secondary)" }}
+              >
+                {child.label}
+              </Link>
+            )
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
