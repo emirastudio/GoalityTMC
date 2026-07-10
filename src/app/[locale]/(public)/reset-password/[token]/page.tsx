@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { isPasswordValid } from "@/lib/password";
 
 export default function ResetPasswordPage() {
   const t = useTranslations("auth");
@@ -23,7 +24,7 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (password.length < 6) { setError(t("passwordTooShort")); return; }
+    if (!isPasswordValid(password)) { setError(t("passwordPolicy")); return; }
     if (password !== confirm) { setError(t("passwordMismatch")); return; }
 
     setLoading(true);

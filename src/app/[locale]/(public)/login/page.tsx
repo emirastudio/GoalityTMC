@@ -245,12 +245,14 @@ export default function LoginPage() {
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-[12px] font-semibold mb-1.5" style={{ color: "var(--cat-text-secondary)" }}>
+                  <label htmlFor="login-email" className="block text-[12px] font-semibold mb-1.5" style={{ color: "var(--cat-text-secondary)" }}>
                     {t("email")}
                   </label>
                   <input
+                    id="login-email"
                     name="email"
                     type="email"
+                    autoComplete="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder={mode === "organizer" ? "organizer@example.com" : "club@example.com"}
@@ -304,7 +306,7 @@ export default function LoginPage() {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-[12px] font-semibold" style={{ color: "var(--cat-text-secondary)" }}>
+                    <label htmlFor="login-password" className="block text-[12px] font-semibold" style={{ color: "var(--cat-text-secondary)" }}>
                       {t("password")}
                     </label>
                     <Link href="/forgot-password" className="text-[11px] font-medium hover:opacity-80 transition-opacity"
@@ -313,8 +315,10 @@ export default function LoginPage() {
                     </Link>
                   </div>
                   <input
+                    id="login-password"
                     name="password"
                     type="password"
+                    autoComplete="current-password"
                     required
                     className="w-full px-4 py-3 rounded-xl text-[14px] outline-none transition-all"
                     style={{ background: "var(--cat-input-bg)", border: "1px solid var(--cat-input-border)", color: "var(--cat-text)" }}

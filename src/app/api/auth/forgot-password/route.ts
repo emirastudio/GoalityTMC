@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { sendPasswordReset } from "@/lib/email";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { passwordResetSignature } from "@/lib/auth";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://goalityfootball.com";
@@ -26,8 +27,10 @@ export async function POST(req: NextRequest) {
     where: eq(clubUsers.email, email),
   });
 
-  // Always return success to prevent email enumeration
-  if (!user) {
+  // Always return success to prevent email enumeration. Also bail (silently)
+  // for accounts with no password set (e.g. OAuth-only) — there's nothing to
+  // reset, and passwordResetSignature needs a hash to bind the token to.
+  if (!user || !user.passwordHash) {
     return NextResponse.json({ ok: true });
   }
 
@@ -36,9 +39,10 @@ export async function POST(req: NextRequest) {
     ? await db.query.clubs.findFirst({ where: eq(clubs.id, user.clubId) })
     : null;
 
-  // Create a short-lived reset token (1 hour)
+  // Create a short-lived reset token (1 hour). `pv` binds it to the current
+  // password hash so it can only be used once (see passwordResetSignature).
   const resetToken = jwt.sign(
-    { purpose: "password-reset", userId: user.id, email: user.email },
+    { purpose: "password-reset", userId: user.id, email: user.email, pv: passwordResetSignature(user.passwordHash) },
     JWT_SECRET,
     { expiresIn: "1h" }
   );

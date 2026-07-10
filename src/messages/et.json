@@ -441,7 +441,8 @@
     "registerNow": "Registreeri klubi",
     "tooManyAttempts": "Liiga palju katseid. Proovige mõne minuti pärast uuesti.",
     "serverError": "Midagi läks valesti. Proovige uuesti.",
-    "networkError": "Võrguviga — kontrollige ühendust ja proovige uuesti."
+    "networkError": "Võrguviga — kontrollige ühendust ja proovige uuesti.",
+    "passwordPolicy": "Parool peab olema vähemalt 8 tähemärki ja sisaldama suurtähte, väiketähte ja numbrit."
   },
   "nav": {
     "overview": "Ülevaade",

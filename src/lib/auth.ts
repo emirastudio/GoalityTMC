@@ -1,9 +1,24 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { cookies } from "next/headers";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const TOKEN_NAME = "goality_token";
+
+// Binds a password-reset token to the account's CURRENT password hash. The
+// signature is embedded in the reset token; at reset time we recompute it from
+// the stored hash. Once the password changes (this reset, a profile change, or
+// an earlier reset from a second email) the hash — and thus the signature —
+// changes, so the token (and any other outstanding reset links) is rejected.
+// This makes reset links single-use without a DB token table or migration.
+export function passwordResetSignature(passwordHash: string): string {
+  return crypto
+    .createHash("sha256")
+    .update(`${passwordHash}:${JWT_SECRET}`)
+    .digest("hex")
+    .slice(0, 24);
+}
 
 export type TokenPayload = {
   userId: number;

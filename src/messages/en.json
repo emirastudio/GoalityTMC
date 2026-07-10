@@ -441,7 +441,8 @@
     "registerNow": "Register a new club",
     "tooManyAttempts": "Too many attempts. Please try again in a few minutes.",
     "serverError": "Something went wrong. Please try again.",
-    "networkError": "Network error — check your connection and try again."
+    "networkError": "Network error — check your connection and try again.",
+    "passwordPolicy": "Password must be at least 8 characters and include an uppercase letter, a lowercase letter and a digit."
   },
   "nav": {
     "overview": "Overview",

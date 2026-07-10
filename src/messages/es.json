@@ -441,7 +441,8 @@
     "registerNow": "Registrar un nuevo club",
     "tooManyAttempts": "Demasiados intentos. Inténtalo de nuevo en unos minutos.",
     "serverError": "Algo salió mal. Inténtalo de nuevo.",
-    "networkError": "Error de red — comprueba tu conexión e inténtalo de nuevo."
+    "networkError": "Error de red — comprueba tu conexión e inténtalo de nuevo.",
+    "passwordPolicy": "La contraseña debe tener al menos 8 caracteres e incluir una mayúscula, una minúscula y un número."
   },
   "nav": {
     "overview": "Resumen",
