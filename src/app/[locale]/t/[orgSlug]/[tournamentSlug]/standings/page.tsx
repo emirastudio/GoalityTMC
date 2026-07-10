@@ -96,6 +96,8 @@ interface BracketMatch {
   homeSlotLabelRu?: string | null;
   awaySlotLabel?: string | null;
   awaySlotLabelRu?: string | null;
+  /** Lowest of the two places contested (3,5,7,…) for placement matches; null otherwise. */
+  placeRank?: number | null;
 }
 
 interface BracketRound {
@@ -539,6 +541,15 @@ function BracketMatchCard({ match, brand, isFinal, locale, colIndex }: {
   locale: string;
   colIndex: number;
 }) {
+  const t = useTranslations("tournament");
+  // Placement match (3rd/5th/7th…): a distinct label so the full-ranking
+  // final column doesn't show several unlabelled cards.
+  const placeRank = match?.placeRank ?? null;
+  const placementLabel = placeRank == null
+    ? null
+    : placeRank === 3
+      ? `🥉 ${t("thirdPlaceMatch")}`
+      : `🏅 ${t("placementMatch", { a: placeRank, b: placeRank + 1 })}`;
   const isFinished = match?.status === "finished";
   const isLive     = match?.status === "live";
   const homeWon    = isFinished && (match!.homeScore ?? 0) > (match!.awayScore ?? 0);
@@ -620,6 +631,26 @@ function BracketMatchCard({ match, brand, isFinal, locale, colIndex }: {
             }}
           >
             #{match.matchNumber}
+          </span>
+        )}
+
+        {/* Placement label (3rd/5th/7th place …) */}
+        {placementLabel && (
+          <span
+            style={{
+              position: "absolute",
+              top: 4,
+              left: 6,
+              fontSize: 8,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+              color: placeRank === 3 ? "#CD7F32" : "var(--cat-text-muted)",
+              pointerEvents: "none",
+              zIndex: 1,
+            }}
+          >
+            {placementLabel}
           </span>
         )}
 
