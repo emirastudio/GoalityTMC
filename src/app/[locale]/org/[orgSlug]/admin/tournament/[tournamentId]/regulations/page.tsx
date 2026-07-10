@@ -133,10 +133,10 @@ function RegulationsContent({
           body: JSON.stringify({ tournament: textML }),
         },
       );
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) throw new Error(t("saveFailed"));
       await load();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Save failed");
+      setError(e instanceof Error ? e.message : t("saveFailed"));
     } finally {
       setSavingText("none");
     }
@@ -154,10 +154,10 @@ function RegulationsContent({
           body: JSON.stringify({ classes: { [classId]: textML } }),
         },
       );
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) throw new Error(t("saveFailed"));
       await load();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Save failed");
+      setError(e instanceof Error ? e.message : t("saveFailed"));
     } finally {
       setSavingText("none");
     }
@@ -420,11 +420,11 @@ function DocumentList({
       );
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(d.error ?? "Upload failed");
+        throw new Error(d.error ?? t("uploadFailed"));
       }
       onChange();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t("uploadFailed"));
     } finally {
       setUploading(false);
       e.target.value = "";

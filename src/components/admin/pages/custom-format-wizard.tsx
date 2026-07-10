@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useTournament } from "@/lib/tournament-context";
 import {
@@ -122,6 +123,7 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
   transitions: PhaseTransition[];
   setTransitions: (t: PhaseTransition[]) => void;
 }) {
+  const tr = useTranslations("formatBuilder");
   const [editingPhase, setEditingPhase] = useState<string | null>(null);
 
   function addPhase() {
@@ -180,9 +182,9 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>Постройте структуру фаз</h2>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>{tr("customPhasesTitle")}</h2>
         <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-          Добавьте фазы и настройте группы в каждой из них
+          {tr("customPhasesSubtitle")}
         </p>
       </div>
 
@@ -223,21 +225,21 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                     )}
                     <p className="text-[10px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
                       {phase.type === "groups"
-                        ? `${phase.groupCount} групп · ${phase.teamsPerGroup} команд в группе`
-                        : `Плей-офф · ${phase.knockoutTeams ?? 8} команд`}
+                        ? tr("customPhaseGroupsSummary", { groups: phase.groupCount, teams: phase.teamsPerGroup })
+                        : tr("customPhaseBracketSummary", { teams: phase.knockoutTeams ?? 8 })}
                     </p>
                   </div>
 
                   {/* Type switcher */}
                   <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: "var(--cat-tag-bg)" }}>
-                    {(["groups", "bracket"] as const).map(t => (
-                      <button key={t} onClick={() => updatePhase(phase.id, { type: t })}
+                    {(["groups", "bracket"] as const).map(ty => (
+                      <button key={ty} onClick={() => updatePhase(phase.id, { type: ty })}
                         className="px-2 py-1 rounded-md text-[10px] font-bold transition-all"
                         style={{
-                          background: phase.type === t ? phaseColor : "transparent",
-                          color: phase.type === t ? "#000" : "var(--cat-text-muted)",
+                          background: phase.type === ty ? phaseColor : "transparent",
+                          color: phase.type === ty ? "#000" : "var(--cat-text-muted)",
                         }}>
-                        {t === "groups" ? "Группы" : "Плей-офф"}
+                        {ty === "groups" ? tr("typeGroups") : tr("typePlayoff")}
                       </button>
                     ))}
                   </div>
@@ -258,7 +260,7 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                       <div className="flex items-center gap-4">
                         <div className="flex-1">
                           <label className="text-[10px] font-semibold uppercase tracking-wide block mb-1.5"
-                            style={{ color: "var(--cat-text-muted)" }}>Количество групп</label>
+                            style={{ color: "var(--cat-text-muted)" }}>{tr("groupCount")}</label>
                           <div className="flex gap-1 flex-wrap">
                             {[2, 3, 4, 6, 8].map(n => (
                               <button key={n} onClick={() => updatePhase(phase.id, { groupCount: n })}
@@ -275,7 +277,7 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                         </div>
                         <div className="flex-1">
                           <label className="text-[10px] font-semibold uppercase tracking-wide block mb-1.5"
-                            style={{ color: "var(--cat-text-muted)" }}>Команд в группе</label>
+                            style={{ color: "var(--cat-text-muted)" }}>{tr("customTeamsInGroup")}</label>
                           <div className="flex gap-1 flex-wrap">
                             {[3, 4, 5, 6, 7, 8].map(n => (
                               <button key={n} onClick={() => updatePhase(phase.id, { teamsPerGroup: n })}
@@ -295,7 +297,7 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                       {/* Group name editor */}
                       <div>
                         <label className="text-[10px] font-semibold uppercase tracking-wide block mb-1.5"
-                          style={{ color: "var(--cat-text-muted)" }}>Названия групп</label>
+                          style={{ color: "var(--cat-text-muted)" }}>{tr("customGroupNames")}</label>
                         <div className="flex gap-1.5 flex-wrap">
                           {phase.groups.map(group => (
                             <div key={group.id} className="flex items-center gap-1 px-2.5 py-1 rounded-full"
@@ -319,7 +321,7 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                       <div className="flex items-center gap-6">
                         <div>
                           <label className="text-[10px] font-semibold uppercase tracking-wide block mb-1.5"
-                            style={{ color: "var(--cat-text-muted)" }}>Размер сетки</label>
+                            style={{ color: "var(--cat-text-muted)" }}>{tr("customBracketSize")}</label>
                           <div className="flex gap-1">
                             {[4, 8, 16].map(n => (
                               <button key={n} onClick={() => updatePhase(phase.id, { knockoutTeams: n })}
@@ -338,18 +340,18 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                           <input type="checkbox" checked={phase.thirdPlace ?? false}
                             onChange={e => updatePhase(phase.id, { thirdPlace: e.target.checked })}
                             className="w-4 h-4 rounded" style={{ accentColor: ACCENT }} />
-                          Матч за 3-е место
+                          {tr("thirdPlaceMatch")}
                         </label>
                       </div>
 
                       {/* Draw resolution config */}
                       <div>
                         <label className="text-[10px] font-semibold uppercase tracking-wide block mb-1.5"
-                          style={{ color: "var(--cat-text-muted)" }}>При ничьей в плей-офф</label>
+                          style={{ color: "var(--cat-text-muted)" }}>{tr("customDrawResolution")}</label>
                         <div className="flex gap-2 flex-wrap">
                           {[
-                            { value: "penalties", label: "Сразу пенальти" },
-                            { value: "extra_time_then_penalties", label: "Доп. время → Пенальти" },
+                            { value: "penalties", label: tr("customPenaltiesNow") },
+                            { value: "extra_time_then_penalties", label: tr("customExtraTimeThenPens") },
                           ].map(opt => (
                             <button key={opt.value}
                               onClick={() => updatePhase(phase.id, { drawResolution: opt.value as CustomPhase["drawResolution"] })}
@@ -365,7 +367,7 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
                         </div>
                         {(phase.drawResolution === "extra_time_then_penalties") && (
                           <div className="flex items-center gap-2 mt-2">
-                            <label className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Минут доп. времени:</label>
+                            <label className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{tr("customExtraTimeMinutes")}</label>
                             <input type="number" min={1} max={60} value={phase.extraTimeMinutes ?? 10}
                               onChange={e => updatePhase(phase.id, { extraTimeMinutes: parseInt(e.target.value) || 10 })}
                               className="w-16 text-center rounded-lg px-2 py-1 text-xs font-bold outline-none"
@@ -393,7 +395,7 @@ function PhasesStep({ phases, setPhases, transitions, setTransitions }: {
       <button onClick={addPhase}
         className="mt-4 w-full py-3 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 text-sm font-semibold transition-all hover:opacity-80"
         style={{ borderColor: `${ACCENT}40`, color: ACCENT, background: `${ACCENT}05` }}>
-        <Plus className="w-4 h-4" /> Добавить фазу
+        <Plus className="w-4 h-4" /> {tr("customAddPhase")}
       </button>
     </div>
   );
@@ -406,6 +408,7 @@ function AdvancementRulesStep({ phases, transitions, setTransitions }: {
   transitions: PhaseTransition[];
   setTransitions: (t: PhaseTransition[]) => void;
 }) {
+  const tr = useTranslations("formatBuilder");
   // Find transition between two phases
   function getTransition(fromPhaseId: string, toPhaseId: string): PhaseTransition | undefined {
     return transitions.find(t => t.fromPhaseId === fromPhaseId && t.toPhaseId === toPhaseId);
@@ -451,7 +454,7 @@ function AdvancementRulesStep({ phases, transitions, setTransitions }: {
     return (
       <div className="text-center py-12">
         <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-          Добавьте как минимум 2 фазы для настройки правил переходов
+          {tr("customNeedTwoPhases")}
         </p>
       </div>
     );
@@ -460,9 +463,9 @@ function AdvancementRulesStep({ phases, transitions, setTransitions }: {
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       <div className="text-center">
-        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>Правила переходов</h2>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>{tr("customTransitionRules")}</h2>
         <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-          Кто из каждой группы куда переходит в следующую фазу
+          {tr("customTransitionRulesDesc")}
         </p>
       </div>
 
@@ -488,7 +491,7 @@ function AdvancementRulesStep({ phases, transitions, setTransitions }: {
               <button onClick={() => autoFill(fromPhase, toPhase, transition)}
                 className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
                 style={{ background: `${ACCENT}15`, color: ACCENT }}>
-                <Shuffle className="w-3 h-3" /> Авто-заполнить
+                <Shuffle className="w-3 h-3" /> {tr("customAutoFill")}
               </button>
             </div>
 
@@ -497,9 +500,9 @@ function AdvancementRulesStep({ phases, transitions, setTransitions }: {
               {/* Column headers */}
               <div className="flex gap-3 mb-3">
                 <div className="w-28 text-[10px] font-bold uppercase tracking-wide"
-                  style={{ color: "var(--cat-text-muted)" }}>Место в группе</div>
+                  style={{ color: "var(--cat-text-muted)" }}>{tr("customPositionInGroup")}</div>
                 <div className="flex-1 text-[10px] font-bold uppercase tracking-wide"
-                  style={{ color: "var(--cat-text-muted)" }}>Переходит в</div>
+                  style={{ color: "var(--cat-text-muted)" }}>{tr("customAdvancesTo")}</div>
               </div>
 
               <div className="space-y-2">
@@ -516,7 +519,7 @@ function AdvancementRulesStep({ phases, transitions, setTransitions }: {
                       <div className="w-28 flex items-center gap-2">
                         <span className="text-base">{medal}</span>
                         <span className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
-                          {pos}-е место
+                          {tr("customPlaceOrdinal", { pos })}
                         </span>
                       </div>
 
@@ -533,7 +536,7 @@ function AdvancementRulesStep({ phases, transitions, setTransitions }: {
                             color: targetGroup ? targetGroup.color : "var(--cat-text-muted)",
                           }}>
                           <option value="__eliminated__" style={{ background: "var(--cat-dropdown-bg, #1a1a1a)", color: "var(--cat-text-muted)" }}>
-                            ❌ Выбывает
+                            ❌ {tr("customEliminated")}
                           </option>
                           {toPhase.groups.map(group => (
                             <option key={group.id} value={group.id}
@@ -558,14 +561,14 @@ function AdvancementRulesStep({ phases, transitions, setTransitions }: {
                     <div key={group.id} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full"
                       style={{ background: `${group.color}12`, color: group.color, border: `1px solid ${group.color}30` }}>
                       <div className="w-2 h-2 rounded-full" style={{ background: group.color }} />
-                      {group.name}: {count} позиц. × {totalSources} групп = <strong>{totalTeams} команд</strong>
+                      {group.name}: {count} {tr("customPosAbbr")} × {totalSources} {tr("customGroupsAbbr")} = <strong>{tr("overviewTeamsCount", { count: totalTeams })}</strong>
                     </div>
                   );
                 })}
                 {transition.rules.length < fromPhase.teamsPerGroup && (
                   <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full"
                     style={{ background: "rgba(220,38,38,0.1)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.3)" }}>
-                    ⚠ {(fromPhase.teamsPerGroup - transition.rules.length) * fromPhase.groupCount} команд выбывают
+                    ⚠ {tr("customTeamsEliminated", { count: (fromPhase.teamsPerGroup - transition.rules.length) * fromPhase.groupCount })}
                   </div>
                 )}
               </div>
@@ -585,6 +588,7 @@ function CustomDrawStep({ phases, teamGroups, setTeamGroups, teams }: {
   setTeamGroups: (g: Record<string, number[]>) => void;
   teams: Team[];
 }) {
+  const tr = useTranslations("formatBuilder");
   const phase1 = phases[0];
   if (!phase1) return null;
 
@@ -623,21 +627,21 @@ function CustomDrawStep({ phases, teamGroups, setTeamGroups, teams }: {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-black" style={{ color: "var(--cat-text)" }}>Жеребьёвка</h2>
+          <h2 className="text-2xl font-black" style={{ color: "var(--cat-text)" }}>{tr("drawTitle")}</h2>
           <p className="text-sm mt-1" style={{ color: "var(--cat-text-muted)" }}>
-            Распределение команд по группам Фазы 1
+            {tr("customDrawDesc")}
           </p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setTeamGroups({})}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border"
             style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)", background: "var(--cat-tag-bg)" }}>
-            <RotateCcw className="w-3.5 h-3.5" /> Очистить
+            <RotateCcw className="w-3.5 h-3.5" /> {tr("clearAll")}
           </button>
           <button onClick={autoDistribute}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold"
             style={{ background: ACCENT, color: "#000", boxShadow: `0 0 16px rgba(43,254,186,0.4)` }}>
-            <Shuffle className="w-3.5 h-3.5" /> Авто-жеребьёвка
+            <Shuffle className="w-3.5 h-3.5" /> {tr("autoDraw")}
           </button>
         </div>
       </div>
@@ -647,14 +651,14 @@ function CustomDrawStep({ phases, teamGroups, setTeamGroups, teams }: {
         <div className="w-44 shrink-0">
           <div className="text-[10px] font-bold uppercase tracking-wide mb-2 flex items-center gap-1.5"
             style={{ color: "var(--cat-text-muted)" }}>
-            <Users className="w-3.5 h-3.5" /> Пул ({unassigned.length})
+            <Users className="w-3.5 h-3.5" /> {tr("poolLabel", { count: unassigned.length })}
           </div>
           <div className="rounded-2xl border p-2 space-y-1.5"
             style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)", minHeight: "280px" }}>
             {unassigned.length === 0
               ? <div className="flex flex-col items-center justify-center py-8 text-center">
                   <CheckCircle className="w-7 h-7 mb-2" style={{ color: ACCENT }} />
-                  <p className="text-xs" style={{ color: ACCENT }}>Все распределены</p>
+                  <p className="text-xs" style={{ color: ACCENT }}>{tr("allAssigned")}</p>
                 </div>
               : unassigned.map(team => (
                 <div key={team.id} className="rounded-xl border p-2"
@@ -706,7 +710,7 @@ function CustomDrawStep({ phases, teamGroups, setTeamGroups, teams }: {
                   {groupTeams.length === 0 && (
                     <div className="flex items-center justify-center py-8 rounded-xl border-2 border-dashed"
                       style={{ borderColor: `${group.color}25` }}>
-                      <span className="text-xs" style={{ color: group.color, opacity: 0.5 }}>+ Команды</span>
+                      <span className="text-xs" style={{ color: group.color, opacity: 0.5 }}>+ {tr("addTeams")}</span>
                     </div>
                   )}
                 </div>
@@ -727,6 +731,7 @@ function CustomGenerateStep({ phases, transitions, teams, generating }: {
   teams: Team[];
   generating: boolean;
 }) {
+  const tr = useTranslations("formatBuilder");
   const totalGroups = phases.filter(p => p.type === "groups").reduce((s, p) => s + p.groupCount, 0);
   const totalMatches = phases.filter(p => p.type === "groups").reduce((s, p) => {
     const n = p.teamsPerGroup;
@@ -740,9 +745,9 @@ function CustomGenerateStep({ phases, transitions, teams, generating }: {
           style={{ background: "rgba(132,204,22,0.15)", boxShadow: "0 0 32px rgba(132,204,22,0.3)" }}>
           <Layers className="w-8 h-8" style={{ color: ACCENT }} />
         </div>
-        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>Ваш формат готов</h2>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>{tr("customFormatReady")}</h2>
         <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-          Система создаст все фазы, группы и правила переходов
+          {tr("customFormatReadyDesc")}
         </p>
       </div>
 
@@ -758,8 +763,8 @@ function CustomGenerateStep({ phases, transitions, teams, generating }: {
                 <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{phase.name}</p>
                 <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
                   {phase.type === "groups"
-                    ? `${phase.groupCount} групп · ${phase.teamsPerGroup} команд · ${(phase.teamsPerGroup * (phase.teamsPerGroup - 1) / 2) * phase.groupCount} матчей`
-                    : `Плей-офф · ${phase.knockoutTeams ?? 8} команд`}
+                    ? tr("customPhaseGroupsFull", { groups: phase.groupCount, teams: phase.teamsPerGroup, matches: (phase.teamsPerGroup * (phase.teamsPerGroup - 1) / 2) * phase.groupCount })
+                    : tr("customPhaseBracketSummary", { teams: phase.knockoutTeams ?? 8 })}
                 </p>
               </div>
               {phase.groups.map(g => (
@@ -778,9 +783,9 @@ function CustomGenerateStep({ phases, transitions, teams, generating }: {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: "Фаз", value: phases.length, color: ACCENT },
-          { label: "Команд", value: teams.length, color: ACCENT },
-          { label: "≈ Матчей", value: totalMatches, color: "#f59e0b" },
+          { label: tr("customStatPhases"), value: phases.length, color: ACCENT },
+          { label: tr("summaryTeams"), value: teams.length, color: ACCENT },
+          { label: tr("customApproxMatches"), value: totalMatches, color: "#f59e0b" },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-2xl border p-4 text-center"
             style={{ background: "var(--cat-card-bg)", borderColor: `${color}25` }}>
@@ -794,7 +799,7 @@ function CustomGenerateStep({ phases, transitions, teams, generating }: {
         <div className="rounded-2xl border p-6 text-center"
           style={{ background: "rgba(132,204,22,0.04)", borderColor: "rgba(132,204,22,0.3)" }}>
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: ACCENT }} />
-          <p className="text-sm font-semibold" style={{ color: ACCENT }}>Создаём структуру...</p>
+          <p className="text-sm font-semibold" style={{ color: ACCENT }}>{tr("generatingStructure")}</p>
         </div>
       )}
     </div>
@@ -804,26 +809,27 @@ function CustomGenerateStep({ phases, transitions, teams, generating }: {
 // ─── Done Screen ──────────────────────────────────────────────────────────────
 
 function DoneScreen({ orgSlug, tournamentId }: { orgSlug: string; tournamentId: number }) {
+  const tr = useTranslations("formatBuilder");
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
       <div className="w-24 h-24 rounded-3xl flex items-center justify-center mb-8"
         style={{ background: "rgba(43,254,186,0.12)", boxShadow: "0 0 50px rgba(43,254,186,0.35)" }}>
         <CheckCircle className="w-12 h-12" style={{ color: ACCENT }} />
       </div>
-      <h2 className="text-3xl font-black mb-3" style={{ color: "var(--cat-text)" }}>Формат создан!</h2>
+      <h2 className="text-3xl font-black mb-3" style={{ color: "var(--cat-text)" }}>{tr("doneTitle")}</h2>
       <p className="text-sm mb-8 max-w-sm" style={{ color: "var(--cat-text-muted)" }}>
-        Все фазы, группы и правила переходов созданы. После завершения каждой фазы команды будут перемещены согласно правилам.
+        {tr("customDoneDesc")}
       </p>
       <div className="flex gap-3">
         <Link href={`/org/${orgSlug}/admin/tournament/${tournamentId}/schedule`}
           className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
           style={{ background: ACCENT, color: "#000", boxShadow: `0 0 24px rgba(43,254,186,0.45)` }}>
-          К расписанию <ChevronRight className="w-4 h-4" />
+          {tr("toScheduleShort")} <ChevronRight className="w-4 h-4" />
         </Link>
         <Link href={`/org/${orgSlug}/admin/tournament/${tournamentId}`}
           className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold border"
           style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)", background: "var(--cat-card-bg)" }}>
-          Обзор
+          {tr("overviewShort")}
         </Link>
       </div>
     </div>
@@ -858,14 +864,14 @@ function getRoundDefs(totalTeams: number, thirdPlace: boolean) {
 const STEPS = ["phases", "rules", "draw", "generate"] as const;
 type Step = typeof STEPS[number];
 
-const STEP_LABELS: Record<Step, string> = {
-  phases: "Фазы",
-  rules: "Правила",
-  draw: "Жеребьёвка",
-  generate: "Запуск",
-};
-
 export function CustomFormatWizard() {
+  const tr = useTranslations("formatBuilder");
+  const STEP_LABELS: Record<Step, string> = {
+    phases: tr("customStepPhases"),
+    rules: tr("customStepRules"),
+    draw: tr("customStepDraw"),
+    generate: tr("stepGenerate"),
+  };
   const ctx = useTournament();
   const tournamentId = ctx?.tournamentId ?? 0;
   const orgSlug = ctx?.orgSlug ?? "";
@@ -1048,9 +1054,9 @@ export function CustomFormatWizard() {
               style={{ background: "rgba(132,204,22,0.15)" }}>
               <Layers className="w-4 h-4" style={{ color: ACCENT }} />
             </div>
-            <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>Мой формат</h1>
+            <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>{tr("specialCustomTitle")}</h1>
           </div>
-          <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>Полностью кастомная структура турнира</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>{tr("customWizardSubtitle")}</p>
         </div>
       </div>
 
@@ -1099,7 +1105,7 @@ export function CustomFormatWizard() {
         <button onClick={goBack} disabled={stepIndex === 0}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:opacity-80 disabled:opacity-30"
           style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)", background: "var(--cat-card-bg)" }}>
-          <ChevronLeft className="w-4 h-4" /> Назад
+          <ChevronLeft className="w-4 h-4" /> {tr("back")}
         </button>
 
         {step !== "generate" ? (
@@ -1107,7 +1113,7 @@ export function CustomFormatWizard() {
             disabled={step === "phases" && phases.length < 1}
             className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
             style={{ background: ACCENT, color: "#000", boxShadow: "0 0 18px rgba(132,204,22,0.4)" }}>
-            Далее <ChevronRight className="w-4 h-4" />
+            {tr("next")} <ChevronRight className="w-4 h-4" />
           </button>
         ) : (
           <button onClick={handleGenerate} disabled={generating}
@@ -1117,7 +1123,7 @@ export function CustomFormatWizard() {
               color: generating ? "var(--cat-text-muted)" : "#000",
               boxShadow: generating ? "none" : "0 0 28px rgba(132,204,22,0.5)",
             }}>
-            {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> Создаётся...</> : <><Zap className="w-4 h-4" /> Создать формат</>}
+            {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> {tr("generating")}</> : <><Zap className="w-4 h-4" /> {tr("createFormat")}</>}
           </button>
         )}
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, Loader2, Pencil, X } from "lucide-react";
 
 // Inline editor for the tournament's URL slug. Loads the current slug
@@ -15,6 +16,7 @@ export function TournamentSlugField({
   orgSlug: string;
   tournamentId: number;
 }) {
+  const t = useTranslations("orgAdmin");
   const [currentSlug, setCurrentSlug] = useState<string>("");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -48,7 +50,7 @@ export function TournamentSlugField({
         else if (d.reason) setCheck({ status: "invalid", reason: d.reason });
         else setCheck({ status: "taken" });
       } catch {
-        setCheck({ status: "invalid", reason: "Network error" });
+        setCheck({ status: "invalid", reason: t("slugNetworkError") });
       }
     }, 350);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
@@ -65,7 +67,7 @@ export function TournamentSlugField({
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setError(d.error ?? "Save failed");
+        setError(d.error ?? t("slugSaveFailed"));
         return;
       }
       setCurrentSlug(draft);
@@ -83,7 +85,7 @@ export function TournamentSlugField({
   return (
     <div className="space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
-        URL турнира
+        {t("tournamentUrlLabel")}
       </p>
 
       {!editing ? (
@@ -98,7 +100,7 @@ export function TournamentSlugField({
             className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all hover:opacity-80"
             style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}
           >
-            <Pencil className="w-3.5 h-3.5" /> Изменить
+            <Pencil className="w-3.5 h-3.5" /> {t("slugEdit")}
           </button>
         </div>
       ) : (
@@ -120,22 +122,22 @@ export function TournamentSlugField({
           <div className="flex items-center gap-2 text-[11px] min-h-[16px]">
             {check.status === "checking" && (
               <span style={{ color: "var(--cat-text-muted)" }}>
-                <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> Проверяем…
+                <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> {t("slugChecking")}
               </span>
             )}
             {check.status === "ok" && (
               <span style={{ color: "#10b981" }}>
-                <Check className="w-3 h-3 inline mr-1" /> Свободен — {draftUrl}
+                <Check className="w-3 h-3 inline mr-1" /> {t("slugAvailable", { url: draftUrl })}
               </span>
             )}
             {check.status === "taken" && (
               <span style={{ color: "#ef4444" }}>
-                <X className="w-3 h-3 inline mr-1" /> Этот URL уже занят другим турниром. Выберите другое название.
+                <X className="w-3 h-3 inline mr-1" /> {t("slugTaken")}
               </span>
             )}
             {check.status === "invalid" && (
               <span style={{ color: "#ef4444" }}>
-                <X className="w-3 h-3 inline mr-1" /> {check.reason ?? "Неверный slug"}
+                <X className="w-3 h-3 inline mr-1" /> {check.reason ?? t("slugInvalid")}
               </span>
             )}
           </div>
@@ -152,7 +154,7 @@ export function TournamentSlugField({
               className="px-3 py-2 rounded-xl text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40"
               style={{ background: "var(--cat-accent)", color: "#000" }}
             >
-              {saving ? "Сохраняем…" : "Сохранить"}
+              {saving ? t("saving") : t("save")}
             </button>
             <button
               type="button"
@@ -160,12 +162,12 @@ export function TournamentSlugField({
               className="px-3 py-2 rounded-xl text-xs font-bold transition-all hover:opacity-80"
               style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}
             >
-              Отмена
+              {t("cancel")}
             </button>
           </div>
 
           <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-            Только латинские буквы, цифры и тире. От 3 до 80 символов. Старые ссылки на этот турнир после смены URL будут вести на новый адрес автоматически.
+            {t("slugHint")}
           </p>
         </div>
       )}

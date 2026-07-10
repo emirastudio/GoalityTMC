@@ -696,7 +696,7 @@ function StepDivisions({ classes, setClasses, planInfo, divisionLimitError, tour
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="col-span-2">
                 <Field label={t("divisionName")}>
-                  <input className={inputCls} style={inputStyle} value={cls.name} onChange={e => updateClass(idx, { name: e.target.value })} placeholder="U12, Men Open..." />
+                  <input className={inputCls} style={inputStyle} value={cls.name} onChange={e => updateClass(idx, { name: e.target.value })} placeholder={t("classNamePlaceholder")} />
                 </Field>
               </div>
               <div>
@@ -781,12 +781,12 @@ const ACCENT_CLR = "#2BFEBA";
 
 // ── StepFormat: status cards linking to Format Builder ────────────────────
 
-// Map from format type to human label
-const FORMAT_LABELS: Record<string, string> = {
-  groups_knockout: "Groups + Playoff",
-  round_robin:     "Round Robin",
-  groups_only:     "Groups only",
-  knockout_only:   "Knockout only",
+// Map from format type to i18n key (orgAdmin namespace)
+const FORMAT_LABEL_KEYS: Record<string, string> = {
+  groups_knockout: "formatGroupsKO",
+  round_robin:     "formatRoundRobin",
+  groups_only:     "formatGroupsOnly",
+  knockout_only:   "formatKOOnly",
 };
 
 function StepFormat({ orgSlug, tournamentId, classes, configured, setConfigured }: {
@@ -884,7 +884,7 @@ function StepFormat({ orgSlug, tournamentId, classes, configured, setConfigured 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{cls.name}</p>
                     <p className="text-xs font-semibold" style={{ color: ACCENT_CLR }}>
-                      {FORMAT_LABELS[info.type] ?? info.type}
+                      {FORMAT_LABEL_KEYS[info.type] ? t(FORMAT_LABEL_KEYS[info.type]) : info.type}
                       {info.groupCount > 0 ? ` · ${info.groupCount} ${t("groups")}` : ""}
                     </p>
                   </div>
@@ -1263,7 +1263,7 @@ function StepInfo({ tInfo, setTInfo }: {
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label={t("contactName")}>
             <input className={inputCls} style={inputStyle} value={tInfo.contactName ?? ""}
-              onChange={e => patch("contactName", e.target.value)} placeholder="John Smith" />
+              onChange={e => patch("contactName", e.target.value)} placeholder={t("organizerNamePlaceholder")} />
           </Field>
           <Field label={t("contactPhone")}>
             <input className={inputCls} style={inputStyle} value={tInfo.contactPhone ?? ""}

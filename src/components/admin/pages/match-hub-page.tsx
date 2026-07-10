@@ -1657,19 +1657,19 @@ function StageAdvancePanel({
                         }}>
                         <span>#{rule.fromRank}–{rule.toRank}</span>
                         <span style={{ opacity: 0.6 }}>→</span>
-                        <span>{stageNames[rule.targetStageId] ?? `Stage ${rule.targetStageId}`}</span>
+                        <span>{stageNames[rule.targetStageId] ?? t("matchHub.stageFallback", { id: rule.targetStageId })}</span>
                       </span>
                     ))}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="text-[11px]" style={{ color: "#f59e0b" }}>
-                      ⚠ No qualification rules — configure in
+                      ⚠ {t("matchHub.noQualRules")}
                     </span>
                     <a href={formatHref}
                       className="text-[11px] font-bold underline"
                       style={{ color: "#f59e0b" }}>
-                      Format settings
+                      {t("matchHub.formatSettingsLink")}
                     </a>
                   </div>
                 )}
@@ -1874,7 +1874,7 @@ export function MatchHubPage() {
 
       {/* Stats bar */}
       <div className="flex flex-wrap gap-2">
-        <StatPill icon={<Zap className="w-4 h-4" />}     value={live.length}       label="Live"       color="#ef4444" />
+        <StatPill icon={<Zap className="w-4 h-4" />}     value={live.length}       label={t("matchHub.statLive")}       color="#ef4444" />
         <StatPill icon={<Clock className="w-4 h-4" />}   value={upcoming.length}   label={t("matchHub.statUpcoming")}  color="#f59e0b" />
         <StatPill icon={<CheckCircle className="w-4 h-4" />} value={`${finished.length}/${matches.length}`} label={t("matchHub.statFinished")} color="#10b981" />
         <StatPill icon={<span>⚽</span>}                 value={totalGoals}        label={t("matchHub.statGoals")}    color="#10b981" />

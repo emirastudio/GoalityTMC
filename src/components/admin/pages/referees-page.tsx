@@ -717,7 +717,7 @@ function BulkImportPanel({ base, onDone, t }: BulkImportPanelProps) {
         onChange={e => setText(e.target.value)}
         rows={6}
         disabled={isImporting}
-        placeholder={"John Smith\nJane Doe, jane@example.com"}
+        placeholder={t("bulkPastePlaceholder")}
         className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 resize-none font-mono disabled:opacity-50"
         style={{
           background: "var(--cat-input-bg, var(--cat-card-bg))",
@@ -734,7 +734,7 @@ function BulkImportPanel({ base, onDone, t }: BulkImportPanelProps) {
       {result && (
         <p className="text-xs mt-2 font-semibold" style={{ color: "#10b981" }}>
           {result}
-          {errors.length > 0 && `, ${errors.length} errors`}
+          {errors.length > 0 && t("bulkErrorsSuffix", { n: errors.length })}
         </p>
       )}
 
@@ -834,7 +834,7 @@ function RefereeCalculator({ matchCount, t }: CalculatorProps) {
       {open && (
         <div className="px-4 py-4 space-y-3" style={{ background: "var(--cat-card-bg)" }}>
           <div className="flex items-center justify-between">
-            <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>Matches</span>
+            <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("calcMatches")}</span>
             <span className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>{matchCount}</span>
           </div>
           <div className="flex items-center justify-between">
@@ -870,10 +870,10 @@ function RefereeCalculator({ matchCount, t }: CalculatorProps) {
               className="rounded-lg border px-2 py-1 text-sm outline-none"
               style={{ ...inputStyle, width: "auto" }}
             >
-              <option value={1}>1 — main</option>
-              <option value={2}>2 — +asst1</option>
-              <option value={3}>3 — +asst2</option>
-              <option value={4}>4 — full</option>
+              <option value={1}>{t("calcRoles1")}</option>
+              <option value={2}>{t("calcRoles2")}</option>
+              <option value={3}>{t("calcRoles3")}</option>
+              <option value={4}>{t("calcRoles4")}</option>
             </select>
           </div>
           <div className="flex items-center justify-between">
@@ -1233,9 +1233,9 @@ const [autoAssigning, setAutoAssigning] = useState(false);
         const { assigned, skipped, noReferee, alreadyAssigned } = await r.json() as {
           assigned: number; skipped: number; noReferee: number; alreadyAssigned: number;
         };
-        const parts = [`✓ ${assigned}`];
-        if (alreadyAssigned > 0) parts.push(`уже назначено: ${alreadyAssigned}`);
-        if (noReferee > 0) parts.push(`нет судьи: ${noReferee}`);
+        const parts = [t("autoAssignResultAssigned", { n: assigned })];
+        if (alreadyAssigned > 0) parts.push(t("autoAssignResultAlready", { n: alreadyAssigned }));
+        if (noReferee > 0) parts.push(t("autoAssignResultNoRef", { n: noReferee }));
         setAutoAssignToast(parts.join(" · "));
         await reloadAllAssignments(matches);
         setTimeout(() => setAutoAssignToast(null), 4000);

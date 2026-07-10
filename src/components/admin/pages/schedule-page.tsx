@@ -363,19 +363,20 @@ interface StatsBarProps {
 }
 
 function StatsBar({ totalMatches, scheduled, loading }: StatsBarProps) {
+  const t = useTranslations("schedule");
   const unscheduled = totalMatches - scheduled;
 
   const stats = [
-    { label: "Total matches", value: totalMatches, accent: false },
-    { label: "Scheduled", value: scheduled, accent: true },
-    { label: "Unscheduled", value: unscheduled, accent: false, warn: unscheduled > 0 },
+    { label: t("statTotalMatches"), value: totalMatches, accent: false },
+    { label: t("statScheduled"), value: scheduled, accent: true },
+    { label: t("statUnscheduled"), value: unscheduled, accent: false, warn: unscheduled > 0 },
   ];
 
   if (loading) {
     return (
       <div className="flex items-center gap-2 h-10" style={{ color: "var(--cat-text-muted)" }}>
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        <span className="text-xs">Loading stats…</span>
+        <span className="text-xs">{t("loadingStats")}</span>
       </div>
     );
   }
@@ -493,10 +494,10 @@ export function SchedulePage() {
         </div>
         <div>
           <p className="text-base font-bold mb-1" style={{ color: "var(--cat-text)" }}>
-            Дивизион не выбран
+            {t("divisionNotSelected")}
           </p>
           <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-            Откройте расписание через карточку дивизиона — classId обязателен.
+            {t("divisionNotSelectedHint")}
           </p>
         </div>
       </div>
@@ -670,7 +671,7 @@ function StructureTab({
               style={{ background: "var(--cat-accent)", color: "var(--cat-accent-text)" }}
             >
               <Sparkles className="w-4 h-4" />
-              Format Builder
+              {t("formatBuilder")}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -694,10 +695,10 @@ function StructureTab({
           </div>
           <div className="flex-1">
             <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>
-              Generate matches to start scheduling
+              {t("generateMatchesBanner")}
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-              Open each stage below and click Generate to create match slots.
+              {t("generateMatchesBannerHint")}
             </p>
           </div>
           <ChevronDown className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
@@ -761,8 +762,8 @@ function StructureTab({
                   {/* Match count summary */}
                   <p className="text-[11px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
                     {stageMatchCount > 0
-                      ? `${stageMatchCount} matches`
-                      : "No matches yet"}
+                      ? t("matchesPlural", { count: stageMatchCount })
+                      : t("noMatchesYet")}
                   </p>
                 </div>
 
@@ -1046,7 +1047,7 @@ function GenerateMatchesSection({
                 {maxTeams && existingGroups.length > 0 && (
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
                     style={{ background: "rgba(43,254,186,0.1)", color: "#2BFEBA" }}>
-                    {maxTeams} ком. ÷ {existingGroups.length} гр.
+                    {t("teamsPerGroupsRatio", { teams: maxTeams, groups: existingGroups.length })}
                   </span>
                 )}
               </div>
@@ -1118,7 +1119,7 @@ function GenerateMatchesSection({
                   style={{ background: "var(--cat-card-bg)", color: "var(--cat-text)", border: "1px solid var(--cat-card-border)" }}>
                   {r.shortName ?? r.name}
                   <span className="ml-1 font-normal text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
-                    {r.matchCount}м
+                    {t("matchesShort", { count: r.matchCount })}
                   </span>
                 </span>
               ))}
@@ -1253,7 +1254,7 @@ function CollapsibleMatchSettings({
         {!open && (
           <span className="normal-case font-normal ml-1">
             · {settings.halves}×{settings.halfDuration}{t("minSuffix")}
-            {settings.halves > 1 && settings.halfBreak > 0 && `, перерыв ${settings.halfBreak}${t("minSuffix")}`}
+            {settings.halves > 1 && settings.halfBreak > 0 && `, ${t("break")} ${settings.halfBreak}${t("minSuffix")}`}
             {settings.breakBetweenMatches > 0 && `, +${settings.breakBetweenMatches}${t("minSuffix")} ${t("break")}`}
           </span>
         )}
@@ -1440,7 +1441,7 @@ function RoundsSummary({ base, stage }: { base: string; stage: Stage }) {
               style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)" }}>
               {r.shortName ?? r.name}
               <span className="ml-1 font-normal" style={{ color: "var(--cat-text-muted)" }}>
-                ({r.matchCount} matches)
+                ({t("matchesPlural", { count: r.matchCount })})
               </span>
             </div>
           ))}
@@ -2136,7 +2137,7 @@ function DrawTab({
                         ))}
                       />
                       <span className="text-[11px] font-semibold" style={{ color: bc.text, opacity: 0.7 }}>
-                        {basketTeams.length} команд
+                        {basketTeams.length} {t("teamsCount")}
                       </span>
                       <button onClick={() => removeBasket(basket.id)}
                         className="opacity-40 hover:opacity-90 transition-opacity">
@@ -2148,7 +2149,7 @@ function DrawTab({
                     <div className="flex flex-wrap gap-1.5 min-h-[28px]">
                       {basketTeams.length === 0 && isBasketOver && (
                         <span className="text-xs font-semibold" style={{ color: bc.text }}>
-                          Отпустите здесь
+                          {t("dropHereShort")}
                         </span>
                       )}
                       {basketTeams.map(team => (
@@ -2194,7 +2195,7 @@ function DrawTab({
                             }}
                             onClick={() => setBasketPopover(basketPopover === basket.id ? null : basket.id)}
                           >
-                            <Plus className="w-3 h-3" /> Добавить
+                            <Plus className="w-3 h-3" /> {t("addShort")}
                           </button>
                           {basketPopover === basket.id && (
                             <div
@@ -2295,10 +2296,10 @@ function DrawTab({
               {t("unassignedTeams", { count: unassignedTeams.length })}
             </p>
             <span className="text-xs ml-1" style={{ color: "var(--cat-text-muted)" }}>
-              — перетащите в группу ↓
+              {t("dragToGroupHint")}
             </span>
             {dragOverPool && (
-              <span className="text-xs font-semibold ml-2" style={{ color: "#f59e0b" }}>← вернуть сюда</span>
+              <span className="text-xs font-semibold ml-2" style={{ color: "#f59e0b" }}>{t("returnHere")}</span>
             )}
           </div>
           <div className="flex flex-wrap gap-2 min-h-[32px]">
@@ -3154,7 +3155,7 @@ function AutoSchedulerPanel({
               color: showAddField ? "#2BFEBA" : "var(--cat-text-secondary)",
               border: `1px solid ${showAddField ? "rgba(43,254,186,0.3)" : "var(--cat-card-border)"}`,
             }}>
-            <Plus className="w-3 h-3" /> Добавить
+            <Plus className="w-3 h-3" /> {t("addShort")}
           </button>
         </div>
 
@@ -3162,7 +3163,7 @@ function AutoSchedulerPanel({
         {showAddField && (
           <div className="rounded-xl p-3 mb-3 space-y-2"
             style={{ background: "rgba(43,254,186,0.04)", border: "1px solid rgba(43,254,186,0.2)" }}>
-            <p className="text-[11px] font-semibold" style={{ color: "#2BFEBA" }}>Новая площадка</p>
+            <p className="text-[11px] font-semibold" style={{ color: "#2BFEBA" }}>{t("newFieldTitle")}</p>
 
             {/* Stadium mode toggle */}
             <div className="flex gap-1.5">
@@ -3174,7 +3175,7 @@ function AutoSchedulerPanel({
                     color: addFieldMode === "existing" ? "#2BFEBA" : "var(--cat-text-muted)",
                     border: `1px solid ${addFieldMode === "existing" ? "rgba(43,254,186,0.3)" : "var(--cat-card-border)"}`,
                   }}>
-                  Существующий стадион
+                  {t("existingStadium")}
                 </button>
               )}
               <button onClick={() => setAddFieldMode("new")}
@@ -3184,7 +3185,7 @@ function AutoSchedulerPanel({
                   color: addFieldMode === "new" ? "#2BFEBA" : "var(--cat-text-muted)",
                   border: `1px solid ${addFieldMode === "new" ? "rgba(43,254,186,0.3)" : "var(--cat-card-border)"}`,
                 }}>
-                + Новый стадион
+                + {t("newStadium")}
               </button>
             </div>
 
@@ -3307,7 +3308,7 @@ function AutoSchedulerPanel({
                                   style={{ ...iStyle, width: "110px", borderColor: timeInvalid ? "#ef4444" : undefined }} />
                                 {timeInvalid && (
                                   <span className="text-[11px] font-semibold" style={{ color: "#ef4444" }}>
-                                    ⚠ конец раньше начала
+                                    ⚠ {t("endBeforeStart")}
                                   </span>
                                 )}
                               </div>
@@ -3368,14 +3369,14 @@ function AutoSchedulerPanel({
       {/* ── 4. Параметры матча ── */}
       <div>
         <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: "var(--cat-text-muted)" }}>
-          ⚙️ Параметры
+          ⚙️ {t("paramsSection")}
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div>
             <label className="text-[10px] block mb-1" style={{ color: "var(--cat-text-muted)" }}>
-              {t("matchDuration")}, мин
+              {t("matchDuration")}, {t("minSuffix")}
               {suggestedDuration && suggestedDuration === matchDuration && (
-                <span className="ml-1 text-[9px] font-semibold" style={{ color: "#2BFEBA" }}>← из настроек</span>
+                <span className="ml-1 text-[9px] font-semibold" style={{ color: "#2BFEBA" }}>{t("fromSettings")}</span>
               )}
             </label>
             <input type="number" min={10} max={180} value={matchDuration}
@@ -3383,7 +3384,7 @@ function AutoSchedulerPanel({
               style={{ ...iStyle, width: "100%" }} />
           </div>
           <div>
-            <label className="text-[10px] block mb-1" style={{ color: "var(--cat-text-muted)" }}>{t("breakBetween")}, мин</label>
+            <label className="text-[10px] block mb-1" style={{ color: "var(--cat-text-muted)" }}>{t("breakBetween")}, {t("minSuffix")}</label>
             <input type="number" min={0} max={60} value={breakMinutes}
               onChange={e => setBreakMinutes(parseInt(e.target.value) || 0)}
               style={{ ...iStyle, width: "100%" }} />
@@ -3437,7 +3438,7 @@ function AutoSchedulerPanel({
                   {result.message}
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 900, color: "#2BFEBA", lineHeight: 1.1 }}>
-                  {animCount} <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.7 }}>матчей расставлено</span>
+                  {animCount} <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.7 }}>{t("matchesPlaced")}</span>
                 </div>
               </div>
             </div>
@@ -3465,6 +3466,7 @@ function AutoSchedulerPanel({
 // ─────────────────────────────────────────────
 
 function PlannerBanner({ base, classId }: { base: string; classId: number | null }) {
+  const t = useTranslations("schedule");
   // Extract /org/X/admin/tournament/Y prefix from base API path
   const match = base.match(/\/api\/org\/([^/]+)\/tournament\/(\d+)/);
   const orgSlug = match?.[1] ?? "";
@@ -3478,12 +3480,12 @@ function PlannerBanner({ base, classId }: { base: string; classId: number | null
       style={{ background: "rgba(43,254,186,0.04)", borderColor: "rgba(43,254,186,0.2)" }}>
       <Zap className="w-4 h-4 shrink-0" style={{ color: "#2BFEBA" }} />
       <p className="text-sm" style={{ color: "var(--cat-text-secondary)" }}>
-        Расписание создаётся в <b>Планировщике</b> — здесь только просмотр и ручное редактирование
+        {t.rich("plannerBannerText", { b: (chunks) => <b>{chunks}</b> })}
       </p>
       <a href={plannerHref}
         className="ml-auto flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg shrink-0 transition-all hover:opacity-80 whitespace-nowrap"
         style={{ background: "var(--cat-accent)", color: "#0A0E14" }}>
-        <Zap className="w-3.5 h-3.5" /> Открыть Планировщик
+        <Zap className="w-3.5 h-3.5" /> {t("openPlanner")}
       </a>
     </div>
   );
@@ -4005,9 +4007,9 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
       {matches.length > 0 && filteredMatches.length === 0 && (
         <Card>
           <div className="text-center py-6" style={{ color: "var(--cat-text-muted)" }}>
-            <p className="text-sm">No matches match the current filters.</p>
+            <p className="text-sm">{t("noMatchesForFilters")}</p>
             <button onClick={() => { setDateFilter(""); setFieldFilter(""); }} className="text-xs mt-2 underline hover:opacity-70">
-              Clear filters
+              {t("clearFilters")}
             </button>
           </div>
         </Card>
@@ -4220,7 +4222,7 @@ function ResultsTab({ base, classId }: { base: string; classId: number | null })
             return (
               <Card key={grp.id}>
                 <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--cat-accent, #2BFEBA)" }}>
-                  Группа {grp.name}
+                  {t("group")} {grp.name}
                 </p>
                 <StandingsTable rows={rows} />
               </Card>
@@ -4233,7 +4235,7 @@ function ResultsTab({ base, classId }: { base: string; classId: number | null })
             <Card>
               <div className="text-center py-8" style={{ color: "var(--cat-text-muted)" }}>
                 <Trophy className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Нет завершённых матчей</p>
+                <p className="text-sm">{t("noFinishedMatches")}</p>
               </div>
             </Card>
           )}

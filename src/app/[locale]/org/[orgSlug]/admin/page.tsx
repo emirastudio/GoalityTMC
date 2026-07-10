@@ -72,7 +72,7 @@ export default async function OrgDashboardPage({ params, searchParams }: Props) 
     if (plan !== "free") return PLAN_BADGE[plan] ?? PLAN_BADGE.free;
     const isFreeSeat = tournament.id === freeSeatId;
     if (isFreeSeat) return PLAN_BADGE.free;
-    return { label: "Upgrade", color: "#DC2626", bg: "rgba(220,38,38,0.1)", Icon: Lock };
+    return { label: t("upgrade"), color: "#DC2626", bg: "rgba(220,38,38,0.1)", Icon: Lock };
   }
 
   return (

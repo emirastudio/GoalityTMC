@@ -1536,21 +1536,21 @@ function FormatSummaryView({
                     {tpg != null && (
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
                         style={{ background: `${gc}18`, color: gc }}>
-                        {tpg}к
+                        {t("overviewTeamsShort", { count: tpg })}
                       </span>
                     )}
                     {/* Advance up */}
                     {upCount > 0 && (
                       <span className="text-[10px] font-medium flex items-center gap-0.5"
                         style={{ color: "#10b981" }}>
-                        ↑{upCount} А
+                        ↑{upCount} {t("overviewBracketA")}
                       </span>
                     )}
                     {/* Down to B */}
                     {downCount != null && downCount > 0 && (
                       <span className="text-[10px] font-medium flex items-center gap-0.5"
                         style={{ color: "#8b5cf6" }}>
-                        ↓{downCount} Б
+                        ↓{downCount} {t("overviewBracketB")}
                       </span>
                     )}
                   </div>
@@ -1717,16 +1717,16 @@ interface StageWithCounts extends ExistingStage {
   scheduledCount: number;
 }
 
-const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  pending:  { label: "Pending",  color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
-  draft:    { label: "Draft",    color: "#f59e0b", bg: "rgba(245,158,11,0.12)"  },
-  active:   { label: "Active",   color: "#2BFEBA", bg: "rgba(43,254,186,0.12)"  },
-  finished: { label: "Finished", color: "#10b981", bg: "rgba(16,185,129,0.12)"  },
+const STATUS_STYLE: Record<string, { labelKey: string; color: string; bg: string }> = {
+  pending:  { labelKey: "statusPending",  color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
+  draft:    { labelKey: "statusDraft",    color: "#f59e0b", bg: "rgba(245,158,11,0.12)"  },
+  active:   { labelKey: "statusActive",   color: "#2BFEBA", bg: "rgba(43,254,186,0.12)"  },
+  finished: { labelKey: "statusFinished", color: "#10b981", bg: "rgba(16,185,129,0.12)"  },
 };
-const TYPE_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  group:    { label: "Groups",   color: "#10b981", bg: "rgba(16,185,129,0.12)" },
-  knockout: { label: "Playoff",  color: "#ec4899", bg: "rgba(236,72,153,0.12)" },
-  league:   { label: "League",   color: "#06b6d4", bg: "rgba(6,182,212,0.12)"  },
+const TYPE_STYLE: Record<string, { labelKey: string; color: string; bg: string }> = {
+  group:    { labelKey: "typeGroups",   color: "#10b981", bg: "rgba(16,185,129,0.12)" },
+  knockout: { labelKey: "typePlayoff",  color: "#ec4899", bg: "rgba(236,72,153,0.12)" },
+  league:   { labelKey: "typeLeague",   color: "#06b6d4", bg: "rgba(6,182,212,0.12)"  },
 };
 
 function StagesManagementView({
@@ -1742,6 +1742,7 @@ function StagesManagementView({
   initialStages: ExistingStage[];
   onStagesChange: () => void;
 }) {
+  const t = useTranslations("formatBuilder");
   const base = `/api/org/${orgSlug}/tournament/${tournamentId}`;
   const [stages, setStages]   = useState<StageWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1797,15 +1798,15 @@ function StagesManagementView({
 
   if (loading) return (
     <div className="flex items-center gap-2 py-10" style={{ color: "var(--cat-text-muted)" }}>
-      <Loader2 className="w-4 h-4 animate-spin" /> Loading stages…
+      <Loader2 className="w-4 h-4 animate-spin" /> {t("loadingStages")}
     </div>
   );
 
   if (stages.length === 0) return (
     <div className="text-center py-16" style={{ color: "var(--cat-text-muted)" }}>
       <Layers className="w-10 h-10 mx-auto mb-3 opacity-20" />
-      <p className="font-bold mb-1" style={{ color: "var(--cat-text)" }}>No stages yet</p>
-      <p className="text-sm">Create a format first to generate stages.</p>
+      <p className="font-bold mb-1" style={{ color: "var(--cat-text)" }}>{t("noStagesYet")}</p>
+      <p className="text-sm">{t("noStagesDesc")}</p>
     </div>
   );
 
@@ -1836,11 +1837,11 @@ function StagesManagementView({
               </span>
               <span className="hidden sm:inline text-[10px] px-2 py-0.5 rounded-full font-bold"
                 style={{ background: typeStyle.bg, color: typeStyle.color }}>
-                {typeStyle.label.toUpperCase()}
+                {t(typeStyle.labelKey).toUpperCase()}
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
                 style={{ background: statusStyle.bg, color: statusStyle.color }}>
-                {statusStyle.label.toUpperCase()}
+                {t(statusStyle.labelKey).toUpperCase()}
               </span>
               {stage.matchCount > 0 && (
                 <span className="text-xs font-semibold" style={{ color: "var(--cat-text-muted)" }}>
@@ -1926,13 +1927,13 @@ function StagesManagementView({
                 {/* Match stats */}
                 {stage.matchCount > 0 ? (
                   <div className="flex items-center gap-4 text-xs" style={{ color: "var(--cat-text-muted)" }}>
-                    <span>⚽ {stage.matchCount} matches</span>
+                    <span>⚽ {t("stageMatchesCount", { count: stage.matchCount })}</span>
                     <span style={{ color: stage.scheduledCount === stage.matchCount ? "#2BFEBA" : "inherit" }}>
-                      📅 {stage.scheduledCount} scheduled
+                      📅 {t("stageScheduledCount", { count: stage.scheduledCount })}
                     </span>
                     {stage.matchCount - stage.scheduledCount > 0 && (
                       <span style={{ color: "#f59e0b" }}>
-                        ⚠ {stage.matchCount - stage.scheduledCount} unscheduled
+                        ⚠ {t("stageUnscheduledCount", { count: stage.matchCount - stage.scheduledCount })}
                       </span>
                     )}
                   </div>
@@ -1941,15 +1942,15 @@ function StagesManagementView({
                     style={{ background: "rgba(43,254,186,0.05)", borderColor: "rgba(43,254,186,0.2)" }}>
                     <Zap className="w-4 h-4 shrink-0" style={{ color: "#2BFEBA" }} />
                     <div className="flex-1">
-                      <p className="text-xs font-bold" style={{ color: "var(--cat-text)" }}>No matches yet</p>
+                      <p className="text-xs font-bold" style={{ color: "var(--cat-text)" }}>{t("noMatchesYet")}</p>
                       <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
-                        Go to Schedule → Draw to assign teams, then generate matches.
+                        {t("noMatchesDesc")}
                       </p>
                     </div>
                     <a href={`${scheduleBase}?classId=${classId}`}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
                       style={{ background: "rgba(43,254,186,0.15)", color: "#2BFEBA" }}>
-                      Schedule →
+                      {t("scheduleLinkArrow")}
                     </a>
                   </div>
                 )}
@@ -2382,16 +2383,16 @@ export function FormatBuilderPage() {
         </div>
         <div>
           <p className="text-base font-bold mb-1" style={{ color: "var(--cat-text)" }}>
-            Дивизион не выбран
+            {t("divisionNotSelected")}
           </p>
           <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-            Откройте Format Builder через карточку дивизиона — classId обязателен.
+            {t("divisionNotSelectedDesc")}
           </p>
         </div>
         <a href={backHref}
           className="px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-80"
           style={{ background: ACCENT, color: "#0a0e14" }}>
-          ← К расписанию
+          {t("backToScheduleArrow")}
         </a>
       </div>
     );
@@ -2416,10 +2417,10 @@ export function FormatBuilderPage() {
         </div>
         <div>
           <p className="text-lg font-black mb-1" style={{ color: "var(--cat-text)" }}>
-            Дивизион удалён
+            {t("divisionDeletedTitle")}
           </p>
           <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-            Этот дивизион был удалён. Вернитесь и создайте новый.
+            {t("divisionDeletedDesc")}
           </p>
         </div>
         <a
@@ -2428,7 +2429,7 @@ export function FormatBuilderPage() {
           style={{ background: ACCENT, color: "#000" }}
         >
           <ChevronLeft className="w-4 h-4" />
-          Вернуться к настройке
+          {t("backToSettings")}
         </a>
       </div>
     );
@@ -2454,8 +2455,8 @@ export function FormatBuilderPage() {
         <div className="flex items-center gap-1 p-1 rounded-2xl w-fit mb-6"
           style={{ background: "var(--cat-tag-bg)", border: "1px solid var(--cat-card-border)" }}>
           {[
-            { key: "format" as const, icon: <GitBranch className="w-4 h-4" />, label: "Format" },
-            { key: "stages" as const, icon: <Layers className="w-4 h-4" />,    label: "Stages" },
+            { key: "format" as const, icon: <GitBranch className="w-4 h-4" />, label: t("tabFormat") },
+            { key: "stages" as const, icon: <Layers className="w-4 h-4" />,    label: t("tabStages") },
           ].map(tab => (
             <button
               key={tab.key}

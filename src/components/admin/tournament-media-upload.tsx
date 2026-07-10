@@ -70,7 +70,7 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
         onCoverChange?.(data.coverUrl);
       }
     } catch {
-      setUploadError({ target, msg: "Network error — check your connection and try again." });
+      setUploadError({ target, msg: t("uploadNetworkError") });
     } finally {
       setUploading(false);
     }
@@ -120,7 +120,7 @@ export function TournamentMediaUpload({ orgSlug, tournamentId, initialCoverUrl, 
                 <ImagePlus className="w-5 h-5" style={{ color: "var(--cat-text-muted)" }} />
               </div>
               <p className="text-sm font-semibold" style={{ color: "var(--cat-text-muted)" }}>{t("uploadCover")}</p>
-              <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>1920×480 · JPG/PNG · до 20MB</p>
+              <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{t("coverSpecHint")}</p>
             </div>
           )}
 

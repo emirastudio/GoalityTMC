@@ -507,14 +507,14 @@ export function TeamsPageContent() {
      small native prompt asking for a reason — the reason is sent
      to the team via the existing rejection email (notes field). */
   async function approveTeam(teamId: number, label: string) {
-    if (!confirm(`Принять заявку «${label}» в турнир? Команде придёт письмо-подтверждение со ссылкой в кабинет.`)) return;
+    if (!confirm(t("confirmApproveTeam", { label }))) return;
     await handleStatusChange(teamId, "confirmed");
   }
   async function rejectTeam(teamId: number, label: string) {
-    const reason = prompt(`Отклонить заявку «${label}». Укажите причину — она будет в письме команде:`)?.trim();
+    const reason = prompt(t("promptRejectTeam", { label }))?.trim();
     if (reason === undefined) return; // user cancelled
     if (!reason) {
-      alert("Причина обязательна — она поможет команде понять и пересмотреть заявку.");
+      alert(t("rejectReasonRequired"));
       return;
     }
     await handleStatusChange(teamId, "rejected", reason);
@@ -550,7 +550,7 @@ export function TeamsPageContent() {
   }
   async function bulkApprove() {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Принять ${selectedIds.size} заявок? Каждой команде придёт письмо-подтверждение.`)) return;
+    if (!confirm(t("confirmBulkApprove", { count: selectedIds.size }))) return;
     setBulkBusy(true);
     try {
       for (const id of selectedIds) {
@@ -568,9 +568,9 @@ export function TeamsPageContent() {
   }
   async function bulkReject() {
     if (selectedIds.size === 0) return;
-    const reason = prompt(`Отклонить ${selectedIds.size} заявок. Укажите общую причину — попадёт в письмо каждой команде:`)?.trim();
+    const reason = prompt(t("promptBulkReject", { count: selectedIds.size }))?.trim();
     if (reason === undefined) return;
-    if (!reason) { alert("Причина обязательна — она поможет командам."); return; }
+    if (!reason) { alert(t("bulkRejectReasonRequired")); return; }
     setBulkBusy(true);
     try {
       for (const id of selectedIds) {
@@ -747,23 +747,23 @@ export function TeamsPageContent() {
                   borderColor: "var(--cat-badge-open-border)",
                 }}>
                 <span className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
-                  Выбрано: {selectedIds.size}
+                  {t("selectedCount", { count: selectedIds.size })}
                 </span>
                 <button type="button" onClick={clearSelection}
                   className="text-xs hover:opacity-70"
                   style={{ color: "var(--cat-text-muted)" }}>
-                  Снять выделение
+                  {t("clearSelection")}
                 </button>
                 <div className="ml-auto flex gap-2">
                   <button type="button" onClick={bulkApprove} disabled={bulkBusy}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40"
                     style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
-                    <Check className="w-3.5 h-3.5" /> {bulkBusy ? "…" : `Принять ${selectedIds.size}`}
+                    <Check className="w-3.5 h-3.5" /> {bulkBusy ? "…" : t("approveCount", { count: selectedIds.size })}
                   </button>
                   <button type="button" onClick={bulkReject} disabled={bulkBusy}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40"
                     style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
-                    <X className="w-3.5 h-3.5" /> Отклонить {selectedIds.size}
+                    <X className="w-3.5 h-3.5" /> {t("rejectCount", { count: selectedIds.size })}
                   </button>
                 </div>
               </div>
@@ -841,7 +841,7 @@ export function TeamsPageContent() {
                           <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
                             {team.club ? (
                               <label
-                                title={`${team.club.name} — click to change logo`}
+                                title={t("changeLogoTitle", { name: team.club.name })}
                                 onMouseEnter={() => setHoveredLogoId(team.club!.id)}
                                 onMouseLeave={() => setHoveredLogoId(null)}
                                 style={{ position: "relative", display: "inline-block", cursor: uploadingBadge === team.club.id ? "wait" : "pointer", lineHeight: 0 }}
@@ -1008,20 +1008,20 @@ export function TeamsPageContent() {
                                       const label = team.displayName ?? team.name ?? team.club?.name ?? `#${team.id}`;
                                       approveTeam(team.id, label);
                                     }}
-                                    title="Принять заявку"
+                                    title={t("approveTitle")}
                                     className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all hover:opacity-90 flex items-center gap-1"
                                     style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
-                                    <Check className="w-3 h-3" /> Принять
+                                    <Check className="w-3 h-3" /> {t("approve")}
                                   </button>
                                   <button
                                     onClick={() => {
                                       const label = team.displayName ?? team.name ?? team.club?.name ?? `#${team.id}`;
                                       rejectTeam(team.id, label);
                                     }}
-                                    title="Отклонить заявку с причиной"
+                                    title={t("rejectTitle")}
                                     className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all hover:opacity-90 flex items-center gap-1"
                                     style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
-                                    <X className="w-3 h-3" /> Отклонить
+                                    <X className="w-3 h-3" /> {t("reject")}
                                   </button>
                                 </>
                               )}

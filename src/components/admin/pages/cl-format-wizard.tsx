@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useTournament } from "@/lib/tournament-context";
 import {
@@ -77,11 +78,12 @@ function StandingsDiagram({ directSpots, playoffSpots, totalTeams, color }: {
   totalTeams: number;
   color: string;
 }) {
+  const tr = useTranslations("formatBuilder");
   const eliminated = totalTeams - directSpots - playoffSpots;
   const rows = [
-    { label: `Топ ${directSpots}`, range: `1–${directSpots}`, outcome: "Прямо в 1/8", outcomeColor: "#10b981", width: (directSpots / totalTeams) * 100 },
-    { label: `${playoffSpots} команд`, range: `${directSpots + 1}–${directSpots + playoffSpots}`, outcome: "Плей-офф раунд", outcomeColor: color, width: (playoffSpots / totalTeams) * 100 },
-    { label: `${eliminated} команд`, range: `${directSpots + playoffSpots + 1}–${totalTeams}`, outcome: "Выбывают", outcomeColor: "#dc2626", width: (eliminated / totalTeams) * 100 },
+    { label: tr("topN", { n: directSpots }), range: `1–${directSpots}`, outcome: tr("clDirectShort"), outcomeColor: "#10b981", width: (directSpots / totalTeams) * 100 },
+    { label: tr("overviewTeamsCount", { count: playoffSpots }), range: `${directSpots + 1}–${directSpots + playoffSpots}`, outcome: tr("clPlayoffRound"), outcomeColor: color, width: (playoffSpots / totalTeams) * 100 },
+    { label: tr("overviewTeamsCount", { count: eliminated }), range: `${directSpots + playoffSpots + 1}–${totalTeams}`, outcome: tr("clEliminated"), outcomeColor: "#dc2626", width: (eliminated / totalTeams) * 100 },
   ];
 
   return (
@@ -138,6 +140,7 @@ function CLConfigStep({ state, setState, teamCount }: {
   setState: (s: CLState) => void;
   teamCount: number;
 }) {
+  const tr = useTranslations("formatBuilder");
   const eliminated = state.teamCount - state.directSpots - state.playoffSpots;
   const knockoutSize = state.directSpots + Math.ceil(state.playoffSpots / 2);
 
@@ -148,9 +151,9 @@ function CLConfigStep({ state, setState, teamCount }: {
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>Настройка формата</h2>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>{tr("clConfigTitle")}</h2>
         <p className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-          По образцу Лиги чемпионов UEFA 2024/25 · {teamCount} команд зарегистрировано
+          {tr("clConfigSubtitle", { teamCount })}
         </p>
       </div>
 
@@ -161,13 +164,12 @@ function CLConfigStep({ state, setState, teamCount }: {
           <LeaguePhaseSVG color={ACCENT} />
         </div>
         <div>
-          <p className="text-sm font-bold mb-1" style={{ color: "var(--cat-text)" }}>Элит-фаза</p>
+          <p className="text-sm font-bold mb-1" style={{ color: "var(--cat-text)" }}>{tr("clElitePhase")}</p>
           <p className="text-xs leading-relaxed" style={{ color: "var(--cat-text-muted)" }}>
-            Все команды в единой таблице. Каждая команда играет против 8 разных соперников (по 2 из каждой корзины).
-            Победители не вылетают — определяется место в общей таблице.
+            {tr("clElitePhaseDesc")}
           </p>
           <div className="flex gap-2 mt-2">
-            {["Один круг", "Единая таблица", "8 матчей"].map(tag => (
+            {[tr("clTagOneRound"), tr("clTagSingleTable"), tr("clTag8Matches")].map(tag => (
               <span key={tag} className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase"
                 style={{ background: `${ACCENT}15`, color: ACCENT }}>{tag}</span>
             ))}
@@ -179,8 +181,8 @@ function CLConfigStep({ state, setState, teamCount }: {
       <div className="rounded-2xl border p-5" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
-            <p className="font-bold" style={{ color: "var(--cat-text)" }}>Команд в элите</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>Стандарт Лиги чемпионов — 36</p>
+            <p className="font-bold" style={{ color: "var(--cat-text)" }}>{tr("clTeamsInElite")}</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>{tr("clStandardCL36")}</p>
           </div>
           <NumberStepper value={state.teamCount} onChange={v => update({ teamCount: v })} min={12} max={64} step={4} />
         </div>
@@ -205,10 +207,10 @@ function CLConfigStep({ state, setState, teamCount }: {
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <p className="font-bold flex items-center gap-2" style={{ color: "var(--cat-text)" }}>
-              <span className="text-lg">🥇</span> Прямо в 1/8 финала
+              <span className="text-lg">🥇</span> {tr("clDirectToR16")}
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-              Команды, занявшие топ-N мест, выходят напрямую
+              {tr("clDirectDesc")}
             </p>
           </div>
           <NumberStepper value={state.directSpots}
@@ -222,10 +224,10 @@ function CLConfigStep({ state, setState, teamCount }: {
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <p className="font-bold flex items-center gap-2" style={{ color: "var(--cat-text)" }}>
-              <span className="text-lg">⚔️</span> В Плей-офф раунд
+              <span className="text-lg">⚔️</span> {tr("clToPlayoffRound")}
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-              Следующие M команд — двухматчевая серия, победители выходят в 1/8
+              {tr("clPlayoffDesc")}
             </p>
           </div>
           <NumberStepper value={state.playoffSpots}
@@ -234,13 +236,13 @@ function CLConfigStep({ state, setState, teamCount }: {
             step={2} />
         </div>
         <p className="text-xs" style={{ color: "var(--cat-text-muted)" }}>
-          Обязательно чётное число (двухматчевые пары). {Math.floor(state.playoffSpots / 2)} пар → {Math.floor(state.playoffSpots / 2)} победителей.
+          {tr("clPlayoffEvenHint", { pairs: Math.floor(state.playoffSpots / 2), winners: Math.floor(state.playoffSpots / 2) })}
         </p>
       </div>
 
       {/* Visual standings diagram */}
       <div className="rounded-2xl border p-5" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-        <p className="font-bold mb-4" style={{ color: "var(--cat-text)" }}>Итоговая таблица → результат</p>
+        <p className="font-bold mb-4" style={{ color: "var(--cat-text)" }}>{tr("clFinalTableResult")}</p>
         <StandingsDiagram
           directSpots={state.directSpots}
           playoffSpots={state.playoffSpots}
@@ -248,18 +250,18 @@ function CLConfigStep({ state, setState, teamCount }: {
           color={ACCENT}
         />
         {eliminated < 0 && (
-          <p className="text-xs mt-3 text-red-400">⚠ Прямые места + плей-офф места превышают количество команд!</p>
+          <p className="text-xs mt-3 text-red-400">⚠ {tr("clOverflowWarning")}</p>
         )}
       </div>
 
       {/* Stage names */}
       <div className="rounded-2xl border p-5" style={{ background: "var(--cat-card-bg)", borderColor: "var(--cat-card-border)" }}>
-        <p className="font-bold mb-4" style={{ color: "var(--cat-text)" }}>Названия этапов</p>
+        <p className="font-bold mb-4" style={{ color: "var(--cat-text)" }}>{tr("stageNames")}</p>
         <div className="space-y-3">
           {([
-            { label: "Элит-фаза", key: "leagueStageName" as const },
-            { label: "Плей-офф раунд", key: "playoffRoundName" as const },
-            { label: "Стадия нокаута (1/8+)", key: "knockoutStageName" as const },
+            { label: tr("clElitePhase"), key: "leagueStageName" as const },
+            { label: tr("clPlayoffRound"), key: "playoffRoundName" as const },
+            { label: tr("clKnockoutStageLabel"), key: "knockoutStageName" as const },
           ] as { label: string; key: keyof CLState }[]).map(({ label, key }) => (
             <div key={key as string}>
               <label className="text-xs font-semibold block mb-1.5" style={{ color: "var(--cat-text-muted)" }}>{label}</label>
@@ -278,14 +280,15 @@ function CLConfigStep({ state, setState, teamCount }: {
 // ─── Generate step ────────────────────────────────────────────────────────────
 
 function CLGenerateStep({ state, teams, generating }: { state: CLState; teams: { id: number }[]; generating: boolean }) {
+  const tr = useTranslations("formatBuilder");
   const eliminated = state.teamCount - state.directSpots - state.playoffSpots;
   const knockoutSize = state.directSpots + Math.floor(state.playoffSpots / 2);
 
   const summaryItems = [
-    { label: "Команд в элите", value: state.teamCount, color: ACCENT },
-    { label: "Прямо в 1/8", value: state.directSpots, color: "#10b981" },
-    { label: "Плей-офф раунд", value: `${state.playoffSpots} команд`, color: "#8b5cf6" },
-    { label: "Выбывают", value: eliminated > 0 ? eliminated : "—", color: "#dc2626" },
+    { label: tr("clTeamsInElite"), value: state.teamCount, color: ACCENT },
+    { label: tr("clDirectShort"), value: state.directSpots, color: "#10b981" },
+    { label: tr("clPlayoffRound"), value: tr("overviewTeamsCount", { count: state.playoffSpots }), color: "#8b5cf6" },
+    { label: tr("clEliminated"), value: eliminated > 0 ? eliminated : "—", color: "#dc2626" },
   ];
 
   return (
@@ -295,9 +298,9 @@ function CLGenerateStep({ state, teams, generating }: { state: CLState; teams: {
           style={{ background: `${ACCENT}18`, boxShadow: `0 0 32px ${ACCENT}30` }}>
           <Star className="w-8 h-8" style={{ color: ACCENT }} />
         </div>
-        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>Элитный формат готова</h2>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--cat-text)" }}>{tr("clReadyTitle")}</h2>
         <p className="text-sm max-w-xs mx-auto" style={{ color: "var(--cat-text-muted)" }}>
-          Будут созданы Элит-фаза, Плей-офф раунд и основная сетка нокаута
+          {tr("clReadyDesc")}
         </p>
       </div>
 
@@ -334,7 +337,7 @@ function CLGenerateStep({ state, teams, generating }: { state: CLState; teams: {
         <div className="rounded-2xl border p-6 text-center"
           style={{ background: `${ACCENT}05`, borderColor: `${ACCENT}30` }}>
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: ACCENT }} />
-          <p className="text-sm font-semibold" style={{ color: ACCENT }}>Создаём Лигу чемпионов...</p>
+          <p className="text-sm font-semibold" style={{ color: ACCENT }}>{tr("clGenerating")}</p>
         </div>
       )}
     </div>
@@ -344,26 +347,27 @@ function CLGenerateStep({ state, teams, generating }: { state: CLState; teams: {
 // ─── Done Screen ──────────────────────────────────────────────────────────────
 
 function DoneScreen({ orgSlug, tournamentId }: { orgSlug: string; tournamentId: number }) {
+  const tr = useTranslations("formatBuilder");
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
       <div className="w-24 h-24 rounded-3xl flex items-center justify-center mb-8"
         style={{ background: `${ACCENT}15`, boxShadow: `0 0 50px ${ACCENT}35` }}>
         <CheckCircle className="w-12 h-12" style={{ color: ACCENT }} />
       </div>
-      <h2 className="text-3xl font-black mb-3" style={{ color: "var(--cat-text)" }}>Формат создан!</h2>
+      <h2 className="text-3xl font-black mb-3" style={{ color: "var(--cat-text)" }}>{tr("doneTitle")}</h2>
       <p className="text-sm mb-8 max-w-sm" style={{ color: "var(--cat-text-muted)" }}>
-        Элит-фаза, Плей-офф раунд и Стадия нокаута созданы. Теперь назначьте команды и сгенерируйте матчи.
+        {tr("clDoneDesc")}
       </p>
       <div className="flex gap-3">
         <Link href={`/org/${orgSlug}/admin/tournament/${tournamentId}/schedule`}
           className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
           style={{ background: ACCENT, color: "#000", boxShadow: `0 0 24px ${ACCENT}45` }}>
-          К расписанию <ChevronRight className="w-4 h-4" />
+          {tr("toScheduleShort")} <ChevronRight className="w-4 h-4" />
         </Link>
         <Link href={`/org/${orgSlug}/admin/tournament/${tournamentId}`}
           className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold border"
           style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)", background: "var(--cat-card-bg)" }}>
-          Обзор
+          {tr("overviewShort")}
         </Link>
       </div>
     </div>
@@ -399,6 +403,7 @@ const STEPS = ["config", "generate"] as const;
 type Step = typeof STEPS[number];
 
 export function CLFormatWizard() {
+  const tr = useTranslations("formatBuilder");
   const ctx = useTournament();
   const tournamentId = ctx?.tournamentId ?? 0;
   const orgSlug = ctx?.orgSlug ?? "";
@@ -532,10 +537,10 @@ export function CLFormatWizard() {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xl">⭐</span>
-            <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>Элитный формат</h1>
+            <h1 className="text-xl font-black" style={{ color: "var(--cat-text)" }}>{tr("specialEliteTitle")}</h1>
           </div>
           <p className="text-xs mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-            Elite Phase + Playoff Round + Knockout — премиум формат для топ-турниров
+            {tr("clWizardSubtitle")}
           </p>
         </div>
       </div>
@@ -543,7 +548,7 @@ export function CLFormatWizard() {
       {/* Step dots */}
       <div className="flex items-center justify-center gap-0 mb-10">
         {STEPS.map((s, i) => {
-          const labels: Record<Step, string> = { config: "Настройка", generate: "Запуск" };
+          const labels: Record<Step, string> = { config: tr("stepConfig"), generate: tr("stepGenerate") };
           const idx = STEPS.indexOf(step);
           return (
             <div key={s} className="flex items-center">
@@ -584,14 +589,14 @@ export function CLFormatWizard() {
         <button onClick={() => setStep("config")} disabled={step === "config"}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:opacity-80 disabled:opacity-30"
           style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)", background: "var(--cat-card-bg)" }}>
-          <ChevronLeft className="w-4 h-4" /> Назад
+          <ChevronLeft className="w-4 h-4" /> {tr("back")}
         </button>
 
         {step === "config" ? (
           <button onClick={() => setStep("generate")}
             className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold transition-all"
             style={{ background: ACCENT, color: "#000", boxShadow: `0 0 18px ${ACCENT}40` }}>
-            Далее <ChevronRight className="w-4 h-4" />
+            {tr("next")} <ChevronRight className="w-4 h-4" />
           </button>
         ) : (
           <button onClick={handleGenerate} disabled={generating}
@@ -601,7 +606,7 @@ export function CLFormatWizard() {
               color: generating ? "var(--cat-text-muted)" : "#000",
               boxShadow: generating ? "none" : `0 0 28px ${ACCENT}50`,
             }}>
-            {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> Создаётся...</> : <><Zap className="w-4 h-4" /> Создать формат</>}
+            {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> {tr("generating")}</> : <><Zap className="w-4 h-4" /> {tr("createFormat")}</>}
           </button>
         )}
       </div>

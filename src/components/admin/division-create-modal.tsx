@@ -19,11 +19,11 @@ const ACCENT = "#2BFEBA";
 
 // Форматы матча (размер команды на поле)
 const MATCH_FORMATS = [
-  { value: "5x5",  label: "5×5",  hint: "мини-футбол" },
-  { value: "7x7",  label: "7×7",  hint: "малое поле"  },
-  { value: "8x8",  label: "8×8",  hint: "среднее поле" },
-  { value: "9x9",  label: "9×9",  hint: "полу-поле"   },
-  { value: "11x11",label: "11×11",hint: "стандарт"    },
+  { value: "5x5",  label: "5×5",  hintKey: "matchFmtFutsal"   },
+  { value: "7x7",  label: "7×7",  hintKey: "matchFmtSmall"    },
+  { value: "8x8",  label: "8×8",  hintKey: "matchFmtMedium"   },
+  { value: "9x9",  label: "9×9",  hintKey: "matchFmtHalf"     },
+  { value: "11x11",label: "11×11",hintKey: "matchFmtStandard" },
 ];
 
 // ── Основной компонент ────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ export function DivisionCreateModal({ orgSlug, tournamentId, onClose, onCreated 
   // ── Создание дивизиона ────────────────────────────────────────────────────
   async function handleCreate() {
     setError(null);
-    if (!name.trim()) { setError("Введите название дивизиона"); return; }
+    if (!name.trim()) { setError(t("errNameRequired")); return; }
     setSaving(true);
     try {
       const res = await fetch(`${apiBase}/classes`, {
@@ -99,9 +99,9 @@ export function DivisionCreateModal({ orgSlug, tournamentId, onClose, onCreated 
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         if (d.error === "Division limit reached") {
-          throw new Error(`Лимит дивизионов достигнут (план ${d.plan}: max ${d.limit})`);
+          throw new Error(t("errLimitReached", { plan: d.plan, limit: d.limit }));
         }
-        throw new Error(d.error ?? "Ошибка создания дивизиона");
+        throw new Error(d.error ?? t("errCreateFailed"));
       }
 
       const created = await res.json();
@@ -110,7 +110,7 @@ export function DivisionCreateModal({ orgSlug, tournamentId, onClose, onCreated 
       setStep(2);
 
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Неизвестная ошибка");
+      setError(e instanceof Error ? e.message : t("errUnknown"));
     } finally {
       setSaving(false);
     }
@@ -217,7 +217,7 @@ export function DivisionCreateModal({ orgSlug, tournamentId, onClose, onCreated 
                       }}
                     >
                       <span className="text-sm font-black">{f.label}</span>
-                      <span className="text-[9px] opacity-70">{f.hint}</span>
+                      <span className="text-[9px] opacity-70">{t(f.hintKey)}</span>
                     </button>
                   ))}
                 </div>
@@ -265,11 +265,11 @@ export function DivisionCreateModal({ orgSlug, tournamentId, onClose, onCreated 
               {/* Даты дивизиона (по умолчанию = даты турнира) */}
               <div className="space-y-1.5">
                 <label className="text-xs font-black uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
-                  Даты дивизиона
+                  {t("datesLabel")}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Начало</span>
+                    <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{t("dateStart")}</span>
                     <input
                       type="date"
                       value={startDate}
@@ -279,7 +279,7 @@ export function DivisionCreateModal({ orgSlug, tournamentId, onClose, onCreated 
                     />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>Конец</span>
+                    <span className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>{t("dateEnd")}</span>
                     <input
                       type="date"
                       value={endDate}
@@ -291,7 +291,7 @@ export function DivisionCreateModal({ orgSlug, tournamentId, onClose, onCreated 
                 </div>
                 {(startDate || endDate) && (
                   <p className="text-[10px]" style={{ color: "var(--cat-text-muted)" }}>
-                    Подтянуто из турнира · можно уточнить для этого дивизиона
+                    {t("datesFromTournament")}
                   </p>
                 )}
               </div>

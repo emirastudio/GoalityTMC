@@ -214,10 +214,10 @@ function AccommodationTab() {
     setError(null);
     try {
       const res = await adminFetch("/api/admin/services/accommodation");
-      if (!res.ok) throw new Error("Failed to load");
+      if (!res.ok) throw new Error(t("loadFailed"));
       setItems(await res.json());
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     } finally {
       setLoading(false);
     }
@@ -262,14 +262,14 @@ function AccommodationTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) throw new Error(t("saveFailed"));
       await load();
       setEditId(null);
       setForm(emptyForm);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     } finally {
       setSaving(false);
     }
@@ -278,11 +278,11 @@ function AccommodationTab() {
   const doDelete = async (id: number) => {
     try {
       const res = await adminFetch(`/api/admin/services/accommodation/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Delete failed");
+      if (!res.ok) throw new Error(t("deleteFailed"));
       setDeleteId(null);
       await load();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     }
   };
 
@@ -466,10 +466,10 @@ function MealsTab() {
     setError(null);
     try {
       const res = await adminFetch("/api/admin/services/meals");
-      if (!res.ok) throw new Error("Failed to load");
+      if (!res.ok) throw new Error(t("loadFailed"));
       setItems(await res.json());
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     } finally {
       setLoading(false);
     }
@@ -506,14 +506,14 @@ function MealsTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) throw new Error(t("saveFailed"));
       await load();
       setEditId(null);
       setForm(emptyForm);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     } finally {
       setSaving(false);
     }
@@ -522,11 +522,11 @@ function MealsTab() {
   const doDelete = async (id: number) => {
     try {
       const res = await adminFetch(`/api/admin/services/meals/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Delete failed");
+      if (!res.ok) throw new Error(t("deleteFailed"));
       setDeleteId(null);
       await load();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     }
   };
 
@@ -680,10 +680,10 @@ function TransfersTab() {
     setError(null);
     try {
       const res = await adminFetch("/api/admin/services/transfers");
-      if (!res.ok) throw new Error("Failed to load");
+      if (!res.ok) throw new Error(t("loadFailed"));
       setItems(await res.json());
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     } finally {
       setLoading(false);
     }
@@ -719,14 +719,14 @@ function TransfersTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) throw new Error(t("saveFailed"));
       await load();
       setEditId(null);
       setForm(emptyForm);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     } finally {
       setSaving(false);
     }
@@ -735,11 +735,11 @@ function TransfersTab() {
   const doDelete = async (id: number) => {
     try {
       const res = await adminFetch(`/api/admin/services/transfers/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Delete failed");
+      if (!res.ok) throw new Error(t("deleteFailed"));
       setDeleteId(null);
       await load();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     }
   };
 
@@ -879,7 +879,7 @@ function RegistrationTab() {
     setError(null);
     try {
       const res = await adminFetch("/api/admin/services/registration");
-      if (!res.ok) throw new Error("Failed to load");
+      if (!res.ok) throw new Error(t("loadFailed"));
       const data: RegistrationFee = await res.json();
       setForm({
         nameML: multilangFromRow(data as unknown as Record<string, unknown>, "name"),
@@ -909,11 +909,11 @@ function RegistrationTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) throw new Error(t("saveFailed"));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : t("genericError"));
     } finally {
       setSaving(false);
     }

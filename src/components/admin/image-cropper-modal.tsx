@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Cropper from "react-easy-crop";
+import { useTranslations } from "next-intl";
 import { X, ZoomIn, ZoomOut, Check, RotateCw } from "lucide-react";
 
 interface Area { x: number; y: number; width: number; height: number; }
@@ -68,6 +69,7 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area, rotation = 0): 
 }
 
 export function ImageCropperModal({ src, aspect = 1, shape = "rect", onDone, onCancel }: Props) {
+  const t = useTranslations("orgAdmin");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -104,10 +106,10 @@ export function ImageCropperModal({ src, aspect = 1, shape = "rect", onDone, onC
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--cat-card-border)" }}>
           <div>
             <h3 className="text-[15px] font-bold" style={{ color: "var(--cat-text)" }}>
-              Обрезать изображение
+              {t("cropperTitle")}
             </h3>
             <p className="text-[11px] mt-0.5" style={{ color: "var(--cat-text-muted)" }}>
-              Перемещайте и масштабируйте фото
+              {t("cropperSubtitle")}
             </p>
           </div>
           <button
@@ -189,7 +191,7 @@ export function ImageCropperModal({ src, aspect = 1, shape = "rect", onDone, onC
               className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold border transition-opacity hover:opacity-80"
               style={{ borderColor: "var(--cat-card-border)", color: "var(--cat-text-secondary)" }}
             >
-              Отмена
+              {t("cancel")}
             </button>
             <button
               onClick={handleSave}
@@ -206,7 +208,7 @@ export function ImageCropperModal({ src, aspect = 1, shape = "rect", onDone, onC
               ) : (
                 <Check className="w-4 h-4" />
               )}
-              Применить
+              {t("cropperApply")}
             </button>
           </div>
         </div>

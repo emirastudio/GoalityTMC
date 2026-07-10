@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import {
   CheckCircle,
   XCircle,
@@ -112,11 +113,11 @@ function gradeColor(g: string) {
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
 
-function fmtMins(m: number | null) {
+function fmtMins(m: number | null, abbrH: string, abbrM: string) {
   if (m === null) return "—";
   const h = Math.floor(m / 60);
   const min = m % 60;
-  return h > 0 ? `${h}ч ${min}м` : `${min}м`;
+  return h > 0 ? `${h}${abbrH} ${min}${abbrM}` : `${min}${abbrM}`;
 }
 
 function fmtDate(d: string) {
@@ -191,14 +192,15 @@ function UtilBar({ pct }: { pct: number }) {
 // ─── Day mini bar chart ───────────────────────────────────────────────────────
 
 function DayBarChart({ data }: { data: DayLoad[] }) {
-  if (data.length === 0) return <p className="text-xs opacity-50">Нет данных</p>;
+  const t = useTranslations("schedule");
+  if (data.length === 0) return <p className="text-xs opacity-50">{t("noData")}</p>;
   const maxCount = Math.max(...data.map(d => d.matchCount), 1);
   return (
     <div className="flex items-end gap-1" style={{ height: 72 }}>
       {data.map(d => {
         const h = Math.round((d.matchCount / maxCount) * 60);
         return (
-          <div key={d.date} className="flex flex-col items-center gap-0.5 flex-1" title={`${fmtDate(d.date)}: ${d.matchCount} матч(ей), ${d.activeFields} поле(й)`}>
+          <div key={d.date} className="flex flex-col items-center gap-0.5 flex-1" title={t("auditDayBarTitle", { date: fmtDate(d.date), matches: d.matchCount, fields: d.activeFields })}>
             <span className="text-xs font-mono" style={{ fontSize: 10, color: "var(--cat-text-muted)" }}>
               {d.matchCount}
             </span>
@@ -229,6 +231,10 @@ export default function ScheduleAuditPanel({
   tournamentId,
   onClose,
 }: ScheduleAuditPanelProps) {
+  const t = useTranslations("schedule");
+  const locale = useLocale();
+  const abbrH = t("abbrHour");
+  const abbrM = t("abbrMin");
   const [report, setReport] = useState<AuditReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -245,7 +251,7 @@ export default function ScheduleAuditPanel({
       const data: AuditReport = await res.json();
       setReport(data);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Неизвестная ошибка");
+      setError(e instanceof Error ? e.message : t("unknownError"));
     } finally {
       setLoading(false);
     }
@@ -269,11 +275,11 @@ export default function ScheduleAuditPanel({
       >
         <Activity className="w-4 h-4" style={{ color: "#2BFEBA" }} />
         <span className="font-semibold flex-1" style={{ color: "var(--cat-text)", fontSize: 14 }}>
-          Аудит расписания
+          {t("auditTitle")}
         </span>
         {report && (
           <span className="text-xs opacity-40" style={{ color: "var(--cat-text-secondary)", fontSize: 12 }}>
-            {new Date(report.generatedAt).toLocaleTimeString("ru")}
+            {new Date(report.generatedAt).toLocaleTimeString(locale)}
           </span>
         )}
         <button
@@ -283,7 +289,7 @@ export default function ScheduleAuditPanel({
           style={{ background: "rgba(43,254,186,0.15)", color: "#2BFEBA", border: "1px solid rgba(43,254,186,0.3)" }}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          {report ? "Обновить" : "Проверить расписание"}
+          {report ? t("auditRefresh") : t("auditRun")}
         </button>
         {onClose && (
           <button
@@ -301,7 +307,7 @@ export default function ScheduleAuditPanel({
         {loading && (
           <div className="flex items-center gap-2 py-6 justify-center" style={{ color: "var(--cat-text-secondary)" }}>
             <RefreshCw className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Анализируем расписание…</span>
+            <span className="text-sm">{t("auditAnalyzing")}</span>
           </div>
         )}
 
@@ -317,7 +323,7 @@ export default function ScheduleAuditPanel({
         {!loading && !error && !report && (
           <div className="py-8 text-center" style={{ color: "var(--cat-text-muted)" }}>
             <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Нажмите «Проверить расписание» для запуска аудита</p>
+            <p className="text-sm">{t("auditPlaceholder")}</p>
           </div>
         )}
 
@@ -325,7 +331,7 @@ export default function ScheduleAuditPanel({
         {report && report.overview.scheduledMatches === 0 && (
           <div className="py-6 text-center" style={{ color: "var(--cat-text-muted)" }}>
             <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Нет данных — ни один матч не запланирован</p>
+            <p className="text-sm">{t("auditNoScheduled")}</p>
           </div>
         )}
 
@@ -359,25 +365,25 @@ export default function ScheduleAuditPanel({
 
               {/* Total */}
               <StatCard
-                label="Матчей всего"
+                label={t("auditTotalMatches")}
                 value={report.overview.totalMatches}
-                sub={`${report.overview.scheduledMatches} назначено`}
+                sub={t("auditScheduledSub", { count: report.overview.scheduledMatches })}
                 icon={<Calendar className="w-4 h-4" />}
                 color="#3b82f6"
               />
               {/* Violations */}
               <StatCard
-                label="Нарушений"
+                label={t("auditViolations")}
                 value={report.overview.hardViolations}
-                sub="критических"
+                sub={t("auditCritical")}
                 icon={<XCircle className="w-4 h-4" />}
                 color={report.overview.hardViolations > 0 ? "#ef4444" : "#10b981"}
               />
               {/* Warnings */}
               <StatCard
-                label="Предупреждений"
+                label={t("auditWarnings")}
                 value={report.overview.warnings}
-                sub="мягких"
+                sub={t("auditSoft")}
                 icon={<AlertTriangle className="w-4 h-4" />}
                 color={report.overview.warnings > 0 ? "#f59e0b" : "#10b981"}
               />
@@ -386,7 +392,7 @@ export default function ScheduleAuditPanel({
             {/* ── Violations ── */}
             {report.violations.length > 0 && (
               <Section
-                title="Нарушения и предупреждения"
+                title={t("auditViolationsTitle")}
                 icon={<AlertTriangle className="w-4 h-4" />}
                 badge={
                   <span
@@ -397,7 +403,7 @@ export default function ScheduleAuditPanel({
                       fontSize: 11,
                     }}
                   >
-                    {report.violations.filter(v => v.severity === "error").length} ошибок
+                    {t("auditErrorsCount", { count: report.violations.filter(v => v.severity === "error").length })}
                   </span>
                 }
               >
@@ -423,7 +429,7 @@ export default function ScheduleAuditPanel({
                         </p>
                         {v.matchIds.length > 0 && (
                           <p className="text-xs mt-0.5 opacity-50" style={{ fontSize: 11 }}>
-                            Матчи: {v.matchIds.join(", ")}
+                            {t("auditMatchesList", { ids: v.matchIds.join(", ") })}
                           </p>
                         )}
                       </div>
@@ -436,7 +442,7 @@ export default function ScheduleAuditPanel({
             {/* ── Field utilisation ── */}
             {report.fieldStats.length > 0 && (
               <Section
-                title="Загрузка полей"
+                title={t("auditFieldLoad")}
                 icon={<MapPin className="w-4 h-4" />}
               >
                 <div className="flex flex-col gap-4">
@@ -449,7 +455,7 @@ export default function ScheduleAuditPanel({
                             {f.stadiumName !== "—" ? `${f.stadiumName} / ` : ""}{f.fieldName}
                           </span>
                           <span className="text-xs opacity-60" style={{ fontSize: 11 }}>
-                            {f.days.reduce((s, d) => s + d.matchCount, 0)} матчей
+                            {t("matchesPlural", { count: f.days.reduce((s, d) => s + d.matchCount, 0) })}
                           </span>
                         </div>
                         <UtilBar pct={f.overallUtilizationPct} />
@@ -465,7 +471,7 @@ export default function ScheduleAuditPanel({
                                   color: "var(--cat-text-secondary)",
                                 }}
                               >
-                                {fmtDate(d.date)}: {d.matchCount}м / {d.utilizationPct}%
+                                {t("auditDayUtil", { date: fmtDate(d.date), matches: d.matchCount, pct: d.utilizationPct })}
                               </span>
                             ))}
                           </div>
@@ -474,7 +480,7 @@ export default function ScheduleAuditPanel({
                     ))}
                   {report.fieldStats.filter(f => f.days.length === 0).length > 0 && (
                     <p className="text-xs opacity-40" style={{ fontSize: 12 }}>
-                      {report.fieldStats.filter(f => f.days.length === 0).length} полей без назначенных матчей
+                      {t("auditFieldsNoMatches", { count: report.fieldStats.filter(f => f.days.length === 0).length })}
                     </p>
                   )}
                 </div>
@@ -484,7 +490,7 @@ export default function ScheduleAuditPanel({
             {/* ── Team stats ── */}
             {report.teamStats.length > 0 && (
               <Section
-                title="Статистика команд"
+                title={t("auditTeamStats")}
                 icon={<Users className="w-4 h-4" />}
                 defaultOpen={false}
               >
@@ -492,54 +498,54 @@ export default function ScheduleAuditPanel({
                   <table className="w-full" style={{ fontSize: 13, borderCollapse: "collapse" }}>
                     <thead>
                       <tr style={{ color: "var(--cat-text-secondary)", borderBottom: "1px solid var(--cat-card-border)" }}>
-                        <th className="text-left pb-2 pr-3 font-semibold">Команда</th>
-                        <th className="text-center pb-2 px-2 font-semibold" title="Групповые матчи">Группа</th>
-                        <th className="text-center pb-2 px-2 font-semibold" title="Матчи плей-офф">П/О</th>
-                        <th className="text-center pb-2 px-2 font-semibold" title="Дом / Гость">Д/Г</th>
-                        <th className="text-center pb-2 px-2 font-semibold" title="Минимальный отдых">Мин.отдых</th>
-                        <th className="text-center pb-2 px-2 font-semibold" title="Средний отдых">Ср.отдых</th>
-                        <th className="text-center pb-2 px-2 font-semibold" title="Максимум матчей подряд без комфортного отдыха">Подряд</th>
-                        <th className="text-center pb-2 px-1 font-semibold" title="Нарушения отдыха">⚠</th>
+                        <th className="text-left pb-2 pr-3 font-semibold">{t("teamHeader")}</th>
+                        <th className="text-center pb-2 px-2 font-semibold" title={t("auditColGroupTitle")}>{t("auditColGroup")}</th>
+                        <th className="text-center pb-2 px-2 font-semibold" title={t("auditColPlayoffTitle")}>{t("auditColPlayoff")}</th>
+                        <th className="text-center pb-2 px-2 font-semibold" title={t("auditColHomeAwayTitle")}>{t("auditColHomeAway")}</th>
+                        <th className="text-center pb-2 px-2 font-semibold" title={t("auditColMinRestTitle")}>{t("auditColMinRest")}</th>
+                        <th className="text-center pb-2 px-2 font-semibold" title={t("auditColAvgRestTitle")}>{t("auditColAvgRest")}</th>
+                        <th className="text-center pb-2 px-2 font-semibold" title={t("auditColStreakTitle")}>{t("auditColStreak")}</th>
+                        <th className="text-center pb-2 px-1 font-semibold" title={t("auditColViolationsTitle")}>⚠</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {report.teamStats.map(t => {
-                        const streakBad = t.maxConsecutiveStreak >= 3;
-                        const streakWarn = t.maxConsecutiveStreak === 2;
+                      {report.teamStats.map(ts => {
+                        const streakBad = ts.maxConsecutiveStreak >= 3;
+                        const streakWarn = ts.maxConsecutiveStreak === 2;
                         return (
                           <tr
-                            key={t.teamId}
+                            key={ts.teamId}
                             style={{
                               borderBottom: "1px solid rgba(255,255,255,0.04)",
                               color: "var(--cat-text)",
                             }}
                           >
-                            <td className="py-2 pr-3 font-medium truncate" style={{ maxWidth: 160 }}>{t.teamName}</td>
+                            <td className="py-2 pr-3 font-medium truncate" style={{ maxWidth: 160 }}>{ts.teamName}</td>
                             <td className="py-2 px-2 text-center">
-                              <span style={{ color: "var(--cat-text-secondary)" }}>{t.groupMatches ?? t.totalScheduled}</span>
+                              <span style={{ color: "var(--cat-text-secondary)" }}>{ts.groupMatches ?? ts.totalScheduled}</span>
                             </td>
                             <td className="py-2 px-2 text-center">
-                              {(t.playoffMatches ?? 0) > 0
-                                ? <span style={{ color: "#6366f1", fontWeight: 600 }}>{t.playoffMatches}</span>
+                              {(ts.playoffMatches ?? 0) > 0
+                                ? <span style={{ color: "#6366f1", fontWeight: 600 }}>{ts.playoffMatches}</span>
                                 : <span style={{ opacity: 0.3 }}>—</span>
                               }
                             </td>
                             <td className="py-2 px-2 text-center" style={{ color: "var(--cat-text-secondary)" }}>
-                              {t.homeMatches}/{t.awayMatches}
+                              {ts.homeMatches}/{ts.awayMatches}
                             </td>
                             <td className="py-2 px-2 text-center">
                               <span style={{
-                                color: t.minRestMinutes !== null && t.minRestMinutes < 60 ? "#ef4444" : "var(--cat-text-secondary)",
-                                fontWeight: t.minRestMinutes !== null && t.minRestMinutes < 60 ? 700 : 400,
+                                color: ts.minRestMinutes !== null && ts.minRestMinutes < 60 ? "#ef4444" : "var(--cat-text-secondary)",
+                                fontWeight: ts.minRestMinutes !== null && ts.minRestMinutes < 60 ? 700 : 400,
                               }}>
-                                {fmtMins(t.minRestMinutes)}
+                                {fmtMins(ts.minRestMinutes, abbrH, abbrM)}
                               </span>
                             </td>
                             <td className="py-2 px-2 text-center" style={{ color: "var(--cat-text-secondary)" }}>
-                              {fmtMins(t.avgRestMinutes)}
+                              {fmtMins(ts.avgRestMinutes, abbrH, abbrM)}
                             </td>
                             <td className="py-2 px-2 text-center">
-                              {(t.maxConsecutiveStreak ?? 0) >= 2 ? (
+                              {(ts.maxConsecutiveStreak ?? 0) >= 2 ? (
                                 <span
                                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold"
                                   style={{
@@ -547,21 +553,21 @@ export default function ScheduleAuditPanel({
                                     color: streakBad ? "#ef4444" : streakWarn ? "#f59e0b" : "var(--cat-text-secondary)",
                                     fontSize: 12,
                                   }}
-                                  title={`${t.consecutiveInstances ?? 0} раз(а) подряд`}
+                                  title={t("auditStreakTimes", { count: ts.consecutiveInstances ?? 0 })}
                                 >
-                                  {t.maxConsecutiveStreak}× {t.consecutiveInstances > 0 && <span style={{ opacity: 0.7 }}>({t.consecutiveInstances})</span>}
+                                  {ts.maxConsecutiveStreak}× {ts.consecutiveInstances > 0 && <span style={{ opacity: 0.7 }}>({ts.consecutiveInstances})</span>}
                                 </span>
                               ) : (
                                 <span style={{ color: "#10b981", fontSize: 16 }}>✓</span>
                               )}
                             </td>
                             <td className="py-2 px-1 text-center">
-                              {t.restViolations > 0 ? (
+                              {ts.restViolations > 0 ? (
                                 <span
                                   className="inline-flex items-center justify-center w-6 h-6 rounded-full font-bold"
                                   style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444", fontSize: 12 }}
                                 >
-                                  {t.restViolations}
+                                  {ts.restViolations}
                                 </span>
                               ) : (
                                 <CheckCircle className="w-4 h-4 mx-auto" style={{ color: "#10b981" }} />
@@ -574,7 +580,7 @@ export default function ScheduleAuditPanel({
                   </table>
                 </div>
                 <p className="text-xs mt-2 opacity-50" style={{ fontSize: 12 }}>
-                  Подряд = макс. цепочка матчей без достаточного отдыха (&lt;2× мин. отдых между ними). В скобках — сколько раз такое произошло.
+                  {t("auditStreakExplain")}
                 </p>
               </Section>
             )}
@@ -582,7 +588,7 @@ export default function ScheduleAuditPanel({
             {/* ── Day load chart ── */}
             {report.dayLoad.length > 0 && (
               <Section
-                title="Нагрузка по дням"
+                title={t("auditDayLoad")}
                 icon={<TrendingUp className="w-4 h-4" />}
                 defaultOpen={false}
               >
@@ -591,7 +597,7 @@ export default function ScheduleAuditPanel({
                   {report.dayLoad.map(d => (
                     <div key={d.date} className="text-xs" style={{ color: "var(--cat-text-secondary)", fontSize: 11 }}>
                       <span className="font-semibold" style={{ color: "var(--cat-text)" }}>{fmtDate(d.date)}</span>
-                      {" "}{d.matchCount} матчей · {d.activeFields} полей
+                      {" "}{t("auditDayLoadItem", { matches: d.matchCount, fields: d.activeFields })}
                     </div>
                   ))}
                 </div>
@@ -600,14 +606,14 @@ export default function ScheduleAuditPanel({
 
             {/* ── Round order ── */}
             <Section
-              title="Порядок туров"
+              title={t("auditRoundOrder")}
               icon={<Clock className="w-4 h-4" />}
               defaultOpen={!report.roundOrderOk}
             >
               {report.roundOrderOk ? (
                 <div className="flex items-center gap-2" style={{ color: "#10b981" }}>
                   <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm">Порядок туров соблюдён</span>
+                  <span className="text-sm">{t("auditRoundOrderOk")}</span>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">

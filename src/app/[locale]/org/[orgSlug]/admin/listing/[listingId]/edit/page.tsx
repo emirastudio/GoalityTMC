@@ -57,10 +57,10 @@ type BaseFields = {
 const FORMAT_OPTIONS = ["4x4", "5x5", "6x6", "7x7", "8x8", "9x9", "10x10", "11x11"];
 const LEVEL_OPTIONS  = ["Local", "Regional", "National", "International"];
 const GENDER_OPTIONS = [
-  { value: "M",     label: "Boys"  },
-  { value: "F",     label: "Girls" },
-  { value: "Mixed", label: "Mixed" },
-];
+  { value: "M",     labelKey: "genderBoys"  },
+  { value: "F",     labelKey: "genderGirls" },
+  { value: "Mixed", labelKey: "genderMixed" },
+] as const;
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => CURRENT_YEAR - 5 - i);
 const LEVEL_COLORS: Record<string, string> = {
@@ -260,7 +260,7 @@ export default function ListingEditPage() {
 
   /* ── Save ── */
   async function handleSave() {
-    if (!translations.en.name.trim()) { showToast("error", "Tournament name (English) is required"); return; }
+    if (!translations.en.name.trim()) { showToast("error", t("nameRequired")); return; }
     setSaving(true);
     try {
       // English content → main columns; all languages → translations column
@@ -283,10 +283,10 @@ export default function ListingEditPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to save");
-      showToast("success", "Saved");
+      if (!res.ok) throw new Error(data.error ?? t("saveFailed"));
+      showToast("success", t("savedSuccessfully"));
     } catch (e) {
-      showToast("error", e instanceof Error ? e.message : "Error");
+      showToast("error", e instanceof Error ? e.message : t("genericError"));
     } finally {
       setSaving(false);
     }
@@ -300,14 +300,14 @@ export default function ListingEditPage() {
       fd.append("file", file);
       const res = await fetch(`/api/org/${orgSlug}/listing/${listingId}/${endpoint}`, { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload failed");
+      if (!res.ok) throw new Error(data.error ?? t("uploadFailed"));
       setUrl(data.logoUrl ?? data.coverUrl ?? data.cardImageUrl ?? null);
-    } catch (e) { showToast("error", e instanceof Error ? e.message : "Upload failed"); }
+    } catch (e) { showToast("error", e instanceof Error ? e.message : t("uploadFailed")); }
     finally { setBusy(false); }
   }
   async function deleteMedia(endpoint: string, setUrl: (u: string | null) => void) {
     try { await fetch(`/api/org/${orgSlug}/listing/${listingId}/${endpoint}`, { method: "DELETE" }); setUrl(null); }
-    catch { showToast("error", "Delete failed"); }
+    catch { showToast("error", t("deleteFailed")); }
   }
 
   /* ── Styles ── */
@@ -388,7 +388,7 @@ export default function ListingEditPage() {
                   }>
                   <span>{flag}</span>
                   <span>{label}</span>
-                  {isBase && <span className="text-[9px] opacity-60">base</span>}
+                  {isBase && <span className="text-[9px] opacity-60">{t("baseBadge")}</span>}
                   {!isBase && filled && (
                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: active ? "#0A0E14" : "var(--cat-accent)" }} />
                   )}
@@ -427,7 +427,7 @@ export default function ListingEditPage() {
 
       {/* ══ BASIC INFO (translatable) ══ */}
       <div className="mt-4">
-        <Card title={`Basic info · ${LANGS.find(l => l.code === activeLang)?.flag} ${LANGS.find(l => l.code === activeLang)?.name}`} accent>
+        <Card title={`${t("basicInfoSection")} · ${LANGS.find(l => l.code === activeLang)?.flag} ${LANGS.find(l => l.code === activeLang)?.name}`} accent>
           <div className="space-y-4">
             <div>
               <label style={lbl}>
@@ -556,7 +556,7 @@ export default function ListingEditPage() {
                           style={ag.gender === g.value
                             ? { background: "var(--cat-accent)", color: "#0A0E14" }
                             : { background: "var(--cat-card-bg)", color: "var(--cat-text-secondary)", border: "1px solid var(--cat-card-border)" }
-                          }>{g.label}</button>
+                          }>{t(g.labelKey)}</button>
                       ))}
                     </div>
                   </div>

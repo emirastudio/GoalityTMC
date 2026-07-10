@@ -1220,10 +1220,10 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         router.push(`/${locale}/team/overview`);
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(`Ошибка: ${data.error ?? res.status}`);
+        alert(t("errorPrefix", { error: data.error ?? res.status }));
       }
     } catch (e) {
-      alert(`Ошибка: ${e}`);
+      alert(t("errorPrefix", { error: String(e) }));
     } finally {
       setLoggingIn(false);
     }
@@ -1300,13 +1300,13 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
         await fetchReport();
       } else {
         const d = await res.json().catch(() => ({}));
-        alert(d.error ?? "Error saving person");
+        alert(d.error ?? t("errorSavingPerson"));
       }
     } finally { setSavingPerson(false); }
   }
 
   async function handleDeletePerson(personId: number) {
-    if (!confirm("Delete this person?")) return;
+    if (!confirm(t("deletePersonConfirm"))) return;
     setDeletingPersonId(personId);
     try {
       const res = await adminFetch(`/api/admin/people/${personId}`, { method: "DELETE" });
@@ -2102,10 +2102,10 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                           </td>
                           <td className="py-2.5 text-xs">
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => openEditPerson(p)} className="th-text-2 hover:text-[var(--cat-accent)] cursor-pointer" title="Edit">
+                              <button onClick={() => openEditPerson(p)} className="th-text-2 hover:text-[var(--cat-accent)] cursor-pointer" title={t("editBtn")}>
                                 <FileText className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => handleDeletePerson(p.id)} disabled={deletingPersonId === p.id} className="th-text-2 hover:text-red-500 cursor-pointer" title="Delete">
+                              <button onClick={() => handleDeletePerson(p.id)} disabled={deletingPersonId === p.id} className="th-text-2 hover:text-red-500 cursor-pointer" title={t("deleteBtn")}>
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
@@ -2149,10 +2149,10 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                           </td>
                           <td className="py-2.5 text-xs">
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => openEditPerson(p)} className="th-text-2 hover:text-[var(--cat-accent)] cursor-pointer" title="Edit">
+                              <button onClick={() => openEditPerson(p)} className="th-text-2 hover:text-[var(--cat-accent)] cursor-pointer" title={t("editBtn")}>
                                 <FileText className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => handleDeletePerson(p.id)} disabled={deletingPersonId === p.id} className="th-text-2 hover:text-red-500 cursor-pointer" title="Delete">
+                              <button onClick={() => handleDeletePerson(p.id)} disabled={deletingPersonId === p.id} className="th-text-2 hover:text-red-500 cursor-pointer" title={t("deleteBtn")}>
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
@@ -2348,7 +2348,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                   <label className="block text-xs font-medium th-text-2 mb-1">{t("position")}</label>
                   <input type="text" value={personModal.form.position}
                     onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, position: e.target.value } }))}
-                    placeholder="GK, DEF, MID, FWD..."
+                    placeholder={t("positionPlaceholder")}
                     className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
                 </div>
               )}
@@ -2357,7 +2357,7 @@ export function TeamDetailPageContent({ teamId }: { teamId: string }) {
                   <label className="block text-xs font-medium th-text-2 mb-1">{t("role")}</label>
                   <input type="text" value={personModal.form.role}
                     onChange={(e) => setPersonModal((m) => ({ ...m, form: { ...m.form, role: e.target.value } }))}
-                    placeholder="Coach, Manager, Doctor..."
+                    placeholder={t("rolePlaceholder")}
                     className="w-full px-3 py-2 rounded-lg border th-border th-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20" />
                 </div>
               )}

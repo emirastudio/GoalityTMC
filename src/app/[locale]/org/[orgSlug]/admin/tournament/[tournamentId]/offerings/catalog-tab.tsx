@@ -528,6 +528,7 @@ function TemplatesBlock({
               duplicateLabel={t("templates.duplicate")}
               deleteLabel={t("templates.delete")}
               builtinLabel={t("templates.builtin")}
+              reqLabel={t("templates.reqBadge")}
               onUse={() => onUse(tmpl)}
               onEdit={() => onEdit(tmpl)}
               onDuplicate={() => onDuplicate(tmpl)}
@@ -541,7 +542,7 @@ function TemplatesBlock({
 }
 
 function TemplateCard({
-  tmpl, locale, priceModelLabel, useLabel, editLabel, duplicateLabel, deleteLabel, builtinLabel,
+  tmpl, locale, priceModelLabel, useLabel, editLabel, duplicateLabel, deleteLabel, builtinLabel, reqLabel,
   onUse, onEdit, onDuplicate, onDelete,
 }: {
   tmpl: OfferingTemplate;
@@ -552,6 +553,7 @@ function TemplateCard({
   duplicateLabel: string;
   deleteLabel: string;
   builtinLabel: string;
+  reqLabel: string;
   onUse: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -607,7 +609,7 @@ function TemplateCard({
                 color: "#ef4444",
                 border: "1px solid rgba(239,68,68,0.30)",
               }}>
-              req.
+              {reqLabel}
             </span>
           )}
           {tmpl.isBuiltin && (

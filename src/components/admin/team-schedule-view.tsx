@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Clock, ChevronDown } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -51,22 +52,22 @@ function fmtTime(iso: string): string {
   return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
 }
 
-function fmtDate(iso: string): string {
+function fmtDate(iso: string, locale = "en"): string {
   // iso = "YYYY-MM-DD"
   const d = new Date(iso + "T12:00:00Z");
-  return d.toLocaleDateString("ru", { day: "numeric", month: "short", timeZone: "UTC" });
+  return d.toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "UTC" });
 }
 
-function fmtDayOfWeek(iso: string): string {
+function fmtDayOfWeek(iso: string, locale = "en"): string {
   const d = new Date(iso + "T12:00:00Z");
-  return d.toLocaleDateString("ru", { weekday: "short", timeZone: "UTC" });
+  return d.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" });
 }
 
-function fmtRestMins(mins: number): string {
-  if (mins < 60) return `${mins}м`;
+function fmtRestMins(mins: number, abbrH: string, abbrM: string): string {
+  if (mins < 60) return `${mins}${abbrM}`;
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return m > 0 ? `${h}ч${m}м` : `${h}ч`;
+  return m > 0 ? `${h}${abbrH}${m}${abbrM}` : `${h}${abbrH}`;
 }
 
 const STAGE_COLORS = [
@@ -77,6 +78,8 @@ const STAGE_COLORS = [
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleViewProps) {
+  const t = useTranslations("schedule");
+  const locale = useLocale();
   const [selectedClassId, setSelectedClassId] = useState<number | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "matches" | "firstMatch">("firstMatch");
@@ -161,7 +164,7 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
         const rest = Math.round((parseUtcMs(m.scheduledAt) - parseUtcMs(ms[i - 1].scheduledAt!) - 45 * 60000) / 60000);
         return rest < minRestMins;
       });
-      return { id, name: name ?? `Команда #${id}`, matches: ms, hasViolation };
+      return { id, name: name ?? t("teamFallback", { id }), matches: ms, hasViolation };
     }).filter(t => !searchQuery || t.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (sortBy === "name") result.sort((a, b) => a.name.localeCompare(b.name));
@@ -185,10 +188,10 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
       <div className="px-4 py-3 border-b flex items-center gap-3 flex-wrap"
         style={{ borderColor: "var(--cat-card-border)" }}>
         <span className="font-bold text-base" style={{ color: "var(--cat-text)" }}>
-          📋 Расписание по командам
+          📋 {t("teamScheduleTitle")}
         </span>
         <span className="text-sm" style={{ color: "var(--cat-text-muted)" }}>
-          {visibleTeams.length} команд · {scheduledCount} матчей · {allDays.length} дн.
+          {t("teamScheduleSummary", { teams: visibleTeams.length, matches: scheduledCount, days: allDays.length })}
         </span>
 
         <div className="ml-auto flex items-center gap-2 flex-wrap">
@@ -204,7 +207,7 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
                   color: "var(--cat-text)",
                 }}
               >
-                <option value="all">Все дивизионы</option>
+                <option value="all">{t("allDivisions")}</option>
                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <ChevronDown className="absolute right-2 top-2 w-4 h-4 pointer-events-none"
@@ -214,7 +217,7 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
 
           <input
             type="text"
-            placeholder="Поиск команды..."
+            placeholder={t("teamSearchPlaceholder")}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="rounded-lg px-3 py-1.5 text-sm outline-none"
@@ -227,7 +230,7 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
           />
 
           <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid var(--cat-card-border)" }}>
-            {([["name", "А-Я"], ["matches", "Матчи"], ["firstMatch", "По времени"]] as const).map(([v, label]) => (
+            {([["name", t("sortAZ")], ["matches", t("sortByMatches")], ["firstMatch", t("sortByTime")]] as const).map(([v, label]) => (
               <button key={v} onClick={() => setSortBy(v)}
                 className="px-3 py-1.5 text-sm transition-all"
                 style={{
@@ -246,12 +249,12 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
       <div className="px-4 py-2 flex items-center gap-4 flex-wrap border-b"
         style={{ borderColor: "var(--cat-card-border)", background: "rgba(0,0,0,0.1)" }}>
         <span className="text-xs flex items-center gap-1" style={{ color: "var(--cat-text-muted)" }}>
-          <Clock className="w-3 h-3" /> Отдых:
+          <Clock className="w-3 h-3" /> {t("restLabel")}
         </span>
         {[
-          ["#ef4444", `<${minRestMins}м (нарушение)`],
-          ["#f59e0b", "<120м (спорно)"],
-          ["#2BFEBA", "≥120м (норм)"],
+          ["#ef4444", t("restLegendViolation", { min: minRestMins })],
+          ["#f59e0b", t("restLegendBorderline")],
+          ["#2BFEBA", t("restLegendOk")],
         ].map(([color, label]) => (
           <span key={label} className="flex items-center gap-1 text-xs" style={{ fontSize: 12 }}>
             <span className="w-3 h-3 rounded-sm inline-block" style={{ background: color }} />
@@ -284,7 +287,7 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
                   zIndex: 2,
                 }}
               >
-                Команда
+                {t("teamHeader")}
               </th>
               {allDays.map(day => (
                 <th key={day}
@@ -300,8 +303,8 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
                     whiteSpace: "nowrap",
                   }}
                 >
-                  <div style={{ color: "var(--cat-text)", fontWeight: 700, fontSize: 13 }}>{fmtDate(day)}</div>
-                  <div style={{ color: "var(--cat-text-muted)", fontWeight: 400, fontSize: 11 }}>{fmtDayOfWeek(day)}</div>
+                  <div style={{ color: "var(--cat-text)", fontWeight: 700, fontSize: 13 }}>{fmtDate(day, locale)}</div>
+                  <div style={{ color: "var(--cat-text-muted)", fontWeight: 400, fontSize: 11 }}>{fmtDayOfWeek(day, locale)}</div>
                 </th>
               ))}
               {/* Total */}
@@ -316,7 +319,7 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
                 minWidth: 60,
                 whiteSpace: "nowrap",
               }}>
-                Итого
+                {t("totalColumn")}
               </th>
             </tr>
           </thead>
@@ -326,7 +329,7 @@ export function TeamScheduleView({ matches, classes, teams = [] }: TeamScheduleV
               <tr>
                 <td colSpan={allDays.length + 2}
                   style={{ textAlign: "center", padding: "32px", color: "var(--cat-text-muted)", fontSize: 14 }}>
-                  Нет запланированных матчей
+                  {t("noScheduledMatches")}
                 </td>
               </tr>
             )}
@@ -416,6 +419,9 @@ function DayCell({
   minRestMins: number;
   stageColorMap: Map<number, string>;
 }) {
+  const t = useTranslations("schedule");
+  const abbrH = t("abbrHour");
+  const abbrM = t("abbrMin");
   return (
     <div className="flex flex-col gap-1">
       {matches.map((m, idx) => {
@@ -442,7 +448,7 @@ function DayCell({
             <div className="flex items-center gap-1 px-1" style={{ marginBottom: 2 }}>
               <div style={{ width: 2, height: 10, background: restColor, borderRadius: 1 }} />
               <span style={{ fontSize: 10, color: restColor, fontWeight: 600 }}>
-                {crossDay ? `+${fmtRestMins(restMins)} ↵` : fmtRestMins(restMins)}
+                {crossDay ? `+${fmtRestMins(restMins, abbrH, abbrM)} ↵` : fmtRestMins(restMins, abbrH, abbrM)}
               </span>
             </div>
           );
