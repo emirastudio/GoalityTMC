@@ -293,6 +293,8 @@ export async function POST(req: NextRequest) {
         console.warn(`[REGISTER] tournamentId=${tournamentId} not found — skipping registrations`);
       } else if (!tournament.registrationOpen) {
         console.warn(`[REGISTER] tournament ${tournamentId} registration closed — skipping`);
+      } else if (tournament.registrationDeadline && new Date(tournament.registrationDeadline) < new Date()) {
+        console.warn(`[REGISTER] tournament ${tournamentId} registration deadline passed — skipping`);
       } else {
         tournamentNameForEmail = tournament.name;
         const validClasses = await tx

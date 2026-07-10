@@ -19,6 +19,15 @@ import { getSession, createToken, setSessionCookie } from "@/lib/auth";
 import { sendRegistrationReceived } from "@/lib/email";
 import { EMAIL_STRINGS, t as tStr, normaliseLocale } from "@/lib/email-i18n";
 
+// Thrown from inside the registration transaction to roll the whole batch
+// back and surface a clean 409 with a localized, actionable message.
+class RegistrationConflict extends Error {
+  constructor(readonly payload: unknown) {
+    super("DUPLICATE_REGISTRATION");
+    this.name = "RegistrationConflict";
+  }
+}
+
 // POST /api/clubs/[clubId]/tournament-register
 // Batch-register a club's teams for a tournament.
 //
@@ -96,6 +105,15 @@ export async function POST(
 
   if (!tournament.registrationOpen) {
     return NextResponse.json({ error: "Registration is closed" }, { status: 400 });
+  }
+
+  // Enforce the registration deadline server-side. Until now this was only a
+  // decorative field shown in the UI — a club could still POST after it passed.
+  if (tournament.registrationDeadline && new Date(tournament.registrationDeadline) < new Date()) {
+    return NextResponse.json(
+      { error: tStr(EMAIL_STRINGS.registrationDeadline, "passed", reqLocale), code: "DEADLINE_PASSED" },
+      { status: 400 }
+    );
   }
 
   // Check plan eligibility: free-plan tournament must be oldest active in org
@@ -191,8 +209,19 @@ export async function POST(
     .where(eq(tournamentRegistrations.tournamentId, tournamentId));
   let nextRegNumber = (maxReg?.maxReg ?? 10000) + 1;
 
-  // 8. Create/reuse teams + registrations
-  const registrations: Array<{
+  // Reads needed by the write transaction below.
+  const [defaultPackage] = await db
+    .select()
+    .from(servicePackages)
+    .where(and(eq(servicePackages.tournamentId, tournamentId), eq(servicePackages.isDefault, true)));
+
+  const [club] = await db.select().from(clubs).where(eq(clubs.id, cid));
+
+  // 8-10. Create teams + registrations + package assignments + welcome inbox
+  //        message ATOMICALLY. A mid-batch failure (flaky venue connection,
+  //        or a duplicate on entry #3) must not leave orphaned `teams` rows or
+  //        half a batch committed — everything commits or rolls back together.
+  type Registration = {
     teamId: number;
     teamName: string;
     registrationId: number;
@@ -200,159 +229,150 @@ export async function POST(
     regNumber: number;
     squadAlias: string;
     isExisting: boolean;
-  }> = [];
+  };
+  let registrations: Registration[];
+  try {
+    registrations = await db.transaction(async (tx) => {
+      const regs: Registration[] = [];
 
-  for (const entry of teamEntries) {
-    const alias = entry.squadAlias?.trim() ?? "";
+      for (const entry of teamEntries) {
+        const alias = entry.squadAlias?.trim() ?? "";
 
-    let teamId: number;
-    let teamName: string;
-    let isExisting = false;
+        let teamId: number;
+        let teamName: string;
+        let isExisting = false;
 
-    if (entry.teamId) {
-      // Reuse existing team
-      teamId = entry.teamId;
-      const [t] = await db.select().from(teams).where(eq(teams.id, teamId));
-      teamName = entry.displayName ?? t.name ?? `Team #${teamId}`;
-      isExisting = true;
-    } else {
-      // Create new permanent team
-      const gender = (entry as { gender?: "male" | "female" | "mixed" }).gender ?? "male";
-      const birthYear = (entry as { birthYear?: number }).birthYear ?? null;
-      const baseName = (entry as { name?: string }).name ?? null;
+        if (entry.teamId) {
+          // Reuse existing team
+          teamId = entry.teamId;
+          const [t] = await tx.select().from(teams).where(eq(teams.id, teamId));
+          teamName = entry.displayName ?? t.name ?? `Team #${teamId}`;
+          isExisting = true;
+        } else {
+          // Create new permanent team
+          const gender = (entry as { gender?: "male" | "female" | "mixed" }).gender ?? "male";
+          const birthYear = (entry as { birthYear?: number }).birthYear ?? null;
+          const baseName = (entry as { name?: string }).name ?? null;
 
-      const [newTeam] = await db
-        .insert(teams)
-        .values({ clubId: cid, name: baseName, birthYear, gender })
+          const [newTeam] = await tx
+            .insert(teams)
+            .values({ clubId: cid, name: baseName, birthYear, gender })
+            .returning();
+
+          teamId = newTeam.id;
+          teamName = entry.displayName ?? baseName ?? `${gender} ${birthYear ?? ""}`.trim();
+        }
+
+        // Build displayName for this registration
+        const displayName = entry.displayName?.trim() || null;
+
+        // Pre-flight: refuse with a clear human message if (team, tournament,
+        // alias) already exists. Throwing rolls the whole batch back and is
+        // caught below to surface a clean 409.
+        const [conflict] = await tx
+          .select({ id: tournamentRegistrations.id, classId: tournamentRegistrations.classId })
+          .from(tournamentRegistrations)
+          .where(
+            and(
+              eq(tournamentRegistrations.teamId, teamId),
+              eq(tournamentRegistrations.tournamentId, tournamentId),
+              eq(tournamentRegistrations.squadAlias, alias),
+            )
+          )
+          .limit(1);
+        if (conflict) {
+          throw new RegistrationConflict({
+            error: tStr(
+              EMAIL_STRINGS.registrationDuplicate,
+              alias ? "aliasUsed" : "alreadyRegistered",
+              reqLocale,
+              { teamName, alias: alias ?? "" },
+            ),
+            code: "DUPLICATE_REGISTRATION",
+            conflict: { registrationId: conflict.id, teamId, classId: conflict.classId },
+          });
+        }
+
+        const [registration] = await tx
+          .insert(tournamentRegistrations)
+          .values({
+            teamId,
+            tournamentId,
+            classId: entry.classId,
+            regNumber: nextRegNumber,
+            status: "open",
+            squadAlias: alias,
+            displayName,
+          })
+          .returning();
+
+        // Backfill registration_people из текущего справочника команды.
+        // Если команда существует и в ней уже есть игроки — сразу готовый ростер
+        // (клуб может поправить галки потом). Для новой команды — просто пусто.
+        const teamPeople = await tx
+          .select({ id: people.id })
+          .from(people)
+          .where(eq(people.teamId, teamId));
+        if (teamPeople.length > 0) {
+          await tx
+            .insert(registrationPeople)
+            .values(teamPeople.map((p) => ({ registrationId: registration.id, personId: p.id })))
+            .onConflictDoNothing();
+        }
+
+        regs.push({
+          teamId,
+          teamName,
+          registrationId: registration.id,
+          classId: entry.classId,
+          regNumber: nextRegNumber,
+          squadAlias: alias,
+          isExisting,
+        });
+
+        nextRegNumber++;
+      }
+
+      // 9. Assign default service package if exists
+      if (defaultPackage) {
+        for (const reg of regs) {
+          await tx.insert(packageAssignments).values({
+            registrationId: reg.registrationId,
+            packageId: defaultPackage.id,
+          });
+        }
+      }
+
+      // 10. Welcome inbox message — in the club's preferred language.
+      const clubLocale = normaliseLocale(club.preferredLocale);
+      const welcomeSubject = tStr(EMAIL_STRINGS.registrationWelcome, "subject", clubLocale);
+      const welcomeBody = tStr(EMAIL_STRINGS.registrationWelcome, "body", clubLocale, { clubName: club.name });
+
+      const [message] = await tx
+        .insert(inboxMessages)
+        .values({
+          tournamentId,
+          subject: welcomeSubject,
+          body: welcomeBody,
+          sentBy: 0,
+          sendToAll: false,
+        })
         .returning();
 
-      teamId = newTeam.id;
-      teamName = entry.displayName ?? baseName ?? `${gender} ${birthYear ?? ""}`.trim();
-    }
+      for (const reg of regs) {
+        await tx.insert(messageRecipients).values({
+          messageId: message.id,
+          registrationId: reg.registrationId,
+        });
+      }
 
-    // Build displayName for this registration
-    const displayName = entry.displayName?.trim() || null;
-
-    // Pre-flight: refuse with a clear human message if (team, tournament,
-    // alias) already exists. The DB has a unique index on this triple,
-    // and a blind insert raises a 23505 that surfaces to the user as a
-    // generic "Registration failed". Better to spell it out.
-    const [conflict] = await db
-      .select({ id: tournamentRegistrations.id, classId: tournamentRegistrations.classId })
-      .from(tournamentRegistrations)
-      .where(
-        and(
-          eq(tournamentRegistrations.teamId, teamId),
-          eq(tournamentRegistrations.tournamentId, tournamentId),
-          eq(tournamentRegistrations.squadAlias, alias),
-        )
-      )
-      .limit(1);
-    if (conflict) {
-      return NextResponse.json(
-        {
-          error: tStr(
-            EMAIL_STRINGS.registrationDuplicate,
-            alias ? "aliasUsed" : "alreadyRegistered",
-            reqLocale,
-            { teamName, alias: alias ?? "" },
-          ),
-          code: "DUPLICATE_REGISTRATION",
-          conflict: { registrationId: conflict.id, teamId, classId: conflict.classId },
-        },
-        { status: 409 },
-      );
-    }
-
-    const [registration] = await db
-      .insert(tournamentRegistrations)
-      .values({
-        teamId,
-        tournamentId,
-        classId: entry.classId,
-        regNumber: nextRegNumber,
-        status: "open",
-        squadAlias: alias,
-        displayName,
-      })
-      .returning();
-
-    // Backfill registration_people из текущего справочника команды.
-    // Если команда существует и в ней уже есть игроки — сразу готовый ростер
-    // (клуб может поправить галки потом). Для новой команды — просто пусто.
-    const teamPeople = await db
-      .select({ id: people.id })
-      .from(people)
-      .where(eq(people.teamId, teamId));
-    if (teamPeople.length > 0) {
-      await db
-        .insert(registrationPeople)
-        .values(
-          teamPeople.map((p) => ({
-            registrationId: registration.id,
-            personId: p.id,
-          }))
-        )
-        .onConflictDoNothing();
-    }
-
-    registrations.push({
-      teamId,
-      teamName,
-      registrationId: registration.id,
-      classId: entry.classId,
-      regNumber: nextRegNumber,
-      squadAlias: alias,
-      isExisting,
+      return regs;
     });
-
-    nextRegNumber++;
-  }
-
-  // 9. Assign default service package if exists
-  const [defaultPackage] = await db
-    .select()
-    .from(servicePackages)
-    .where(
-      and(
-        eq(servicePackages.tournamentId, tournamentId),
-        eq(servicePackages.isDefault, true)
-      )
-    );
-
-  if (defaultPackage) {
-    for (const reg of registrations) {
-      await db.insert(packageAssignments).values({
-        registrationId: reg.registrationId,
-        packageId: defaultPackage.id,
-      });
+  } catch (e) {
+    if (e instanceof RegistrationConflict) {
+      return NextResponse.json(e.payload, { status: 409 });
     }
-  }
-
-  // 10. Create welcome inbox message
-  const [club] = await db.select().from(clubs).where(eq(clubs.id, cid));
-
-  // Inbox welcome — in the club's preferred language.
-  const clubLocale = normaliseLocale(club.preferredLocale);
-  const welcomeSubject = tStr(EMAIL_STRINGS.registrationWelcome, "subject", clubLocale);
-  const welcomeBody = tStr(EMAIL_STRINGS.registrationWelcome, "body", clubLocale, { clubName: club.name });
-
-  const [message] = await db
-    .insert(inboxMessages)
-    .values({
-      tournamentId,
-      subject: welcomeSubject,
-      body: welcomeBody,
-      sentBy: 0,
-      sendToAll: false,
-    })
-    .returning();
-
-  for (const reg of registrations) {
-    await db.insert(messageRecipients).values({
-      messageId: message.id,
-      registrationId: reg.registrationId,
-    });
+    throw e;
   }
 
   // 10b. Send confirmation email

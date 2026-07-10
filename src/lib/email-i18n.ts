@@ -187,6 +187,14 @@ export const EMAIL_STRINGS = {
       es: "El equipo «{teamName}» ya está inscrito en este torneo. Para añadir un segundo equipo, define un alias (Black/White/A/B) o cancela la solicitud existente.",
     },
   },
+  registrationDeadline: {
+    passed: {
+      en: "Registration for this tournament has closed — the deadline has passed.",
+      ru: "Регистрация на этот турнир закрыта — срок подачи заявок истёк.",
+      et: "Sellele turniirile registreerimine on suletud — tähtaeg on möödas.",
+      es: "La inscripción para este torneo ha cerrado — el plazo ha finalizado.",
+    },
+  },
 } as const;
 
 // ─── Renderer ────────────────────────────────────────────────
