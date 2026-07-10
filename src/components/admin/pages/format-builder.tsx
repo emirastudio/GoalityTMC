@@ -1303,10 +1303,14 @@ function getRoundDefs(realTeams: number, thirdPlace: boolean) {
   }
 
   if (byes > 0) {
-    // Seeded: first round only has `byes` matches (non-seeded teams play each other)
-    // Seeded teams skip directly to next round
+    // Seeded bracket: the top `byes` seeds skip round 1, the remaining
+    // `realTeams - byes` teams play round 1. Number of first-round matches =
+    // (realTeams - byes) / 2 = realTeams - bracketSize/2. (The old code used
+    // `byes` here, which only equals the correct count when realTeams is a
+    // power of 2 or exactly 3/4·bracketSize — wrong for 5,7,9,10,11,… teams.)
+    const firstRoundMatches = realTeams - bracketSize / 2;
     const firstInfo = nameMap[bracketSize] ?? { name: `Round of ${bracketSize}`, nameRu: `1/${bracketSize / 2} финала`, short: `R${bracketSize}` };
-    rounds.push({ name: firstInfo.name, nameRu: firstInfo.nameRu, shortName: firstInfo.short, matchCount: byes, isTwoLegged: false, hasThirdPlace: false });
+    rounds.push({ name: firstInfo.name, nameRu: firstInfo.nameRu, shortName: firstInfo.short, matchCount: firstRoundMatches, isTwoLegged: false, hasThirdPlace: false });
     addFinalRounds(bracketSize / 2);
   } else {
     // Perfect bracket: all teams play round 1

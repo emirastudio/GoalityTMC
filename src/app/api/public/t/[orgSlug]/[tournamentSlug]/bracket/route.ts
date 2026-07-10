@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { organizations, tournaments, tournamentStages, matchRounds, matches, tournamentRegistrations, stageSlots } from "@/db/schema";
-import { eq, and, isNull, asc, desc, inArray, or } from "drizzle-orm";
+import { eq, and, isNull, asc, inArray, or } from "drizzle-orm";
 import { resolveTeamDisplayNames } from "@/lib/team-display-names";
+import { playOrderedRounds, thirdPlaceRound } from "@/lib/playoff-rounds";
 
 // GET /api/public/t/[orgSlug]/[tournamentSlug]/bracket
 // Публичная сетка плей-офф — все раунды + матчи
@@ -57,10 +58,18 @@ export async function GET(
   const result = [];
 
   for (const stage of knockoutStages) {
-    const rounds = await db.query.matchRounds.findMany({
+    const rawRounds = await db.query.matchRounds.findMany({
       where: eq(matchRounds.stageId, stage.id),
-      orderBy: [desc(matchRounds.order)], // R32 → R16 → QF → SF → F
     });
+    // Normalise round order → always first-played → final, with `order`
+    // re-indexed to a canonical play index (1 = first round … N = final),
+    // regardless of which stored `order` convention this stage used. The
+    // 3rd-place round is appended after the final (displayed alongside it).
+    // This makes both bracket renderers agree on one convention.
+    const bracketSeq = playOrderedRounds(rawRounds);
+    const third = thirdPlaceRound(rawRounds);
+    const ordered = third ? [...bracketSeq, third] : bracketSeq;
+    const rounds = ordered.map((r, i) => ({ ...r, order: i + 1 }));
 
     // Knockout stages are already filtered by classId at the stage level above.
     // Do NOT filter by classTeamIds here — that would exclude undrawn placeholder

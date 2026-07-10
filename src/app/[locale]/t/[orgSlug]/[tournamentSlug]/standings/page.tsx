@@ -1224,8 +1224,9 @@ function BracketView({ bracketStages, activeBracketStageId, setActiveBracketStag
       ) : isMobile ? (
         <MobileBracket rounds={current.rounds} brand={brand} locale={locale} />
       ) : (
-        // API returns rounds desc (Final→QF), reverse to get QF→Final left-to-right
-        <BracketGrid rounds={[...current.rounds].reverse()} brand={brand} locale={locale} t={t} />
+        // API now returns rounds first→final (QF→Final); BracketGrid renders
+        // left-to-right in that same order, so no reverse needed.
+        <BracketGrid rounds={current.rounds} brand={brand} locale={locale} t={t} />
       )}
     </div>
   );

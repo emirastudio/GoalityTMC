@@ -278,8 +278,13 @@ function RoundColumn({
   const emptyCount = Math.max(0, round.matchCount - round.matches.length);
   const slots: (BracketMatch | null)[] = [...round.matches, ...Array(emptyCount).fill(null)];
 
-  // Вертикальный отступ между матчами растёт с каждым раундом
-  const matchGap = isLast ? 0 : Math.max(16, 48 * Math.pow(2, totalRounds - round.order - 1));
+  // Вертикальный отступ между матчами растёт к финалу. `order` теперь
+  // канонический play-index (1 = первый раунд … N = финал), нормализованный
+  // API. Зазор = 48·2^(order-2): первый раунд плотный, финал — самый
+  // разреженный. Показатель (order-2) подобран так, чтобы абсолютные зазоры
+  // 1:1 совпадали со старым рендером для сеток с конвенцией «order 1 = финал»
+  // (нулевой визуальный регресс), и при этом чинили перевёрнутые B-сетки.
+  const matchGap = isLast ? 0 : Math.max(16, 48 * Math.pow(2, round.order - 2));
 
   const cardHeight = 88; // примерная высота карточки
   const halfCard = cardHeight / 2;
