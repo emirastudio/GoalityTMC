@@ -50,11 +50,17 @@ type Props = {
    * Draw tab (reveal-only; `groups` prop carries the assignment).
    * "league" — round-robin reveal over every team in the division; no
    * group assignment needed, `groups` is ignored.
+   * "playoff" — bracket pairing reveal over every team in the division.
+   * Round-1 knockout matches start as empty TBD shells (no prior
+   * pairing data), so this always draws a fresh random pairing — same
+   * as "league", `groups` is ignored. The show itself doesn't write the
+   * pairing back to the actual bracket matches (that's a separate,
+   * not-yet-built "apply" step); it's a reveal/preview for now.
    */
-  mode: "groups" | "league";
-  /** Groups with their currently assigned team ids (from the Draw tab state). Ignored when mode="league". */
+  mode: "groups" | "league" | "playoff";
+  /** Groups with their currently assigned team ids (from the Draw tab state). Ignored when mode !== "groups". */
   groups: LauncherGroup[];
-  /** Full team pool (for name/logo lookup, and the full roster when mode="league"). */
+  /** Full team pool (for name/logo lookup, and the full roster when mode !== "groups"). */
   allTeams: LauncherTeam[];
   /**
    * Division / age-class name shown as the subtitle on the stage header
@@ -125,18 +131,18 @@ export function DrawShowLauncher(props: Props) {
       pot: team.pot ?? null,
     }));
 
-    if (props.mode === "league") {
-      // Round-robin reveal over the whole roster — no group assignment
-      // needed, so the seed is just the stage + team-id set (stable across
-      // reopens, changes if the roster changes).
+    if (props.mode === "league" || props.mode === "playoff") {
+      // Round-robin / bracket-pairing reveal over the whole roster — no
+      // group assignment needed, so the seed is just the stage + team-id
+      // set (stable across reopens, changes if the roster changes).
       const seed = [
         "stage",
         props.stageId,
-        "league",
+        props.mode,
         ...teams.map((t) => t.id).sort(),
       ].join(":");
       const config: DrawConfig = {
-        mode: "league",
+        mode: props.mode,
         seedingMode: "random",
         seed,
       };
@@ -170,22 +176,26 @@ export function DrawShowLauncher(props: Props) {
     return { engineTeams: teams, engineConfig: config };
   }, [props.mode, props.allTeams, props.groups, props.stageId]);
 
-  const assignedTeamCount = props.mode === "league"
+  const assignedTeamCount = props.mode === "league" || props.mode === "playoff"
     ? props.allTeams.length
     : engineConfig.preAssignedGroups?.reduce((sum, g) => sum + g.length, 0) ?? 0;
   // The engine requires >= 2 groups for mode="groups" — a single filled
   // group (e.g. a division with just "Main Group", no A/B/C split) used to
   // pass the team-count check below and then throw once DrawStage actually
   // called buildDrawPlan(). Gate on group count too. Not applicable in
-  // league mode — round-robin just needs >= 2 teams, no groups at all.
+  // league/playoff mode — round-robin/bracket just needs >= 2 teams, no
+  // groups at all.
   const needsMoreGroups = props.mode === "groups"
     && (engineConfig.preAssignedGroups?.filter((g) => g.length > 0).length ?? 0) < 2;
 
   // Set of team ids actually placed in a group — used to compute the
   // "team not in any group" remainder we surface in the done summary.
-  // Every team participates in league mode, so nothing is "unassigned".
+  // Every team participates in league/playoff mode, so nothing is "unassigned"
+  // (an odd playoff roster gets a BYE inside the engine, not an exclusion here).
   const assignedIds = useMemo(() => {
-    if (props.mode === "league") return new Set(props.allTeams.map((t) => t.id));
+    if (props.mode === "league" || props.mode === "playoff") {
+      return new Set(props.allTeams.map((t) => t.id));
+    }
     const s = new Set<number>();
     for (const g of props.groups) for (const id of g.teamIds) s.add(id);
     return s;

@@ -1534,7 +1534,7 @@ function DrawTab({
       fetch(stagesUrl).then(r => r.ok ? r.json() : []),
       fetch(`${base}/teams${classId ? `?classId=${classId}` : ""}`).then(r => r.ok ? r.json() : []),
     ]).then(([s, tm]) => {
-      const groupStages = (s as Stage[]).filter(st => st.type === "group" || st.type === "league");
+      const groupStages = (s as Stage[]).filter(st => st.type === "group" || st.type === "league" || st.type === "knockout");
       setStages(groupStages);
       setAllTeams(tm);
       if (groupStages.length > 0) setSelectedStageId(groupStages[0].id);
@@ -1905,6 +1905,12 @@ function DrawTab({
   const noTeamsRegistered = allTeams.length === 0;
   const selectedStage = stages.find(s => s.id === selectedStageId);
   const isLeagueStage = selectedStage?.type === "league";
+  // Knockout round-1 matches start as empty TBD shells (no manual bracket
+  // editor exists) — the Draw Show here is a fresh random pairing reveal,
+  // same "no pre-existing assignment" treatment as league. It does not
+  // (yet) write the pairing back into the actual bracket matches.
+  const isKnockoutStage = selectedStage?.type === "knockout";
+  const isFreeDrawStage = isLeagueStage || isKnockoutStage;
 
   return (
     <div className="space-y-5" onClick={() => { setBasketPopover(null); setGroupPopover(null); }}>
@@ -1914,31 +1920,35 @@ function DrawTab({
         subtitle={t("drawSubtitle")}
         action={
           <div className="flex items-center gap-2">
-            {allTeams.length > 0 && groups.length > 0 && (
+            {/* Group-assignment actions (auto-draw / clear / revert / apply)
+                only make sense for stage.type === "group" — league and
+                knockout draws here are a preview reveal, not a manual
+                per-group layout to apply. */}
+            {!isFreeDrawStage && allTeams.length > 0 && groups.length > 0 && (
               <Btn variant="outline" size="sm" onClick={autoDraw} loading={autoDrawing}>
                 <Shuffle className="w-3.5 h-3.5" />
                 {baskets.some(b => b.teamIds.length > 0) ? t("drawByBaskets") : t("drawAuto")}
               </Btn>
             )}
-            {Object.values(assignMap).some(ids => ids.length > 0) && (
+            {!isFreeDrawStage && Object.values(assignMap).some(ids => ids.length > 0) && (
               <Btn variant="ghost" size="sm" onClick={clearDraw} loading={clearing}>
                 <Trash2 className="w-3.5 h-3.5" /> {t("clear")}
               </Btn>
             )}
             {/* Revert — only meaningful after apply-draw has ever run. */}
-            {lockState?.committed && !lockState.tournamentPublished && (
+            {!isFreeDrawStage && lockState?.committed && !lockState.tournamentPublished && (
               <Btn variant="ghost" size="sm" onClick={revertToApplied} loading={reverting}>
                 <RefreshCw className="w-3.5 h-3.5" /> {t("revertToApplied")}
               </Btn>
             )}
             {selectedStageId && (
-              isLeagueStage
+              isFreeDrawStage
                 ? allTeams.length >= 2 && (
                   <DrawShowLauncher
                     orgSlug={orgSlug}
                     tournamentId={tournamentId}
                     stageId={selectedStageId}
-                    mode="league"
+                    mode={isKnockoutStage ? "playoff" : "league"}
                     groups={[]}
                     allTeams={allTeams.map(tm => ({
                       id: tm.id,
@@ -1966,7 +1976,7 @@ function DrawTab({
                   />
                 )
             )}
-            {selectedStageId && (
+            {!isFreeDrawStage && selectedStageId && (
               <Btn variant="primary" size="sm" onClick={applyDraw} loading={applyingDraw}>
                 <Check className="w-3.5 h-3.5" /> {t("applyDraw")}
               </Btn>
@@ -2291,7 +2301,11 @@ function DrawTab({
       )}
 
       {/* ── Groups grid ── */}
-      {groups.length === 0 && (
+      {/* League/knockout stages have no groups by design — the "no groups"
+          hint (which tells the organiser to go create some) doesn't apply
+          there, so it's suppressed in favor of just the Draw Show button
+          above. */}
+      {groups.length === 0 && !isFreeDrawStage && (
         <Card>
           <div className="text-center py-8" style={{ color: "var(--cat-text-muted)" }}>
             <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-25" />
