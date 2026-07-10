@@ -536,7 +536,10 @@
     "responsibleOnSite": "Vastutav kohapeal",
     "noPersons": "Kedagi pole veel registreeritud",
     "addPerson": "Lisa isik",
-    "medicalDietary": "Meditsiin ja dieet"
+    "medicalDietary": "Meditsiin ja dieet",
+    "deleteLabel": "Kustuta",
+    "deleteConfirm": "Eemaldada {name} nimekirjast? Seda ei saa tagasi võtta.",
+    "unnamed": "see isik"
   },
   "players": {
     "title": "Mängijad",
@@ -552,7 +555,13 @@
     "extraInfo": "Lisainfo",
     "autoSaved": "Salvestatud",
     "fillRowToAdd": "Sisestage mängija lisamiseks ees- ja perekonnanimi",
-    "newRow": "Uus mängija..."
+    "newRow": "Uus mängija...",
+    "pasteList": "Kleebi nimekiri",
+    "pastePlaceholder": "Üks mängija real:\nJaan Tamm\nMari Kask",
+    "pasteHint": "Ees- ja perekonnanimi, üks real. Olemasolevad mängijad jäetakse vahele.",
+    "pasteAdd": "Lisa nimekirja",
+    "pasteImporting": "Lisamine…",
+    "medicalSection": "Allergiad ja meditsiin"
   },
   "staff": {
     "title": "Personal",
@@ -565,12 +574,14 @@
       "physio": "Füsioterapeut",
       "teamManager": "Meeskonnajuht",
       "other": "Muu"
-    }
+    },
+    "fillRowToAdd": "Sisestage lisamiseks ees- ja perekonnanimi"
   },
   "accompanying": {
     "title": "Saatjad",
     "addAccompanying": "Lisa isik",
-    "description": "Registreerige vanemad, toetajad ja teised saatjad"
+    "description": "Registreerige vanemad, toetajad ja teised saatjad",
+    "fillRowToAdd": "Sisestage lisamiseks ees- ja perekonnanimi"
   },
   "orders": {
     "title": "Tellimused",

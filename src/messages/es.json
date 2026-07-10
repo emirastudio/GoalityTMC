@@ -536,7 +536,10 @@
     "responsibleOnSite": "Responsable en el lugar",
     "noPersons": "Aún no hay personas registradas",
     "addPerson": "Añadir persona",
-    "medicalDietary": "Médico y dietético"
+    "medicalDietary": "Médico y dietético",
+    "deleteLabel": "Eliminar",
+    "deleteConfirm": "¿Quitar a {name} de la convocatoria? Esta acción no se puede deshacer.",
+    "unnamed": "esta persona"
   },
   "players": {
     "title": "Jugadores",
@@ -552,7 +555,13 @@
     "extraInfo": "Información adicional",
     "autoSaved": "Guardado",
     "fillRowToAdd": "Complete el nombre y apellido para agregar un jugador",
-    "newRow": "Nuevo jugador..."
+    "newRow": "Nuevo jugador...",
+    "pasteList": "Pegar lista",
+    "pastePlaceholder": "Un jugador por línea:\nJuan García\nMaría López",
+    "pasteHint": "Nombre y apellido, uno por línea. Los jugadores existentes se omiten.",
+    "pasteAdd": "Añadir a la convocatoria",
+    "pasteImporting": "Añadiendo…",
+    "medicalSection": "Alergias y datos médicos"
   },
   "staff": {
     "title": "Personal",
@@ -565,12 +574,14 @@
       "physio": "Fisioterapeuta",
       "teamManager": "Director de Equipo",
       "other": "Otro"
-    }
+    },
+    "fillRowToAdd": "Complete el nombre y apellido para agregar"
   },
   "accompanying": {
     "title": "Personas Acompañantes",
     "addAccompanying": "Agregar persona",
-    "description": "Registre padres, aficionados u otras personas acompañantes"
+    "description": "Registre padres, aficionados u otras personas acompañantes",
+    "fillRowToAdd": "Complete el nombre y apellido para agregar"
   },
   "orders": {
     "title": "Pedidos",

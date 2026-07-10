@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, Fragment } from "react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronUp, Trash2, Plus } from "lucide-react";
 
@@ -36,6 +37,18 @@ interface AccompanyingInlineTableProps {
 
 const cellCls = "w-full bg-transparent text-sm px-2 py-2 outline-none rounded transition-colors focus:ring-1 focus:ring-[var(--cat-accent)]/20";
 const cellStyle = { color: "var(--cat-text)" } as React.CSSProperties;
+
+const mFieldCls = "w-full text-sm px-3 py-2.5 rounded-lg border th-border outline-none focus:ring-2 focus:ring-[var(--cat-accent)]/20";
+const mInputStyle = { background: "var(--cat-input-bg)", color: "var(--cat-text)" } as React.CSSProperties;
+
+function MField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block min-w-0">
+      <span className="block text-[10px] font-semibold uppercase tracking-wider th-text-2 mb-1">{label}</span>
+      {children}
+    </label>
+  );
+}
 
 const theadStyle: React.CSSProperties = { background: "var(--cat-card-bg)" };
 const medRowStyle: React.CSSProperties = { background: "var(--cat-badge-open-bg)" };
@@ -133,7 +146,8 @@ export function AccompanyingInlineTable({ persons, teamId, registrationId, onRef
     if (newRow.firstName.trim() && newRow.lastName.trim()) createPerson();
   };
 
-  const deletePerson = async (id: number) => {
+  const deletePerson = async (id: number, name: string) => {
+    if (!confirm(tp("deleteConfirm", { name: name.trim() || tp("unnamed") }))) return;
     await fetch(`/api/teams/${teamId}/people?id=${id}`, { method: "DELETE" });
     onRefresh();
   };
@@ -142,7 +156,8 @@ export function AccompanyingInlineTable({ persons, teamId, registrationId, onRef
 
   return (
     <Card padding={false} className="overflow-hidden">
-      <div className="overflow-x-auto">
+      {/* Desktop: spreadsheet table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b th-border" style={theadStyle}>
@@ -158,8 +173,8 @@ export function AccompanyingInlineTable({ persons, teamId, registrationId, onRef
           </thead>
           <tbody>
             {persons.map((person, idx) => (
-              <>
-                <tr key={person.personId}
+              <Fragment key={person.personId}>
+                <tr
                   className={cn("border-b th-border transition-colors group", saving.has(person.personId) && "bg-[var(--cat-badge-open-bg)]")}
                   style={expandedIds.has(person.personId) ? medRowStyle : undefined}>
                   <td className="text-center px-2">
@@ -195,9 +210,10 @@ export function AccompanyingInlineTable({ persons, teamId, registrationId, onRef
                     </button>
                   </td>
                   <td className="px-1">
-                    <button onClick={() => deletePerson(person.personId)}
-                      className="p-1.5 rounded-lg transition-colors cursor-pointer opacity-0 group-hover:opacity-100 hover:text-red-500"
-                      style={{ color: "var(--cat-text-muted)" }}>
+                    <button onClick={() => deletePerson(person.personId, `${person.firstName} ${person.lastName}`)}
+                      className="p-1.5 rounded-lg transition-colors cursor-pointer opacity-60 hover:opacity-100 hover:text-red-500"
+                      style={{ color: "var(--cat-text-muted)" }}
+                      title={tp("deleteLabel")} aria-label={tp("deleteLabel")}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </td>
@@ -224,7 +240,7 @@ export function AccompanyingInlineTable({ persons, teamId, registrationId, onRef
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
 
             <tr className={cn("border-b th-border", saving.has("new") && "bg-[var(--cat-badge-open-bg)]")} style={newRowStyle}>
@@ -241,11 +257,11 @@ export function AccompanyingInlineTable({ persons, teamId, registrationId, onRef
               </td>
               <td className="px-1">
                 <input type="email" value={newRow.email} onChange={(e) => setNewRow({ ...newRow, email: e.target.value })}
-                  onBlur={handleNewBlur} placeholder="email" className={cellCls} style={cellStyle} />
+                  onBlur={handleNewBlur} placeholder={tp("email")} className={cellCls} style={cellStyle} />
               </td>
               <td className="px-1">
                 <input type="tel" value={newRow.phone} onChange={(e) => setNewRow({ ...newRow, phone: e.target.value })}
-                  onBlur={handleNewBlur} placeholder="phone" className={cellCls} style={cellStyle} />
+                  onBlur={handleNewBlur} placeholder={tp("phone")} className={cellCls} style={cellStyle} />
               </td>
               <td className="text-center px-2">
                 <input type="checkbox" className="accent-navy w-4 h-4 cursor-pointer"
@@ -288,7 +304,102 @@ export function AccompanyingInlineTable({ persons, teamId, registrationId, onRef
         </table>
       </div>
 
-      <div className="px-4 py-2.5 text-[11px] border-t th-border" style={{ color: "var(--cat-text-muted)", background: "var(--cat-card-bg)" }}>
+      {/* Mobile: stacked cards */}
+      <div className="md:hidden divide-y th-border">
+        {persons.map((person, idx) => (
+          <div key={person.personId} className={cn("p-4 space-y-3", saving.has(person.personId) && "bg-[var(--cat-badge-open-bg)]")}>
+            <div className="flex items-center gap-2">
+              <span className="w-6 shrink-0 text-xs font-semibold" style={{ color: "var(--cat-text-muted)" }}>{idx + 1}</span>
+              <span className="flex-1 truncate text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
+                {`${person.firstName} ${person.lastName}`.trim() || "—"}
+              </span>
+              <button onClick={() => deletePerson(person.personId, `${person.firstName} ${person.lastName}`)}
+                className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:text-red-500 transition-colors cursor-pointer"
+                style={{ color: "var(--cat-text-muted)" }} title={tp("deleteLabel")} aria-label={tp("deleteLabel")}>
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <MField label={tp("firstName")}>
+                <input defaultValue={person.firstName} className={mFieldCls} style={mInputStyle}
+                  onBlur={(e) => savePerson(person.personId, "firstName", e.target.value)} />
+              </MField>
+              <MField label={tp("lastName")}>
+                <input defaultValue={person.lastName} className={mFieldCls} style={mInputStyle}
+                  onBlur={(e) => savePerson(person.personId, "lastName", e.target.value)} />
+              </MField>
+              <MField label={tp("email")}>
+                <input type="email" defaultValue={person.email ?? ""} className={mFieldCls} style={mInputStyle}
+                  onBlur={(e) => savePerson(person.personId, "email", e.target.value)} />
+              </MField>
+              <MField label={tp("phone")}>
+                <input type="tel" defaultValue={person.phone ?? ""} className={mFieldCls} style={mInputStyle}
+                  onBlur={(e) => savePerson(person.personId, "phone", e.target.value)} />
+              </MField>
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--cat-text-secondary)" }}>
+              <input type="checkbox" className="accent-navy w-5 h-5 cursor-pointer" defaultChecked={person.needsHotel}
+                onChange={(e) => saveRoster(person.personId, "needsHotel", e.target.checked)} />
+              🏨 {tp("needsHotel")}
+            </label>
+            <div>
+              <button type="button" onClick={() => toggleExpand(person.personId)}
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium cursor-pointer"
+                style={{ color: hasMedical(person) ? "var(--cat-accent)" : "var(--cat-text-muted)" }}>
+                {expandedIds.has(person.personId) ? <ChevronUp className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {tp("medicalDietary")}
+              </button>
+              {expandedIds.has(person.personId) && (
+                <div className="mt-2 space-y-2">
+                  {[
+                    { key: "allergies", label: tp("allergies"), placeholder: tp("allergiesHint"), val: person.allergies },
+                    { key: "dietaryRequirements", label: tp("dietaryRequirements"), placeholder: tp("dietaryHint"), val: person.dietaryRequirements },
+                    { key: "medicalNotes", label: tp("medicalNotes"), placeholder: tp("medicalHint"), val: person.medicalNotes },
+                  ].map(({ key, label, placeholder, val }) => (
+                    <MField key={key} label={label}>
+                      <input defaultValue={val ?? ""} placeholder={placeholder} className={mFieldCls} style={mInputStyle}
+                        onBlur={(e) => saveRoster(person.personId, key, e.target.value)} />
+                    </MField>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {/* New accompanying card */}
+        <div className={cn("p-4 space-y-3", saving.has("new") && "bg-[var(--cat-badge-open-bg)]")} style={newRowStyle}>
+          <div className="text-[11px] font-semibold uppercase tracking-wider th-text-2">{ta("addAccompanying")}</div>
+          <div className="grid grid-cols-2 gap-2">
+            <MField label={tp("firstName")}>
+              <input value={newRow.firstName} onChange={(e) => setNewRow({ ...newRow, firstName: e.target.value })}
+                placeholder={tp("firstName")} className={mFieldCls} style={mInputStyle} />
+            </MField>
+            <MField label={tp("lastName")}>
+              <input value={newRow.lastName} onChange={(e) => setNewRow({ ...newRow, lastName: e.target.value })}
+                placeholder={tp("lastName")} className={mFieldCls} style={mInputStyle} />
+            </MField>
+            <MField label={tp("email")}>
+              <input type="email" value={newRow.email} onChange={(e) => setNewRow({ ...newRow, email: e.target.value })}
+                placeholder={tp("email")} className={mFieldCls} style={mInputStyle} />
+            </MField>
+            <MField label={tp("phone")}>
+              <input type="tel" value={newRow.phone} onChange={(e) => setNewRow({ ...newRow, phone: e.target.value })}
+                placeholder={tp("phone")} className={mFieldCls} style={mInputStyle} />
+            </MField>
+          </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--cat-text-secondary)" }}>
+            <input type="checkbox" className="accent-navy w-5 h-5 cursor-pointer" checked={newRow.needsHotel}
+              onChange={(e) => setNewRow({ ...newRow, needsHotel: e.target.checked })} />
+            🏨 {tp("needsHotel")}
+          </label>
+          <Button size="sm" loading={saving.has("new")} disabled={!newRow.firstName.trim() || !newRow.lastName.trim()} onClick={createPerson}>
+            <Plus className="w-4 h-4" /> {ta("addAccompanying")}
+          </Button>
+        </div>
+      </div>
+
+      <div className="hidden md:block px-4 py-2.5 text-[11px] border-t th-border" style={{ color: "var(--cat-text-muted)", background: "var(--cat-card-bg)" }}>
         {ta("fillRowToAdd")}
       </div>
     </Card>

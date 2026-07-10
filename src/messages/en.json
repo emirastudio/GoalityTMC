@@ -536,7 +536,10 @@
     "responsibleOnSite": "Responsible on site",
     "noPersons": "No persons registered yet",
     "addPerson": "Add person",
-    "medicalDietary": "Medical & Dietary"
+    "medicalDietary": "Medical & Dietary",
+    "deleteLabel": "Delete",
+    "deleteConfirm": "Remove {name} from the roster? This cannot be undone.",
+    "unnamed": "this person"
   },
   "players": {
     "title": "Players",
@@ -552,7 +555,13 @@
     "extraInfo": "Extra info",
     "autoSaved": "Saved",
     "fillRowToAdd": "Fill in first and last name to add a player",
-    "newRow": "New player..."
+    "newRow": "New player...",
+    "pasteList": "Paste list",
+    "pastePlaceholder": "One player per line:\nJohn Smith\nMaria Garcia",
+    "pasteHint": "First and last name, one per line. Existing players are skipped.",
+    "pasteAdd": "Add to roster",
+    "pasteImporting": "Adding…",
+    "medicalSection": "Allergies & medical"
   },
   "staff": {
     "title": "Staff",
@@ -565,12 +574,14 @@
       "physio": "Physiotherapist",
       "teamManager": "Team Manager",
       "other": "Other"
-    }
+    },
+    "fillRowToAdd": "Fill in first and last name to add"
   },
   "accompanying": {
     "title": "Accompanying Persons",
     "addAccompanying": "Add person",
-    "description": "Register parents, supporters, or other accompanying persons"
+    "description": "Register parents, supporters, or other accompanying persons",
+    "fillRowToAdd": "Fill in first and last name to add"
   },
   "orders": {
     "title": "Orders",
