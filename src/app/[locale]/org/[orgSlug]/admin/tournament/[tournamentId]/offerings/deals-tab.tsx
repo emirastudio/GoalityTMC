@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Loader2, Users, CheckCircle, Clock, AlertCircle, Plus } from "lucide-react";
 import { formatMoney, type DealListItem } from "@/lib/offerings/types";
 import { DealDrawer } from "./deal-drawer";
@@ -16,6 +16,8 @@ export function OfferingsDealsTab({
   onChange: () => void;
 }) {
   const t = useTranslations("offeringsAdmin");
+  const locale = useLocale();
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   const [deals, setDeals] = useState<DealListItem[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDealId, setSelectedDealId] = useState<number | null>(null);
@@ -112,20 +114,20 @@ export function OfferingsDealsTab({
                     )}
                   </div>
                   <div className="text-right text-sm font-mono tabular-nums" style={{ color: "var(--cat-text-muted)" }}>
-                    {b ? formatMoney(b.subtotalCents, b.currency) : "—"}
+                    {b ? fmt(b.subtotalCents, b.currency) : "—"}
                   </div>
                   <div className="text-right text-sm font-black tabular-nums" style={{ color: "var(--cat-text)" }}>
-                    {b ? formatMoney(b.totalCents, b.currency) : "—"}
+                    {b ? fmt(b.totalCents, b.currency) : "—"}
                     {diff !== 0 && (
                       <div className="text-[10px] font-normal" style={{ color: diff < 0 ? "#10b981" : "#f59e0b" }}>
-                        {diff < 0 ? formatMoney(diff, b!.currency) : `+${formatMoney(diff, b!.currency)}`}
+                        {diff < 0 ? fmt(diff, b!.currency) : `+${fmt(diff, b!.currency)}`}
                       </div>
                     )}
                   </div>
                   <div className="text-right text-sm font-bold tabular-nums flex items-center gap-1.5 justify-end"
                     style={{ color: paid ? "#10b981" : partial ? "#f59e0b" : "var(--cat-text-muted)" }}>
                     {paid ? <CheckCircle className="w-3.5 h-3.5" /> : partial ? <Clock className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
-                    {b ? (paid ? t("paid") : formatMoney(b.outstandingCents, b.currency)) : "—"}
+                    {b ? (paid ? t("paid") : fmt(b.outstandingCents, b.currency)) : "—"}
                   </div>
                   <div className="text-right">
                     <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>→</span>

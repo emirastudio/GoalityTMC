@@ -158,6 +158,7 @@ export default function AdminInviteAcceptPage() {
                     {invite.accountExists ? t("existingPasswordLabel") : t("newPasswordLabel")}
                   </label>
                   <PasswordStrengthInput
+                    locale={params.locale || "en"}
                     onChange={(v, valid) => {
                       setPassword(v);
                       setPasswordValid(valid);

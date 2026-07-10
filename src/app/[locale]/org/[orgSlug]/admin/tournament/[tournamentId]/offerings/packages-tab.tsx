@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Loader2, Package as PackageIcon, Plus, Edit3, Trash2, Copy } from "lucide-react";
 import { formatMoney, type OfferingDTO } from "@/lib/offerings/types";
 import { OfferingIcon } from "@/lib/offerings/icons";
@@ -24,6 +24,8 @@ export function OfferingsPackagesTab({
   onChange: () => void;
 }) {
   const t = useTranslations("offeringsAdmin");
+  const locale = useLocale();
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   const [offerings, setOfferings] = useState<OfferingDTO[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -183,12 +185,12 @@ export function OfferingsPackagesTab({
                           color: "var(--cat-accent)",
                           textShadow: "0 0 22px var(--cat-accent-glow)",
                         }}>
-                        {formatMoney(effectiveCents, pkg.currency)}
+                        {fmt(effectiveCents, pkg.currency)}
                       </p>
                       {hasOverride && (
                         <p className="text-xs line-through tabular-nums mt-1"
                           style={{ color: "var(--cat-text-muted)" }}>
-                          {formatMoney(sumCents, pkg.currency)}
+                          {fmt(sumCents, pkg.currency)}
                         </p>
                       )}
                     </div>
@@ -220,7 +222,7 @@ export function OfferingsPackagesTab({
                           </span>
                           <span className="text-sm font-bold tabular-nums"
                             style={{ color: "var(--cat-text)" }}>
-                            {formatMoney(c.priceCents, c.currency)}
+                            {fmt(c.priceCents, c.currency)}
                           </span>
                         </li>
                       ))}

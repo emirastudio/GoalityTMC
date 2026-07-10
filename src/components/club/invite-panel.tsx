@@ -24,6 +24,8 @@ interface InvitePanelProps {
     shareWhatsapp: string;
     shareTelegram: string;
     inviteExpires: string;
+    generatingLink: string;
+    inviteShareText: string;
   };
 }
 
@@ -105,11 +107,11 @@ export function InvitePanel({ clubId, t }: InvitePanelProps) {
   }
 
   const whatsappUrl = inviteLink
-    ? `https://wa.me/?text=${encodeURIComponent(`You've been invited to join our club on Goality: ${inviteLink}`)}`
+    ? `https://wa.me/?text=${encodeURIComponent(`${t.inviteShareText}: ${inviteLink}`)}`
     : "#";
 
   const telegramUrl = inviteLink
-    ? `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent("You've been invited to join our club on Goality")}`
+    ? `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(t.inviteShareText)}`
     : "#";
 
   const expiryLabel = expiresAt
@@ -150,7 +152,7 @@ export function InvitePanel({ clubId, t }: InvitePanelProps) {
           {loading ? (
             <div className="flex items-center gap-2 py-3" style={{ color: "var(--cat-text-muted)" }}>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm">Generating link…</span>
+              <span className="text-sm">{t.generatingLink}</span>
             </div>
           ) : inviteLink ? (
             <>

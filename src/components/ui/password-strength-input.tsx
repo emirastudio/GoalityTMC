@@ -43,12 +43,19 @@ const RULE_LABELS_BY_LOCALE: Record<string, string[]> = {
     "Väike täht (a–z)",
     "Number (0–9)",
   ],
+  es: [
+    "Mín. 8 caracteres",
+    "Letra mayúscula (A–Z)",
+    "Letra minúscula (a–z)",
+    "Número (0–9)",
+  ],
 };
 
 const STRENGTH_LABELS: Record<string, [string, string, string]> = {
   en: ["Weak", "Medium", "Strong"],
   ru: ["Слабый", "Средний", "Сильный"],
   et: ["Nõrk", "Keskmine", "Tugev"],
+  es: ["Débil", "Media", "Fuerte"],
 };
 
 // Re-exported from the shared policy so existing importers keep working.

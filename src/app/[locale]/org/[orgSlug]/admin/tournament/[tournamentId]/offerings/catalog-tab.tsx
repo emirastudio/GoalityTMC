@@ -557,6 +557,7 @@ function TemplateCard({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   const title = pickLocaleTitle(tmpl, locale);
   const description = pickLocaleDescription(tmpl, locale);
   const isRequired = tmpl.inclusion === "required";
@@ -635,7 +636,7 @@ function TemplateCard({
         <p className="text-sm font-black font-mono tabular-nums"
           style={{ color: tmpl.defaultPriceCents > 0 ? "var(--cat-accent)" : "var(--cat-text-muted)" }}>
           {tmpl.defaultPriceCents > 0
-            ? formatMoney(tmpl.defaultPriceCents, tmpl.currency)
+            ? fmt(tmpl.defaultPriceCents, tmpl.currency)
             : "—"}
         </p>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -702,6 +703,7 @@ function OfferingCard({
   syncing?: boolean;
   syncResult?: number | null;
 }) {
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   const incColor = INCLUSION_COLOR[o.inclusion];
   const priceCents = o.kind === "package" ? (o.packagePriceOverrideCents ?? 0) : o.priceCents;
   const priceModelShort = label.priceModel;
@@ -764,7 +766,7 @@ function OfferingCard({
               color: "var(--cat-accent)",
               textShadow: "0 0 18px var(--cat-accent-glow)",
             }}>
-            {formatMoney(priceCents, o.currency)}
+            {fmt(priceCents, o.currency)}
           </p>
         </div>
       </div>

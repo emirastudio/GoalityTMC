@@ -381,7 +381,10 @@
     "download": "Скачать",
     "yes": "Да",
     "no": "Нет",
-    "euro": "Евро"
+    "euro": "Евро",
+    "or": "или",
+    "signIn": "Войти",
+    "backToHome": "На главную"
   },
   "auth": {
     "login": "Войти",
@@ -745,7 +748,17 @@
     "generateNew": "Создать новую ссылку",
     "copy": "Копировать",
     "copied": "Скопировано!",
-    "inviteLinkExpiry": "Ссылка действительна 7 дней."
+    "inviteLinkExpiry": "Ссылка действительна 7 дней.",
+    "saveChanges": "Сохранить изменения",
+    "saving": "Сохранение…",
+    "failedToSave": "Не удалось сохранить",
+    "passwordsDoNotMatch": "Пароли не совпадают",
+    "failedToChangePassword": "Не удалось изменить пароль",
+    "failedToSendRequest": "Не удалось отправить запрос",
+    "sending": "Отправка…",
+    "yesRequestDeletion": "Да, запросить удаление",
+    "saved": "Сохранено!",
+    "passwordMinLength": "Пароль должен содержать минимум 6 символов"
   },
   "documents": {
     "title": "Документы",
@@ -2984,7 +2997,12 @@
     "signIn": "Войти",
     "backToHome": "На главную",
     "forOrganizers": "Для организаторов",
-    "somethingWentWrong": "Что-то пошло не так"
+    "somethingWentWrong": "Что-то пошло не так",
+    "iWantTo": "Я хочу:",
+    "optionManagedTitle": "Управлять турниром через Goality TMC",
+    "optionManagedDesc": "Регистрация, отели, платежи, расписания — полная платформа",
+    "optionListingTitle": "Разместить турнир в каталоге",
+    "optionListingDesc": "Простая страница, SEO-видимость — €4.99/мес"
   },
   "invite": {
     "loading": "Загрузка...",
@@ -3033,7 +3051,8 @@
     "signInToClub": "Войти в кабинет клуба",
     "backToSearch": "← Вернуться к поиску",
     "continueCreate": "Продолжить — создать новый клуб",
-    "teamsInClub": "Команды в этом клубе — войдите в свою"
+    "teamsInClub": "Команды в этом клубе — войдите в свою",
+    "or": "или"
   },
   "tournament": {
     "statTeams": "Команд",
@@ -4814,7 +4833,15 @@
       "countPlural": "турниров",
       "viewNews": "Открыть новости",
       "unfollow": "Отписаться"
-    }
+    },
+    "attentionTitle": "Заявки требуют внимания",
+    "attentionDesc": "На рассмотрении организатором или отклонены — отслеживайте статус и пишите организатору при необходимости.",
+    "statusPendingReview": "На рассмотрении",
+    "statusRejected": "Отклонена",
+    "openApplication": "Открыть заявку",
+    "viewDetails": "Подробнее",
+    "generatingLink": "Создание ссылки…",
+    "inviteShareText": "Вас пригласили присоединиться к нашему клубу в Goality"
   },
   "blog": {
     "title": "Блог",
@@ -4878,7 +4905,9 @@
     "back": "Назад",
     "next": "Далее",
     "finish": "Завершить настройку",
-    "saving": "Сохранение..."
+    "saving": "Сохранение...",
+    "clubNameRequired": "Укажите название клуба",
+    "failedToSave": "Не удалось сохранить"
   },
   "schedulePlanner": {
     "badge": "Планировщик расписания",
@@ -5460,7 +5489,11 @@
     "regFailed": "Не удалось зарегистрироваться. Попробуйте снова.",
     "logInUnderEmail": "🔐 Войти под {email}",
     "logInUnderEmailFallback": "этим email",
-    "registerFreeNextSteps": "Регистрация бесплатна. После отправки вы добавите игроков и выберете услуги (проживание, питание, трансфер) в кабинете команды."
+    "registerFreeNextSteps": "Регистрация бесплатна. После отправки вы добавите игроков и выберете услуги (проживание, питание, трансфер) в кабинете команды.",
+    "teamsCount": "{count, plural, one {# команда} few {# команды} many {# команд} other {# команды}}",
+    "tournamentsCount": "{count, plural, one {# турнир} few {# турнира} many {# турниров} other {# турнира}}",
+    "playersCount": "{count, plural, one {# игрок} few {# игрока} many {# игроков} other {# игрока}}",
+    "fileHint": "PNG, JPG · макс. 2 МБ"
   },
   "about": {
     "hub": {
@@ -6577,5 +6610,15 @@
     "close": "Закрыть",
     "save": "Сохранить",
     "confirmDelete": "Удалить этот баг-репорт? Действие необратимо."
+  },
+  "pendingCoaches": {
+    "title": "Новые тренеры — требуют подтверждения",
+    "description": "Они уже могут регистрировать свои команды на турниры. Подтвердите если знаете их, или удалите если нет.",
+    "teamLabel": "команда",
+    "confirmAction": "Подтвердить",
+    "remove": "Удалить",
+    "confirmFailed": "Не удалось подтвердить",
+    "removeFailed": "Не удалось удалить",
+    "removeConfirm": "Удалить {label} из клуба? Они потеряют доступ."
   }
 }

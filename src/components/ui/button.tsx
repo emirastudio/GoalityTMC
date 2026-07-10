@@ -9,6 +9,8 @@ type Size = "sm" | "md" | "lg";
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
+  /** Shows a spinner, disables the button and sets aria-busy while true. */
+  loading?: boolean;
 }
 
 const variants: Record<Variant, string> = {
@@ -26,7 +28,7 @@ const sizes: Record<Size, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "primary", size = "md", disabled, ...props }, ref) => (
+  ({ className, variant = "primary", size = "md", disabled, loading, children, ...props }, ref) => (
     <button
       ref={ref}
       className={cn(
@@ -35,9 +37,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         sizes[size],
         className
       )}
-      disabled={disabled}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
-    />
+    >
+      {loading && (
+        <span
+          aria-hidden="true"
+          className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+        />
+      )}
+      {children}
+    </button>
   )
 );
 Button.displayName = "Button";

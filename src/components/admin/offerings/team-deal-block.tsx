@@ -18,7 +18,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   Loader2, Plus, Trash2, Check, Eye, EyeOff, Package as PackageIcon,
   Gift, RotateCcw, ChevronDown, ChevronUp, X, Search,
@@ -368,6 +368,8 @@ function BulkAddOnPicker({
   onConfirm: (ids: number[]) => Promise<void> | void;
   t: (k: string, p?: Record<string, string | number>) => string;
 }) {
+  const locale = useLocale();
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [query, setQuery] = useState("");
 
@@ -512,7 +514,7 @@ function BulkAddOnPicker({
                         className="text-[11px]"
                         style={{ color: "var(--cat-text-muted)" }}
                       >
-                        {formatMoney(o.priceCents, o.currency)} ·{" "}
+                        {fmt(o.priceCents, o.currency)} ·{" "}
                         {priceModelLabel(o.priceModel)}
                       </div>
                     </div>
@@ -592,6 +594,8 @@ function DealSection({
   }) => Promise<void>;
 }) {
   const t = useTranslations("offeringsTeam");
+  const locale = useLocale();
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   const b = deal.breakdown;
 
   return (
@@ -718,14 +722,14 @@ function DealSection({
             <>
               <div className="flex justify-between text-sm" style={{ color: "var(--cat-text-muted)" }}>
                 <span>{t("subtotal")}</span>
-                <span className="font-mono tabular-nums">{formatMoney(b.subtotalCents, b.currency)}</span>
+                <span className="font-mono tabular-nums">{fmt(b.subtotalCents, b.currency)}</span>
               </div>
               {b.adjustments.map(a => (
                 <div key={a.id} className="flex justify-between items-center text-[13px]"
                   style={{ color: a.kind === "discount" ? "#10b981" : "#f59e0b" }}>
                   <span>{a.reason}</span>
                   <span className="font-mono tabular-nums">
-                    {a.kind === "discount" ? "−" : "+"}{formatMoney(Math.abs(a.effectCents), b.currency)}
+                    {a.kind === "discount" ? "−" : "+"}{fmt(Math.abs(a.effectCents), b.currency)}
                   </span>
                 </div>
               ))}
@@ -735,18 +739,18 @@ function DealSection({
           <div className="flex justify-between items-center pt-2"
             style={{ color: "var(--cat-text)" }}>
             <span className="text-base font-bold">{t("total")}</span>
-            <span className="text-xl font-black tabular-nums">{formatMoney(b.totalCents, b.currency)}</span>
+            <span className="text-xl font-black tabular-nums">{fmt(b.totalCents, b.currency)}</span>
           </div>
           {b.paidCents > 0 && (
             <div className="flex justify-between text-[13px]" style={{ color: "#10b981" }}>
               <span>{t("paid")}</span>
-              <span className="font-mono tabular-nums">{formatMoney(b.paidCents, b.currency)}</span>
+              <span className="font-mono tabular-nums">{fmt(b.paidCents, b.currency)}</span>
             </div>
           )}
           {b.outstandingCents > 0 && (
             <div className="flex justify-between text-[13px] font-semibold" style={{ color: "#f59e0b" }}>
               <span>{t("outstanding")}</span>
-              <span className="font-mono tabular-nums">{formatMoney(b.outstandingCents, b.currency)}</span>
+              <span className="font-mono tabular-nums">{fmt(b.outstandingCents, b.currency)}</span>
             </div>
           )}
         </div>
@@ -771,6 +775,8 @@ function LineRow({
   onToggleGift: (makeGift: boolean) => Promise<void>;
 }) {
   const t = useTranslations("offeringsTeam");
+  const locale = useLocale();
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState((line.unitPriceCents / 100).toString());
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -846,7 +852,7 @@ function LineRow({
           >
             {hasOverride && (
               <span className="text-[11px] line-through" style={{ color: "var(--cat-text-muted)" }}>
-                {formatMoney(line.originalUnitPriceCents!, currency)}
+                {fmt(line.originalUnitPriceCents!, currency)}
               </span>
             )}
             <span
@@ -856,7 +862,7 @@ function LineRow({
                 fontWeight: isGift ? 800 : 700,
               }}
             >
-              {formatMoney(line.unitPriceCents, currency)}
+              {fmt(line.unitPriceCents, currency)}
             </span>
           </button>
         )}

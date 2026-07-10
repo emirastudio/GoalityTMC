@@ -363,7 +363,7 @@ function ClubFoundPanel({
       {/* Divider */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px" style={{ background: "var(--cat-card-border)" }} />
-        <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>or</span>
+        <span className="text-xs" style={{ color: "var(--cat-text-muted)" }}>{tcr("or")}</span>
         <div className="flex-1 h-px" style={{ background: "var(--cat-card-border)" }} />
       </div>
 
@@ -766,7 +766,7 @@ export default function RegisterPage() {
               <Link href="/login"
                 className="hidden sm:inline-flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-lg border transition-colors"
                 style={{ color: "var(--cat-text-secondary)", borderColor: "var(--cat-card-border)" }}>
-                Sign in
+                {tc("signIn")}
               </Link>
             </div>
           </div>
@@ -1004,7 +1004,7 @@ export default function RegisterPage() {
                   </Button>
 
                   {isLast ? (
-                    <Button variant="gold" size="lg" disabled={submitting} onClick={handleSubmit}>
+                    <Button variant="gold" size="lg" loading={submitting} onClick={handleSubmit}>
                       {submitting ? t("submitting") : t("submit")}
                     </Button>
                   ) : (
@@ -1020,7 +1020,7 @@ export default function RegisterPage() {
             <div className="mt-6 text-center">
               <Link href="/" className="inline-flex items-center gap-1.5 text-[12px] hover:opacity-80 transition-opacity"
                 style={{ color: "var(--cat-text-muted)" }}>
-                <ArrowLeft className="w-3 h-3" /> Back to home
+                <ArrowLeft className="w-3 h-3" /> {tc("backToHome")}
               </Link>
             </div>
           </div>

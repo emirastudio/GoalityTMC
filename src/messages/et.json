@@ -381,7 +381,10 @@
     "download": "Lae alla",
     "yes": "Jah",
     "no": "Ei",
-    "euro": "Eurot"
+    "euro": "Eurot",
+    "or": "või",
+    "signIn": "Logi sisse",
+    "backToHome": "Tagasi avalehele"
   },
   "auth": {
     "login": "Logi sisse",
@@ -745,7 +748,17 @@
     "generateNew": "Loo uus link",
     "copy": "Kopeeri",
     "copied": "Kopeeritud!",
-    "inviteLinkExpiry": "Link kehtib 7 päeva."
+    "inviteLinkExpiry": "Link kehtib 7 päeva.",
+    "saveChanges": "Salvesta muudatused",
+    "saving": "Salvestamine…",
+    "failedToSave": "Salvestamine ebaõnnestus",
+    "passwordsDoNotMatch": "Paroolid ei kattu",
+    "failedToChangePassword": "Parooli muutmine ebaõnnestus",
+    "failedToSendRequest": "Taotluse saatmine ebaõnnestus",
+    "sending": "Saatmine…",
+    "yesRequestDeletion": "Jah, taotle kustutamist",
+    "saved": "Salvestatud!",
+    "passwordMinLength": "Parool peab olema vähemalt 6 tähemärki"
   },
   "documents": {
     "title": "Dokumendid",
@@ -2984,7 +2997,12 @@
     "signIn": "Logi sisse",
     "backToHome": "Tagasi avalehele",
     "forOrganizers": "Korraldajatele",
-    "somethingWentWrong": "Midagi läks valesti"
+    "somethingWentWrong": "Midagi läks valesti",
+    "iWantTo": "Soovin:",
+    "optionManagedTitle": "Hallata turniiri Goality TMC-ga",
+    "optionManagedDesc": "Registreerimine, hotellid, maksed, ajakavad — täisplatvorm",
+    "optionListingTitle": "Lisada turniir kataloogi",
+    "optionListingDesc": "Lihtne leht, SEO-nähtavus — 4,99 €/kuus"
   },
   "invite": {
     "loading": "Laadimine...",
@@ -3033,7 +3051,8 @@
     "signInToClub": "Logi klubi portaali",
     "backToSearch": "← Tagasi otsingusse",
     "continueCreate": "Jätka — loo siiski uus klubi",
-    "teamsInClub": "Selle klubi meeskonnad — logi oma meeskonda"
+    "teamsInClub": "Selle klubi meeskonnad — logi oma meeskonda",
+    "or": "või"
   },
   "tournament": {
     "statTeams": "Meeskondi",
@@ -4814,7 +4833,15 @@
       "countPlural": "turniiri",
       "viewNews": "Ava uudised",
       "unfollow": "Lõpeta jälgimine"
-    }
+    },
+    "attentionTitle": "Taotlused vajavad tähelepanu",
+    "attentionDesc": "Korraldaja vaatab läbi või tagasi lükatud — jälgi olekut ja kirjuta korraldajale vajadusel.",
+    "statusPendingReview": "Läbivaatamisel",
+    "statusRejected": "Tagasi lükatud",
+    "openApplication": "Ava taotlus",
+    "viewDetails": "Üksikasjad",
+    "generatingLink": "Lingi loomine…",
+    "inviteShareText": "Sind on kutsutud liituma meie klubiga Goality's"
   },
   "blog": {
     "title": "Blogi",
@@ -4878,7 +4905,9 @@
     "back": "Tagasi",
     "next": "Järgmine",
     "finish": "Lõpeta seadistamine",
-    "saving": "Salvestamine..."
+    "saving": "Salvestamine...",
+    "clubNameRequired": "Klubi nimi on kohustuslik",
+    "failedToSave": "Salvestamine ebaõnnestus"
   },
   "schedulePlanner": {
     "badge": "Ajakava planeerija",
@@ -5460,7 +5489,11 @@
     "regFailed": "Registreerimine ebaõnnestus. Proovige uuesti.",
     "logInUnderEmail": "🔐 Logi sisse aadressiga {email}",
     "logInUnderEmailFallback": "selle e-postiga",
-    "registerFreeNextSteps": "Registreerimine on tasuta. Pärast esitamist lisate mängijad ja valite teenused (majutus, toitlustus, transfeer) meeskonna portaalis."
+    "registerFreeNextSteps": "Registreerimine on tasuta. Pärast esitamist lisate mängijad ja valite teenused (majutus, toitlustus, transfeer) meeskonna portaalis.",
+    "teamsCount": "{count, plural, one {# võistkond} other {# võistkonda}}",
+    "tournamentsCount": "{count, plural, one {# turniir} other {# turniiri}}",
+    "playersCount": "{count, plural, one {# mängija} other {# mängijat}}",
+    "fileHint": "PNG, JPG · max 2 MB"
   },
   "about": {
     "hub": {
@@ -6577,5 +6610,15 @@
     "close": "Sulge",
     "save": "Salvesta",
     "confirmDelete": "Kustuta see veateade? Seda ei saa tagasi võtta."
+  },
+  "pendingCoaches": {
+    "title": "Uued treenerid — vajavad kinnitust",
+    "description": "Nad saavad juba oma võistkondi turniiridele registreerida. Kinnita, kui tunned neid, või eemalda, kui mitte.",
+    "teamLabel": "võistkond",
+    "confirmAction": "Kinnita",
+    "remove": "Eemalda",
+    "confirmFailed": "Kinnitamine ebaõnnestus",
+    "removeFailed": "Eemaldamine ebaõnnestus",
+    "removeConfirm": "Eemaldada {label} klubist? Ta kaotab juurdepääsu."
   }
 }

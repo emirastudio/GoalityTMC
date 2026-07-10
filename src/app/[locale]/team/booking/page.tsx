@@ -1401,6 +1401,9 @@ function V3StepCard({
   hideSubtotal?: boolean;
   children: React.ReactNode;
 }) {
+  const locale = useLocale();
+  // Locale-aware money formatting (es → "1.234,50 €", en → "€1,234.50").
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   return (
     <div className="rounded-2xl border th-border th-card shadow-sm overflow-hidden"
       style={{
@@ -1434,7 +1437,7 @@ function V3StepCard({
               color: "var(--cat-text)",
               border: "1px solid var(--cat-card-border)",
             }}>
-            {formatMoney(subtotalCents, currency ?? "EUR")}
+            {fmt(subtotalCents, currency ?? "EUR")}
           </span>
         )}
       </div>
@@ -1444,6 +1447,7 @@ function V3StepCard({
 }
 
 function V3DealLines({ deal, locale }: { deal: V3Data["deals"][number]; locale: string }) {
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   return (
     <div className="divide-y th-border">
       {deal.lines.map((l) => {
@@ -1465,18 +1469,18 @@ function V3DealLines({ deal, locale }: { deal: V3Data["deals"][number]; locale: 
                 style={{ background: "rgba(16,185,129,0.10)" }}>
                 <Gift className="w-4 h-4" style={{ color: "#10b981" }} />
                 <span className="text-base font-bold tabular-nums" style={{ color: "#10b981" }}>
-                  {formatMoney(0, deal.currency)}
+                  {fmt(0, deal.currency)}
                 </span>
               </div>
             ) : (
               <div className="flex flex-col items-end">
                 {l.originalUnitPriceCents != null && l.originalUnitPriceCents !== l.unitPriceCents && (
                   <span className="text-[11px] line-through th-text-2 tabular-nums">
-                    {formatMoney(l.originalUnitPriceCents, deal.currency)}
+                    {fmt(l.originalUnitPriceCents, deal.currency)}
                   </span>
                 )}
                 <span className="text-lg font-bold th-text tabular-nums">
-                  {formatMoney(l.unitPriceCents, deal.currency)}
+                  {fmt(l.unitPriceCents, deal.currency)}
                 </span>
               </div>
             )}
@@ -1497,6 +1501,7 @@ function V3SummaryTable({
   t: ReturnType<typeof useTranslations<"booking">>;
   locale: string;
 }) {
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   // Flatten every deal's lines into a single ledger (what the organiser
   // wants the club to pay, grouped by origin deal). Gifts show €0 on their
   // own row — matches the old legacy summary's clarity.
@@ -1553,11 +1558,11 @@ function V3SummaryTable({
                 </td>
                 <td className="py-3 text-center th-text-2 tabular-nums">{row.qty}</td>
                 <td className="py-3 text-right th-text-2 tabular-nums">
-                  {formatMoney(row.unitPrice, data.currency)}
+                  {fmt(row.unitPrice, data.currency)}
                 </td>
                 <td className="py-3 text-right font-bold tabular-nums"
                   style={{ color: row.isGift ? "#10b981" : "var(--cat-text)" }}>
-                  {formatMoney(row.totalCents, data.currency)}
+                  {fmt(row.totalCents, data.currency)}
                 </td>
               </tr>
             ))}
@@ -1577,7 +1582,7 @@ function V3SummaryTable({
                 {t("paid")}
               </p>
               <p className="text-base font-bold tabular-nums" style={{ color: "#10b981" }}>
-                {formatMoney(data.paidCents, data.currency)}
+                {fmt(data.paidCents, data.currency)}
               </p>
             </div>
           )}
@@ -1587,7 +1592,7 @@ function V3SummaryTable({
                 {t("outstanding")}
               </p>
               <p className="text-base font-bold tabular-nums" style={{ color: "#f59e0b" }}>
-                {formatMoney(data.outstandingCents, data.currency)}
+                {fmt(data.outstandingCents, data.currency)}
               </p>
             </div>
           )}
@@ -1598,7 +1603,7 @@ function V3SummaryTable({
           </p>
           <p className="text-3xl font-black th-text tabular-nums"
             style={{ textShadow: "0 0 20px var(--cat-accent-glow)" }}>
-            {formatMoney(data.grandTotalCents, data.currency)}
+            {fmt(data.grandTotalCents, data.currency)}
           </p>
         </div>
       </div>

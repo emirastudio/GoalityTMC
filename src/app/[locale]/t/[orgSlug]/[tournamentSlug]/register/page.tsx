@@ -227,7 +227,7 @@ function ClubCard({ club, onSelect }: { club: ClubResult; onSelect: () => void }
         <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>{club.name}</p>
         <p className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
           {[club.city, club.country].filter(Boolean).join(", ")}
-          {club.teamCount > 0 && ` · ${club.teamCount} команд`}
+          {club.teamCount > 0 && ` · ${tr("teamsCount", { count: club.teamCount })}`}
         </p>
       </div>
       {club.hasAdmin && (
@@ -280,7 +280,7 @@ function TeamIdentityBadge({ team, clubName }: { team: ExistingTeam; clubName?: 
       )}
       {team.totalTournaments > 0 && (
         <span className="text-[10px]" style={{ color: "var(--cat-text-faint)" }}>
-          · {team.totalTournaments} {team.totalTournaments === 1 ? "турнир" : "турниров"}
+          · {tr("tournamentsCount", { count: team.totalTournaments })}
         </span>
       )}
     </div>
@@ -1475,7 +1475,7 @@ export default function RegisterPage() {
                 <Upload className="w-3.5 h-3.5" /> {t("uploadBadge")}
                 <input type="file" accept="image/*" className="hidden" onChange={handleLogo} />
               </label>
-              <p className="text-[10px] mt-1" style={{ color: "var(--cat-text-faint)" }}>PNG, JPG · макс 2МБ</p>
+              <p className="text-[10px] mt-1" style={{ color: "var(--cat-text-faint)" }}>{tr("fileHint")}</p>
             </div>
           </div>
           <Field label={t("clubName")} value={clubName} onChange={setClubName} placeholder="FC Barcelona" required />
@@ -1963,7 +1963,7 @@ export default function RegisterPage() {
                           <TeamIdentityBadge team={team} clubName={loggedInClub.name} />
                           {team.playersCount > 0 && (
                             <p className="text-[10px] mt-0.5 ml-0" style={{ color: "var(--cat-text-faint)" }}>
-                              {team.playersCount} игроков
+                              {tr("playersCount", { count: team.playersCount })}
                             </p>
                           )}
                         </div>

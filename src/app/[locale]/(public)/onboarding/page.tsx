@@ -222,22 +222,22 @@ export default function OnboardingPage() {
               {/* Type selector */}
               <div className="mb-6">
                 <p className="text-[12px] font-semibold mb-3" style={{ color: "var(--cat-text-secondary)" }}>
-                  I want to:
+                  {t("iWantTo")}
                 </p>
                 <div className="grid grid-cols-1 gap-3">
                   {[
                     {
                       type: "managed" as const,
                       icon: Trophy,
-                      title: "Manage tournament with Goality TMC",
-                      desc: "Registration, hotels, payments, schedules — full platform",
+                      title: t("optionManagedTitle"),
+                      desc: t("optionManagedDesc"),
                       color: "#2BFEBA",
                     },
                     {
                       type: "listing" as const,
                       icon: Tag,
-                      title: "List my tournament in the catalog",
-                      desc: "Simple listing page, SEO visibility — €4.99/month",
+                      title: t("optionListingTitle"),
+                      desc: t("optionListingDesc"),
                       color: "#8B5CF6",
                     },
                   ].map(option => {

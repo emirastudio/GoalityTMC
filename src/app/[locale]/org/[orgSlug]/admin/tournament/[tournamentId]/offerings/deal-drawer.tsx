@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { X, Loader2, Plus, Trash2, Check, Minus } from "lucide-react";
 import { formatMoney, type DealBreakdown, type DealListItem } from "@/lib/offerings/types";
 import { OfferingIcon } from "@/lib/offerings/icons";
@@ -35,6 +35,8 @@ export function DealDrawer({
   onChange: () => void;
 }) {
   const t = useTranslations("offeringsAdmin");
+  const locale = useLocale();
+  const fmt = (cents: number, currency = "EUR") => formatMoney(cents, currency, locale);
   const [breakdown, setBreakdown] = useState<DealBreakdown | null>(deal.breakdown);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -129,11 +131,11 @@ export function DealDrawer({
                         <span className="truncate">{l.title}</span>
                       </div>
                       <div className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
-                        {formatMoney(l.unitPriceCents, breakdown.currency)} × {l.quantity}
+                        {fmt(l.unitPriceCents, breakdown.currency)} × {l.quantity}
                       </div>
                     </div>
                     <div className="text-sm font-mono tabular-nums" style={{ color: "var(--cat-text)" }}>
-                      {formatMoney(l.lineCents, breakdown.currency)}
+                      {fmt(l.lineCents, breakdown.currency)}
                     </div>
                   </div>
                 ))}
@@ -141,7 +143,7 @@ export function DealDrawer({
                   style={{ background: "var(--cat-bg)", fontWeight: 700 }}>
                   <span style={{ color: "var(--cat-text)" }}>{t("subtotal")}</span>
                   <span className="font-mono tabular-nums" style={{ color: "var(--cat-text)" }}>
-                    {formatMoney(breakdown.subtotalCents, breakdown.currency)}
+                    {fmt(breakdown.subtotalCents, breakdown.currency)}
                   </span>
                 </div>
               </div>
@@ -179,13 +181,13 @@ export function DealDrawer({
                           {a.mode === "percent_bps"
                             ? `${(a.value / 100).toFixed(a.value % 100 === 0 ? 0 : 1)}%`
                             : a.mode === "per_player"
-                            ? t("perPlayerValue", { v: formatMoney(a.value, breakdown.currency) })
-                            : formatMoney(a.value, breakdown.currency)}
+                            ? t("perPlayerValue", { v: fmt(a.value, breakdown.currency) })
+                            : fmt(a.value, breakdown.currency)}
                         </div>
                       </div>
                       <span className="text-sm font-mono tabular-nums font-bold"
                         style={{ color: a.kind === "discount" ? "#10b981" : "#f59e0b" }}>
-                        {a.kind === "discount" ? "−" : "+"}{formatMoney(Math.abs(a.effectCents), breakdown.currency)}
+                        {a.kind === "discount" ? "−" : "+"}{fmt(Math.abs(a.effectCents), breakdown.currency)}
                       </span>
                       <button onClick={() => deleteAdjustment(a.id)}
                         className="p-1 rounded hover:opacity-70" style={{ color: "var(--cat-text-muted)" }}>
@@ -205,7 +207,7 @@ export function DealDrawer({
                   {t("total")}
                 </span>
                 <span className="text-xl font-black tabular-nums" style={{ color: "var(--cat-accent)" }}>
-                  {formatMoney(breakdown.totalCents, breakdown.currency)}
+                  {fmt(breakdown.totalCents, breakdown.currency)}
                 </span>
               </div>
             </section>
@@ -234,7 +236,7 @@ export function DealDrawer({
                       <Check className="w-3.5 h-3.5 shrink-0" style={{ color: "#10b981" }} />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold" style={{ color: "var(--cat-text)" }}>
-                          {formatMoney(p.amountCents, p.currency)} · {t(`method_${p.method}`)}
+                          {fmt(p.amountCents, p.currency)} · {t(`method_${p.method}`)}
                         </div>
                         <div className="text-[11px]" style={{ color: "var(--cat-text-muted)" }}>
                           {new Date(p.receivedAt).toLocaleDateString()} {p.reference ? `· ${p.reference}` : ""}
@@ -249,14 +251,14 @@ export function DealDrawer({
                   <div className="grid grid-cols-[1fr_auto] gap-2 px-2 pt-2 text-[12px]">
                     <span style={{ color: "var(--cat-text-muted)" }}>{t("totalPaid")}</span>
                     <span className="font-mono tabular-nums font-bold" style={{ color: "#10b981" }}>
-                      {formatMoney(breakdown.paidCents, breakdown.currency)}
+                      {fmt(breakdown.paidCents, breakdown.currency)}
                     </span>
                   </div>
                   <div className="grid grid-cols-[1fr_auto] gap-2 px-2 text-[12px]">
                     <span style={{ color: "var(--cat-text-muted)" }}>{t("outstanding")}</span>
                     <span className="font-mono tabular-nums font-bold"
                       style={{ color: breakdown.outstandingCents === 0 ? "#10b981" : "#f59e0b" }}>
-                      {formatMoney(breakdown.outstandingCents, breakdown.currency)}
+                      {fmt(breakdown.outstandingCents, breakdown.currency)}
                     </span>
                   </div>
                 </div>

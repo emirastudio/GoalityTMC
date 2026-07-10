@@ -101,7 +101,7 @@ export default function ClubOnboardingPage() {
   function next() {
     setError("");
     if (step === "info" && !clubName.trim()) {
-      setError("Club name is required");
+      setError(t("clubNameRequired"));
       return;
     }
     if (!isLast) setStep(STEPS[stepIndex + 1]);
@@ -153,7 +153,7 @@ export default function ClubOnboardingPage() {
         router.push("/club/dashboard");
       } else {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Failed to save");
+        setError(data.error || t("failedToSave"));
       }
     } finally {
       setSubmitting(false);

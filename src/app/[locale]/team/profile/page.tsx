@@ -89,7 +89,7 @@ export default function ProfilePage() {
       setTimeout(() => setProfileSaved(false), 3000);
     } else {
       const d = await res.json().catch(() => ({}));
-      setProfileError(d.error ?? "Failed to save");
+      setProfileError(d.error ?? t("failedToSave"));
     }
     setProfileSaving(false);
   }
@@ -98,11 +98,11 @@ export default function ProfilePage() {
     e.preventDefault();
     setPasswordError("");
     if (newPassword !== confirmPassword) {
-      setPasswordError("Passwords do not match");
+      setPasswordError(t("passwordsDoNotMatch"));
       return;
     }
     if (newPassword.length < 6) {
-      setPasswordError("Password must be at least 6 characters");
+      setPasswordError(t("passwordMinLength"));
       return;
     }
     setPasswordSaving(true);
@@ -119,7 +119,7 @@ export default function ProfilePage() {
       setTimeout(() => setPasswordSaved(false), 3000);
     } else {
       const d = await res.json().catch(() => ({}));
-      setPasswordError(d.error ?? "Failed to change password");
+      setPasswordError(d.error ?? t("failedToChangePassword"));
     }
     setPasswordSaving(false);
   }
@@ -133,7 +133,7 @@ export default function ProfilePage() {
       setShowDeletionConfirm(false);
     } else {
       const d = await res.json().catch(() => ({}));
-      setDeletionError(d.error ?? "Failed to send request");
+      setDeletionError(d.error ?? t("failedToSendRequest"));
     }
     setDeletionSending(false);
   }
@@ -175,11 +175,11 @@ export default function ProfilePage() {
           )}
           <div className="flex items-center justify-between">
             {profileSaved && (
-              <span className="text-sm text-success font-medium">Saved!</span>
+              <span className="text-sm text-success font-medium">{t("saved")}</span>
             )}
             {!profileSaved && <span />}
             <Button type="submit" disabled={profileSaving}>
-              {profileSaving ? "Saving..." : "Save Changes"}
+              {profileSaving ? t("saving") : t("saveChanges")}
             </Button>
           </div>
         </form>
@@ -225,7 +225,7 @@ export default function ProfilePage() {
             )}
             {!passwordSaved && <span />}
             <Button type="submit" disabled={passwordSaving}>
-              {passwordSaving ? "Saving..." : "Change Password"}
+              {passwordSaving ? t("saving") : t("changePassword")}
             </Button>
           </div>
         </form>
@@ -267,7 +267,7 @@ export default function ProfilePage() {
                     onClick={handleRequestDeletion}
                     disabled={deletionSending}
                   >
-                    {deletionSending ? "Sending..." : "Yes, request deletion"}
+                    {deletionSending ? t("sending") : t("yesRequestDeletion")}
                   </Button>
                   <Button
                     variant="ghost"

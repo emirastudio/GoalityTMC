@@ -340,6 +340,8 @@ export default async function ClubDashboardPage() {
               shareWhatsapp: t("shareWhatsapp"),
               shareTelegram: t("shareTelegram"),
               inviteExpires: t("inviteExpires"),
+              generatingLink: t("generatingLink"),
+              inviteShareText: t("inviteShareText"),
             }}
           />
         </div>
@@ -406,10 +408,10 @@ export default async function ClubDashboardPage() {
           <div className="rounded-2xl p-6 border"
             style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.35)" }}>
             <h2 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: "var(--cat-text)" }}>
-              <span className="text-amber-500">⚠</span> Заявки требуют внимания ({attention.length})
+              <span className="text-amber-500">⚠</span> {t("attentionTitle")} ({attention.length})
             </h2>
             <p className="text-xs mb-3" style={{ color: "var(--cat-text-muted)" }}>
-              На рассмотрении организатором или отклонены — отслеживайте статус и пишите организатору при необходимости.
+              {t("attentionDesc")}
             </p>
             <ul className="space-y-2">
               {attention.map((reg) => {
@@ -428,7 +430,7 @@ export default async function ClubDashboardPage() {
                       style={isOpen
                         ? { background: "rgba(245,158,11,0.15)", color: "#f59e0b" }
                         : { background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
-                      {isOpen ? "🕓 На рассмотрении" : "✕ Отклонена"}
+                      {isOpen ? `🕓 ${t("statusPendingReview")}` : `✕ ${t("statusRejected")}`}
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold truncate" style={{ color: "var(--cat-text)" }}>
@@ -442,7 +444,7 @@ export default async function ClubDashboardPage() {
                       href={`/t/${reg.tournamentSlug}/register`}
                       className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
                       style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text-secondary)" }}>
-                      {isOpen ? "Открыть заявку" : "Подробнее"} →
+                      {isOpen ? t("openApplication") : t("viewDetails")} →
                     </Link>
                   </li>
                 );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, X, Loader2, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 type Member = {
   id: number;
@@ -27,6 +28,7 @@ export function PendingCoachesPanel({ clubId }: { clubId: number }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const tr = useTranslations("pendingCoaches");
 
   async function load() {
     setLoading(true);
@@ -52,7 +54,7 @@ export function PendingCoachesPanel({ clubId }: { clubId: number }) {
         { method: "POST" }
       );
       if (!res.ok) {
-        setError("Не удалось подтвердить");
+        setError(tr("confirmFailed"));
         return;
       }
       await load();
@@ -63,14 +65,14 @@ export function PendingCoachesPanel({ clubId }: { clubId: number }) {
   }
 
   async function remove(memberId: number, label: string) {
-    if (!confirm(`Удалить ${label} из клуба? Они потеряют доступ.`)) return;
+    if (!confirm(tr("removeConfirm", { label }))) return;
     setBusy(`remove:${memberId}`);
     setError(null);
     try {
       const res = await fetch(`/api/clubs/${clubId}/members/${memberId}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Не удалось удалить");
+        setError(data.error ?? tr("removeFailed"));
         return;
       }
       await load();
@@ -91,7 +93,7 @@ export function PendingCoachesPanel({ clubId }: { clubId: number }) {
       <div className="flex items-center gap-2 mb-3">
         <UserCheck className="w-4 h-4" style={{ color: "#f59e0b" }} />
         <p className="text-sm font-bold" style={{ color: "var(--cat-text)" }}>
-          Новые тренеры — требуют подтверждения
+          {tr("title")}
         </p>
         <span
           className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -101,7 +103,7 @@ export function PendingCoachesPanel({ clubId }: { clubId: number }) {
         </span>
       </div>
       <p className="text-xs mb-3" style={{ color: "var(--cat-text-muted)" }}>
-        Они уже могут регистрировать свои команды на турниры. Подтвердите если знаете их, или удалите если нет.
+        {tr("description")}
       </p>
 
       {error && (
@@ -127,25 +129,25 @@ export function PendingCoachesPanel({ clubId }: { clubId: number }) {
                     {label}
                   </p>
                   <p className="text-[11px] truncate" style={{ color: "var(--cat-text-muted)" }}>
-                    {m.email} · команда: <span style={{ color: "var(--cat-text-secondary)" }}>{tm.label}</span>
+                    {m.email} · {tr("teamLabel")}: <span style={{ color: "var(--cat-text-secondary)" }}>{tm.label}</span>
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => approve(m.id, tm.id)}
                   disabled={busy !== null}
-                  title="Подтвердить"
+                  title={tr("confirmAction")}
                   className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40 cursor-pointer flex items-center gap-1"
                   style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}
                 >
                   {busy === `approve:${m.id}:${tm.id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  Подтвердить
+                  {tr("confirmAction")}
                 </button>
                 <button
                   type="button"
                   onClick={() => remove(m.id, label)}
                   disabled={busy !== null}
-                  title="Удалить"
+                  title={tr("remove")}
                   className="p-1.5 rounded-lg hover:opacity-70 transition-all cursor-pointer disabled:opacity-40"
                   style={{ color: "#ef4444" }}
                 >

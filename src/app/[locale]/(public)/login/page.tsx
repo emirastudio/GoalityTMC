@@ -333,6 +333,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
+                  aria-busy={loading || undefined}
                   className="cat-cta-glow w-full py-3.5 rounded-xl text-[14px] font-bold transition-opacity hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
                   style={{
                     background: "linear-gradient(90deg, var(--cat-accent), var(--cat-accent-dark))",

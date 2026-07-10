@@ -381,7 +381,10 @@
     "download": "Descargar",
     "yes": "Sí",
     "no": "No",
-    "euro": "Euro"
+    "euro": "Euro",
+    "or": "o",
+    "signIn": "Iniciar sesión",
+    "backToHome": "Volver al inicio"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -751,7 +754,17 @@
     "generateNew": "Generar Nuevo Enlace",
     "copy": "Copiar",
     "copied": "¡Copiado!",
-    "inviteLinkExpiry": "El enlace es válido por 7 días."
+    "inviteLinkExpiry": "El enlace es válido por 7 días.",
+    "saveChanges": "Guardar cambios",
+    "saving": "Guardando…",
+    "failedToSave": "No se pudo guardar",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "failedToChangePassword": "No se pudo cambiar la contraseña",
+    "failedToSendRequest": "No se pudo enviar la solicitud",
+    "sending": "Enviando…",
+    "yesRequestDeletion": "Sí, solicitar eliminación",
+    "saved": "¡Guardado!",
+    "passwordMinLength": "La contraseña debe tener al menos 6 caracteres"
   },
   "documents": {
     "title": "Documentos",
@@ -2989,7 +3002,12 @@
     "signIn": "Iniciar sesión",
     "backToHome": "Volver al inicio",
     "forOrganizers": "Para organizadores",
-    "somethingWentWrong": "Algo salió mal"
+    "somethingWentWrong": "Algo salió mal",
+    "iWantTo": "Quiero:",
+    "optionManagedTitle": "Gestionar el torneo con Goality TMC",
+    "optionManagedDesc": "Inscripciones, hoteles, pagos, calendarios — plataforma completa",
+    "optionListingTitle": "Publicar mi torneo en el catálogo",
+    "optionListingDesc": "Página sencilla, visibilidad SEO — 4,99 €/mes"
   },
   "invite": {
     "loading": "Cargando...",
@@ -3038,7 +3056,8 @@
     "signInToClub": "Iniciar sesión en el portal del club",
     "backToSearch": "← Volver a la búsqueda",
     "continueCreate": "Continuar — crear nuevo club de todas formas",
-    "teamsInClub": "Equipos en este club — inicie sesión en el suyo"
+    "teamsInClub": "Equipos en este club — inicie sesión en el suyo",
+    "or": "o"
   },
   "tournament": {
     "statTeams": "Equipos",
@@ -4821,7 +4840,15 @@
       "countPlural": "torneos",
       "viewNews": "Ver noticias",
       "unfollow": "Dejar de seguir"
-    }
+    },
+    "attentionTitle": "Solicitudes que requieren atención",
+    "attentionDesc": "En revisión por el organizador o rechazadas — sigue el estado y escribe al organizador si es necesario.",
+    "statusPendingReview": "En revisión",
+    "statusRejected": "Rechazada",
+    "openApplication": "Abrir solicitud",
+    "viewDetails": "Detalles",
+    "generatingLink": "Generando enlace…",
+    "inviteShareText": "Te han invitado a unirte a nuestro club en Goality"
   },
   "blog": {
     "title": "Blog",
@@ -4885,7 +4912,9 @@
     "back": "Atrás",
     "next": "Siguiente",
     "finish": "Completar configuración",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "clubNameRequired": "El nombre del club es obligatorio",
+    "failedToSave": "No se pudo guardar"
   },
   "schedulePlanner": {
     "badge": "Planificador de calendarios",
@@ -5500,7 +5529,11 @@
     "regFailed": "No se pudo registrar. Inténtalo de nuevo.",
     "logInUnderEmail": "🔐 Inicia sesión como {email}",
     "logInUnderEmailFallback": "este email",
-    "registerFreeNextSteps": "El registro es gratuito. Tras enviar, añadirás a tus jugadores y elegirás servicios (alojamiento, comidas, transporte) en tu portal de equipo."
+    "registerFreeNextSteps": "El registro es gratuito. Tras enviar, añadirás a tus jugadores y elegirás servicios (alojamiento, comidas, transporte) en tu portal de equipo.",
+    "teamsCount": "{count, plural, one {# equipo} other {# equipos}}",
+    "tournamentsCount": "{count, plural, one {# torneo} other {# torneos}}",
+    "playersCount": "{count, plural, one {# jugador} other {# jugadores}}",
+    "fileHint": "PNG, JPG · máx. 2 MB"
   },
   "about": {
     "hub": {
@@ -6617,5 +6650,15 @@
     "close": "Cerrar",
     "save": "Guardar",
     "confirmDelete": "¿Eliminar este reporte? No se puede deshacer."
+  },
+  "pendingCoaches": {
+    "title": "Nuevos entrenadores — requieren confirmación",
+    "description": "Ya pueden inscribir sus equipos en torneos. Confírmalos si los conoces, o elimínalos si no.",
+    "teamLabel": "equipo",
+    "confirmAction": "Confirmar",
+    "remove": "Eliminar",
+    "confirmFailed": "No se pudo confirmar",
+    "removeFailed": "No se pudo eliminar",
+    "removeConfirm": "¿Eliminar a {label} del club? Perderá el acceso."
   }
 }
