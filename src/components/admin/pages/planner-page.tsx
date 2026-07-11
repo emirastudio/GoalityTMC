@@ -1437,6 +1437,7 @@ function defaultConfig(fields: Field[]): ScheduleConfig {
     breakBetweenMatchesMinutes: 10,
     maxMatchesPerTeamPerDay: 3,
     minRestBetweenTeamMatchesMinutes: 60,
+    maxConsecutiveMatchesPerTeam: 0,
   };
 }
 
@@ -1825,6 +1826,29 @@ function DivisionConfigPanel({
                 {(config.enableTeamRestRule ?? true)
                   ? t("planner.restRuleDesc", { min: config.minRestBetweenTeamMatchesMinutes ?? 60 })
                   : t("planner.noRestLimit")}
+              </p>
+
+              {/* Max consecutive matches — allow back-to-back but cap the run
+                  (only bites when rest is relaxed enough to permit it). */}
+              <div className="flex items-center gap-3 flex-wrap mt-3 pt-3" style={{ borderTop: "1px solid var(--cat-card-border)" }}>
+                <span className="text-sm" style={{ color: "var(--cat-text-muted)" }}>{t("planner.maxConsecutive")}</span>
+                <div className="flex items-center gap-1.5">
+                  {[0, 2, 3, 4].map(v => (
+                    <button key={v}
+                      onClick={() => onChange({ ...config, maxConsecutiveMatchesPerTeam: v })}
+                      className="px-2.5 py-0.5 rounded-md text-sm font-semibold transition-all"
+                      style={{
+                        background: (config.maxConsecutiveMatchesPerTeam ?? 0) === v ? "rgba(99,102,241,0.2)" : "var(--cat-tag-bg)",
+                        color: (config.maxConsecutiveMatchesPerTeam ?? 0) === v ? "#6366f1" : "var(--cat-text-muted)",
+                        border: `1px solid ${(config.maxConsecutiveMatchesPerTeam ?? 0) === v ? "rgba(99,102,241,0.4)" : "transparent"}`,
+                      }}>
+                      {v === 0 ? t("planner.noLimit") : v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-sm mt-1" style={{ color: "var(--cat-text-muted)" }}>
+                {t("planner.maxConsecutiveDesc")}
               </p>
             </div>
 
@@ -2828,6 +2852,7 @@ export function PlannerPage() {
           breakBetweenMatchesMinutes: cfg.breakBetweenMatchesMinutes,
           maxMatchesPerTeamPerDay: cfg.maxMatchesPerTeamPerDay,
           minRestBetweenTeamMatchesMinutes: effectiveMinRest,
+          maxConsecutiveMatchesPerTeam: cfg.maxConsecutiveMatchesPerTeam ?? 0,
           fieldDaySchedule:        completeFieldDaySchedule,
           fieldStageIds:           cfg.fieldStageIds,
           overwriteScheduled:      !partialRegen, // false = keep existing, true = overwrite all

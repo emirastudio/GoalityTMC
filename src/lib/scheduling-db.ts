@@ -496,6 +496,7 @@ export type LegacyScheduleAllDivision = {
   breakBetweenMatchesMinutes: number;
   maxMatchesPerTeamPerDay: number;
   minRestBetweenTeamMatchesMinutes: number;
+  maxConsecutiveMatchesPerTeam?: number;
   overwriteScheduled?: boolean;
   fieldDaySchedule?: Array<{
     fieldId: number;
@@ -727,6 +728,7 @@ export async function legacyScheduleAll(input: {
       cfg.breakBetweenMatchesMinutes = div.breakBetweenMatchesMinutes;
       cfg.maxMatchesPerTeamPerDay = div.maxMatchesPerTeamPerDay;
       cfg.minRestBetweenTeamMatchesMinutes = div.minRestBetweenTeamMatchesMinutes;
+      cfg.maxConsecutiveMatchesPerTeam = div.maxConsecutiveMatchesPerTeam ?? 0;
       cfg.daySchedule = div.days.map((d) => ({
         date: d.date,
         startTime: d.startTime,

@@ -255,6 +255,7 @@ export type ScheduleConfig = {
   maxMatchesPerTeamPerDay: number;
   minRestBetweenTeamMatchesMinutes: number; // мин. отдых между матчами одной команды
   enableTeamRestRule?: boolean;     // toggle: enforce team rest rule
+  maxConsecutiveMatchesPerTeam?: number; // макс. игр подряд без перерыва (0 = без лимита)
 
   // Per-day time overrides (overrides dailyStart/End for that day)
   daySchedule?: DayScheduleEntry[];
