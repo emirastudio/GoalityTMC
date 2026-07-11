@@ -2797,9 +2797,19 @@ export function PlannerPage() {
             let endTime:   string | null = day.endTime;
 
             if (stadiumId !== null) {
-              const sdEntry = cfg.stadiumDaySchedule?.find(
-                e => e.stadiumId === stadiumId && e.date === day.date
-              );
+              // Stadium open hours are set in the "Стадионы" modal, which saves
+              // to the stadiumSchedules store (tournamentStadiumSchedule). Read
+              // that FIRST, falling back to the per-division config copy. Before
+              // this we only read cfg.stadiumDaySchedule — empty when hours were
+              // set via the modal — so each field window silently defaulted to
+              // 09:00 and overrode the real 11:00–15:00 server-side.
+              const sdEntry =
+                stadiumSchedules.find(
+                  e => e.stadiumId === stadiumId && e.date === day.date
+                ) ??
+                cfg.stadiumDaySchedule?.find(
+                  e => e.stadiumId === stadiumId && e.date === day.date
+                );
               if (sdEntry !== undefined) {
                 startTime = sdEntry.startTime; // null = closed
                 endTime   = sdEntry.endTime;
