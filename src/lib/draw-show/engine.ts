@@ -20,6 +20,7 @@ import type {
   DrawInputTeam,
   DrawResult,
   DrawStep,
+  ScheduleMatchInput,
 } from "./types";
 
 /**
@@ -33,6 +34,12 @@ export function buildDrawPlan(
   teams: DrawInputTeam[],
   config: DrawConfig,
 ): DrawResult {
+  // Schedule mode carries its matches (and teams) inside config.scheduleMatches,
+  // so the team-list guard below doesn't apply — check it first.
+  if (config.mode === "schedule") {
+    return buildSchedulePlan(config);
+  }
+
   if (teams.length < 2) {
     throw new Error("Draw requires at least 2 teams");
   }
@@ -129,6 +136,76 @@ function buildLeaguePlan(
     config,
     seed: config.seed,
     leagueRounds: rounds,
+    steps,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  Schedule (real calendar reveal)
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Reveals a REAL, precomputed calendar. Unlike league mode, this does not
+ * generate any pairings — it takes the scheduler's output (matches already
+ * placed on fields × time slots) and only:
+ *   1. groups matches into time slots (matches sharing a slotKey),
+ *   2. orders slots chronologically, and
+ *   3. emits one "slot" step per time slot (revealed together — honouring
+ *      "N fields play in parallel").
+ * Deterministic: no RNG, the schedule is the source of truth.
+ */
+function buildSchedulePlan(config: DrawConfig): DrawResult {
+  const input = config.scheduleMatches ?? [];
+  if (input.length === 0) {
+    throw new Error("Schedule reveal needs at least one scheduled match");
+  }
+
+  // Group by time slot, preserving chronological order.
+  const bySlot = new Map<string, ScheduleMatchInput[]>();
+  for (const m of input) {
+    const arr = bySlot.get(m.slotKey);
+    if (arr) arr.push(m);
+    else bySlot.set(m.slotKey, [m]);
+  }
+  const slotKeys = [...bySlot.keys()].sort(
+    (a, b) => bySlot.get(a)![0].slotSort - bySlot.get(b)![0].slotSort,
+  );
+
+  // Stable field column order (by name) so every slot row aligns.
+  const fieldMap = new Map<string, { id: number | null; name: string }>();
+  for (const m of input) {
+    const key = m.fieldId == null ? `~${m.fieldName}` : String(m.fieldId);
+    if (!fieldMap.has(key)) fieldMap.set(key, { id: m.fieldId, name: m.fieldName });
+  }
+  const scheduleFields = [...fieldMap.values()].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+
+  const scheduleSlots: NonNullable<DrawResult["scheduleSlots"]> = [];
+  const steps: DrawStep[] = [];
+
+  slotKeys.forEach((key, si) => {
+    const slotMatches = bySlot.get(key)!;
+    // Order the matches within a slot to match the field column order.
+    const ordered = [...slotMatches].sort(
+      (a, b) => a.fieldName.localeCompare(b.fieldName),
+    );
+    const matches = ordered.map((m) => ({
+      fieldId: m.fieldId,
+      fieldName: m.fieldName,
+      home: m.home,
+      away: m.away,
+    }));
+    const label = slotMatches[0].slotLabel;
+    scheduleSlots.push({ label, matches });
+    steps.push({ kind: "slot", index: si, slotIndex: si, label, matches });
+  });
+
+  return {
+    config,
+    seed: config.seed,
+    scheduleFields,
+    scheduleSlots,
     steps,
   };
 }

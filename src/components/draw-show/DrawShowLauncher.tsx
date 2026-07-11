@@ -21,7 +21,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Sparkles, Lock, Loader2 } from "lucide-react";
 import { DrawStage } from "./DrawStage";
-import type { DrawConfig, DrawInputTeam } from "@/lib/draw-show/types";
+import type {
+  DrawConfig,
+  DrawInputTeam,
+  ScheduleMatchInput,
+} from "@/lib/draw-show/types";
 
 export type LauncherGroup = {
   id: number;
@@ -117,10 +121,54 @@ export function DrawShowLauncher(props: Props) {
     };
   }, [props.orgSlug, props.tournamentId]);
 
+  // ── Real schedule (league mode only) ───────────────────────────────
+  // When the division already has a generated calendar (matches with real
+  // times + fields), a league draw upgrades into a "schedule reveal": the
+  // real fixtures are revealed slot by slot, honouring the field count.
+  // Fetch it lazily; if there's no schedule yet we stay in league mode.
+  const [schedule, setSchedule] = useState<ScheduleMatchInput[] | null>(null);
+  useEffect(() => {
+    if (props.mode !== "league") {
+      setSchedule(null);
+      return;
+    }
+    let cancelled = false;
+    const url = `/api/org/${props.orgSlug}/tournament/${props.tournamentId}/matches?stageId=${props.stageId}`;
+    fetch(url)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((rows: any[]) => {
+        if (cancelled) return;
+        setSchedule(buildScheduleMatches(rows));
+      })
+      .catch(() => {
+        if (!cancelled) setSchedule(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [props.mode, props.orgSlug, props.tournamentId, props.stageId]);
+
+  const scheduleActive = props.mode === "league" && !!schedule && schedule.length > 0;
+
   // ── Build engine-shaped teams + config ─────────────────────────────
   // Memoized because it's passed to DrawStage which memoizes buildDrawPlan
   // by reference equality — we don't want a fresh array on every render.
   const { engineTeams, engineConfig } = useMemo(() => {
+    // Schedule reveal: hand the real calendar to the engine, no teams needed.
+    if (scheduleActive && schedule) {
+      const seed = ["stage", props.stageId, "schedule", schedule.length].join(":");
+      const config: DrawConfig = {
+        mode: "schedule",
+        seedingMode: "random",
+        seed,
+        scheduleMatches: schedule,
+      };
+      return { engineTeams: [] as DrawInputTeam[], engineConfig: config };
+    }
+    return buildTeamsConfig();
+
+    function buildTeamsConfig() {
     const teams: DrawInputTeam[] = props.allTeams.map((team) => ({
       id: String(team.id),
       name: team.name,
@@ -174,7 +222,8 @@ export function DrawShowLauncher(props: Props) {
     };
 
     return { engineTeams: teams, engineConfig: config };
-  }, [props.mode, props.allTeams, props.groups, props.stageId]);
+    }
+  }, [scheduleActive, schedule, props.mode, props.allTeams, props.groups, props.stageId]);
 
   const assignedTeamCount = props.mode === "league" || props.mode === "playoff"
     ? props.allTeams.length
@@ -267,7 +316,7 @@ export function DrawShowLauncher(props: Props) {
         }}
       >
         <Sparkles className="w-3.5 h-3.5" />
-        {t("showDraw")}
+        {scheduleActive ? t("showScheduleDraw") : t("showDraw")}
       </button>
       {open && (
         <DrawStage
@@ -294,4 +343,61 @@ export function DrawShowLauncher(props: Props) {
       )}
     </>
   );
+}
+
+// ── Schedule helpers ─────────────────────────────────────────────────
+
+/** "HH:MM" in the stored wall-clock (prod stores/serves times in UTC). */
+function slotTimeLabel(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mm = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+/** "DD.MM" for multi-day tournaments so slots on different days differ. */
+function slotDateLabel(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${dd}.${mm}`;
+}
+
+/**
+ * Turn the matches API rows into `ScheduleMatchInput[]`. Only real, placed
+ * matches count (both teams set + a scheduled time). If the schedule spans
+ * more than one day, slot labels get a "DD.MM " date prefix so identical
+ * clock times on different days stay distinct.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildScheduleMatches(rows: any[]): ScheduleMatchInput[] {
+  const placed = (rows ?? []).filter(
+    (m) => m?.scheduledAt && m?.homeTeamId && m?.awayTeamId,
+  );
+  const multiDay =
+    new Set(placed.map((m) => slotDateLabel(m.scheduledAt as string))).size > 1;
+
+  return placed.map((m) => {
+    const iso = m.scheduledAt as string;
+    const time = slotTimeLabel(iso);
+    return {
+      slotKey: iso,
+      slotLabel: multiDay ? `${slotDateLabel(iso)} ${time}` : time,
+      slotSort: Date.parse(iso) || 0,
+      fieldId: m.fieldId ?? null,
+      fieldName: m.field?.name ?? "—",
+      home: {
+        id: String(m.homeTeamId),
+        name: m.homeTeam?.name ?? "—",
+        logoUrl: m.homeTeam?.club?.badgeUrl ?? null,
+      },
+      away: {
+        id: String(m.awayTeamId),
+        name: m.awayTeam?.name ?? "—",
+        logoUrl: m.awayTeam?.club?.badgeUrl ?? null,
+      },
+    };
+  });
 }

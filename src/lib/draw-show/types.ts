@@ -40,9 +40,39 @@ export type DrawInputTeam = {
  * - `playoff` — pair teams into N/2 matches, no groups.
  * - `league` — round-robin: every team plays every other team once. Draw
  *   reveals the full schedule round by round, pair by pair.
+ * - `schedule` — reveals a REAL, precomputed calendar (from the tournament
+ *   scheduler): matches grouped by actual time slot, one per field. The
+ *   engine does NOT compute the schedule — it only groups + orders the
+ *   `DrawConfig.scheduleMatches` it's handed.
  * - `groups-playoff` — reserved for a future iteration; engine may throw.
  */
-export type DrawMode = "groups" | "playoff" | "league" | "groups-playoff";
+export type DrawMode =
+  | "groups"
+  | "playoff"
+  | "league"
+  | "schedule"
+  | "groups-playoff";
+
+/**
+ * One real, already-scheduled match fed into `mode: "schedule"`. Produced by
+ * the tournament scheduler (fields × time slots) — the draw show only reveals
+ * it. Matches sharing a `slotKey` are played at the same time (one per field)
+ * and are revealed together as a single slot.
+ */
+export type ScheduleMatchInput = {
+  /** Groups matches into one time slot (typically the ISO start instant). */
+  slotKey: string;
+  /** Human label for the slot, e.g. "10:00". */
+  slotLabel: string;
+  /** Chronological sort key (epoch ms). */
+  slotSort: number;
+  /** Real field/pitch id (null = unassigned). */
+  fieldId: number | null;
+  /** Field/pitch display name, e.g. "Field A". */
+  fieldName: string;
+  home: DrawInputTeam;
+  away: DrawInputTeam;
+};
 
 /**
  * - `random` — fully random order, one team at a time.
@@ -76,6 +106,12 @@ export type DrawConfig = {
   preAssignedGroups?: string[][];
   /** Same idea but for playoff pairs: `preAssignedPairs[i] = [homeId, awayId]`. */
   preAssignedPairs?: [string, string][];
+  /**
+   * Real precomputed calendar for `mode === "schedule"`. Each entry is one
+   * scheduled match with its actual time slot + field. The engine groups
+   * these into slots and computes the reveal order only.
+   */
+  scheduleMatches?: ScheduleMatchInput[];
 };
 
 /**
@@ -117,6 +153,21 @@ export type DrawStep =
       matchInRound: number;
       home: DrawInputTeam;
       away: DrawInputTeam;
+    }
+  | {
+      kind: "slot";
+      index: number;
+      /** 0-based chronological slot index. */
+      slotIndex: number;
+      /** Slot display label, e.g. "10:00". */
+      label: string;
+      /** All matches in this slot — one per occupied field. */
+      matches: {
+        fieldId: number | null;
+        fieldName: string;
+        home: DrawInputTeam;
+        away: DrawInputTeam;
+      }[];
     };
 
 /**
@@ -138,6 +189,24 @@ export type DrawResult = {
    * matches in that round. Populated when `config.mode === "league"`.
    */
   leagueRounds?: { home: DrawInputTeam; away: DrawInputTeam }[][];
+  /**
+   * Field column order for `mode === "schedule"` — stable across all slots
+   * so the board renders a consistent grid.
+   */
+  scheduleFields?: { id: number | null; name: string }[];
+  /**
+   * Chronological time slots for `mode === "schedule"`. Each slot holds the
+   * matches played at that time (one per occupied field).
+   */
+  scheduleSlots?: {
+    label: string;
+    matches: {
+      fieldId: number | null;
+      fieldName: string;
+      home: DrawInputTeam;
+      away: DrawInputTeam;
+    }[];
+  }[];
   steps: DrawStep[];
 };
 

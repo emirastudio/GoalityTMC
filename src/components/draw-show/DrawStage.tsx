@@ -328,6 +328,7 @@ export function DrawStage({
   const isGroupsMode = !isError && plan.config.mode === "groups";
   const isLeagueMode = !isError && plan.config.mode === "league";
   const isPlayoffMode = !isError && plan.config.mode === "playoff";
+  const isScheduleMode = !isError && plan.config.mode === "schedule";
   const isDone = placedCount >= total && total > 0;
 
   // For playoff: each step has (pairIndex, side), so we track which
@@ -356,6 +357,17 @@ export function DrawStage({
     }
     return set;
   }, [isLeagueMode, placedCount, steps]);
+
+  // Schedule mode: which time slots (by index) have been fully revealed.
+  const revealedSlotIndices = useMemo(() => {
+    const set = new Set<number>();
+    if (!isScheduleMode) return set;
+    for (let i = 0; i < placedCount && i < steps.length; i++) {
+      const s = steps[i];
+      if (s.kind === "slot") set.add(s.slotIndex);
+    }
+    return set;
+  }, [isScheduleMode, placedCount, steps]);
 
   if (!mounted) return null;
 
@@ -604,6 +616,48 @@ export function DrawStage({
                         ? "stage.sideHome"
                         : "stage.sideAway",
                     )}
+                  />
+                ) : null}
+              </AnimatePresence>
+            </BodyOverlay>
+          </>
+        ) : isScheduleMode ? (
+          <>
+            <div className="flex-1 overflow-y-auto px-6 pb-56 pt-2 w-full">
+              <ScheduleBoard
+                fields={plan.scheduleFields ?? []}
+                slots={plan.scheduleSlots ?? []}
+                revealedSlotIndices={revealedSlotIndices}
+                statusLabel={t("stage.scheduleStatus")}
+                slotLabel={t("stage.slotLabel")}
+                vsLabel={t("stage.vs")}
+                placedCount={placedCount}
+                totalSlots={total}
+              />
+            </div>
+            <BodyOverlay>
+              <AnimatePresence mode="wait">
+                {isDone ? (
+                  <DonePanel
+                    key="done"
+                    title={t("stage.scheduleDoneTitle")}
+                    subtitle={t("stage.scheduleDoneSubtitle", {
+                      matches: plan.scheduleSlots?.reduce(
+                        (n, s) => n + s.matches.length,
+                        0,
+                      ) ?? 0,
+                      slots: total,
+                    })}
+                  />
+                ) : showSpotlight &&
+                  currentStep &&
+                  currentStep.kind === "slot" ? (
+                  <ScheduleSlotSpotlight
+                    key={`sspot-${placedCount}`}
+                    label={currentStep.label}
+                    matches={currentStep.matches}
+                    slotLabel={t("stage.slotLabel")}
+                    vsLabel={t("stage.vs")}
                   />
                 ) : null}
               </AnimatePresence>
@@ -1058,6 +1112,285 @@ function BodyOverlay({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * ScheduleBoard — the real calendar grid: columns = fields (pitches),
+ * rows = time slots. A whole slot row lights up at once as the show
+ * reveals it, honouring "N fields play in parallel". Mirrors the
+ * organizer's planner grid so the audience recognises the layout.
+ */
+function ScheduleBoard({
+  fields,
+  slots,
+  revealedSlotIndices,
+  statusLabel,
+  slotLabel,
+  vsLabel,
+  placedCount,
+  totalSlots,
+}: {
+  fields: { id: number | null; name: string }[];
+  slots: {
+    label: string;
+    matches: {
+      fieldId: number | null;
+      fieldName: string;
+      home: DrawInputTeam;
+      away: DrawInputTeam;
+    }[];
+  }[];
+  revealedSlotIndices: ReadonlySet<number>;
+  statusLabel: string;
+  slotLabel: string;
+  vsLabel: string;
+  placedCount: number;
+  totalSlots: number;
+}) {
+  if (slots.length === 0 || fields.length === 0) return null;
+
+  const findMatch = (
+    slot: (typeof slots)[number],
+    field: { id: number | null; name: string },
+  ) =>
+    slot.matches.find((m) =>
+      field.id != null
+        ? m.fieldId === field.id
+        : m.fieldId == null && m.fieldName === field.name,
+    );
+
+  const gridCols = `minmax(72px, max-content) repeat(${fields.length}, minmax(0, 1fr))`;
+
+  return (
+    <div className="w-full max-w-5xl mx-auto">
+      <div
+        className="flex items-center justify-between px-1 mb-3 text-xs font-bold uppercase tracking-widest"
+        style={{ color: "rgba(245,247,251,0.55)" }}
+      >
+        <span>
+          {statusLabel} · {placedCount}/{totalSlots}
+        </span>
+        <span>
+          {slots.length} {slotLabel.toLowerCase()}
+        </span>
+      </div>
+
+      {/* Header row: field names */}
+      <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: gridCols }}>
+        <div />
+        {fields.map((f, fi) => (
+          <div
+            key={f.id ?? `n${fi}`}
+            className="rounded-xl px-3 py-2 text-sm font-black text-center truncate"
+            style={{
+              background: "rgba(43,254,186,0.10)",
+              color: "#2BFEBA",
+              border: "1px solid rgba(43,254,186,0.25)",
+            }}
+          >
+            {f.name}
+          </div>
+        ))}
+      </div>
+
+      {/* Slot rows */}
+      <div className="space-y-2">
+        {slots.map((slot, si) => {
+          const revealed = revealedSlotIndices.has(si);
+          return (
+            <div
+              key={si}
+              className="grid gap-2 items-stretch"
+              style={{ gridTemplateColumns: gridCols }}
+            >
+              {/* Time cell */}
+              <div
+                className="rounded-xl px-2 flex items-center justify-center text-sm font-black tabular-nums"
+                style={{
+                  background: revealed
+                    ? "rgba(255,255,255,0.06)"
+                    : "rgba(255,255,255,0.02)",
+                  color: revealed ? "#f5f7fb" : "rgba(245,247,251,0.35)",
+                  border: revealed
+                    ? "1px solid rgba(255,255,255,0.1)"
+                    : "1px dashed rgba(255,255,255,0.07)",
+                }}
+              >
+                {slot.label}
+              </div>
+
+              {/* One cell per field */}
+              {fields.map((f, fi) => {
+                const m = findMatch(slot, f);
+                return (
+                  <div
+                    key={f.id ?? `n${fi}`}
+                    className="rounded-xl px-3 py-2 flex items-center gap-1.5 text-[12px] min-h-[42px]"
+                    style={{
+                      background:
+                        revealed && m
+                          ? "rgba(255,255,255,0.06)"
+                          : "rgba(255,255,255,0.02)",
+                      border:
+                        revealed && m
+                          ? "1px solid rgba(255,255,255,0.1)"
+                          : "1px dashed rgba(255,255,255,0.07)",
+                    }}
+                  >
+                    {revealed && m ? (
+                      <>
+                        <span
+                          className="flex-1 truncate font-semibold text-right"
+                          style={{ color: "#f5f7fb" }}
+                        >
+                          {m.home.name}
+                        </span>
+                        <span
+                          className="text-[9px] font-black uppercase tracking-widest shrink-0"
+                          style={{ color: "rgba(245,247,251,0.4)" }}
+                        >
+                          {vsLabel}
+                        </span>
+                        <span
+                          className="flex-1 truncate font-semibold"
+                          style={{ color: "#f5f7fb" }}
+                        >
+                          {m.away.name}
+                        </span>
+                      </>
+                    ) : (
+                      <span
+                        className="flex-1 text-center"
+                        style={{ color: "rgba(245,247,251,0.25)" }}
+                      >
+                        ·
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ScheduleSlotSpotlight — the centre card that pops for each time slot:
+ * a big time chip, then one card per field showing that field's matchup.
+ */
+function ScheduleSlotSpotlight({
+  label,
+  matches,
+  slotLabel,
+  vsLabel,
+}: {
+  label: string;
+  matches: {
+    fieldId: number | null;
+    fieldName: string;
+    home: DrawInputTeam;
+    away: DrawInputTeam;
+  }[];
+  slotLabel: string;
+  vsLabel: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.7, y: 30 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{
+        opacity: 0,
+        scale: 0.6,
+        y: -50,
+        transition: { duration: 0.45, ease: [0.6, 0, 0.4, 1] },
+      }}
+      transition={{ type: "spring", stiffness: 180, damping: 22 }}
+      className="flex flex-col items-center gap-4 relative"
+    >
+      <motion.div
+        aria-hidden
+        className="absolute -inset-12 rounded-[3rem] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(43,254,186,0.32) 0%, transparent 70%)",
+        }}
+        animate={{ opacity: [0.55, 1, 0.55], scale: [0.95, 1.05, 0.95] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <motion.span
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="relative text-sm font-bold uppercase tracking-widest px-4 py-1.5 rounded-full"
+        style={{
+          background: "rgba(43,254,186,0.16)",
+          color: "#2BFEBA",
+          border: "1px solid rgba(43,254,186,0.45)",
+        }}
+      >
+        {slotLabel} {label}
+      </motion.span>
+
+      <div className="relative flex flex-wrap items-stretch justify-center gap-4 md:gap-6 max-w-[92vw]">
+        {matches.map((m, i) => (
+          <div
+            key={i}
+            className="flex flex-col items-center gap-3 rounded-[1.75rem] px-6 md:px-10 py-6 md:py-7"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(43,254,186,0.22), rgba(43,254,186,0.04))",
+              border: "1px solid rgba(43,254,186,0.55)",
+              boxShadow:
+                "0 28px 80px -12px rgba(43,254,186,0.5), 0 0 160px -30px rgba(43,254,186,0.6)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            <span
+              className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                color: "rgba(245,247,251,0.75)",
+              }}
+            >
+              {m.fieldName}
+            </span>
+            <div className="flex items-center gap-4 md:gap-6">
+              <p
+                className="text-2xl md:text-4xl font-black truncate max-w-[32vw]"
+                style={{
+                  color: "#f5f7fb",
+                  letterSpacing: "-0.02em",
+                  textShadow: "0 0 40px rgba(43,254,186,0.35)",
+                }}
+              >
+                {m.home.name}
+              </p>
+              <span
+                className="text-sm md:text-base font-black uppercase tracking-widest shrink-0"
+                style={{ color: "#2BFEBA" }}
+              >
+                {vsLabel}
+              </span>
+              <p
+                className="text-2xl md:text-4xl font-black truncate max-w-[32vw]"
+                style={{
+                  color: "#f5f7fb",
+                  letterSpacing: "-0.02em",
+                  textShadow: "0 0 40px rgba(43,254,186,0.35)",
+                }}
+              >
+                {m.away.name}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 
