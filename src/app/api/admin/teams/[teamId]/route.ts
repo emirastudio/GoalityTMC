@@ -3,7 +3,6 @@ import { db } from "@/db";
 import {
   teams,
   tournamentRegistrations,
-  clubs,
   tournaments,
   tournamentStages,
   stageGroups,
@@ -58,33 +57,35 @@ async function withdrawTeamFromDivision(
     : [];
   const affectedGroupIds = teamGroupRows.map((r) => r.groupId);
 
-  // 1) Pull out of group assignments
-  if (groupIds.length) {
-    await db
-      .delete(groupTeams)
-      .where(and(inArray(groupTeams.groupId, groupIds), eq(groupTeams.teamId, teamId)));
-  }
+  // Remove the team from the division atomically: pulling it from the group,
+  // deleting its matches (children — events, referees — cascade via FK), and
+  // dropping its standings row must all land or none, or a partial failure
+  // leaves the division in a half-withdrawn, self-inconsistent state.
+  await db.transaction(async (tx) => {
+    if (groupIds.length) {
+      await tx
+        .delete(groupTeams)
+        .where(and(inArray(groupTeams.groupId, groupIds), eq(groupTeams.teamId, teamId)));
+    }
+    await tx
+      .delete(matches)
+      .where(
+        and(
+          eq(matches.tournamentId, tournamentId),
+          inArray(matches.stageId, stageIds),
+          or(eq(matches.homeTeamId, teamId), eq(matches.awayTeamId, teamId)),
+        ),
+      );
+    if (groupIds.length) {
+      await tx
+        .delete(standings)
+        .where(and(inArray(standings.groupId, groupIds), eq(standings.teamId, teamId)));
+    }
+  });
 
-  // 2) Delete the team's matches within this division (children — events,
-  //    referees, etc. — cascade via FK onDelete).
-  await db
-    .delete(matches)
-    .where(
-      and(
-        eq(matches.tournamentId, tournamentId),
-        inArray(matches.stageId, stageIds),
-        or(eq(matches.homeTeamId, teamId), eq(matches.awayTeamId, teamId)),
-      ),
-    );
-
-  // 3) Drop the team's standings rows
-  if (groupIds.length) {
-    await db
-      .delete(standings)
-      .where(and(inArray(standings.groupId, groupIds), eq(standings.teamId, teamId)));
-  }
-
-  // 4) Recalc the remaining teams in the groups the team left
+  // Recalc the remaining teams in the groups the team left. Idempotent and
+  // safe to run after the transaction commits — a recalc failure only leaves
+  // stale standings (re-triggerable), never a half-deleted team.
   for (const gId of affectedGroupIds) {
     await recalculateGroupStandings(gId);
   }

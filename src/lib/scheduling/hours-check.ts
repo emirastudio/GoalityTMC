@@ -67,33 +67,3 @@ export function checkMatchWithinHours(
   if (start + Math.max(0, durationMin) > close) return "after_close";
   return null;
 }
-
-/**
- * Batch check. `windowFor(stadiumId, date)` returns the configured window for
- * a match's field (stadiumId + "YYYY-MM-DD"), or `undefined` when there's no
- * config for that stadium/day. Matches on fields with no stadium (stadiumId
- * null) are never flagged — the planner can't bind hours to them.
- *
- * Returns a Map from match id → violation, containing only violating matches.
- */
-export function findHoursViolations(
-  matches: {
-    id: number;
-    scheduledAt: string | null | undefined;
-    stadiumId: number | null | undefined;
-  }[],
-  windowFor: (stadiumId: number, date: string) => HoursWindow | null | undefined,
-  durationMin: number,
-): Map<number, HoursViolation> {
-  const out = new Map<number, HoursViolation>();
-  for (const m of matches) {
-    if (!m.scheduledAt || m.stadiumId == null) continue;
-    const date = new Date(m.scheduledAt);
-    if (Number.isNaN(date.getTime())) continue;
-    const dayKey = date.toISOString().slice(0, 10); // UTC calendar day
-    const window = windowFor(m.stadiumId, dayKey);
-    const v = checkMatchWithinHours(m.scheduledAt, durationMin, window);
-    if (v) out.set(m.id, v);
-  }
-  return out;
-}

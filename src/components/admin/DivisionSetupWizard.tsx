@@ -30,6 +30,7 @@ type Props = {
 };
 
 type StageInfo = { stageId: number | null; groupIds: number[]; singleGroup: boolean };
+type StageRow = { id: number; type?: string | null; groups?: { id: number }[] };
 
 const STEP_ICON: Record<SetupStepKey, typeof Users> = {
   teams: Users, draw: Shuffle, schedule: CalendarClock, publish: Send,
@@ -61,9 +62,9 @@ export function DivisionSetupWizard({ base, classId, orgSlug, tournamentId, onGo
       const arr = Array.isArray(matches) ? matches : [];
       const teamArr = Array.isArray(teams) ? teams : [];
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const gStage = (Array.isArray(stages) ? stages : []).find(
-        (s: any) => s.type === "group" || s.type === "groups" || s.type === "league",
+      const stageList: StageRow[] = Array.isArray(stages) ? stages : [];
+      const gStage = stageList.find(
+        (s) => s.type === "group" || s.type === "groups" || s.type === "league",
       );
       const groups = gStage?.groups ?? [];
       setStage({
@@ -83,11 +84,11 @@ export function DivisionSetupWizard({ base, classId, orgSlug, tournamentId, onGo
       setState(st);
       return st;
     } catch {
-      return state;
+      return null;
     }
-  }, [base, classId, state]);
+  }, [base, classId]);
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [base, classId]);
+  useEffect(() => { void load(); }, [load]);
 
   const plan = useMemo(() => (state ? computeSetupSteps(state) : null), [state]);
 
@@ -100,19 +101,20 @@ export function DivisionSetupWizard({ base, classId, orgSlug, tournamentId, onGo
     }
     setBusy("draw"); setNote(null);
     try {
-      const shuffled = [...teamIds].sort(() => Math.random() - 0.5);
-      await fetch(`${base}/stages/${stage.stageId}/groups/${stage.groupIds[0]}/teams`, {
+      const gRes = await fetch(`${base}/stages/${stage.stageId}/groups/${stage.groupIds[0]}/teams`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Draw-Unlock": "CONFIRM" },
         credentials: "include",
-        body: JSON.stringify({ teamIds: shuffled, mode: "replace" }),
+        body: JSON.stringify({ teamIds: shuffle(teamIds), mode: "replace" }),
       });
-      await fetch(`${base}/stages/${stage.stageId}/apply-draw`, {
+      if (!gRes.ok) { setNote(t("wizardActionError")); return; }
+      const aRes = await fetch(`${base}/stages/${stage.stageId}/apply-draw`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: "{}",
       });
+      if (!aRes.ok) { setNote(t("wizardActionError")); return; }
       const st = await load();
       if (st && st.matchesWithTeams < st.totalMatches) setNote(t("wizardDrawPartial"));
     } catch {
@@ -133,10 +135,11 @@ export function DivisionSetupWizard({ base, classId, orgSlug, tournamentId, onGo
       });
       const solveData = await solveRes.json().catch(() => ({}));
       if (solveRes.ok && solveData.runId && solveData.status === "succeeded") {
-        await fetch(`${base}/schedule/runs/${solveData.runId}/apply`, {
+        const applyRes = await fetch(`${base}/schedule/runs/${solveData.runId}/apply`, {
           method: "POST",
           credentials: "include",
         });
+        if (!applyRes.ok) { setNote(t("wizardScheduleFailed")); return; }
         const st = await load();
         if (st && st.scheduledMatches < st.totalMatches) {
           setNote(t("wizardScheduleUnplaced", { count: st.totalMatches - st.scheduledMatches }));
@@ -304,4 +307,14 @@ function AdvancedHref({ href, label }: { href: string; label: string }) {
       {label}
     </Link>
   );
+}
+
+/** Unbiased Fisher–Yates shuffle for a genuine random draw. */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
