@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useTournament } from "@/lib/tournament-context";
@@ -14,6 +14,11 @@ import {
 import { Link } from "@/i18n/navigation";
 import { TeamBadge } from "@/components/ui/team-badge";
 import { DrawShowLauncher } from "@/components/draw-show/DrawShowLauncher";
+import {
+  checkMatchWithinHours,
+  type HoursViolation,
+  type HoursWindow,
+} from "@/lib/scheduling/hours-check";
 
 // ─────────────────────────────────────────────
 //  Types
@@ -3491,6 +3496,34 @@ function PlannerBanner({ base, classId }: { base: string; classId: number | null
   );
 }
 
+// Warns when scheduled matches fall outside the configured stadium hours —
+// the schedule is stale (hours changed, or generated on the default window).
+// Directs the organizer to re-generate in the planner.
+function StaleHoursBanner({ count, base, classId }: { count: number; base: string; classId: number | null }) {
+  const t = useTranslations("schedule");
+  const m = base.match(/\/api\/org\/([^/]+)\/tournament\/(\d+)/);
+  const orgSlug = m?.[1] ?? "";
+  const tid = m?.[2] ?? "";
+  const plannerHref = tid
+    ? `/org/${orgSlug}/admin/tournament/${tid}/planner${classId ? `?classId=${classId}` : ""}`
+    : `planner${classId ? `?classId=${classId}` : ""}`;
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border mb-3"
+      style={{ background: "rgba(239,68,68,0.06)", borderColor: "rgba(239,68,68,0.28)" }}>
+      <AlertCircle className="w-4 h-4 shrink-0" style={{ color: "#ef4444" }} />
+      <p className="text-sm" style={{ color: "var(--cat-text-secondary)" }}>
+        <b style={{ color: "#ef4444" }}>{t("staleHoursTitle", { count })}</b>{" "}
+        {t("staleHoursBody")}
+      </p>
+      <a href={plannerHref}
+        className="ml-auto flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg shrink-0 transition-all hover:opacity-80 whitespace-nowrap"
+        style={{ background: "#ef4444", color: "#fff" }}>
+        <Zap className="w-3.5 h-3.5" /> {t("regenerateSchedule")}
+      </a>
+    </div>
+  );
+}
+
 function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: number | null; stageSettings: Record<number, StageSettings> }) {
   const t = useTranslations("schedule");
   const locale = useLocale();
@@ -3579,6 +3612,49 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
   }, [base, classId]);
 
   useEffect(() => { loadMatches(); }, [loadMatches]);
+
+  // Configured stadium open hours (per stadium, per date) — the source of
+  // truth the planner writes. Used to flag matches scheduled outside them.
+  const [stadiumHours, setStadiumHours] = useState<
+    { stadiumId: number; date: string; startTime: string | null; endTime: string | null }[]
+  >([]);
+  useEffect(() => {
+    fetch(`${base}/stadium-schedule`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : { schedules: [] })
+      .then((d: { schedules?: { stadiumId: number; date: string; startTime: string | null; endTime: string | null }[] }) => {
+        setStadiumHours(d.schedules ?? []);
+      })
+      .catch(() => {});
+  }, [base]);
+
+  // Matches sitting outside their stadium's configured hours → the schedule
+  // is stale (hours changed after generation, or generated on the default
+  // 09–21 window). Keyed matchId → violation.
+  const hoursViolations = useMemo(() => {
+    const hoursMap = new Map<string, HoursWindow | null>();
+    for (const h of stadiumHours) {
+      hoursMap.set(
+        `${h.stadiumId}:${h.date}`,
+        h.startTime && h.endTime ? { start: h.startTime, end: h.endTime } : null,
+      );
+    }
+    const durationFor = (stageId?: number | null) => {
+      const s = stageId != null ? stageSettings[stageId] : undefined;
+      if (!s) return 40;
+      return s.halves * s.halfDuration + (s.halves > 1 ? s.halfBreak : 0);
+    };
+    const out = new Map<number, HoursViolation>();
+    for (const m of matches) {
+      const stadiumId = m.field?.stadium?.id;
+      if (!m.scheduledAt || stadiumId == null) continue;
+      const date = new Date(m.scheduledAt).toISOString().slice(0, 10);
+      const key = `${stadiumId}:${date}`;
+      const window = hoursMap.has(key) ? hoursMap.get(key) : undefined;
+      const v = checkMatchWithinHours(m.scheduledAt, durationFor(m.stageId), window);
+      if (v) out.set(m.id, v);
+    }
+    return out;
+  }, [matches, stadiumHours, stageSettings]);
 
   // Available dates from scheduled matches (for pill navigation)
   const availableDates: string[] = Array.from(
@@ -3726,6 +3802,9 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
 
       {/* Planner banner — scheduling is done in the Planner */}
       <PlannerBanner base={base} classId={classId} />
+      {hoursViolations.size > 0 && (
+        <StaleHoursBanner count={hoursViolations.size} base={base} classId={classId} />
+      )}
 
       {/* Stage filter pills (if multiple stages) */}
       {stages.length > 1 && (
@@ -3924,6 +4003,17 @@ function ScheduleTab({ base, classId, stageSettings }: { base: string; classId: 
                           </span>
                         </div>
                       </div>
+
+                      {/* Out-of-hours warning */}
+                      {hoursViolations.has(match.id) && (
+                        <span
+                          className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 hidden sm:flex items-center gap-1"
+                          style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}
+                          title={t("outOfHoursHint")}
+                        >
+                          <AlertCircle className="w-3 h-3" /> {t("outOfHours")}
+                        </span>
+                      )}
 
                       {/* Field */}
                       <span className="text-[11px] shrink-0 hidden sm:block w-24 truncate text-right"
