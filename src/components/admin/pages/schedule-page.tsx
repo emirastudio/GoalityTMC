@@ -14,6 +14,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { TeamBadge } from "@/components/ui/team-badge";
 import { DrawShowLauncher } from "@/components/draw-show/DrawShowLauncher";
+import { DivisionSetupWizard } from "@/components/admin/DivisionSetupWizard";
 import {
   checkMatchWithinHours,
   type HoursViolation,
@@ -543,6 +544,17 @@ export function SchedulePage() {
         scheduled={scheduledCount}
         loading={statsLoading}
       />
+
+      {/* Guided setup wizard — the simple linear path over the tabs below. */}
+      {classId && (
+        <DivisionSetupWizard
+          base={base}
+          classId={classId}
+          orgSlug={orgSlug}
+          tournamentId={tournamentId}
+          onGoToDraw={() => setTab("draw")}
+        />
+      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-1 p-1 rounded-2xl w-fit"
