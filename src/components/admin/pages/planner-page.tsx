@@ -1441,6 +1441,26 @@ function defaultConfig(fields: Field[]): ScheduleConfig {
   };
 }
 
+// The calendar view range follows the STADIUM hours — the single source of
+// truth for time. Spans min-open → max-close across the given schedule with an
+// hour of padding, clamped to a sane window. Returns null when nothing's set.
+function gridRangeFromStadium(
+  schedules: { startTime: string | null; endTime: string | null }[],
+): { start: number; end: number } | null {
+  const open = schedules.filter((s) => s.startTime && s.endTime);
+  if (open.length === 0) return null;
+  let minH = 24;
+  let maxH = 0;
+  for (const s of open) {
+    const sh = parseInt(s.startTime!.slice(0, 2), 10);
+    const em = s.endTime!.split(":").map(Number);
+    const eh = em[0] + (em[1] > 0 ? 1 : 0);
+    if (sh < minH) minH = sh;
+    if (eh > maxH) maxH = eh;
+  }
+  return { start: Math.max(6, minH - 1), end: Math.min(23, maxH + 1) };
+}
+
 function countDays(startDate?: string | null, endDate?: string | null): number {
   if (!startDate || !endDate) return 1;
   const s = new Date(startDate + "T12:00:00Z");
@@ -2286,17 +2306,25 @@ export function PlannerPage() {
         return next;
       });
 
-      // Auto-sync grid params from the first (or URL-selected) division config
+      // Auto-sync the grid view: HOURS follow the stadium (one source of
+      // truth), INTERVAL follows the match settings. Falls back to the
+      // division default only when no stadium hours are set.
       setGridAutoSynced(prev => {
         if (prev) return prev; // already synced, don't override user settings
         const targetCls = urlClassId ? clArr.find(c => c.id === urlClassId) : clArr[0];
         const cfg = targetCls?.scheduleConfig;
-        if (cfg) {
+        const range = gridRangeFromStadium(ssData.schedules ?? []);
+        if (range) {
+          setStartHour(range.start);
+          setEndHour(range.end);
+        } else if (cfg) {
           const [h] = (cfg.dailyStartTime ?? "08:00").split(":").map(Number);
           const [eh] = (cfg.dailyEndTime ?? "21:00").split(":").map(Number);
-          const slot = matchSlotMinutes(cfg) + (cfg.breakBetweenMatchesMinutes ?? 0);
           setStartHour(h);
-          setEndHour(Math.min(23, eh + 1)); // show 1 extra hour after end
+          setEndHour(Math.min(23, eh + 1));
+        }
+        if (cfg) {
+          const slot = matchSlotMinutes(cfg) + (cfg.breakBetweenMatchesMinutes ?? 0);
           if (slot > 0) setSlotMins(slot);
         }
         return true;
@@ -3063,24 +3091,25 @@ export function PlannerPage() {
                 {[5, 10, 15, 20, 25, 30, 40, 45, 50, 55, 60, 70, 80, 90].map(m => <option key={m} value={m}>{m} {t("planner.min")}</option>)}
               </select>
             </label>
-            {/* Sync grid from division config */}
+            {/* Sync grid view to the stadium hours (one source of truth) */}
             <button
               onClick={() => {
+                const range = gridRangeFromStadium(stadiumSchedules);
+                if (range) {
+                  setStartHour(range.start);
+                  setEndHour(range.end);
+                }
                 const cid = filterClass ?? classes[0]?.id;
                 const cfg = cid ? divConfigs[cid] : null;
                 if (cfg) {
-                  const [h] = (cfg.dailyStartTime ?? "08:00").split(":").map(Number);
-                  const [eh] = (cfg.dailyEndTime ?? "21:00").split(":").map(Number);
                   const slot = matchSlotMinutes(cfg) + (cfg.breakBetweenMatchesMinutes ?? 0);
-                  setStartHour(h);
-                  setEndHour(Math.min(23, eh + 1));
                   if (slot > 0) setSlotMins(slot);
                 }
               }}
               className="px-2 py-1 rounded-lg text-xs font-semibold transition-all"
               style={{ background: "rgba(43,254,186,0.15)", color: "#2BFEBA", border: "1px solid rgba(43,254,186,0.3)" }}
-              title={t("planner.syncGrid")}>
-              {t("planner.fromDivision")}
+              title={t("planner.syncGridStadium")}>
+              {t("planner.fromStadium")}
             </button>
             <label className="flex items-center gap-2 text-xs" style={{ color: "var(--cat-text-secondary)" }}>
               <span>{t("planner.cellHeight")}</span>
@@ -3794,6 +3823,12 @@ export function PlannerPage() {
           onClose={() => setShowStadiumSchedule(false)}
           onSaved={(entries) => {
             setStadiumSchedules(entries);
+            // Keep the grid view in step with the stadium hours (one truth).
+            const range = gridRangeFromStadium(entries);
+            if (range) {
+              setStartHour(range.start);
+              setEndHour(range.end);
+            }
             showToast(t("planner.stadiumsSaved"), "ok");
           }}
         />

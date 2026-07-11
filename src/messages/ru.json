@@ -1366,6 +1366,8 @@
       "byTeams": "По командам",
       "interval": "Интервал",
       "fromDivision": "↺ Из дивизиона",
+      "fromStadium": "Из стадиона",
+      "syncGridStadium": "Подогнать вид под часы стадиона",
       "cellHeight": "Высота ячейки",
       "autoHeight": "Авто ({height}px)",
       "noMatchesWithDatesTabs": "Нет матчей с датами",

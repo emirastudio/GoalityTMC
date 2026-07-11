@@ -1372,6 +1372,8 @@
       "byTeams": "Por equipos",
       "interval": "Intervalo",
       "fromDivision": "↺ De la división",
+      "fromStadium": "Del estadio",
+      "syncGridStadium": "Ajustar la vista al horario del estadio",
       "cellHeight": "Altura de celda",
       "autoHeight": "Auto ({height}px)",
       "noMatchesWithDatesTabs": "Sin partidos con fechas",

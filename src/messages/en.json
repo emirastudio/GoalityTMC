@@ -1366,6 +1366,8 @@
       "byTeams": "By teams",
       "interval": "Interval",
       "fromDivision": "↺ From division",
+      "fromStadium": "From stadium",
+      "syncGridStadium": "Fit the view to the stadium hours",
       "cellHeight": "Cell height",
       "autoHeight": "Auto ({height}px)",
       "noMatchesWithDatesTabs": "No matches with dates",

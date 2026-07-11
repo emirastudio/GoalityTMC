@@ -1366,6 +1366,8 @@
       "byTeams": "Võistkondade kaupa",
       "interval": "Intervall",
       "fromDivision": "↺ Divisjonist",
+      "fromStadium": "Staadionist",
+      "syncGridStadium": "Sobita vaade staadioni aegadega",
       "cellHeight": "Lahtri kõrgus",
       "autoHeight": "Automaatne ({height}px)",
       "noMatchesWithDatesTabs": "Mängudel pole kuupäevi",
