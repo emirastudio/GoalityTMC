@@ -15,7 +15,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import {
   Users, Shuffle, CalendarClock, Send,
-  Check, ArrowRight, Loader2, AlertCircle,
+  Check, ArrowRight, Loader2, AlertCircle, RotateCcw,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { computeSetupSteps, type SetupState, type SetupStepKey } from "@/lib/setup-steps";
@@ -43,8 +43,9 @@ export function DivisionSetupWizard({ base, classId, orgSlug, tournamentId, onGo
   const [state, setState] = useState<SetupState | null>(null);
   const [stage, setStage] = useState<StageInfo>({ stageId: null, groupIds: [], singleGroup: false });
   const [teamIds, setTeamIds] = useState<number[]>([]);
-  const [busy, setBusy] = useState<null | "draw" | "schedule" | "publish">(null);
+  const [busy, setBusy] = useState<null | "draw" | "schedule" | "publish" | "reset">(null);
   const [note, setNote] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const load = useCallback(async (): Promise<SetupState | null> => {
     const q = classId ? `?classId=${classId}` : "";
@@ -167,6 +168,43 @@ export function DivisionSetupWizard({ base, classId, orgSlug, tournamentId, onGo
     }
   }
 
+  // Full reset back to a clean slate: unschedule everything, empty the groups
+  // (teams back to the pool) and clear the match teams to TBD. Uses the draw
+  // unlock header so it works even after the draw was applied/committed;
+  // scored matches keep their teams server-side.
+  async function doReset() {
+    setBusy("reset"); setNote(null); setConfirmReset(false);
+    try {
+      await fetch(`${base}/matches/clear-schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ classId }),
+      });
+      if (stage.stageId) {
+        await Promise.all(stage.groupIds.map((gid) =>
+          fetch(`${base}/stages/${stage.stageId}/groups/${gid}/teams`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Draw-Unlock": "CONFIRM" },
+            credentials: "include",
+            body: JSON.stringify({ teamIds: [], mode: "replace" }),
+          }),
+        ));
+        await fetch(`${base}/stages/${stage.stageId}/apply-draw`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Draw-Unlock": "CONFIRM" },
+          credentials: "include",
+          body: "{}",
+        });
+      }
+      await load();
+    } catch {
+      setNote(t("wizardActionError"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (!state || !plan) return null;
 
   const cls = classId ? `?classId=${classId}` : "";
@@ -256,6 +294,32 @@ export function DivisionSetupWizard({ base, classId, orgSlug, tournamentId, onGo
             <div className="mt-2.5 flex items-center gap-1.5 text-xs" style={{ color: "#f59e0b" }}>
               <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {note}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Start over — full reset (unschedule + clear draw back to the pool) */}
+      {(state.matchesWithTeams > 0 || state.scheduledMatches > 0) && (
+        <div className="mt-2 text-right">
+          {confirmReset ? (
+            <span className="text-xs">
+              <span style={{ color: "var(--cat-text-secondary)" }}>{t("wizardResetConfirm")} </span>
+              <button onClick={doReset} disabled={busy === "reset"}
+                className="font-bold underline-offset-2 hover:underline disabled:opacity-50" style={{ color: "#ef4444" }}>
+                {busy === "reset" ? "…" : t("wizardResetYes")}
+              </button>
+              <span style={{ color: "var(--cat-text-muted)" }}> · </span>
+              <button onClick={() => setConfirmReset(false)}
+                className="underline-offset-2 hover:underline" style={{ color: "var(--cat-text-muted)" }}>
+                {t("wizardResetNo")}
+              </button>
+            </span>
+          ) : (
+            <button onClick={() => setConfirmReset(true)}
+              className="inline-flex items-center gap-1 text-xs font-semibold hover:underline underline-offset-2"
+              style={{ color: "var(--cat-text-muted)" }}>
+              <RotateCcw className="w-3 h-3" /> {t("wizardReset")}
+            </button>
           )}
         </div>
       )}
