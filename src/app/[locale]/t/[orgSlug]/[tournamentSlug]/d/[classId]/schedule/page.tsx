@@ -31,17 +31,17 @@ interface PublicMatch {
 
 function fmtDate(iso: string, locale: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString(locale, { day: "numeric", month: "long", weekday: "long" });
+  return d.toLocaleDateString(locale, { day: "numeric", month: "long", weekday: "long", timeZone: "UTC" });
 }
 
 function fmtTime(iso: string, locale: string) {
-  return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 }
 
 function groupByDate(matches: PublicMatch[], locale: string, noDateLabel: string): { dateKey: string; label: string; matches: PublicMatch[] }[] {
   const map = new Map<string, PublicMatch[]>();
   for (const m of matches) {
-    const key = m.scheduledAt ? new Date(m.scheduledAt).toDateString() : "no-date";
+    const key = m.scheduledAt ? new Date(m.scheduledAt).toISOString().slice(0, 10) : "no-date";
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(m);
   }

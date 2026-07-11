@@ -332,7 +332,7 @@ export default function MatchProtocolPage() {
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {new Date(match.scheduledAt).toLocaleString(locale, {
-                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC",
                 })}
               </span>
             )}

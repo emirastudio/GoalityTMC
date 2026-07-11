@@ -563,7 +563,7 @@ function BracketMatchCard({ match, brand, isFinal, locale, colIndex }: {
     ? `${stadiumName} · ${fieldName}`
     : (fieldName ?? stadiumName);
   const timeStr     = hasTime
-    ? new Date(match!.scheduledAt!).toLocaleString(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    ? new Date(match!.scheduledAt!).toLocaleString(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })
     : null;
 
   const cardH = matchCardH(match);
@@ -1157,6 +1157,7 @@ function MobileBracket({ rounds, brand, locale }: { rounds: BracketRound[]; bran
                                     day: "numeric",
                                     hour: "2-digit",
                                     minute: "2-digit",
+                                    timeZone: "UTC",
                                   })}
                                 </span>
                               )}

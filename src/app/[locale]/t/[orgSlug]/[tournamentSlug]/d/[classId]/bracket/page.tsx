@@ -232,7 +232,7 @@ function BracketMatchCard({
             <span className="flex items-center gap-1 text-[9px]" style={{ color: "var(--cat-text-muted)" }}>
               <Clock className="w-2.5 h-2.5" />
               {new Date(match.scheduledAt).toLocaleTimeString(locale, {
-                hour: "2-digit", minute: "2-digit",
+                hour: "2-digit", minute: "2-digit", timeZone: "UTC",
               })}
             </span>
           )}

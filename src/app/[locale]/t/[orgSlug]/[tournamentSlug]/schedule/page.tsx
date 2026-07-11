@@ -36,19 +36,23 @@ interface PublicMatch {
 
 // ─── Helpers ─────────────────────────────────────────────
 
+// Match times are stored as wall-clock (the organizer's intended local time,
+// persisted UTC-anchored), so we render them in UTC everywhere — same as the
+// admin schedule/planner. Formatting in the viewer's timezone would shift a
+// 11:00 kick-off to 14:00 for a Tallinn visitor.
 function fmtDate(iso: string, locale: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString(locale, { day: "numeric", month: "long", weekday: "long" });
+  return d.toLocaleDateString(locale, { day: "numeric", month: "long", weekday: "long", timeZone: "UTC" });
 }
 
 function fmtTime(iso: string, locale: string) {
-  return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 }
 
 function groupByDate(matches: PublicMatch[], noDateLabel: string, locale: string) {
   const map = new Map<string, PublicMatch[]>();
   for (const m of matches) {
-    const key = m.scheduledAt ? new Date(m.scheduledAt).toDateString() : "no-date";
+    const key = m.scheduledAt ? new Date(m.scheduledAt).toISOString().slice(0, 10) : "no-date";
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(m);
   }
