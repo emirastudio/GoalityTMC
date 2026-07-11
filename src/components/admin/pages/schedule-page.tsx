@@ -1872,6 +1872,16 @@ function DrawTab({
           body: JSON.stringify({ teamIds: [], mode: "replace" }),
         })
       ));
+      // Propagate the cleared draw into the matches. Emptying the groups alone
+      // leaves the previously-applied team assignments on the match rows, so
+      // the planner/results still show the old teams ("nothing updated").
+      // apply-draw with empty groups nulls home/away back to TBD (keeping the
+      // slots + schedule; scored matches are preserved server-side).
+      await fetch(`${base}/stages/${selectedStageId}/apply-draw`, {
+        method: "POST",
+        headers: drawReplaceHeaders(lockState, unlocked),
+        body: "{}",
+      });
       loadLockState();
     } finally {
       setClearing(false);
