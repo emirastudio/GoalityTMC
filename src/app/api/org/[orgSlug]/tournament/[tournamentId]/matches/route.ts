@@ -76,34 +76,39 @@ export async function GET(
     if (m.homeTeamId) teamIds.add(m.homeTeamId);
     if (m.awayTeamId) teamIds.add(m.awayTeamId);
   }
-  const displayMap = new Map<number, string | null>();
+  const regMap = new Map<number, { displayName: string | null; squadAlias: string | null }>();
   if (teamIds.size > 0) {
     const regs = await db
-      .select({ teamId: tournamentRegistrations.teamId, displayName: tournamentRegistrations.displayName })
+      .select({
+        teamId: tournamentRegistrations.teamId,
+        displayName: tournamentRegistrations.displayName,
+        squadAlias: tournamentRegistrations.squadAlias,
+      })
       .from(tournamentRegistrations)
       .where(and(
         eq(tournamentRegistrations.tournamentId, ctx.tournament.id),
         inArray(tournamentRegistrations.teamId, [...teamIds])
       ));
-    for (const r of regs) displayMap.set(r.teamId, r.displayName);
+    for (const r of regs) regMap.set(r.teamId, { displayName: r.displayName, squadAlias: r.squadAlias });
   }
+
+  // Resolve a team's display name, appending its squad alias ("Blue"/"Black")
+  // so two same-named squads of one club stay distinguishable in every match
+  // view (planner, schedule, protocols, public).
+  const resolveName = (
+    teamId: number | null | undefined,
+    team: { name?: string | null; club?: { name?: string | null } | null },
+  ): string | null => {
+    const reg = teamId != null ? regMap.get(teamId) : undefined;
+    const base = reg?.displayName ?? team.name ?? team.club?.name ?? null;
+    if (!base) return null;
+    return reg?.squadAlias ? `${base} (${reg.squadAlias})` : base;
+  };
 
   const enriched = result.map(m => ({
     ...m,
-    homeTeam: m.homeTeam ? {
-      ...m.homeTeam,
-      name: (m.homeTeamId ? displayMap.get(m.homeTeamId) : undefined)
-        ?? m.homeTeam.name
-        ?? m.homeTeam.club?.name
-        ?? null,
-    } : m.homeTeam,
-    awayTeam: m.awayTeam ? {
-      ...m.awayTeam,
-      name: (m.awayTeamId ? displayMap.get(m.awayTeamId) : undefined)
-        ?? m.awayTeam.name
-        ?? m.awayTeam.club?.name
-        ?? null,
-    } : m.awayTeam,
+    homeTeam: m.homeTeam ? { ...m.homeTeam, name: resolveName(m.homeTeamId, m.homeTeam) } : m.homeTeam,
+    awayTeam: m.awayTeam ? { ...m.awayTeam, name: resolveName(m.awayTeamId, m.awayTeam) } : m.awayTeam,
   }));
 
   return NextResponse.json(enriched);

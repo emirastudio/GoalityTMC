@@ -21,6 +21,7 @@ export async function resolveTeamDisplayNames(
     .select({
       teamId: tournamentRegistrations.teamId,
       displayName: tournamentRegistrations.displayName,
+      squadAlias: tournamentRegistrations.squadAlias,
     })
     .from(tournamentRegistrations)
     .where(
@@ -30,7 +31,11 @@ export async function resolveTeamDisplayNames(
       )
     );
   for (const r of rows) {
-    if (r.displayName) map.set(r.teamId, r.displayName);
+    // Append the squad alias ("Blue"/"Black") so two same-named squads of one
+    // club stay distinguishable everywhere this name is shown.
+    if (r.displayName) {
+      map.set(r.teamId, r.squadAlias ? `${r.displayName} (${r.squadAlias})` : r.displayName);
+    }
   }
   return map;
 }
