@@ -2032,6 +2032,7 @@ function DrawTab({
           orgSlug={orgSlug}
           tournamentId={tournamentId}
           t={t}
+          onUnpublished={loadLockState}
         />
       )}
 
@@ -2527,6 +2528,7 @@ function DrawTab({
           tournamentId={tournamentId}
           t={t}
           onCancel={() => setDrawConfirm(null)}
+          onUnpublished={() => { setDrawConfirm(null); loadLockState(); }}
           onConfirm={async (mode) => {
             const kind = drawConfirm.kind;
             setDrawConfirm(null);
@@ -2565,13 +2567,33 @@ function DrawLockBanner({
   orgSlug,
   tournamentId,
   t,
+  onUnpublished,
 }: {
   lock: NonNullable<DrawLockState>;
   unlocked: boolean;
   orgSlug: string;
   tournamentId: number;
   t: DrawI18n;
+  onUnpublished: () => void;
 }) {
+  const [unpublishing, setUnpublishing] = useState(false);
+
+  // Unpublish the schedule right here — there is no dedicated /publish page
+  // (the toggle lives in the planner), so the old link 404'd. Clearing the
+  // publish flag unlocks the draw; reload the lock state to reflect it.
+  const handleUnpublish = async () => {
+    setUnpublishing(true);
+    try {
+      const r = await fetch(
+        `/api/org/${orgSlug}/tournament/${tournamentId}/schedule/publish`,
+        { method: "DELETE", credentials: "include" },
+      );
+      if (r.ok) onUnpublished();
+    } finally {
+      setUnpublishing(false);
+    }
+  };
+
   // Priority order of concerns — we render only the most severe one.
   // Published (red) > Committed+scores (orange) > Committed (blue).
   let tone: "red" | "orange" | "blue" = "blue";
@@ -2579,7 +2601,7 @@ function DrawLockBanner({
   let body = t("lockBannerCommittedBody", {
     matches: lock.matchesWithTeams,
   });
-  let action: { label: string; href: string } | null = null;
+  let action: { label: string; href?: string; onClick?: () => void } | null = null;
 
   if (lock.tournamentPublished) {
     tone = "red";
@@ -2587,7 +2609,7 @@ function DrawLockBanner({
     body = t("lockBannerPublishedBody");
     action = {
       label: t("lockBannerGoToPublish"),
-      href: `/org/${orgSlug}/admin/tournament/${tournamentId}/publish`,
+      onClick: handleUnpublish,
     };
   } else if (lock.hasScores) {
     tone = "orange";
@@ -2627,13 +2649,24 @@ function DrawLockBanner({
         </p>
       </div>
       {action && (
-        <a
-          href={action.href}
-          className="text-xs font-bold shrink-0 underline-offset-2 hover:underline"
-          style={{ color: c.text }}
-        >
-          {action.label} →
-        </a>
+        action.onClick ? (
+          <button
+            onClick={action.onClick}
+            disabled={unpublishing}
+            className="text-xs font-bold shrink-0 underline-offset-2 hover:underline disabled:opacity-50"
+            style={{ color: c.text }}
+          >
+            {unpublishing ? "…" : `${action.label} →`}
+          </button>
+        ) : (
+          <a
+            href={action.href}
+            className="text-xs font-bold shrink-0 underline-offset-2 hover:underline"
+            style={{ color: c.text }}
+          >
+            {action.label} →
+          </a>
+        )
       )}
     </div>
   );
@@ -2647,6 +2680,7 @@ function DrawConfirmModal({
   t,
   onCancel,
   onConfirm,
+  onUnpublished,
 }: {
   kind: "auto-draw" | "clear" | "revert" | "unlock" | "unlock-scores";
   lock: DrawLockState;
@@ -2655,6 +2689,7 @@ function DrawConfirmModal({
   t: DrawI18n;
   onCancel: () => void;
   onConfirm: (mode: "confirmed" | "typed") => void;
+  onUnpublished: () => void;
 }) {
   // Require typing CONFIRM for the most destructive variant — the one
   // where scores are about to be disconnected from their teams.
@@ -2697,11 +2732,18 @@ function DrawConfirmModal({
               style={{ background: "var(--cat-tag-bg)", color: "var(--cat-text)" }}>
               {t("modalCancel")}
             </button>
-            <a href={`/org/${orgSlug}/admin/tournament/${tournamentId}/publish`}
+            <button
+              onClick={async () => {
+                await fetch(
+                  `/api/org/${orgSlug}/tournament/${tournamentId}/schedule/publish`,
+                  { method: "DELETE", credentials: "include" },
+                );
+                onUnpublished();
+              }}
               className="flex-1 py-2 rounded-xl text-sm font-bold text-center"
               style={{ background: "#ef4444", color: "#fff" }}>
               {t("modalGoToPublish")}
-            </a>
+            </button>
           </div>
         </div>
       </div>
