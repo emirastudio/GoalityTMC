@@ -180,6 +180,21 @@ export function buildProblem(snap: DbSnapshot, opts: BuildProblemOptions = {}): 
   }
   if (opts.weights) weights = { ...weights, ...opts.weights };
 
+  // When the team-rest rule is turned OFF (or min-rest is 0), the organizer
+  // wants matches packed back-to-back. The soft "rest comfort" weight would
+  // otherwise still spread a team's matches apart — leaving gaps of up to
+  // ~75 min even with the hard rule off. Zero it in that case, unless a
+  // comfort weight was set explicitly (config or caller override).
+  const restRelaxed = snap.divisions.length > 0
+    && snap.divisions.every((d) =>
+      d.scheduleConfig.enableTeamRestRule === false
+      || (d.scheduleConfig.minRestBetweenTeamMatchesMinutes ?? 60) === 0);
+  const comfortExplicit = opts.weights?.teamRestComfort != null
+    || snap.divisions.some((d) => d.scheduleConfig.weights?.teamRestComfort != null);
+  if (restRelaxed && !comfortExplicit) {
+    weights = { ...weights, teamRestComfort: 0 };
+  }
+
   // Auto-enable division field balance when solving the whole tournament (>1 division
   // present). Single-division solves keep it at 0 (no cost, no interference).
   // Only auto-enable if the caller hasn't explicitly set it.
