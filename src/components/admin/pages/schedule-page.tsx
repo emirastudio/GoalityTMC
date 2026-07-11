@@ -1751,6 +1751,14 @@ function DrawTab({
       setDrawConfirm({ kind: lockState.hasScores ? "unlock-scores" : "unlock" });
       return;
     }
+    // Single group (league): there's nothing to distribute across groups, so
+    // "Авто-жеребьёвка" would otherwise do nothing. Run it directly — it
+    // shuffles the teams and applies the draw, filling the round-robin matches
+    // with real teams, which is what the organizer expects.
+    if (groups.length === 1) {
+      runAutoDraw();
+      return;
+    }
     setDrawConfirm({ kind: "auto-draw" });
   }
 
@@ -1826,6 +1834,12 @@ function DrawTab({
           body: JSON.stringify({ teamIds: newMap[g.id], mode: "replace" }),
         })
       ));
+      // Single group (league): distributing was a no-op, so also apply the
+      // draw — write the round-robin pairings (teams) into the match shells,
+      // so "Авто-жеребьёвка" actually produces a filled schedule.
+      if (groups.length === 1) {
+        await applyDraw();
+      }
       loadLockState();
     } finally {
       setAutoDrawing(false);
