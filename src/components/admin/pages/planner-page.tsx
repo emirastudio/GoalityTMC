@@ -439,49 +439,44 @@ function MatchCard({
           )}
         </div>
 
-        {compact ? (
-          !match.homeTeamId && !match.awayTeamId ? (
-            <div className="flex items-center gap-1">
-              <span className="opacity-40 italic text-xs truncate" style={{ color: "var(--cat-text)" }}>
-                TBD vs TBD
+        {(!match.homeTeamId && !match.awayTeamId) ? (
+          <div className="flex items-center justify-center gap-1 mt-0.5">
+            <span className="opacity-40 italic text-xs" style={{ color: "var(--cat-text)" }}>TBD vs TBD</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+            {/* Home — name then badge, pushed toward the centre */}
+            <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
+              <span
+                className={`font-bold leading-tight truncate ${compact ? "text-[12px]" : "text-[14px]"}`}
+                style={{ color: "var(--cat-text)" }}
+                title={home}
+              >
+                {match.homeTeamId ? (compact ? teamShort(home) : home) : <span className="opacity-40 italic">TBD</span>}
+              </span>
+              <TeamBadge team={match.homeTeam ?? null} size={compact ? 16 : 20} />
+            </div>
+            {/* vs */}
+            <span className="shrink-0 text-[10px] font-black uppercase tracking-wider" style={{ color, opacity: 0.75 }}>vs</span>
+            {/* Away — badge then name */}
+            <div className="flex items-center gap-1 min-w-0 flex-1">
+              <TeamBadge team={match.awayTeam ?? null} size={compact ? 16 : 20} />
+              <span
+                className={`font-bold leading-tight truncate ${compact ? "text-[12px]" : "text-[14px]"}`}
+                style={{ color: "var(--cat-text)" }}
+                title={away}
+              >
+                {match.awayTeamId ? (compact ? teamShort(away) : away) : <span className="opacity-40 italic">TBD</span>}
               </span>
             </div>
-          ) : (
-          <>
-            <div className="flex items-center gap-1">
-              <TeamBadge team={match.homeTeam ?? null} size={14} />
-              <div className="text-[13px] font-bold leading-tight truncate" style={{ color: "var(--cat-text)" }}>
-                {match.homeTeamId ? teamShort(home) : <span className="opacity-40 italic text-xs">TBD</span>}
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <TeamBadge team={match.awayTeam ?? null} size={14} />
-              <div className="text-[13px] font-semibold leading-tight truncate" style={{ color: "var(--cat-text)", opacity: 0.65 }}>
-                {match.awayTeamId ? teamShort(away) : <span className="opacity-40 italic text-xs">TBD</span>}
-              </div>
-            </div>
-          </>
-          )
-        ) : (
-          <>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <TeamBadge team={match.homeTeam ?? null} size={18} />
-              <div className="font-bold text-[15px] leading-tight truncate" style={{ color: "var(--cat-text)" }}>
-                {match.homeTeamId ? home : <span className="opacity-50 italic text-sm">TBD</span>}
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <TeamBadge team={match.awayTeam ?? null} size={18} />
-              <div className="text-sm leading-tight opacity-65 truncate" style={{ color: "var(--cat-text)" }}>
-                {match.awayTeamId ? away : <span className="opacity-50 italic">TBD</span>}
-              </div>
-            </div>
-            <div className="text-[11px] mt-0.5 opacity-50 truncate" style={{ color: "var(--cat-text)" }}>
-              {match.round?.name
-                ? `${match.stage?.name ?? ""} · ${match.round.shortName ?? match.round.name}`
-                : match.stage?.name}
-            </div>
-          </>
+          </div>
+        )}
+        {!compact && (
+          <div className="text-[11px] mt-0.5 opacity-50 truncate text-center" style={{ color: "var(--cat-text)" }}>
+            {match.round?.name
+              ? `${match.stage?.name ?? ""} · ${match.round.shortName ?? match.round.name}`
+              : match.stage?.name}
+          </div>
         )}
       </div>
     </div>
