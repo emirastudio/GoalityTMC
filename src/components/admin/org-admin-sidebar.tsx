@@ -6,16 +6,23 @@ import { useSearchParams } from "next/navigation";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
-  LayoutGrid, GitBranch, CalendarDays, FileText, Users, ShoppingBag,
-  CreditCard, MessageSquare, Settings, LayoutDashboard, Trophy, LogOut, Newspaper,
-  ChevronDown, ChevronLeft, Radio, Lock, Zap, Receipt, Plus, Trash2,
-  ClipboardList, Hotel, Utensils, Bus, BarChart3, MapPin,
-  Crown, Rocket, Gift, Users2, BookOpen,
+  GitBranch, CalendarDays, Users,
+  CreditCard, Settings, LayoutDashboard, Trophy, LogOut,
+  ChevronDown, ChevronLeft, Lock, Zap, Receipt, Plus, Trash2,
+  ClipboardList, BarChart3,
+  Crown, Rocket, Gift,
 } from "lucide-react";
 import { DivisionCreateModal } from "@/components/admin/division-create-modal";
 import { PlanLimitModal } from "@/components/ui/plan-gate";
 import { ExtrasCart } from "@/components/admin/extras-cart";
-import type { TournamentPlan } from "@/lib/plan-gates";
+import {
+  tournamentNavPresentation,
+  buildTournamentHref,
+  resolveTournamentNavAccess,
+  groupTournamentNavItems,
+  type TournamentNavDefinition,
+} from "@/components/admin/tournament-nav-items";
+import { useTournamentModules } from "@/lib/use-tournament-modules";
 
 // ── Цвета секций ─────────────────────────────────────────────────────────────
 
@@ -48,29 +55,8 @@ type TournamentClass = {
   minBirthYear: number | null;
 };
 
-type TournamentModules = {
-  hasMessaging:     boolean;
-  hasFinance:       boolean;
-  hasMatchHub:      boolean;
-  hasAccommodation: boolean;
-  hasMeals:         boolean;
-  hasTransfer:      boolean;
-  effectivePlan:    TournamentPlan;
-  maxDivisions:     number;
-  maxTeams:         number;
-  needsPlanUpgrade: boolean;
-  extrasOwed?: {
-    divisions: number;
-    teams: number;
-    amountCents: number;
-    teamsPendingCents?: number;
-    displayAmountCents?: number;
-    extraDivisionPriceCents: number;
-    extraTeamPriceCents: number;
-    paymentDue: string | null;
-    blocked: boolean;
-  };
-};
+// TournamentModules now lives in @/lib/use-tournament-modules (shared with the
+// mobile drawer via the deduped useTournamentModules hook).
 
 type Props = {
   orgSlug: string;
@@ -129,6 +115,23 @@ function LockedLink({
   );
 }
 
+// ── Ссылка в состоянии загрузки (entitlement ещё неизвестен) ─────────────────
+// Neutral, non-navigating placeholder so a gated link never flashes unlocked
+// before its entitlement loads (and never disappears on a transient error).
+
+function PendingNavItem({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
+  return (
+    <div
+      aria-disabled="true"
+      className="flex items-center gap-3 rounded-xl py-2 px-3 text-sm animate-pulse"
+      style={{ color: "var(--cat-text-muted)", opacity: 0.55, cursor: "default" }}
+    >
+      <Icon className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
+      <span className="flex-1">{label}</span>
+    </div>
+  );
+}
+
 // ── Заголовок секции ──────────────────────────────────────────────────────────
 
 function SectionHeader({
@@ -166,7 +169,9 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
   const [tournamentName, setTournamentName] = useState<string | null>(null);
   const [tournamentLogo, setTournamentLogo] = useState<string | null>(null);
   const [classes, setClasses]               = useState<TournamentClass[]>([]);
-  const [modules, setModules]               = useState<TournamentModules | null>(null);
+  // Shared, deduped modules — same source the mobile drawer reads, so both
+  // navs issue a single billing-info request and stay in one consistent state.
+  const { modules, status: modulesStatus, refetch: refetchModules } = useTournamentModules(orgSlug, tournamentId);
 
   // Состояние аккордеона дивизионов
   const [openClasses, setOpenClasses] = useState<Set<number>>(new Set());
@@ -218,7 +223,6 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
     if (!tournamentId) {
       setTournamentName(null);
       setClasses([]);
-      setModules(null);
       return;
     }
 
@@ -247,25 +251,8 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
       })
       .catch(() => null);
 
-    // Модули и план
-    fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/billing-info`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (d) setModules({
-          hasMessaging:     d.features?.hasMessaging     ?? false,
-          hasFinance:       d.features?.hasFinance       ?? false,
-          hasMatchHub:      d.features?.hasMatchHub      ?? false,
-          hasAccommodation: d.tournament?.hasAccommodation ?? false,
-          hasMeals:         d.tournament?.hasMeals         ?? false,
-          hasTransfer:      d.tournament?.hasTransfer       ?? false,
-          effectivePlan:    (d.effectivePlan ?? "free") as TournamentPlan,
-          maxDivisions:     d.features?.maxDivisions ?? 1,
-          maxTeams:         d.features?.maxTeams ?? 12,
-          needsPlanUpgrade: d.needsPlanUpgrade ?? false,
-          extrasOwed:       d.extrasOwed ?? undefined,
-        });
-      })
-      .catch(() => null);
+    // Модули и план грузятся через общий deduped-хук useTournamentModules
+    // (тот же источник, что и мобильная навигация) — здесь не фетчим.
   }, [tournamentId, orgSlug, pathname]);
 
   // Открыть/закрыть дивизион при изменении URL
@@ -279,16 +266,11 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
   useEffect(() => {
     if (!tournamentId || !orgSlug) return;
     function onBillingRefresh() {
-      fetch(`/api/org/${orgSlug}/tournament/${tournamentId}/billing-info`)
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (d) setModules(prev => prev ? { ...prev, extrasOwed: d.extrasOwed ?? undefined } : prev);
-        })
-        .catch(() => null);
+      refetchModules();
     }
     window.addEventListener("billing:refresh", onBillingRefresh);
     return () => window.removeEventListener("billing:refresh", onBillingRefresh);
-  }, [tournamentId, orgSlug]);
+  }, [tournamentId, orgSlug, refetchModules]);
 
   // Listen for tournament-data save events from the Setup wizard so the
   // divisions list (and tournament name/logo) refresh without a full page
@@ -336,11 +318,44 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
     return pathname.startsWith(`${base}/${section}`) && activeClassId === classId;
   }
 
-  // Показывать финансы если есть хотя бы один модуль или план позволяет
-  const showFinance = modules?.hasFinance ||
-    modules?.hasAccommodation ||
-    modules?.hasMeals ||
-    modules?.hasTransfer;
+  // Tournament nav is rendered by ITERATING the shared definitions (grouped by
+  // section) — desktop and mobile consume the same canonical list, so a new
+  // route added to the definitions appears in both without touching either
+  // component. The division accordion + extras cart below remain desktop-only.
+  const navGroups = groupTournamentNavItems();
+
+  const isActiveFor = (def: TournamentNavDefinition, href: string) => {
+    if (def.exact) return pathname === href;
+    if (def.id === "teams") return isActive(href) && !activeClassId;
+    if (def.id === "setup")
+      return isActive(href) || (isActive(`${base}/settings`) && pathname.endsWith("/settings"));
+    return isActive(href);
+  };
+
+  const renderNavItem = (def: TournamentNavDefinition) => {
+    const pres = tournamentNavPresentation[def.id];
+    const Icon = pres.icon;
+    const href = buildTournamentHref(def, base);
+    const label = def.labelNs === "orgAdmin" ? tAdmin(def.labelKey) : t(def.labelKey);
+    const access = resolveTournamentNavAccess(def, modules, modulesStatus).state;
+    if (access === "locked") {
+      return <LockedLink key={def.id} href={href} icon={Icon} label={label} plan={def.lockedPlan ?? "Pro"} />;
+    }
+    if (access === "pending") {
+      return <PendingNavItem key={def.id} icon={Icon} label={label} />;
+    }
+    return (
+      <NavLink
+        key={def.id}
+        href={href}
+        icon={Icon}
+        label={label}
+        isActive={isActiveFor(def, href)}
+        color={pres.color}
+        bg={pres.bg}
+      />
+    );
+  };
 
   // Навигация организации (не в контексте турнира)
   const orgNav = [
@@ -515,51 +530,7 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
           {!modules?.needsPlanUpgrade && (
           <><SectionHeader color={CLR.tournament} label={tAdmin("sectionTournament")} />
           <nav className="px-2 mb-1 space-y-0.5">
-            <NavLink
-              href={base}
-              icon={LayoutGrid}
-              label={t("overview")}
-              isActive={pathname === base}
-              color={CLR.accent}
-            />
-            {modules && !modules.hasMatchHub ? (
-              <LockedLink href={`${base}/hub`} icon={Radio} label={tAdmin("matchHub")} plan="Pro" />
-            ) : (
-              <NavLink
-                href={`${base}/hub`}
-                icon={Radio}
-                label={tAdmin("matchHub")}
-                isActive={isActive(`${base}/hub`)}
-                color="#ef4444"
-                bg="rgba(239,68,68,0.10)"
-              />
-            )}
-            <NavLink
-              href={`${base}/planner`}
-              icon={CalendarDays}
-              label={tAdmin("planner")}
-              isActive={isActive(`${base}/planner`)}
-              color="#06b6d4"
-              bg="rgba(6,182,212,0.10)"
-            />
-            <NavLink
-              href={`${base}/setup`}
-              icon={Settings}
-              label={tAdmin("settings")}
-              isActive={isActive(`${base}/setup`) || (isActive(`${base}/settings`) && pathname.endsWith("/settings"))}
-              color="var(--cat-text-muted)"
-            />
-            {/* Регламент турнира — общий текст + по дивизионам + документы.
-                Plan-gated на documents (Starter+); сама страница покажет
-                gate если у плана нет hasDocuments. */}
-            <NavLink
-              href={`${base}/regulations`}
-              icon={BookOpen}
-              label={tAdmin("regulations")}
-              isActive={isActive(`${base}/regulations`)}
-              color="#06b6d4"
-              bg="rgba(6,182,212,0.10)"
-            />
+            {navGroups.tournament.map(renderNavItem)}
           </nav>
 
           {/* ── ДИВИЗИОНЫ ── */}
@@ -714,94 +685,21 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
           {/* ── УЧАСТНИКИ ── */}
           <SectionHeader color={CLR.participants} label={tAdmin("sectionParticipants")} />
           <nav className="px-2 mb-1 space-y-0.5">
-            <NavLink
-              href={`${base}/registrations`}
-              icon={FileText}
-              label={t("registrations")}
-              isActive={isActive(`${base}/registrations`)}
-              color={CLR.participants}
-              bg={BG.participants}
-            />
-            <NavLink
-              href={`${base}/teams`}
-              icon={Users}
-              label={t("teams")}
-              isActive={isActive(`${base}/teams`) && !activeClassId}
-              color={CLR.participants}
-              bg={BG.participants}
-            />
+            {navGroups.participants.map(renderNavItem)}
           </nav>
 
           {/* ── ФИНАНСЫ — только платежи. «Сборы и услуги» переехали в
-                 «Организацию» (там ближе к стадионам/отелям). ── */}
-          {showFinance && (
-            <>
-              <SectionHeader color={CLR.finance} label={tAdmin("sectionFinance")} />
-              <nav className="px-2 mb-1 space-y-0.5">
-                {modules && !modules.hasFinance ? (
-                  <LockedLink href={`${base}/payments`} icon={CreditCard} label={t("payments")} plan="Pro" />
-                ) : (
-                  <NavLink
-                    href={`${base}/payments`}
-                    icon={CreditCard}
-                    label={t("payments")}
-                    isActive={isActive(`${base}/payments`)}
-                    color={CLR.finance}
-                    bg={BG.finance}
-                  />
-                )}
-              </nav>
-            </>
-          )}
-
-          {!showFinance && (
-            <>
-              <SectionHeader color={CLR.finance} label={tAdmin("sectionFinance")} />
-              <nav className="px-2 mb-1 space-y-0.5">
-                <LockedLink href={`${base}/payments`} icon={CreditCard} label={t("payments")} plan="Pro" />
-              </nav>
-            </>
-          )}
+                 «Организацию» (там ближе к стадионам/отелям). Платежи всегда
+                 присутствуют; при отсутствии hasFinance — в locked-состоянии. ── */}
+          <SectionHeader color={CLR.finance} label={tAdmin("sectionFinance")} />
+          <nav className="px-2 mb-1 space-y-0.5">
+            {navGroups.finance.map(renderNavItem)}
+          </nav>
 
           {/* ── ОРГАНИЗАЦИЯ ── */}
           <SectionHeader color={CLR.organization} label={tAdmin("sectionOrganization")} />
           <nav className="px-2 mb-1 space-y-0.5">
-            <NavLink
-              href={`${base}/offerings`}
-              icon={ShoppingBag}
-              label={tAdmin("feesServices")}
-              isActive={isActive(`${base}/offerings`)}
-              color={CLR.organization}
-              bg={BG.organization}
-            />
-            <NavLink
-              href={`${base}/stadiums`}
-              icon={MapPin}
-              label={tAdmin("stadiums")}
-              isActive={isActive(`${base}/stadiums`)}
-              color={CLR.organization}
-              bg={BG.organization}
-            />
-            <NavLink
-              href={`${base}/hotels`}
-              icon={Hotel}
-              label={tAdmin("hotels")}
-              isActive={isActive(`${base}/hotels`)}
-              color={CLR.organization}
-              bg={BG.organization}
-            />
-            {modules && !modules.hasMatchHub ? (
-              <LockedLink href={`${base}/referees`} icon={Users2} label={tAdmin("referees")} plan="Pro" />
-            ) : (
-              <NavLink
-                href={`${base}/referees`}
-                icon={Users2}
-                label={tAdmin("referees")}
-                isActive={isActive(`${base}/referees`)}
-                color={CLR.organization}
-                bg={BG.organization}
-              />
-            )}
+            {navGroups.organization.map(renderNavItem)}
           </nav>
           </>)}
 
@@ -812,27 +710,7 @@ export function OrgAdminSidebar({ orgSlug, orgName, orgLogo }: Props) {
       {tournamentId && !modules?.needsPlanUpgrade && (
         <div className="px-2 pt-2 border-t space-y-0.5 shrink-0"
           style={{ borderColor: "var(--cat-card-border)" }}>
-          {modules && !modules.hasMessaging ? (
-            <LockedLink href={`${base}/messages`} icon={MessageSquare} label={t("messagesLabel")} plan="Pro" />
-          ) : (
-            <NavLink
-              href={`${base}/messages`}
-              icon={MessageSquare}
-              label={t("messagesLabel")}
-              isActive={isActive(`${base}/messages`)}
-              color={CLR.messages}
-              bg={BG.messages}
-            />
-          )}
-          {/* News (Follow feature) — available on every plan */}
-          <NavLink
-            href={`${base}/news`}
-            icon={Newspaper}
-            label={tAdmin("newsLabel")}
-            isActive={isActive(`${base}/news`)}
-            color={CLR.news}
-            bg={BG.news}
-          />
+          {navGroups.communication.map(renderNavItem)}
         </div>
       )}
 
