@@ -6,15 +6,31 @@ import { Link, usePathname } from "@/i18n/navigation";
 import {
   LayoutDashboard, Trophy, Receipt, Settings, Menu, X,
   LayoutGrid, ClipboardList, Users, SlidersHorizontal,
-  GitBranch, CalendarDays, CreditCard, MessageSquare,
-  ShoppingBag, Radio, FileText, LogOut, ChevronRight,
-  Zap, Lock, MapPin, Hotel,
+  LogOut, ChevronRight, Zap, Lock,
 } from "lucide-react";
+import {
+  tournamentNavDefinitions,
+  tournamentNavPresentation,
+  buildTournamentHref,
+  resolveTournamentNavAccess,
+  type TournamentNavDefinition,
+} from "@/components/admin/tournament-nav-items";
+import { useTournamentModules } from "@/lib/use-tournament-modules";
 
 type Props = {
   orgSlug: string;
   orgName: string;
   orgLogo?: string | null;
+};
+
+// Compact bottom-tab icons (a curated quick-access subset). The hrefs are
+// derived from the shared nav definitions so no route string is duplicated.
+const BOTTOM_TAB_IDS = ["overview", "registrations", "teams", "setup"] as const;
+const BOTTOM_TAB_ICONS: Record<string, typeof LayoutGrid> = {
+  overview: LayoutGrid,
+  registrations: ClipboardList,
+  teams: Users,
+  setup: SlidersHorizontal,
 };
 
 export function OrgAdminMobileNav({ orgSlug, orgName, orgLogo }: Props) {
@@ -28,9 +44,17 @@ export function OrgAdminMobileNav({ orgSlug, orgName, orgLogo }: Props) {
   const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
   const base = tournamentId ? `${basePath}/tournament/${tournamentId}` : null;
 
+  // Shared, deduped modules (same source as the desktop sidebar → one request,
+  // one consistent locked/unlocked state, never hidden on a transient error).
+  const { modules, status } = useTournamentModules(orgSlug, tournamentId);
+
   function isActive(href: string, exact = false) {
     if (exact) return pathname === href;
     return pathname.startsWith(href);
+  }
+
+  function labelFor(def: TournamentNavDefinition) {
+    return def.labelNs === "orgAdmin" ? tAdmin(def.labelKey) : t(def.labelKey);
   }
 
   // ── Bottom tab items change based on context ──────────────────────────────
@@ -41,12 +65,17 @@ export function OrgAdminMobileNav({ orgSlug, orgName, orgLogo }: Props) {
     { key: "settings",    icon: Settings,         href: `${basePath}/settings` },
   ];
 
-  const tournamentTabs = base ? [
-    { key: "overview",       icon: LayoutGrid,       href: base,                        exact: true },
-    { key: "registrations",  icon: ClipboardList,    href: `${base}/registrations` },
-    { key: "teams",          icon: Users,            href: `${base}/teams` },
-    { key: "setup",          icon: SlidersHorizontal,href: `${base}/setup` },
-  ] : [];
+  const tournamentTabs = base
+    ? BOTTOM_TAB_IDS.map((id) => {
+        const def = tournamentNavDefinitions.find((d) => d.id === id)!;
+        return {
+          key: id,
+          icon: BOTTOM_TAB_ICONS[id],
+          href: buildTournamentHref(def, base),
+          exact: def.exact ?? false,
+        };
+      })
+    : [];
 
   const tabs = tournamentId ? tournamentTabs : orgTabs;
 
@@ -58,18 +87,16 @@ export function OrgAdminMobileNav({ orgSlug, orgName, orgLogo }: Props) {
     { key: "settings",    icon: Settings,         href: `${basePath}/settings` },
   ];
 
-  const drawerTournamentItems = base ? [
-    { key: "overview",          icon: LayoutGrid,        href: base,                        exact: true,  color: "var(--cat-accent)" },
-    { key: "planner",           icon: CalendarDays,      href: `${base}/planner`,            exact: false, color: "#06b6d4" },
-    { key: "registrations",     icon: FileText,          href: `${base}/registrations`,      exact: false, color: "#10b981" },
-    { key: "teams",             icon: Users,             href: `${base}/teams`,              exact: false, color: "#10b981" },
-    { key: "servicesPackages",  icon: ShoppingBag,       href: `${base}/offerings`,  exact: false, color: "#ec4899" },
-    { key: "stadiums",          icon: MapPin,            href: `${base}/stadiums`,           exact: false, color: "#ec4899" },
-    { key: "hotels",            icon: Hotel,             href: `${base}/hotels`,             exact: false, color: "#ec4899" },
-    { key: "payments",          icon: CreditCard,        href: `${base}/payments`,           exact: false, color: "#f59e0b" },
-    { key: "messagesLabel",     icon: MessageSquare,     href: `${base}/messages`,           exact: false, color: "#8b5cf6" },
-    { key: "setup",             icon: SlidersHorizontal, href: `${base}/setup`,              exact: false, color: "#8b5cf6" },
-  ] : [];
+  // Full tournament nav — built from the SINGLE shared source of truth, so the
+  // mobile drawer can never again drift from the desktop sidebar.
+  const drawerTournamentItems = base
+    ? tournamentNavDefinitions.map((def) => ({
+        def,
+        href: buildTournamentHref(def, base),
+        access: resolveTournamentNavAccess(def, modules, status).state,
+        pres: tournamentNavPresentation[def.id],
+      }))
+    : [];
 
   function closeAndNav() {
     setDrawerOpen(false);
@@ -102,7 +129,7 @@ export function OrgAdminMobileNav({ orgSlug, orgName, orgLogo }: Props) {
                 )}
                 <Icon className="w-[22px] h-[22px]" />
                 <span style={{ fontSize: "10px", fontWeight: active ? 700 : 500, lineHeight: 1 }}>
-                  {key === "messagesLabel" ? t("messagesLabel") : (t as any)(key)}
+                  {(t as (k: string) => string)(key)}
                 </span>
               </Link>
             );
@@ -200,29 +227,61 @@ export function OrgAdminMobileNav({ orgSlug, orgName, orgLogo }: Props) {
             </>
           )}
 
-          {/* Tournament nav */}
+          {/* Tournament nav — full list from the shared source of truth */}
           {tournamentId && drawerTournamentItems.length > 0 && (
             <>
               <p className="text-[10px] font-black uppercase tracking-widest px-2 mb-2" style={{ color: "var(--cat-text-muted)" }}>
                 {t("tournaments")}
               </p>
-              {drawerTournamentItems.map(({ key, icon: Icon, href, exact, color }) => {
-                const active = exact ? pathname === href : isActive(href);
+              {drawerTournamentItems.map(({ def, href, access, pres }) => {
+                const Icon = pres?.icon ?? LayoutGrid;
+                const color = pres?.color ?? "var(--cat-accent)";
+                const label = labelFor(def);
+
+                // pending: modules not yet known → neutral, non-navigating row
+                // (never hidden, never flashed as an open link).
+                if (access === "pending") {
+                  return (
+                    <div
+                      key={def.id}
+                      aria-disabled="true"
+                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium animate-pulse"
+                      style={{ color: "var(--cat-text-muted)", opacity: 0.6, cursor: "default" }}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" style={{ color: "var(--cat-text-muted)" }} />
+                      <span className="flex-1">{label}</span>
+                    </div>
+                  );
+                }
+
+                const locked = access === "locked";
+                const active = def.exact ? pathname === href : isActive(href);
                 return (
                   <Link
-                    key={key}
+                    key={def.id}
                     href={href}
                     onClick={closeAndNav}
+                    aria-label={locked ? `${label} (${def.lockedPlan})` : label}
                     className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all"
                     style={{
                       background: active ? `${color}15` : "transparent",
-                      color: active ? "var(--cat-text)" : "var(--cat-text-secondary)",
+                      color: locked
+                        ? "var(--cat-text-muted)"
+                        : active ? "var(--cat-text)" : "var(--cat-text-secondary)",
                       borderLeft: `2px solid ${active ? color : "transparent"}`,
+                      opacity: locked ? 0.75 : 1,
                     }}
                   >
-                    <Icon className="w-4 h-4 shrink-0" style={{ color: active ? color : "var(--cat-text-muted)" }} />
-                    <span className="flex-1">{key === "messagesLabel" ? t("messagesLabel") : (t as any)(key)}</span>
-                    <ChevronRight className="w-3.5 h-3.5 opacity-40" style={{ color: "var(--cat-text-muted)" }} />
+                    <Icon className="w-4 h-4 shrink-0" style={{ color: active && !locked ? color : "var(--cat-text-muted)" }} />
+                    <span className="flex-1">{label}</span>
+                    {locked ? (
+                      <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--cat-text-muted)" }}>
+                        <Lock className="w-3 h-3" />
+                        {def.lockedPlan}
+                      </span>
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5 opacity-40" style={{ color: "var(--cat-text-muted)" }} />
+                    )}
                   </Link>
                 );
               })}
